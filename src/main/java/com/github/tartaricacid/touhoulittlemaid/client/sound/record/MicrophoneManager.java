@@ -135,7 +135,7 @@ public class MicrophoneManager {
             dataLine.flush();
 
             byte[] byteArray = pcmToWav(stream.toByteArray(), format);
-            // debugFile(byteArray);
+
             consumer.accept(byteArray);
 
             TouhouLittleMaid.LOGGER.debug("Microphone stop record...");

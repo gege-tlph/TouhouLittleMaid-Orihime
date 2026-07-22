@@ -1,9 +1,7 @@
 /*
  * https://github.com/anlingyi/xechat-idea
  *
- *        Apache License
- *   Version 2.0, January 2004
- * http://www.apache.org/licenses/
+ * Apache 许可证版本 2.0，2004 年 1 月 http://www.apache.org/licenses/
  */
 package com.github.tartaricacid.touhoulittlemaid.api.game.gomoku;
 
@@ -198,8 +196,8 @@ public class ZhiZhangAIService implements AIService {
         /**
          * 判断分数是否处于区间 [leftScore, rightScore)
          *
-         * @param score      分数
-         * @param leftScore  左区分值
+         * @param score 分数
+         * @param leftScore 左区分值
          * @param rightScore 右区分值
          * @return
          */
@@ -628,9 +626,9 @@ public class ZhiZhangAIService implements AIService {
     /**
      * 迭代加深VCX
      *
-     * @param isAi     是否是AI
+     * @param isAi 是否是AI
      * @param maxDepth 最大深度
-     * @param isVcf    true:VCF false:VCT
+     * @param isVcf 真：VCF 假：VCT
      * @return
      */
     private Point deepeningVcx(boolean isAi, int maxDepth, boolean isVcf) {
@@ -649,9 +647,9 @@ public class ZhiZhangAIService implements AIService {
     /**
      * 迭代加深算杀搜索
      *
-     * @param depth    当前搜索深度
+     * @param depth 当前搜索深度
      * @param maxDepth 最大搜索深度
-     * @param isVcf    true:VCF false:VCT
+     * @param isVcf 真：VCF 假：VCT
      * @return
      */
     private Point deepening(int depth, int maxDepth, boolean isVcf) {
@@ -669,7 +667,7 @@ public class ZhiZhangAIService implements AIService {
                     StringBuilder pathOut = new StringBuilder();
                     pathOut.append(isVcf ? "VCF" : "VCT").append("路径：");
                     this.bestPathStack.forEach(p -> pathOut.append(p).append(" "));
-                    //TouhouLittleMaid.LOGGER.debug(pathOut.toString());
+
                 }
 
                 // 算杀成功
@@ -684,9 +682,9 @@ public class ZhiZhangAIService implements AIService {
     /**
      * 算杀（VCF、VCT）
      *
-     * @param type  当前走棋方 1.AI 2.玩家
+     * @param type 当前走棋方 1.AI 2.玩家
      * @param depth 搜索深度
-     * @param isVcf true:VCF false:VCT
+     * @param isVcf 真：VCF 假：VCT
      * @return
      */
     private Point vcx(int type, int depth, boolean isVcf) {
@@ -768,7 +766,7 @@ public class ZhiZhangAIService implements AIService {
     /**
      * 获取算杀落子点
      *
-     * @param type  当前走棋方 0.根节点表示AI走棋 1.黑棋 2.白棋
+     * @param type 当前走棋方 0.根节点表示AI走棋 1.黑棋 2.白棋
      * @param isVcf 是否是连续冲四
      * @return
      */
@@ -940,7 +938,7 @@ public class ZhiZhangAIService implements AIService {
                 }
 
                 Point p = new Point(i, j, this.ai);
-                // 该点得分 = AI落子得分 * 进攻系数 + 对手落子得分
+
                 int val = Math.round(evaluate(p) * this.attack) + evaluate(new Point(i, j, 3 - this.ai));
                 // 选择得分最高的点位
                 if (val > score) {
@@ -958,7 +956,7 @@ public class ZhiZhangAIService implements AIService {
     /**
      * 极大极小值搜索
      *
-     * @param type  当前走棋方 0.根节点表示AI走棋 1.AI 2.玩家
+     * @param type 当前走棋方 0.根节点表示AI走棋 1.AI 2.玩家
      * @param depth 搜索深度
      * @return
      */
@@ -984,11 +982,7 @@ public class ZhiZhangAIService implements AIService {
 
         // 到达叶子结点
         if (depth == 0) {
-            /*
-             * 评估每棵博弈树的叶子结点的局势
-             * 比如：depth=2时，表示从AI开始走两步棋之后的局势评估，AI(走第一步) -> 玩家(走第二步)，然后对局势进行评估
-             * 注意：局势评估是以AI角度进行的，分值越大对AI越有利，对玩家越不利
-             */
+            /* 评估每棵博弈树的叶子结点的局势 比如：depth=2时，表示从AI开始走两步棋之后的局势评估，AI(走第一步) -> 玩家(走第二步)，然后对局势进行评估 注意：局势评估是以AI角度进行的，分值越大对AI越有利，对玩家越不利 */
             return evaluateAll();
         }
 
@@ -1034,10 +1028,10 @@ public class ZhiZhangAIService implements AIService {
     /**
      * 极大极小值搜索、AlphaBeta剪枝
      *
-     * @param type  当前走棋方 0.根节点表示AI走棋 1.AI 2.玩家
+     * @param type 当前走棋方 0.根节点表示AI走棋 1.AI 2.玩家
      * @param depth 搜索深度
      * @param alpha 极大值
-     * @param beta  极小值
+     * @param beta 极小值
      * @return
      */
     private int minimax(int type, int depth, int alpha, int beta) {
@@ -1065,9 +1059,7 @@ public class ZhiZhangAIService implements AIService {
         // 到达叶子结点
         if (depth == 0) {
             /**
-             * 评估每棵博弈树的叶子结点的局势
-             * 比如：depth=2时，表示从AI开始走两步棋之后的局势评估，AI(走第一步) -> 玩家(走第二步)，然后对局势进行评估
-             * 注意：局势评估是以AI角度进行的，分值越大对AI越有利，对玩家越不利
+             * 评估每棵博弈树的叶子结点的局势 比如：depth=2时，表示从AI开始走两步棋之后的局势评估，AI(走第一步) -> 玩家(走第二步)，然后对局势进行评估 注意：局势评估是以AI角度进行的，分值越大对AI越有利，对玩家越不利
              */
             return evaluateAll();
         }
@@ -1136,14 +1128,11 @@ public class ZhiZhangAIService implements AIService {
                 }
 
                 /*
-                 AlphaBeta剪枝
-
-                 解释：
-                 AI当前最大分数为：alpha 搜索区间 (alpha, +∞]
-                 对手当前最小分数为：beta 搜索区间 [-∞, beta)
-
-                 因为对手要选择分数小于beta的分支，AI要从对手给的分支里面选最大的分支，这个最大的分支要和当前的分支(alpha)做比较，
-                 现在alpha都比beta大了，下面搜索给出的分支也都是小于alpha的，所以搜索下去没有意义，剪掉提高搜索效率。
+                 * AlphaBeta剪枝
+                 *
+                 * 解释： AI当前最大分数为：alpha 搜索区间 (alpha, +∞] 对手当前最小分数为：beta 搜索区间 [-∞, beta)
+                 *
+                 * 因为对手要选择分数小于beta的分支，AI要从对手给的分支里面选最大的分支，这个最大的分支要和当前的分支(alpha)做比较， 现在alpha都比beta大了，下面搜索给出的分支也都是小于alpha的，所以搜索下去没有意义，剪掉提高搜索效率。
                  */
                 break;
             }
@@ -1311,7 +1300,7 @@ public class ZhiZhangAIService implements AIService {
     /**
      * 迭代加深 minimax 搜索
      *
-     * @param depth    当前搜索深度
+     * @param depth 当前搜索深度
      * @param maxDepth 最大搜索深度
      * @return
      */
@@ -1385,8 +1374,7 @@ public class ZhiZhangAIService implements AIService {
             return true;
         }
         if (huosanTotal > 0 && huoerTotal > 0) {
-            // 活三又活二
-            // return true;
+
         }
 
         return false;
@@ -1446,7 +1434,7 @@ public class ZhiZhangAIService implements AIService {
      * 随机获取落子点
      *
      * @param type 棋子类型
-     * @param num  数量
+     * @param num 数量
      * @return
      */
     private List<Point> randomPoint(int type, int num) {
@@ -1553,14 +1541,14 @@ public class ZhiZhangAIService implements AIService {
             }
         }
 
-        // 该局AI最终得分 = AI得分 * 进攻系数 - 对手得分
+
         return Math.round(aiScore * this.attack) - foeScore;
     }
 
     /**
      * 检查当前落子是否处于某一局势
      *
-     * @param point       当前棋位
+     * @param point 当前棋位
      * @param chessModels 检查的局势
      * @return
      */
@@ -1580,7 +1568,7 @@ public class ZhiZhangAIService implements AIService {
     /**
      * 检查当前局势是否处于某个局势
      *
-     * @param situation  当前局势
+     * @param situation 当前局势
      * @param chessModel 检查的局势
      * @return
      */
@@ -1594,11 +1582,7 @@ public class ZhiZhangAIService implements AIService {
     }
 
     /**
-     * 获取当前局势的棋型（按顺序匹配）
-     * <p>
-     * 如当前局势棋型为："210111002"（同时包含活三和冲四的棋型）
-     * 该方法会优先匹配到活三 "011100"，然后返回该棋型
-     * 满足冲四 "10111" 棋型，但由于顺序问题，将不会返回
+     * 获取当前局势的棋型（按顺序匹配） <p> 如当前局势棋型为："210111002"（同时包含活三和冲四的棋型） 该方法会优先匹配到活三 "011100"，然后返回该棋型 满足冲四 "10111" 棋型，但由于顺序问题，将不会返回
      *
      * @param situation 当前局势
      * @return
@@ -1633,7 +1617,7 @@ public class ZhiZhangAIService implements AIService {
     /**
      * 获取棋位局势
      *
-     * @param point     当前棋位
+     * @param point 当前棋位
      * @param direction 大方向 1.横 2.纵 3.左斜 4.右斜
      * @return
      */
@@ -1655,17 +1639,12 @@ public class ZhiZhangAIService implements AIService {
     }
 
     /**
-     * 拼接各个方向的棋子
-     * <p>
-     * 由于现有评估模型是对黑棋进行评估
-     * 所以，为了方便对局势进行评估，如果当前是白棋方，需要将扫描到的白棋转换为黑棋，黑棋转换为白棋
-     * 如：point(x=0,y=0,type=2) 即当前为白棋方
-     * 扫描到的某个方向局势为：20212 -> 转换后 -> 10121
+     * 拼接各个方向的棋子 <p> 由于现有评估模型是对黑棋进行评估 所以，为了方便对局势进行评估，如果当前是白棋方，需要将扫描到的白棋转换为黑棋，黑棋转换为白棋 如：point(x=0,y=0,type=2) 即当前为白棋方 扫描到的某个方向局势为：20212 -> 转换后 -> 10121
      *
-     * @param sb        字符串容器
-     * @param point     当前棋子
+     * @param sb 字符串容器
+     * @param point 当前棋子
      * @param direction 方向 1.左横 2.右横 3.上纵 4.下纵  5.左斜上 6.左斜下 7.右斜上 8.右斜下
-     * @param offset    偏移量
+     * @param offset 偏移量
      */
     private void appendChess(StringBuilder sb, Point point, int direction, int offset) {
         int chess = relativePoint(point, direction, offset);
@@ -1684,9 +1663,9 @@ public class ZhiZhangAIService implements AIService {
     /**
      * 获取相对点位棋子
      *
-     * @param point     当前棋位
+     * @param point 当前棋位
      * @param direction 方向 1.左横 2.右横 3.上纵 4.下纵  5.左斜上 6.左斜下 7.右斜上 8.右斜下
-     * @param offset    偏移量
+     * @param offset 偏移量
      * @return -1:越界 0:空位 1:黑棋 2:白棋
      */
     private int relativePoint(Point point, int direction, int offset) {

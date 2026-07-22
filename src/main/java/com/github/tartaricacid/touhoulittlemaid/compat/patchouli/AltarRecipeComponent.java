@@ -1,17 +1,12 @@
 package com.github.tartaricacid.touhoulittlemaid.compat.patchouli;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
-import com.github.tartaricacid.touhoulittlemaid.crafting.AltarRecipe;
-import com.github.tartaricacid.touhoulittlemaid.init.InitRecipes;
-import com.google.common.collect.Lists;
+import com.github.tartaricacid.touhoulittlemaid.network.client.ClientAltarRecipeCache;
+import com.github.tartaricacid.touhoulittlemaid.network.message.SyncAltarRecipesPackage.AltarRecipeSummary;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingBookCategory;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -21,77 +16,74 @@ import vazkii.patchouli.api.IVariableProvider;
 
 import java.util.List;
 
-public class AltarRecipeComponent implements IComponentProcessor {
+public final class AltarRecipeComponent implements IComponentProcessor {
     private static final String RECIPE_ID = "recipe_id";
     private static final String INPUT = "input";
     private static final String POWER_COST = "power_cost";
     private static final String OUTPUT_ITEM = "output_item";
     private static final String OUTPUT_ENTITY = "output_entity";
     private static final String OUTPUT_DESC = "output_desc";
+    private static final String ALTAR_RECIPE_PATH = "altar_recipe/";
 
-    private @Nullable AltarRecipe recipe;
+    private @Nullable AltarRecipeSummary recipe;
 
-    @SuppressWarnings("all")
     @Override
     public void setup(Level level, IVariableProvider variables) {
-        ResourceLocation recipeId = ResourceLocation.parse(variables.get(RECIPE_ID, level.registryAccess()).asString());
-        List<RecipeHolder<AltarRecipe>> allAltarRecipes = level.getRecipeManager().getAllRecipesFor(InitRecipes.ALTAR_CRAFTING);
-        for (RecipeHolder<AltarRecipe> recipe : allAltarRecipes) {
-            if (recipe.id().equals(recipeId)) {
-                this.recipe = recipe.value();
-                return;
-            }
+        Identifier recipeId = Identifier.parse(variables.get(RECIPE_ID, level.registryAccess()).asString());
+        String path = recipeId.getPath();
+        String recipeString = path.startsWith(ALTAR_RECIPE_PATH)
+                ? path.substring(ALTAR_RECIPE_PATH.length()) : path;
+        recipe = ClientAltarRecipeCache.getRecipes().stream()
+                .filter(summary -> summary.recipeString().equals(recipeString))
+                .findFirst()
+                .orElse(null);
+        if (recipe == null) {
+            TouhouLittleMaid.LOGGER.error("Altar recipe summary not found for Patchouli page: {}", recipeId);
         }
-        this.recipe = new AltarRecipe("altar_recipe", CraftingBookCategory.MISC, NonNullList.of(Ingredient.EMPTY),
-                0, ItemStack.EMPTY, ResourceLocation.withDefaultNamespace("item"), "");
-        TouhouLittleMaid.LOGGER.error("Altar recipe not found: {}", recipeId);
     }
 
-    @Nullable
     @Override
-    public IVariable process(Level level, String key) {
+    public @Nullable IVariable process(Level level, String key) {
+        if (recipe == null) {
+            return emptyValue(level, key);
+        }
         if (key.startsWith(INPUT)) {
             int index = Integer.parseInt(key.substring(INPUT.length())) - 1;
-            if (index < 0 || index >= recipe.getIngredients().size()) {
+            if (index < 0 || index >= recipe.inputs().size()) {
                 return IVariable.from(ItemStack.EMPTY, level.registryAccess());
             }
-            Ingredient ingredient = recipe.getIngredients().get(index);
-            ItemStack[] stacks = ingredient.getItems();
-            if (stacks.length == 0) {
-                return IVariable.from(ItemStack.EMPTY, level.registryAccess());
-            }
-            List<String> stackNames = Lists.newArrayList();
-            for (ItemStack stack : stacks) {
-                ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
-                stackNames.add(itemId.toString());
-            }
-            return IVariable.wrap(StringUtils.join(stackNames, ","), level.registryAccess());
+            List<String> itemIds = recipe.inputs().get(index).stream()
+                    .map(ItemStack::getItem)
+                    .map(BuiltInRegistries.ITEM::getKey)
+                    .map(Identifier::toString)
+                    .toList();
+            return IVariable.wrap(StringUtils.join(itemIds, ","), level.registryAccess());
         }
+        return switch (key) {
+            case POWER_COST -> IVariable.wrap(String.format("x%.2f", recipe.powerCost()), level.registryAccess());
+            case OUTPUT_ITEM -> isItemCraft(recipe)
+                    ? IVariable.from(recipe.output(), level.registryAccess())
+                    : IVariable.from(ItemStack.EMPTY, level.registryAccess());
+            case OUTPUT_DESC -> IVariable.wrap(I18n.get(recipe.langKey()), level.registryAccess());
+            case OUTPUT_ENTITY -> IVariable.wrap(displayEntityType(recipe.entityType()), level.registryAccess());
+            default -> null;
+        };
+    }
 
-        switch (key) {
-            case POWER_COST -> {
-                float powerCost = recipe.getPower();
-                return IVariable.wrap(String.format("x%.2f", powerCost), level.registryAccess());
-            }
-            case OUTPUT_ITEM -> {
-                if (!recipe.isItemCraft()) {
-                    return IVariable.from(ItemStack.EMPTY, level.registryAccess());
-                }
-                return IVariable.from(recipe.getResultItem(level.registryAccess()), level.registryAccess());
-            }
-            case OUTPUT_DESC -> {
-                return IVariable.wrap(I18n.get(recipe.getLangKey()), level.registryAccess());
-            }
-            case OUTPUT_ENTITY -> {
-                String entityId = recipe.getEntityType().toString();
-                // 特判，女仆生成是实体对象是盒子，这里纠正为女仆
-                if ("touhou_little_maid:box".equals(entityId)) {
-                    entityId = "touhou_little_maid:maid";
-                }
-                return IVariable.wrap(entityId, level.registryAccess());
-            }
-        }
+    private static boolean isItemCraft(AltarRecipeSummary summary) {
+        return "minecraft:item".equals(summary.entityType());
+    }
 
-        return null;
+    private static String displayEntityType(String entityType) {
+        return "touhou_little_maid:box".equals(entityType) ? "touhou_little_maid:maid" : entityType;
+    }
+
+    private static @Nullable IVariable emptyValue(Level level, String key) {
+        return switch (key) {
+            case POWER_COST, OUTPUT_DESC -> IVariable.wrap("", level.registryAccess());
+            case OUTPUT_ENTITY -> IVariable.wrap("minecraft:item", level.registryAccess());
+            case OUTPUT_ITEM -> IVariable.from(ItemStack.EMPTY, level.registryAccess());
+            default -> key.startsWith(INPUT) ? IVariable.from(ItemStack.EMPTY, level.registryAccess()) : null;
+        };
     }
 }

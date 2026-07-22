@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ExperimentalConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
 import com.google.common.collect.ImmutableMap;
@@ -14,6 +15,10 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import javax.annotation.Nullable;
 
 public class MaidFollowOwnerTask extends Behavior<EntityMaid> {
+    private static final int SMOOTH_START_DISTANCE = 5;
+    private static final int SMOOTH_TELEPORT_DISTANCE = 16;
+    private static final float SMOOTH_SPEED_MODIFIER = 0.6F;
+
     private final float speedModifier;
     private final int stopDistance;
 
@@ -53,14 +58,16 @@ public class MaidFollowOwnerTask extends Behavior<EntityMaid> {
         }
 
         // 否则正常传送
-        int startDistance = (int) maid.getRestrictRadius() - 2;
-        int minTeleportDistance = startDistance + 4;
+        boolean smoothFollow = ExperimentalConfig.SMOOTH_FOLLOW.get();
+        int startDistance = smoothFollow ? SMOOTH_START_DISTANCE : (int) maid.getHomeRadius() - 2;
+        int minTeleportDistance = smoothFollow ? SMOOTH_TELEPORT_DISTANCE : startDistance + 4;
+        float followSpeed = smoothFollow ? SMOOTH_SPEED_MODIFIER : speedModifier;
         if (ownerStateConditions(owner, maid) && maidStateConditions(maid) && !maid.closerThan(owner, startDistance)) {
             if (!maid.closerThan(owner, minTeleportDistance)) {
                 maid.teleportToOwner(owner);
                 maid.getNavigationManager().resetNavigation();
             } else if (!ownerIsWalkTarget(maid, owner)) {
-                BehaviorUtils.setWalkAndLookTargetMemories(maid, owner, speedModifier, stopDistance);
+                BehaviorUtils.setWalkAndLookTargetMemories(maid, owner, followSpeed, stopDistance);
             }
         }
     }

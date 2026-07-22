@@ -4,24 +4,12 @@
   "entity": "touhou_little_maid:maid",
   "group": "altar_recipe",
   "ingredients": [
-    {
-      "item": "touhou_little_maid:film"
-    },
-    {
-      "tag": "c:gems/lapis"
-    },
-    {
-      "tag": "c:ingots/gold"
-    },
-    {
-      "tag": "c:dusts/redstone"
-    },
-    {
-      "tag": "c:ingots/iron"
-    },
-    {
-      "item": "minecraft:coal"
-    }
+    "touhou_little_maid:film",
+    "#c:gems/lapis",
+    "#c:ingots/gold",
+    "#c:dusts/redstone",
+    "#c:ingots/iron",
+    "minecraft:coal"
   ],
   "lang": "jei.touhou_little_maid.altar_craft.reborn_maid.result",
   "power": 0.5,

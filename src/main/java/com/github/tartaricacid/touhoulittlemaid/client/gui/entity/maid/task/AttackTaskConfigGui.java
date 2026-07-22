@@ -11,14 +11,15 @@ import com.github.tartaricacid.touhoulittlemaid.network.message.SetAttackListPac
 import com.google.common.collect.Lists;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Inventory;
@@ -41,10 +42,10 @@ import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil
 @IPNGuiHint(button = IPNButton.SHOW_EDITOR, horizontalOffset = -5)
 @IPNGuiHint(button = IPNButton.SETTINGS, horizontalOffset = -5)
 public class AttackTaskConfigGui extends MaidTaskConfigGui<TaskConfigContainer> {
-    private static final ResourceLocation BG = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/attack_task_config.png");
+    private static final Identifier BG = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/attack_task_config.png");
 
-    private final Map<ResourceLocation, MonsterType> attackGroups;
-    private final List<ResourceLocation> attackGroupsKey;
+    private final Map<Identifier, MonsterType> attackGroups;
+    private final List<Identifier> attackGroupsKey;
     private EditBox inputField;
     private int page = 0;
 
@@ -58,11 +59,11 @@ public class AttackTaskConfigGui extends MaidTaskConfigGui<TaskConfigContainer> 
     private void sortKey() {
         this.attackGroupsKey.clear();
 
-        List<ResourceLocation> hostile = Lists.newArrayList();
-        List<ResourceLocation> neutral = Lists.newArrayList();
-        List<ResourceLocation> friendly = Lists.newArrayList();
+        List<Identifier> hostile = Lists.newArrayList();
+        List<Identifier> neutral = Lists.newArrayList();
+        List<Identifier> friendly = Lists.newArrayList();
 
-        for (ResourceLocation id : attackGroups.keySet()) {
+        for (Identifier id : attackGroups.keySet()) {
             if (attackGroups.get(id) == MonsterType.HOSTILE) {
                 hostile.add(id);
             }
@@ -109,8 +110,9 @@ public class AttackTaskConfigGui extends MaidTaskConfigGui<TaskConfigContainer> 
             if (index >= attackGroupsKey.size()) {
                 return;
             }
-            ResourceLocation id = attackGroupsKey.get(index);
-            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(id);
+            Identifier id = attackGroupsKey.get(index);
+
+            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(id);
             Component name = type.getDescription();
             int yOffset = startTop + 31 + 13 * i;
             this.addRenderableWidget(new MonsterListButton(name, startLeft - 1, yOffset, id, this));
@@ -125,7 +127,7 @@ public class AttackTaskConfigGui extends MaidTaskConfigGui<TaskConfigContainer> 
         if (!isValidResourceLocation(value)) {
             return;
         }
-        ResourceLocation id = ResourceLocation.parse(value);
+        Identifier id = Identifier.parse(value);
         if (BuiltInRegistries.ENTITY_TYPE.containsKey(id)) {
             this.attackGroups.put(id, MonsterType.NEUTRAL);
             this.sortKey();
@@ -133,16 +135,17 @@ public class AttackTaskConfigGui extends MaidTaskConfigGui<TaskConfigContainer> 
         }
     }
 
-    public void removeMonsterType(ResourceLocation id) {
+    public void removeMonsterType(Identifier id) {
         this.attackGroups.remove(id);
         this.sortKey();
         super.init();
     }
 
     @Override
-    public void resize(Minecraft minecraft, int width, int height) {
+
+    public void resize(int width, int height) {
         String value = this.inputField.getValue();
-        super.resize(minecraft, width, height);
+        super.resize(width, height);
         this.inputField.setValue(value);
     }
 
@@ -151,22 +154,23 @@ public class AttackTaskConfigGui extends MaidTaskConfigGui<TaskConfigContainer> 
         this.inputField.render(graphics, mouseX, mouseY, partialTicks);
 
         MutableComponent pageText = Component.literal(String.format("%d/%d", this.page + 1, (this.attackGroupsKey.size() - 1) / 7 + 1));
-        graphics.drawCenteredString(font, pageText, leftPos + 228, topPos + 57, 0xFFFFFF);
-        graphics.drawCenteredString(font, Component.translatable("gui.touhou_little_maid.monster_type.title"), leftPos + 147, topPos + 57, 0xFFFFFF);
+        graphics.drawCenteredString(font, pageText, leftPos + 228, topPos + 57, 0xFFFFFFFF);
+        graphics.drawCenteredString(font, Component.translatable("gui.touhou_little_maid.monster_type.title"), leftPos + 147, topPos + 57, 0xFFFFFFFF);
     }
 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTicks, int x, int y) {
         super.renderBg(graphics, partialTicks, x, y);
-        graphics.blit(BG, leftPos + 80, topPos + 28, 0, 0, imageWidth, 137);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos + 80, topPos + 28, 0F, 0F, imageWidth, 137, 256, 256);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE && Screens.getClient(this).player != null) {
+
+    public boolean keyPressed(KeyEvent event) {
+        if (event.key() == GLFW.GLFW_KEY_ESCAPE && Screens.getClient(this).player != null) {
             Screens.getClient(this).player.closeContainer();
         }
-        return this.inputField.keyPressed(keyCode, scanCode, modifiers) || this.inputField.canConsumeInput() || super.keyPressed(keyCode, scanCode, modifiers);
+        return this.inputField.keyPressed(event) || this.inputField.canConsumeInput() || super.keyPressed(event);
     }
 
     @Override
@@ -175,7 +179,7 @@ public class AttackTaskConfigGui extends MaidTaskConfigGui<TaskConfigContainer> 
         super.onClose();
     }
 
-    public Map<ResourceLocation, MonsterType> getAttackGroups() {
+    public Map<Identifier, MonsterType> getAttackGroups() {
         return attackGroups;
     }
 }

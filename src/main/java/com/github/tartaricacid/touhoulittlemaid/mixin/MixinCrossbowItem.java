@@ -6,7 +6,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.CrossbowItem;
 import org.spongepowered.asm.mixin.Mixin;
@@ -29,7 +29,8 @@ public class MixinCrossbowItem {
                     attackValue = attackDamage.getBaseValue();
                 }
                 float multiplier = (float) (attackValue / 2.0f);
-                arrow.setBaseDamage(arrow.getBaseDamage() * multiplier);
+
+                arrow.setBaseDamage(Math.max(1.0, 2.0 * multiplier));
             }
             this.shootCrossbowProjectile(shooter, target, projectile, 1.6F);
             ci.cancel();

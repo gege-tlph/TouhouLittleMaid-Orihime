@@ -3,6 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.entity.backpack;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.ILittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.IMaidBackpack;
+import com.github.tartaricacid.touhoulittlemaid.api.backpack.MaidBackpackRenderData;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -10,7 +11,8 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.EntityModelSet;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -18,12 +20,21 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+
+import static com.github.tartaricacid.touhoulittlemaid.api.backpack.MaidBackpackRenderData.EMPTY;
 
 public class BackpackManager {
-    private static Map<ResourceLocation, IMaidBackpack> BACKPACK_ID_MAP;
+    /**
+     * 渲染数据，客户端才能用
+     */
+    public static final Function<Identifier, MaidBackpackRenderData> RENDER_DATA_CACHE = Util.memoize(id ->
+            findBackpack(id).map(IMaidBackpack::getRenderData).orElse(EMPTY)
+    );
+    private static Map<Identifier, IMaidBackpack> BACKPACK_ID_MAP;
     private static Map<Item, IMaidBackpack> BACKPACK_ITEM_MAP;
     @Environment(EnvType.CLIENT)
-    private static Map<ResourceLocation, Pair<EntityModel<EntityMaid>, ResourceLocation>> BACKPACK_MODEL_MAP;
+    private static Map<Identifier, Pair<EntityModel<?>, Identifier>> BACKPACK_MODEL_MAP;
     private static IMaidBackpack EMPTY_BACKPACK;
 
     private BackpackManager() {
@@ -42,6 +53,7 @@ public class BackpackManager {
         manager.add(new EnderChestBackpack());
         manager.add(new FurnaceBackpack());
         manager.add(new TankBackpack());
+
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             littleMaid.addMaidBackpack(manager);
         }
@@ -66,7 +78,7 @@ public class BackpackManager {
         return EMPTY_BACKPACK;
     }
 
-    public static Optional<IMaidBackpack> findBackpack(ResourceLocation id) {
+    public static Optional<IMaidBackpack> findBackpack(Identifier id) {
         return Optional.ofNullable(BACKPACK_ID_MAP.get(id));
     }
 
@@ -76,13 +88,13 @@ public class BackpackManager {
 
     public static void addBackpackCooldown(Player player) {
         for (Item backpack : BACKPACK_ITEM_MAP.keySet()) {
-            player.getCooldowns().addCooldown(backpack, 20);
+            player.getCooldowns().addCooldown(backpack.getDefaultInstance(), 20);
         }
     }
 
     @Environment(EnvType.CLIENT)
-    public static Optional<Pair<EntityModel<EntityMaid>, ResourceLocation>> findBackpackModel(ResourceLocation id) {
-        Pair<EntityModel<EntityMaid>, ResourceLocation> pair = BACKPACK_MODEL_MAP.get(id);
+    public static Optional<Pair<EntityModel<?>, Identifier>> findBackpackModel(Identifier id) {
+        Pair<EntityModel<?>, Identifier> pair = BACKPACK_MODEL_MAP.get(id);
         if (pair == null) {
             return Optional.empty();
         }

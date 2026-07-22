@@ -1,13 +1,15 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.data;
 
-import com.github.tartaricacid.touhoulittlemaid.api.entity.data.TaskDataKey;
+import cn.sh1rocu.touhoulittlemaid.api.entity.data.TaskDataKey;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -41,9 +43,10 @@ public final class MaidTaskDataMaps {
         dataMaps.put(dataKey, Optional.of(value));
     }
 
+
     @SuppressWarnings("all")
-    public void writeSaveData(CompoundTag entityTag) {
-        CompoundTag dataTags = readOrCreateTag(entityTag);
+    public void writeSaveData(ValueOutput output) {
+        CompoundTag dataTags = new CompoundTag();
         dataMaps.forEach((key, value) -> {
             TaskDataKey dataKey = key;
             value.ifPresent(data -> {
@@ -51,18 +54,20 @@ public final class MaidTaskDataMaps {
                 dataTags.put(key.getKey().toString(), saveData);
             });
         });
+        output.store(TAG_NAME, CustomData.COMPOUND_TAG_CODEC, dataTags);
     }
 
-    public void readSaveData(CompoundTag entityTag) {
+    public void readSaveData(ValueInput input) {
         dataMaps.clear();
-        CompoundTag dataTags = readOrCreateTag(entityTag);
-        for (String key : dataTags.getAllKeys()) {
-            TaskDataKey<?> dataKey = TaskDataRegister.getValue(ResourceLocation.parse(key));
-            if (dataKey != null) {
-                CompoundTag tag = dataTags.getCompound(key);
-                dataMaps.put(dataKey, Optional.of(dataKey.readSaveData(tag)));
+        input.read(TAG_NAME, CustomData.COMPOUND_TAG_CODEC).ifPresent(dataTags -> {
+            for (String key : dataTags.keySet()) {
+                TaskDataKey<?> dataKey = TaskDataRegister.getValue(Identifier.parse(key));
+                if (dataKey != null) {
+                    CompoundTag tag = dataTags.getCompound(key).orElse(new CompoundTag());
+                    dataMaps.put(dataKey, Optional.of(dataKey.readSaveData(tag)));
+                }
             }
-        }
+        });
     }
 
     @SuppressWarnings("all")
@@ -81,23 +86,12 @@ public final class MaidTaskDataMaps {
     @Environment(EnvType.CLIENT)
     public void readFromServer(CompoundTag taskTags) {
         dataMaps.clear();
-        for (String key : taskTags.getAllKeys()) {
-            TaskDataKey<?> dataKey = TaskDataRegister.getValue(ResourceLocation.parse(key));
+        for (String key : taskTags.keySet()) {
+            TaskDataKey<?> dataKey = TaskDataRegister.getValue(Identifier.parse(key));
             if (dataKey != null) {
-                CompoundTag tag = taskTags.getCompound(key);
+                CompoundTag tag = taskTags.getCompound(key).orElse(new CompoundTag());
                 dataMaps.put(dataKey, Optional.of(dataKey.readSyncData(tag)));
             }
-        }
-    }
-
-    @NotNull
-    private CompoundTag readOrCreateTag(CompoundTag entityTag) {
-        if (entityTag.contains(TAG_NAME)) {
-            return entityTag.getCompound(TAG_NAME);
-        } else {
-            CompoundTag dataTags = new CompoundTag();
-            entityTag.put(TAG_NAME, dataTags);
-            return dataTags;
         }
     }
 }

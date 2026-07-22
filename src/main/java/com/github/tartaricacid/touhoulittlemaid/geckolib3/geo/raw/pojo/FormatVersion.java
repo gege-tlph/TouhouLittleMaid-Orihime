@@ -16,12 +16,12 @@ public enum FormatVersion {
     /**
      * 旧版本基岩版模型，仅限 1.10.0
      */
-    //LEGACY("[1.10.0]"),
+    // LEGACY(“[1.10.0]”),
     LEGACY("=1.10.0"),
     /**
      * 新版本基岩版模型，往后的 1.14.0，1.16.0 1.21.0 通通用此版本读取
      */
-    //NEW("[1.12.0,)");
+    // NEW(“[1.12.0,)”);
     NEW(">=1.12.0");
 
     private final VersionPredicate versionRange;

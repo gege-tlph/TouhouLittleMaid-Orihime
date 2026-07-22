@@ -21,11 +21,11 @@
     "main": [
       "cn.sh1rocu.touhoulittlemaid.TouhouLittleMaidFabric"
     ],
+    "little_maid_extension": [
+      "com.github.tartaricacid.touhoulittlemaid.compat.kaleidoscopetavern.TavernCompat"
+    ],
     "modmenu": [
       "cn.sh1rocu.touhoulittlemaid.compat.modmenu.ModMenuApiImpl"
-    ],
-    "emi": [
-      "com.github.tartaricacid.touhoulittlemaid.compat.emi.MaidEmiPlugin"
     ],
     "jade": [
       "com.github.tartaricacid.touhoulittlemaid.compat.jade.JadePlugin"
@@ -35,6 +35,9 @@
     ],
     "rei_client": [
       "com.github.tartaricacid.touhoulittlemaid.compat.rei.MaidREIClientPlugin"
+    ],
+    "fabric-gametest": [
+      "cn.sh1rocu.touhoulittlemaid.gametest.ScheduleGameTest"
     ]
   },
   "mixins": [
@@ -45,7 +48,7 @@
   "depends": {
     "fabric": "*",
     "minecraft": [
-      "1.21.1"
+      "1.21.11"
     ],
     "forgeconfigapiport": "*"
   }

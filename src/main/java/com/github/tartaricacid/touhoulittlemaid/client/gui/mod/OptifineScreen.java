@@ -1,13 +1,11 @@
 package com.github.tartaricacid.touhoulittlemaid.client.gui.mod;
 
-import cn.sh1rocu.touhoulittlemaid.mixin.accessor.ScreenAccessor;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.MultiLineLabel;
-import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
@@ -16,7 +14,7 @@ import net.minecraft.network.chat.MutableComponent;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Refer: https://github.com/TeamTwilight/twilightforest/blob/1.20.x/src/main/java/twilightforest/client/OptifineWarningScreen.java
+ * 参考：https://github.com/TeamTwilight/twilightforest/blob/1.20.x/src/main/java/twilightforest/client/OptifineWarningScreen.java
  */
 public class OptifineScreen extends Screen {
     public final Screen lastScreen;
@@ -49,12 +47,10 @@ public class OptifineScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(graphics, mouseX, mouseY, partialTicks);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, 30, 16777215);
-        this.message.renderCentered(graphics, this.width / 2, 70);
-        for (Renderable renderable : ((ScreenAccessor) this).tlm$getRenderables()) {
-            renderable.render(graphics, mouseX, mouseY, partialTicks);
-        }
+        graphics.drawCenteredString(this.font, this.title, this.width / 2, 30, 0xFFFFFFFF);
+        this.message.visitLines(net.minecraft.client.gui.TextAlignment.CENTER,
+                this.width / 2, 70, 9, graphics.textRenderer());
+        super.render(graphics, mouseX, mouseY, partialTicks);
     }
 
     @Override

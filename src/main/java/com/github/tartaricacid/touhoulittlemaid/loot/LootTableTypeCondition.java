@@ -7,10 +7,11 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
+
+import net.minecraft.util.context.ContextKeySet;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
 import org.jetbrains.annotations.NotNull;
@@ -19,11 +20,11 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.Optional;
 
-public record LootTableTypeCondition(ResourceLocation lootTableType,
+public record LootTableTypeCondition(Identifier lootTableType,
                                      @Nullable ResourceKey<LootTable> lootTableId,
                                      ResourceKey<LootTable> lootTableAdd) implements LootItemCondition {
     public static final MapCodec<LootTableTypeCondition> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("loot_table_type").forGetter(m -> m.lootTableType),
+            Identifier.CODEC.fieldOf("loot_table_type").forGetter(m -> m.lootTableType),
             ResourceKey.codec(Registries.LOOT_TABLE).optionalFieldOf("loot_table_id").forGetter(m -> Optional.ofNullable(m.lootTableId)),
             ResourceKey.codec(Registries.LOOT_TABLE).fieldOf("loot_table_add").forGetter(m -> m.lootTableAdd)
     ).apply(instance, (type, id, add)
@@ -31,14 +32,15 @@ public record LootTableTypeCondition(ResourceLocation lootTableType,
 
     @Override
     public boolean test(LootContext context) {
-        ResourceLocation currentLootTable = ((ILootContext) context).tlm$getQueriedLootTableId();
-        return !currentLootTable.equals(lootTableAdd.location()) && typeAreEquals(context) && idAreEquals(context);
+        Identifier currentLootTable = ((ILootContext) context).tlm$getQueriedLootTableId();
+        return !currentLootTable.equals(lootTableAdd.identifier()) && typeAreEquals(context) && idAreEquals(context);
     }
 
     private boolean typeAreEquals(LootContext context) {
+
         ResourceKey<LootTable> currentLootTable = ResourceKey.create(Registries.LOOT_TABLE, ((ILootContext) context).tlm$getQueriedLootTableId());
-        LootContextParamSet lootContextParamSet = LootContextParamSetsAccessor.tlm$getRegistry().get(lootTableType);
-        return context.getResolver().get(Registries.LOOT_TABLE, currentLootTable).map(lootTable ->
+        ContextKeySet lootContextParamSet = LootContextParamSetsAccessor.tlm$getRegistry().get(lootTableType);
+        return context.getResolver().get(currentLootTable).map(lootTable ->
                         Objects.equals(lootTable.value().getParamSet(), lootContextParamSet))
                 .orElse(false);
     }
@@ -47,7 +49,8 @@ public record LootTableTypeCondition(ResourceLocation lootTableType,
         if (this.lootTableId == null) {
             return true;
         }
-        return ((ILootContext) context).tlm$getQueriedLootTableId().equals(this.lootTableId.location());
+
+        return ((ILootContext) context).tlm$getQueriedLootTableId().equals(this.lootTableId.identifier());
     }
 
     @Override

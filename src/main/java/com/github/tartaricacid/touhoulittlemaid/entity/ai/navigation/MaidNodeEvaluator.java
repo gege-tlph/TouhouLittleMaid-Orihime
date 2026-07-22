@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.entity.ai.navigation;
 
 import cn.sh1rocu.touhoulittlemaid.util.forge.CommonHooks;
 import com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagBlock;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.ExtraMaidBrainManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -70,7 +71,7 @@ public class MaidNodeEvaluator extends WalkNodeEvaluator {
         int z = pos.getZ();
 
         PathType pathType = getMaidBlockPathTypeRaw(context, x, y, z);
-        if (pathType == PathType.OPEN && y >= context.level().getMinBuildHeight() + 1) {
+        if (pathType == PathType.OPEN && y >= context.level().getMinY() + 1) {
             return switch (getMaidBlockPathTypeRaw(context, x, y - 1, z)) {
                 case OPEN, WATER, LAVA, WALKABLE -> PathType.OPEN;
                 case DAMAGE_FIRE -> PathType.DAMAGE_FIRE;
@@ -89,12 +90,12 @@ public class MaidNodeEvaluator extends WalkNodeEvaluator {
     private PathType getMaidBlockPathTypeRaw(PathfindingContext context, int pX, int pY, int pZ) {
         BlockPos pos = new BlockPos(pX, pY, pZ);
         // 女仆在限定范围内寻路寻到了范围外，失败
-        if (this.mob instanceof EntityMaid maid && maid.isWithinRestriction() && !maid.isWithinRestriction(pos)) {
+        if (this.mob instanceof EntityMaid maid && maid.isWithinHome() && !maid.isWithinHome(pos)) {
             return PathType.BLOCKED;
         }
 
         BlockState blockState = context.getBlockState(pos);
-        // 先检查方块是否在黑名单中
+
         if (blockState.is(TagBlock.MAID_AVOID_BLOCK)) {
             return PathType.DAMAGE_OTHER;
         }
@@ -152,6 +153,7 @@ public class MaidNodeEvaluator extends WalkNodeEvaluator {
     }
 
     public static boolean isMaidCanClimbBlock(BlockState blockState, BlockPos blockPos, EntityMaid maid) {
-        return CommonHooks.isLadder(blockState, maid.level, blockPos, maid);
+        return CommonHooks.isLadder(blockState, maid.level, blockPos, maid)
+                && ExtraMaidBrainManager.canClimbBlock(maid, blockPos, blockState);
     }
 }

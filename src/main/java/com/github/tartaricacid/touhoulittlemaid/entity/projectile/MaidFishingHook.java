@@ -9,6 +9,7 @@ import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -16,6 +17,8 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
@@ -51,7 +54,7 @@ public class MaidFishingHook extends Projectile {
     public static final EntityType<MaidFishingHook> TYPE = EntityType.Builder.<MaidFishingHook>of(MaidFishingHook::new, MobCategory.MISC)
             .noSave().noSummon().sized(0.25F, 0.25F)
             .clientTrackingRange(4).updateInterval(5)
-            .build("fishing_hook");
+            .build(ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "fishing_hook")));
     protected static final EntityDataAccessor<Boolean> DATA_BITING = SynchedEntityData.defineId(MaidFishingHook.class, EntityDataSerializers.BOOLEAN);
     protected static final int MAX_OUT_OF_WATER_TIME = 10;
     protected final RandomSource syncronizedRandom = RandomSource.create();
@@ -66,10 +69,17 @@ public class MaidFishingHook extends Projectile {
     protected float fishAngle;
     protected boolean openWater = true;
     protected FishHookState currentState = FishHookState.FLYING;
+    /**
+     * 钓钩在客户端和服务端分别模拟移动，因此忽略网络插值目标，避免跟踪更新与客户端模拟互相拉扯。
+     */
+    private final InterpolationHandler interpolation = new InterpolationHandler(this) {
+        @Override
+        public void interpolateTo(Vec3 position, float yRot, float xRot) {
+        }
+    };
 
     protected MaidFishingHook(EntityType<? extends MaidFishingHook> entityType, Level level, int luck, int lureSpeed) {
         super(entityType, level);
-        this.noCulling = true;
         this.luck = Math.max(0, luck);
         this.lureSpeed = Math.max(0, lureSpeed);
     }
@@ -81,7 +91,12 @@ public class MaidFishingHook extends Projectile {
     public MaidFishingHook(EntityMaid maid, Level level, int luck, int lureSpeed, Vec3 pos) {
         this(TYPE, level, luck, lureSpeed);
         this.setOwner(maid);
-        this.moveTo(pos);
+        this.setPos(pos);
+    }
+
+    @Override
+    public InterpolationHandler getInterpolation() {
+        return this.interpolation;
     }
 
     @Override
@@ -107,10 +122,6 @@ public class MaidFishingHook extends Projectile {
 
 
     @Override
-    public void lerpTo(double pX, double pY, double pZ, float pYaw, float pPitch, int pSteps) {
-    }
-
-    @Override
     public void tick() {
         // 每个 tick 给予不同的 seed，保证随机不一致
         this.syncronizedRandom.setSeed(this.getUUID().getLeastSignificantBits() ^ this.level.getGameTime());
@@ -121,7 +132,7 @@ public class MaidFishingHook extends Projectile {
         // 女仆为空，那么吊钩也不应当存在
         if (maid == null) {
             this.discard();
-        } else if (this.level.isClientSide || !this.shouldStopFishing(maid)) {
+        } else if (this.level.isClientSide() || !this.shouldStopFishing(maid)) {
             if (this.lifeTick()) {
                 return;
             }
@@ -198,7 +209,7 @@ public class MaidFishingHook extends Projectile {
             this.setDeltaMovement(this.getDeltaMovement().add(0.0D, -0.1D * (double) this.syncronizedRandom.nextFloat() * (double) this.syncronizedRandom.nextFloat(), 0.0D));
         }
         // 咬钩！
-        if (!this.level.isClientSide) {
+        if (!this.level.isClientSide()) {
             this.catchingFish(blockPos, (ServerLevel) this.level);
         }
     }
@@ -335,7 +346,7 @@ public class MaidFishingHook extends Projectile {
         // 咬钩时间到了，收杆
         EntityMaid maid = getMaidOwner();
         int retrieveTime = Mth.nextInt(this.random, 2, 10);
-        // TODO：收杆应该有成功率，应该和好感度挂钩
+
         if (this.nibble <= retrieveTime && maid != null) {
             ItemStack rodItem = maid.getMainHandItem();
             int rodDamage = this.retrieve(rodItem);
@@ -347,7 +358,7 @@ public class MaidFishingHook extends Projectile {
 
     public int retrieve(ItemStack stack) {
         EntityMaid maid = this.getMaidOwner();
-        if (!this.level.isClientSide && maid != null && !this.shouldStopFishing(maid)) {
+        if (!this.level.isClientSide() && maid != null && !this.shouldStopFishing(maid)) {
             MaidFishedEvent event = null;
             MinecraftServer server = this.level.getServer();
             int rodDamage = 0;
@@ -359,8 +370,7 @@ public class MaidFishingHook extends Projectile {
                         .withParameter(LootContextParams.ORIGIN, this.position())
                         .withParameter(LootContextParams.TOOL, stack)
                         .withParameter(LootContextParams.THIS_ENTITY, this)
-                        // TODO: Fabric没允许这个param
-                        // .withParameter(LootContextParams.ATTACKING_ENTITY, maid)
+
                         .withLuck(this.luck + maid.getLuck())
                         .create(LootContextParamSets.FISHING);
 
@@ -509,7 +519,7 @@ public class MaidFishingHook extends Projectile {
 
     private boolean shouldStopFishing(EntityMaid maid) {
         ItemStack mainHandItem = maid.getMainHandItem();
-        boolean hasFishingRod = mainHandItem./*canPerformAction(ItemAbilities.FISHING_ROD_CAST)*/getItem() instanceof FishingRodItem || mainHandItem.is(ConventionalItemTags.FISHING_ROD_TOOLS);
+        boolean hasFishingRod = mainHandItem./* canPerformAction(ItemAbilities.FISHING_ROD_CAST) */getItem() instanceof FishingRodItem || mainHandItem.is(ConventionalItemTags.FISHING_ROD_TOOLS);
         boolean isFishingTask = maid.getTask() instanceof TaskFishing;
         boolean hasVehicle = maid.getVehicle() != null;
         if (!maid.isRemoved() && maid.isAlive() && hasVehicle && isFishingTask && hasFishingRod && this.distanceToSqr(maid) < 256) {
@@ -520,11 +530,9 @@ public class MaidFishingHook extends Projectile {
         }
     }
 
-    @Override
     protected void addAdditionalSaveData(CompoundTag compound) {
     }
 
-    @Override
     protected void readAdditionalSaveData(CompoundTag compound) {
     }
 
@@ -545,7 +553,7 @@ public class MaidFishingHook extends Projectile {
         if (this.getMaidOwner() == null) {
             int dataId = packet.getData();
             TouhouLittleMaid.LOGGER.error("Failed to recreate fishing hook on client. {} (id: {}) is not a valid owner.", this.level.getEntity(dataId), dataId);
-            this.kill();
+            this.discard();
         }
     }
 

@@ -15,17 +15,19 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.text.DecimalFormat;
 
 public class MaidBeaconGui extends Screen {
-    private static final ResourceLocation BG = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_beacon.png");
+    private static final Identifier BG = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_beacon.png");
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.00");
     private final TileEntityMaidBeacon beacon;
 
@@ -92,23 +94,23 @@ public class MaidBeaconGui extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         super.render(graphics, mouseX, mouseY, partialTicks);
-        graphics.blit(BG, leftPos, topPos + 2, 0, 0, 142, 111);
-        graphics.blit(BG, leftPos + 118, topPos + 1, 44, 111, 154, 15);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos, topPos + 2, 0, 0, 142, 111, 256, 256);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos + 118, topPos + 1, 44, 111, 154, 15, 256, 256);
 
-        graphics.blit(BG, leftPos + 224, topPos + 44, 44, 126, 12, 12);
-        graphics.blit(BG, leftPos + 224, topPos + 58, 44, 138, 12, 12);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos + 224, topPos + 44, 44, 126, 12, 12, 256, 256);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos + 224, topPos + 58, 44, 138, 12, 12, 256, 256);
 
-        graphics.blit(BG, leftPos + 146, topPos + 46, 58, 128, 74, 9);
-        graphics.blit(BG, leftPos + 146, topPos + 59, 58, 128, 74, 9);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos + 146, topPos + 46, 58, 128, 74, 9, 256, 256);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos + 146, topPos + 59, 58, 128, 74, 9, 256, 256);
         float percent = beacon.getStoragePower() / beacon.getMaxStorage();
-        graphics.blit(BG, leftPos + 146, topPos + 48, 58, 138, (int) (74 * percent), 5);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos + 146, topPos + 48, 58, 138, (int) (74 * percent), 5, 256, 256);
 
         this.renderPlayerPower(graphics);
-        graphics.drawString(font, DECIMAL_FORMAT.format(beacon.getStoragePower()), leftPos + 240, topPos + 46, 0xffffff);
+        graphics.drawString(font, DECIMAL_FORMAT.format(beacon.getStoragePower()), leftPos + 240, topPos + 46, 0xFFFFFFFF);
         if (potionIndex == -1) {
-            this.drawCenteredString(graphics, font, I18n.get("gui.touhou_little_maid.maid_beacon.cost_power", DECIMAL_FORMAT.format(0)), leftPos + 195, topPos + 5, ChatFormatting.DARK_GRAY.getColor());
+            this.drawCenteredString(graphics, font, I18n.get("gui.touhou_little_maid.maid_beacon.cost_power", DECIMAL_FORMAT.format(0)), leftPos + 195, topPos + 5, 0xFF000000 | ChatFormatting.DARK_GRAY.getColor());
         } else {
-            this.drawCenteredString(graphics, font, Component.translatable("gui.touhou_little_maid.maid_beacon.cost_power", DECIMAL_FORMAT.format(beacon.getEffectCost() * 900)).withStyle(ChatFormatting.RED), leftPos + 195, topPos + 5, 0xffffff);
+            this.drawCenteredString(graphics, font, Component.translatable("gui.touhou_little_maid.maid_beacon.cost_power", DECIMAL_FORMAT.format(beacon.getEffectCost() * 900)).withStyle(ChatFormatting.RED), leftPos + 195, topPos + 5, 0xFFFFFFFF);
         }
         ((ScreenAccessor) this).tlm$getRenderables().stream().filter(b -> b instanceof BeaconEffectButton).forEach(b -> ((BeaconEffectButton) b).renderToolTip(graphics, this, mouseX, mouseY));
     }
@@ -119,13 +121,12 @@ public class MaidBeaconGui extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        //InputConstants.Key mouseKey = InputConstants.getKey(keyCode, scanCode);
-        if (this.minecraft != null && this.minecraft.options.keyInventory.matches(keyCode, scanCode)/*isActiveAndMatches(mouseKey)*/) {
+    public boolean keyPressed(KeyEvent event) {
+        if (this.minecraft != null && this.minecraft.options.keyInventory.matches(event)) {
             this.onClose();
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     private void renderPlayerPower(GuiGraphics graphics) {
@@ -133,8 +134,8 @@ public class MaidBeaconGui extends Screen {
         if (player != null) {
             PowerAttachment power = player.getAttachedOrCreate(InitDataAttachment.POWER_NUM, () -> new PowerAttachment(0));
             float percent = power.get() / PowerAttachment.MAX_POWER;
-            graphics.blit(BG, leftPos + 146, topPos + 61, 58, 143, (int) (74 * percent), 5);
-            graphics.drawString(font, DECIMAL_FORMAT.format(power.get()), leftPos + 240, topPos + 60, 0xffffff);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos + 146, topPos + 61, 58, 143, (int) (74 * percent), 5, 256, 256);
+            graphics.drawString(font, DECIMAL_FORMAT.format(power.get()), leftPos + 240, topPos + 60, 0xFFFFFFFF);
         }
     }
 

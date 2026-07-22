@@ -1,25 +1,19 @@
 package com.github.tartaricacid.touhoulittlemaid.init;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
-import com.github.tartaricacid.touhoulittlemaid.compat.accessories.menu.CuriosContainer;
-import com.github.tartaricacid.touhoulittlemaid.init.registry.CompatRegistry;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.backpack.*;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.config.MaidConfigContainer;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.other.PicnicBasketContainer;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.other.WirelessIOContainer;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.task.AttackTaskConfigContainer;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.task.DefaultMaidTaskConfigContainer;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.MenuType;
 
 public final class InitContainer {
     public static void init() {
-        if (FabricLoader.getInstance().isModLoaded(CompatRegistry.ACCESSORIES)) {
-            register("curios_container", CuriosContainer.TYPE);
-        }
     }
 
     public static final MenuType<EmptyBackpackContainer> MAID_EMPTY_BACKPACK_CONTAINER = register("maid_empty_backpack_container", EmptyBackpackContainer.TYPE);
@@ -39,6 +33,6 @@ public final class InitContainer {
     public static final MenuType<AttackTaskConfigContainer> ATTACK_TASK_CONFIG = register("attack_task_config_container", AttackTaskConfigContainer.TYPE);
 
     private static <T extends MenuType<?>> T register(String id, T type) {
-        return Registry.register(BuiltInRegistries.MENU, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), type);
+        return Registry.register(BuiltInRegistries.MENU, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), type);
     }
 }

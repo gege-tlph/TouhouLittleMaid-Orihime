@@ -1,35 +1,32 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.implement;
 
-import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble.IChatBubbleRenderer;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble.implement.TextChatBubbleRenderer;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class TextChatBubbleData implements IChatBubbleData {
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "text");
+    public static final Identifier ID = IdentifierUtil.modLoc("text");
 
     private final int existTick;
-    private final ResourceLocation bg;
+    private final Identifier bg;
     private final int priority;
     private Component text;
 
-    @Environment(EnvType.CLIENT)
     private IChatBubbleRenderer renderer;
 
-    private TextChatBubbleData(int existTick, Component text, ResourceLocation bg, int priority) {
+    private TextChatBubbleData(int existTick, Component text, Identifier bg, int priority) {
         this.existTick = existTick;
         this.text = text;
         this.bg = bg;
         this.priority = priority;
     }
 
-    private TextChatBubbleData(int existTick, Component text, ResourceLocation bg) {
+    private TextChatBubbleData(int existTick, Component text, Identifier bg) {
         this(existTick, text, bg, DEFAULT_PRIORITY);
     }
 
@@ -41,7 +38,7 @@ public class TextChatBubbleData implements IChatBubbleData {
         return new TextChatBubbleData(DEFAULT_EXIST_TICK, text, TYPE_2);
     }
 
-    public static TextChatBubbleData create(int existTick, Component text, ResourceLocation bg, int priority) {
+    public static TextChatBubbleData create(int existTick, Component text, Identifier bg, int priority) {
         return new TextChatBubbleData(existTick, text, bg, priority);
     }
 
@@ -51,7 +48,7 @@ public class TextChatBubbleData implements IChatBubbleData {
     }
 
     @Override
-    public ResourceLocation id() {
+    public Identifier id() {
         return ID;
     }
 
@@ -65,7 +62,6 @@ public class TextChatBubbleData implements IChatBubbleData {
     }
 
     @Override
-    @Environment(EnvType.CLIENT)
     public IChatBubbleRenderer getRenderer(IChatBubbleRenderer.Position position) {
         if (renderer == null) {
             renderer = new TextChatBubbleRenderer(this.text, this.bg, position);
@@ -77,14 +73,18 @@ public class TextChatBubbleData implements IChatBubbleData {
         @Override
         public IChatBubbleData readFromBuff(FriendlyByteBuf buf) {
             // 往客户端同步的数据里，不需要同步 existTick 和 priority，这两个数据仅在服务端有效
-            return new TextChatBubbleData(DEFAULT_EXIST_TICK, buf.readJsonWithCodec(ComponentSerialization.CODEC), buf.readResourceLocation());
+            return new TextChatBubbleData(
+                    DEFAULT_EXIST_TICK,
+                    buf.readLenientJsonWithCodec(ComponentSerialization.CODEC),
+                    buf.readIdentifier()
+            );
         }
 
         @Override
         public void writeToBuff(FriendlyByteBuf buf, IChatBubbleData data) {
             TextChatBubbleData textChat = (TextChatBubbleData) data;
             buf.writeJsonWithCodec(ComponentSerialization.CODEC, textChat.text);
-            buf.writeResourceLocation(textChat.bg);
+            buf.writeIdentifier(textChat.bg);
         }
     }
 }

@@ -1,5 +1,13 @@
 package com.github.tartaricacid.touhoulittlemaid.world.backups;
 
+import org.apache.commons.lang3.StringUtils;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EntityReference;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.core.RegistryAccess;
+import com.mojang.serialization.JsonOps;
+import com.google.gson.JsonParser;
 import cn.sh1rocu.touhoulittlemaid.mixin.accessor.DimensionDataStorageAccessor;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -11,6 +19,7 @@ import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,9 +41,7 @@ import java.util.concurrent.Executors;
 import static com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid.LOGGER;
 
 /**
- * 女仆数据备份管理器
- * <p>
- * 存储结构：
+ * 女仆数据备份管理器 <p> 存储结构：
  * <pre>
  * maid_backups/
  * ├── owner_uuid/
@@ -74,13 +81,14 @@ public final class MaidBackupsManager {
      * 保存女仆数据备份
      *
      * @param server 服务器实例
-     * @param maid   要备份的女仆实体
+     * @param maid 要备份的女仆实体
      */
     public static void save(@NotNull MinecraftServer server, @NotNull EntityMaid maid) {
-        UUID ownerId = maid.getOwnerUUID();
-        if (ownerId == null) {
+        EntityReference<LivingEntity> ownerRef = maid.getOwnerReference();
+        if (ownerRef == null) {
             return;
         }
+        UUID ownerId = ownerRef.getUUID();
 
         ServerLevel overWorld = server.getLevel(Level.OVERWORLD);
         if (overWorld == null) {
@@ -103,7 +111,7 @@ public final class MaidBackupsManager {
      */
     public static CompoundTag getMaidIndex(ServerPlayer player) {
         UUID ownerId = player.getUUID();
-        MinecraftServer server = player.getServer();
+        MinecraftServer server = player.level().getServer();
         if (server == null) {
             return new CompoundTag();
         }
@@ -112,7 +120,7 @@ public final class MaidBackupsManager {
             LOGGER.error("Cannot access overworld for maid index retrieval: {}", ownerId);
             return new CompoundTag();
         }
-        Path ownerFolder = ((DimensionDataStorageAccessor) overWorld.getDataStorage()).tlm$getDataFolder().toPath()
+        Path ownerFolder = ((DimensionDataStorageAccessor) overWorld.getDataStorage()).tlm$getDataFolder()
                 .resolve(BACKUPS_FOLDER_NAME)
                 .resolve(ownerId.toString());
         File indexFile = ownerFolder.resolve(INDEX_FILE_NAME).toFile();
@@ -128,8 +136,11 @@ public final class MaidBackupsManager {
             Path saveFolder = buildBackupFolderPath(maid, overWorld, ownerId);
             String saveFileName = generateBackupFileName();
 
-            CompoundTag entityData = new CompoundTag();
-            boolean saveResult = maid.saveAsPassenger(entityData);
+
+            TagValueOutput valueOutput = TagValueOutput.createWithContext(
+                    ProblemReporter.DISCARDING, maid.registryAccess());
+            boolean saveResult = maid.saveAsPassenger(valueOutput);
+            CompoundTag entityData = valueOutput.buildResult();
 
             if (!saveResult) {
                 LOGGER.warn("Failed to serialize maid data for backup: {}", maid.getStringUUID());
@@ -151,9 +162,10 @@ public final class MaidBackupsManager {
     @NotNull
     private static CompoundTag createIndexData(@NotNull EntityMaid maid) {
         CompoundTag indexData = new CompoundTag();
-        indexData.putString("Name", Component.Serializer.toJson(maid.getName(), maid.level.registryAccess()));
-        indexData.putString("Dimension", maid.level.dimension().location().toString());
-        indexData.put("Pos", NbtUtils.writeBlockPos(maid.blockPosition()));
+        indexData.putString("Name", componentToJson(maid.getName(), maid.level.registryAccess()));
+        indexData.putString("Dimension", maid.level.dimension().identifier().toString());
+        BlockPos maidPos = maid.blockPosition();
+        indexData.putIntArray("Pos", new int[]{maidPos.getX(), maidPos.getY(), maidPos.getZ()});
         indexData.putLong("Timestamp", System.currentTimeMillis());
         return indexData;
     }
@@ -161,13 +173,14 @@ public final class MaidBackupsManager {
     public static Map<UUID, IndexData> getMaidIndexMap(ServerPlayer player) {
         CompoundTag indexTag = getMaidIndex(player);
         Map<UUID, IndexData> map = Maps.newHashMap();
-        for (String s : indexTag.getAllKeys()) {
-            CompoundTag maidTag = indexTag.getCompound(s);
+        for (String s : indexTag.keySet()) {
+            CompoundTag maidTag = indexTag.getCompoundOrEmpty(s);
             UUID maidUuid = UUID.fromString(s);
-            Component name = Component.Serializer.fromJson(maidTag.getString("Name"), player.level.registryAccess());
-            BlockPos pos = NbtUtils.readBlockPos(maidTag, "Pos").orElse(BlockPos.ZERO);
-            String dimension = maidTag.getString("Dimension");
-            long timestamp = maidTag.getLong("Timestamp");
+            Component name = componentFromJson(maidTag.getStringOr("Name", ""), player.level.registryAccess());
+            BlockPos pos = maidTag.getIntArray("Pos").filter(a -> a.length == 3)
+                    .map(a -> new BlockPos(a[0], a[1], a[2])).orElse(BlockPos.ZERO);
+            String dimension = maidTag.getStringOr("Dimension", "");
+            long timestamp = maidTag.getLongOr("Timestamp", 0L);
             map.put(maidUuid, new IndexData(name, pos, dimension, timestamp));
         }
         return map;
@@ -175,7 +188,7 @@ public final class MaidBackupsManager {
 
     public static List<String> getMaidBackupFiles(ServerPlayer player, UUID maidUuid) {
         List<String> backupFiles = Lists.newArrayList();
-        Path folderPath = ((DimensionDataStorageAccessor) player.serverLevel().getDataStorage()).tlm$getDataFolder().toPath()
+        Path folderPath = ((DimensionDataStorageAccessor) ((ServerLevel) player.level()).getDataStorage()).tlm$getDataFolder()
                 .resolve(BACKUPS_FOLDER_NAME)
                 .resolve(player.getUUID().toString())
                 .resolve(maidUuid.toString());
@@ -194,7 +207,7 @@ public final class MaidBackupsManager {
     }
 
     public static CompoundTag getMaidBackFile(ServerPlayer player, UUID maidUuid, String fileName) {
-        Path filePath = ((DimensionDataStorageAccessor) player.serverLevel().getDataStorage()).tlm$getDataFolder().toPath()
+        Path filePath = ((DimensionDataStorageAccessor) ((ServerLevel) player.level()).getDataStorage()).tlm$getDataFolder()
                 .resolve(BACKUPS_FOLDER_NAME)
                 .resolve(player.getUUID().toString())
                 .resolve(maidUuid.toString())
@@ -344,7 +357,7 @@ public final class MaidBackupsManager {
      */
     @NotNull
     private static Path buildBackupFolderPath(@NotNull EntityMaid maid, @NotNull ServerLevel level, @NotNull UUID ownerId) {
-        return ((DimensionDataStorageAccessor) level.getDataStorage()).tlm$getDataFolder().toPath()
+        return ((DimensionDataStorageAccessor) level.getDataStorage()).tlm$getDataFolder()
                 .resolve(BACKUPS_FOLDER_NAME)
                 .resolve(ownerId.toString())
                 .resolve(maid.getStringUUID());
@@ -374,5 +387,23 @@ public final class MaidBackupsManager {
             CompoundTag entityData,
             CompoundTag indexData,
             String maidUuid) {
+    }
+
+    /**
+     * 使用注册表感知的编解码上下文将文本组件序列化为 JSON，确保含注册表引用的组件也能正确保存。
+     */
+    private static String componentToJson(Component component, RegistryAccess access) {
+        return ComponentSerialization.CODEC
+                .encodeStart(access.createSerializationContext(JsonOps.INSTANCE), component)
+                .getOrThrow().toString();
+    }
+
+    private static Component componentFromJson(String json, RegistryAccess access) {
+        if (StringUtils.isBlank(json)) {
+            return Component.empty();
+        }
+        return ComponentSerialization.CODEC
+                .parse(access.createSerializationContext(JsonOps.INSTANCE), JsonParser.parseString(json))
+                .result().orElse(Component.empty());
     }
 }

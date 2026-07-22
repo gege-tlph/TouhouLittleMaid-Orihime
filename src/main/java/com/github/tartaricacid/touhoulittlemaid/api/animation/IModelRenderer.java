@@ -5,149 +5,149 @@ import com.github.tartaricacid.simplebedrockmodel.client.bedrock.model.BedrockPa
 
 public interface IModelRenderer {
     /**
-     * Get ModelRenderer's BedrockPart
+     * 获取模型渲染器对应的 BedrockPart。
      *
      * @return BedrockPart
      */
     BedrockPart getModelRenderer();
 
     /**
-     * Get ModelRenderer's x rotate angle
+     * 获取模型的 x 轴旋转角度。
      *
-     * @return float
+     * @return 旋转角度
      */
     float getRotateAngleX();
 
     /**
-     * Set ModelRenderer's x rotate angle
+     * 设置模型的 x 轴旋转角度。
      *
-     * @param xRot x rotate angle
+     * @param xRot x 旋转角度
      */
     void setRotateAngleX(float xRot);
 
     /**
-     * Get ModelRenderer's initialization x rotate angle
+     * 获取模型初始的 x 轴旋转角度。
      *
-     * @return float
+     * @return 初始旋转角度
      */
     float getInitRotateAngleX();
 
     /**
-     * Get ModelRenderer's y rotate angle
+     * 获取模型的 y 轴旋转角度。
      *
-     * @return float
+     * @return 旋转角度
      */
     float getRotateAngleY();
 
     /**
-     * Set ModelRenderer's y rotate angle
+     * 设置模型的 y 轴旋转角度。
      *
-     * @param yRot y rotate angle
+     * @param yRot y 轴旋转角度
      */
     void setRotateAngleY(float yRot);
 
     /**
-     * Get ModelRenderer's initialization y rotate angle
+     * 获取模型初始的 y 轴旋转角度。
      *
-     * @return float
+     * @return 初始旋转角度
      */
     float getInitRotateAngleY();
 
     /**
-     * Get ModelRenderer's z rotate angle
+     * 获取模型的 z 轴旋转角度。
      *
-     * @return float
+     * @return 旋转角度
      */
     float getRotateAngleZ();
 
     /**
-     * Set ModelRenderer's z rotate angle
+     * 设置模型的 z 轴旋转角度。
      *
-     * @param zRot z rotate angle
+     * @param zRot z 旋转角度
      */
     void setRotateAngleZ(float zRot);
 
     /**
-     * Get ModelRenderer's initialization z rotate angle
+     * 获取模型初始的 z 轴旋转角度。
      *
-     * @return float
+     * @return 初始旋转角度
      */
     float getInitRotateAngleZ();
 
     /**
-     * Get ModelRenderer's x offset
+     * 获取 ModelRenderer 的 x 偏移量
      *
-     * @return float
+     * @return x 轴偏移量
      */
     float getOffsetX();
 
     /**
-     * Set ModelRenderer's x offset
+     * 设置ModelRenderer的x偏移
      *
-     * @param offsetX x offset
+     * @param offsetX x 偏移量
      */
     void setOffsetX(float offsetX);
 
     /**
-     * Get ModelRenderer's y offset
+     * 获取 ModelRenderer 的 y 偏移量
      *
-     * @return float
+     * @return y 轴偏移量
      */
     float getOffsetY();
 
     /**
-     * Set ModelRenderer's y offset
+     * 设置ModelRenderer的y偏移
      *
-     * @param offsetY y offset
+     * @param offsetY y 轴偏移
      */
     void setOffsetY(float offsetY);
 
     /**
-     * Get ModelRenderer's z offset
+     * 获取 ModelRenderer 的 z 偏移
      *
-     * @return float
+     * @return z 轴偏移量
      */
     float getOffsetZ();
 
     /**
-     * Set ModelRenderer's z offset
+     * 设置 ModelRenderer 的 z 偏移
      *
-     * @param offsetZ z offset
+     * @param offsetZ z 轴偏移
      */
     void setOffsetZ(float offsetZ);
 
     /**
-     * Get ModelRenderer's x rotation point
+     * 获取ModelRenderer的x旋转点
      *
-     * @return float
+     * @return x 轴旋转中心
      */
     float getRotationPointX();
 
     /**
-     * Get ModelRenderer's y rotation point
+     * 获取ModelRenderer的y旋转点
      *
-     * @return float
+     * @return y 轴旋转中心
      */
     float getRotationPointY();
 
     /**
-     * Get ModelRenderer's z rotation point
+     * 获取ModelRenderer的z旋转点
      *
-     * @return float
+     * @return z 轴旋转中心
      */
     float getRotationPointZ();
 
     /**
-     * Is ModelRenderer' hidden
+     * 判断模型部件是否隐藏。
      *
-     * @return boolean
+     * @return 布尔值
      */
     boolean isHidden();
 
     /**
-     * Set ModelRenderer hidden
+     * 设置模型部件是否隐藏。
      *
-     * @param hidden boolean
+     * @param hidden 布尔值
      */
     void setHidden(boolean hidden);
 }

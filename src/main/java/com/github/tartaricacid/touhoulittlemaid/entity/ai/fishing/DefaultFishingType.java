@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
 public class DefaultFishingType implements IFishingType {
     @Override
     public boolean isFishingRod(ItemStack itemStack) {
-        //return itemStack.canPerformAction(ItemAbilities.FISHING_ROD_CAST);
+
         return itemStack.is(ConventionalItemTags.FISHING_ROD_TOOLS) || itemStack.getItem() instanceof FishingRodItem;
     }
 

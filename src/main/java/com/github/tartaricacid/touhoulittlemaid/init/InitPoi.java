@@ -3,7 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.init;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.poi.MaidPoiManager;
 import net.fabricmc.fabric.api.object.builder.v1.world.poi.PointOfInterestHelper;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 
 public class InitPoi {
@@ -18,7 +18,7 @@ public class InitPoi {
 
     private static PoiType register(String id, PoiType type) {
         return PointOfInterestHelper.register(
-                ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id),
+                Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id),
                 type.maxTickets(), type.validRange(), type.matchingStates());
     }
 }

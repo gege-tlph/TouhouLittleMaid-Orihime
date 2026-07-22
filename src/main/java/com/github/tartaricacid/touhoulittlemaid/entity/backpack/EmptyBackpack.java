@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.entity.backpack;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.IMaidBackpack;
+import com.github.tartaricacid.touhoulittlemaid.api.backpack.MaidBackpackRenderData;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityTombstone;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.AbstractMaidContainer;
@@ -14,7 +15,7 @@ import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
@@ -26,10 +27,10 @@ import net.minecraft.world.item.Items;
 import javax.annotation.Nullable;
 
 public class EmptyBackpack extends IMaidBackpack {
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "empty");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "empty");
 
     @Override
-    public ResourceLocation getId() {
+    public Identifier getId() {
         return ID;
     }
 
@@ -73,10 +74,7 @@ public class EmptyBackpack extends IMaidBackpack {
                 return false;
             }
 
-/*            @Override
-            public boolean shouldTriggerClientSideContainerClosingOnOpen() {
-                return false;
-            }*/
+
         };
     }
 
@@ -85,17 +83,22 @@ public class EmptyBackpack extends IMaidBackpack {
         return BackpackLevel.EMPTY_CAPACITY;
     }
 
+    @Override
+    public MaidBackpackRenderData getRenderData() {
+        return MaidBackpackRenderData.EMPTY;
+    }
+
     @Nullable
     @Override
     @Environment(EnvType.CLIENT)
-    public EntityModel<EntityMaid> getBackpackModel(EntityModelSet modelSet) {
+    public EntityModel<?> getBackpackModel(EntityModelSet modelSet) {
         return null;
     }
 
     @Nullable
     @Override
     @Environment(EnvType.CLIENT)
-    public ResourceLocation getBackpackTexture() {
+    public Identifier getBackpackTexture() {
         return null;
     }
 

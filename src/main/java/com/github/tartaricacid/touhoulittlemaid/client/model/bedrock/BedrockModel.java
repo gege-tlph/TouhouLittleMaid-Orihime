@@ -12,13 +12,14 @@ import com.github.tartaricacid.touhoulittlemaid.client.animation.inner.IAnimatio
 import com.github.tartaricacid.touhoulittlemaid.client.animation.script.EntityChairWrapper;
 import com.github.tartaricacid.touhoulittlemaid.client.animation.script.EntityMaidWrapper;
 import com.github.tartaricacid.touhoulittlemaid.client.animation.script.ModelRendererWrapper;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.CustomPackLoader;
+import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityChair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -29,8 +30,9 @@ import javax.script.Invocable;
 import java.util.HashMap;
 import java.util.List;
 
+
 @Environment(EnvType.CLIENT)
-public class BedrockModel<T extends LivingEntity> extends AbstractBedrockEntityModel<T> {
+public class BedrockModel<T extends LivingEntity> extends AbstractBedrockEntityModel<EntityRenderState> {
     /**
      * 用于自定义动画的变量
      */
@@ -38,6 +40,9 @@ public class BedrockModel<T extends LivingEntity> extends AbstractBedrockEntityM
     private final EntityChairWrapper entityChairWrapper = new EntityChairWrapper();
     protected final HashMap<String, ModelRendererWrapper> modelMapWrapper = Maps.newHashMap();
     private List<Object> animations = Lists.newArrayList();
+
+    public float attackTime;
+    public boolean riding;
 
     public BedrockModel() {
         super();
@@ -48,7 +53,6 @@ public class BedrockModel<T extends LivingEntity> extends AbstractBedrockEntityM
         this.modelMap.forEach((key, model) -> modelMapWrapper.put(key, new ModelRendererWrapper(model)));
     }
 
-    @Override
     @ParametersAreNonnullByDefault
     public void setupAnim(T entityIn, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
         if (animations != null) {

@@ -1,5 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.init;
 
+import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityBroom;
+import com.github.tartaricacid.touhoulittlemaid.entity.item.EntitySit;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.MaidSchedule;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.sensor.MaidHostilesSensor;
@@ -14,18 +16,20 @@ import com.github.tartaricacid.touhoulittlemaid.entity.projectile.EntityDanmaku;
 import com.github.tartaricacid.touhoulittlemaid.entity.projectile.EntityThrowPowerPoint;
 import com.github.tartaricacid.touhoulittlemaid.entity.projectile.MaidFishingHook;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricTrackedDataRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.behavior.PositionTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.schedule.Activity;
-import net.minecraft.world.entity.schedule.Schedule;
-import net.minecraft.world.entity.schedule.ScheduleBuilder;
+
+import net.minecraft.world.attribute.AttributeTypes;
+import net.minecraft.world.attribute.EnvironmentAttribute;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.List;
@@ -62,53 +66,40 @@ public final class InitEntities {
     public static SensorType<MaidHostilesSensor> MAID_HOSTILES_SENSOR = registerSensorType("maid_hostiles", new SensorType<>(MaidHostilesSensor::new));
     public static SensorType<MaidPickupEntitiesSensor> MAID_PICKUP_ENTITIES_SENSOR = registerSensorType("maid_pickup_entities", new SensorType<>(MaidPickupEntitiesSensor::new));
 
-    public static Schedule MAID_DAY_SHIFT_SCHEDULES = registerSchedule("maid_day_shift_schedules",
-            // 06:00 ~ 18:00 工作
-            // 18:00 ~ 22:00 娱乐
-            // 22:00 ~ 06:00 睡觉
-            new ScheduleBuilder(new Schedule())
-                    .changeActivityAt(0, Activity.WORK)
-                    .changeActivityAt(12000, Activity.IDLE)
-                    .changeActivityAt(16000, Activity.REST)
-                    .build()
-    );
-    public static Schedule MAID_NIGHT_SHIFT_SCHEDULES = registerSchedule("maid_night_shift_schedules",
-            // 18:00 ~ 06:00 工作
-            // 06:00 ~ 14:00 睡觉
-            // 14:00 ~ 18:00 娱乐
-            new ScheduleBuilder(new Schedule())
-                    .changeActivityAt(0, Activity.REST)
-                    .changeActivityAt(8000, Activity.IDLE)
-                    .changeActivityAt(12000, Activity.WORK)
-                    .build()
-    );
 
-    public static Schedule MAID_ALL_DAY_SCHEDULES = registerSchedule("maid_all_day_schedules",
-            new ScheduleBuilder(new Schedule()).changeActivityAt(0, Activity.WORK).build());
+    public static EnvironmentAttribute<Activity> MAID_DAY_SHIFT_ACTIVITY = registerEnvironment("gameplay/maid_day_shift_activity",
+            EnvironmentAttribute.builder(AttributeTypes.ACTIVITY).defaultValue(Activity.IDLE).build());
+    public static EnvironmentAttribute<Activity> MAID_NIGHT_SHIFT_ACTIVITY = registerEnvironment("gameplay/maid_night_shift_activity",
+            EnvironmentAttribute.builder(AttributeTypes.ACTIVITY).defaultValue(Activity.IDLE).build());
+    public static EnvironmentAttribute<Activity> MAID_ALL_DAY_ACTIVITY = registerEnvironment("gameplay/maid_all_day_activity",
+            EnvironmentAttribute.builder(AttributeTypes.ACTIVITY).defaultValue(Activity.WORK).build());
 
     private static <T extends EntityType<?>> T registerEntityType(String id, T eType) {
-        return Registry.register(BuiltInRegistries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), eType);
+        return Registry.register(BuiltInRegistries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), eType);
     }
 
     private static <T extends MemoryModuleType<?>> T registerMemoryModuleType(String id, T mType) {
-        return Registry.register(BuiltInRegistries.MEMORY_MODULE_TYPE, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), mType);
+        return Registry.register(BuiltInRegistries.MEMORY_MODULE_TYPE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), mType);
     }
 
     private static <T extends SensorType<?>> T registerSensorType(String id, T sType) {
-        return Registry.register(BuiltInRegistries.SENSOR_TYPE, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), sType);
+        return Registry.register(BuiltInRegistries.SENSOR_TYPE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), sType);
     }
 
-    private static Schedule registerSchedule(String id, Schedule schedule) {
-        return Registry.register(BuiltInRegistries.SCHEDULE, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), schedule);
+
+    private static EnvironmentAttribute<Activity> registerEnvironment(String id, EnvironmentAttribute<Activity> attribute) {
+        return Registry.register(BuiltInRegistries.ENVIRONMENT_ATTRIBUTE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), attribute);
     }
 
     private static Activity registerActivity(String id, Activity activity) {
-        return Registry.register(BuiltInRegistries.ACTIVITY, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), activity);
+        return Registry.register(BuiltInRegistries.ACTIVITY, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), activity);
     }
 
     private static void registerSerializer() {
-        EntityDataSerializers.registerSerializer(MaidSchedule.DATA);
-        EntityDataSerializers.registerSerializer(ChatBubbleRegister.INSTANCE);
+
+        FabricTrackedDataRegistry.register(Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "maid_schedule"), MaidSchedule.DATA);
+
+        FabricTrackedDataRegistry.register(Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "chat_bubble"), ChatBubbleRegister.INSTANCE);
     }
 
     private static void addEntityAttribute(EntityType<? extends LivingEntity> type, AttributeSupplier.Builder builder) {

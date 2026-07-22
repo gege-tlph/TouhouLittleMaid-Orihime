@@ -38,10 +38,10 @@ public class MaidShearTask extends MaidCheckRateTask {
         }
 
         this.getEntities(maid)
-                .find(e -> maid.isWithinRestriction(e.blockPosition()))
+                .find(e -> maid.isWithinHome(e.blockPosition()))
                 .filter(Entity::isAlive)
-                .filter(e -> e instanceof Shearable /*IShearable*/)
-                //.filter(e -> ((IShearable) e).isShearable(null, mainHandItem, maid.level(), e.blockPosition()))
+                .filter(e -> e instanceof Shearable /* IShearable */)
+
                 .filter(e -> ((Shearable) e).readyForShearing())
                 .filter(maid::canPathReach)
                 .findFirst()
@@ -51,21 +51,9 @@ public class MaidShearTask extends MaidCheckRateTask {
                 });
 
         if (shearableEntity != null && shearableEntity.closerThan(maid, 2)) {
-/*            RandomSource rand = maid.getRandom();
-            List<ItemStack> drops = ((IShearable) shearableEntity).onSheared(null, mainHandItem,
-                    maid.level(), shearableEntity.blockPosition());
-            drops.forEach(stack -> {
-                ItemEntity itemEntity = shearableEntity.spawnAtLocation(stack, 1.0F);
-                if (itemEntity != null) {
-                    itemEntity.setDeltaMovement(itemEntity.getDeltaMovement().add(
-                            (rand.nextFloat() - rand.nextFloat()) * 0.1F,
-                            rand.nextFloat() * 0.05F,
-                            (rand.nextFloat() - rand.nextFloat()) * 0.1F));
-                }
-            });*/
 
-            // Fabric:
-            ((Shearable) shearableEntity).shear(SoundSource.BLOCKS);
+
+            ((Shearable) shearableEntity).shear(worldIn, SoundSource.BLOCKS, mainHandItem);
 
             maid.swing(InteractionHand.MAIN_HAND);
             mainHandItem.hurtAndBreak(1, maid, EquipmentSlot.MAINHAND);

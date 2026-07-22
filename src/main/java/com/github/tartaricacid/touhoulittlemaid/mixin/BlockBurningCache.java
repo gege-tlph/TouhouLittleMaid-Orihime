@@ -1,6 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.mixin;
 
-import com.github.tartaricacid.touhoulittlemaid.api.mixin.IBlockBurningCacheMixin;
+import cn.sh1rocu.touhoulittlemaid.api.mixin.IBlockBurningCacheMixin;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;

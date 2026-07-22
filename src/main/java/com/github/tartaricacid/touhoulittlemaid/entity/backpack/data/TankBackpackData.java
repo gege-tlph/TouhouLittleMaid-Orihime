@@ -10,8 +10,11 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants;
 import net.fabricmc.fabric.api.transfer.v1.fluid.base.SingleFluidStorage;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.inventory.ContainerData;
@@ -59,7 +62,7 @@ public class TankBackpackData extends SimpleContainer implements IBackpackData {
 
     @Override
     public void setItem(int index, @NotNull ItemStack stack) {
-        if (!this.maid.level.isClientSide) {
+        if (!this.maid.level.isClientSide()) {
             CombinedInvWrapper availableInv = this.maid.getAvailableInv(false);
             if (index == INPUT_INDEX) {
                 MaidFluidUtil.bucketToTank(stack, tank, availableInv);
@@ -68,7 +71,7 @@ public class TankBackpackData extends SimpleContainer implements IBackpackData {
                 MaidFluidUtil.tankToBucket(stack, tank, availableInv);
             }
             this.tankFluidCount = tank.amount;
-            ResourceLocation key = BuiltInRegistries.FLUID.getKey(tank.getResource().getFluid());
+            Identifier key = BuiltInRegistries.FLUID.getKey(tank.getResource().getFluid());
             maid.setBackpackFluid(key.toString());
         }
         super.setItem(index, stack);
@@ -86,16 +89,21 @@ public class TankBackpackData extends SimpleContainer implements IBackpackData {
 
     @Override
     public void load(CompoundTag tag, EntityMaid maid) {
-        this.loadTank(tag.getCompound("Tanks"), maid);
-        this.fromTag(tag.getList("Items", Tag.TAG_COMPOUND), this.maid.registryAccess());
+        this.loadTank(tag.getCompoundOrEmpty("Tanks"), maid);
+
+        this.fromItemList(TagValueInput.create(ProblemReporter.DISCARDING, this.maid.registryAccess(), tag).listOrEmpty("Items", ItemStack.CODEC));
     }
 
     @Override
     public void save(CompoundTag tag, EntityMaid maid) {
-        CompoundTag tankNbt = new CompoundTag();
-        tank.writeNbt(tankNbt, maid.registryAccess());
-        tag.put("Tanks", tankNbt);
-        tag.put("Items", this.createTag(maid.registryAccess()));
+
+        TagValueOutput tankOut = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, maid.registryAccess());
+        tank.writeData(tankOut);
+        tag.put("Tanks", tankOut.buildResult());
+
+        TagValueOutput itemsOutput = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, maid.registryAccess());
+        this.storeAsItemList(itemsOutput.list("Items", ItemStack.CODEC));
+        tag.put("Items", itemsOutput.buildResult().getListOrEmpty("Items"));
     }
 
     @Override
@@ -107,9 +115,10 @@ public class TankBackpackData extends SimpleContainer implements IBackpackData {
     }
 
     public void loadTank(CompoundTag nbt, EntityMaid maid) {
-        tank.readNbt(nbt, this.maid.registryAccess());
+
+        tank.readData(TagValueInput.create(ProblemReporter.DISCARDING, this.maid.registryAccess(), nbt));
         this.tankFluidCount = tank.getAmount();
-        ResourceLocation key = BuiltInRegistries.FLUID.getKey(tank.getResource().getFluid());
+        Identifier key = BuiltInRegistries.FLUID.getKey(tank.getResource().getFluid());
         maid.setBackpackFluid(key.toString());
     }
 }

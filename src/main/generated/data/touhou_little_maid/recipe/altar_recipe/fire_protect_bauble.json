@@ -4,24 +4,12 @@
   "entity": "minecraft:item",
   "group": "altar_recipe",
   "ingredients": [
-    {
-      "tag": "c:crops/nether_wart"
-    },
-    {
-      "tag": "c:dyes/red"
-    },
-    {
-      "item": "minecraft:blaze_powder"
-    },
-    {
-      "item": "minecraft:blaze_powder"
-    },
-    {
-      "item": "minecraft:blaze_powder"
-    },
-    {
-      "item": "minecraft:blaze_powder"
-    }
+    "#c:crops/nether_wart",
+    "#c:dyes/red",
+    "minecraft:blaze_powder",
+    "minecraft:blaze_powder",
+    "minecraft:blaze_powder",
+    "minecraft:blaze_powder"
   ],
   "lang": "jei.touhou_little_maid.altar_craft.item_craft.result",
   "power": 0.2,

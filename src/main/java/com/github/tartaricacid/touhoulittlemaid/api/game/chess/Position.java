@@ -260,12 +260,12 @@ public class Position {
     static {
         Util.RC4 rc4 = new Util.RC4(new byte[]{0});
         PreGen_zobristKeyPlayer = rc4.nextLong();
-        rc4.nextLong(); // Skip ZobristLock0
+        rc4.nextLong(); // 跳过 ZobristLock0
         PreGen_zobristLockPlayer = rc4.nextLong();
         for (int i = 0; i < 12; i++) {
             for (int j = 0; j < 128; j++) {
                 PreGen_zobristKeyTable[i][j] = rc4.nextLong();
-                rc4.nextLong(); // Skip ZobristLock0
+                rc4.nextLong(); // 跳过 ZobristLock0
                 PreGen_zobristLockTable[i][j] = rc4.nextLong();
             }
         }
@@ -280,7 +280,7 @@ public class Position {
                     bookSize++;
                 }
             } catch (Exception e) {
-                // Exit "while" when IOException occurs
+                // 当 IOException 发生时退出“while”
             }
             try {
                 in.close();
@@ -306,8 +306,8 @@ public class Position {
     public int[] castlingBitsList = new int[MAX_MOVE_NUM];
     public int[] sqEnPassantList = new int[MAX_MOVE_NUM];
 
-    public int[] brWhitePawn = new int[8]; // br = Bit-Rank
-    public int[] brBlackPawn = new int[8]; // br = Bit-Rank
+    public int[] brWhitePawn = new int[8];
+    public int[] brBlackPawn = new int[8];
     public short[][] vlWhitePiecePos = new short[6][128];
     public short[][] vlBlackPiecePos = new short[6][128];
 
@@ -401,28 +401,23 @@ public class Position {
         addPiece(sq, pc, true);
     }
 
-    /* A - Take out Captured Piece (Different in En-Passant, see A-EP)
-     * B - Remove Source
-     * C - Add into Destination (Different in Promotion, see C-P)
-     * D - for Castling only
-     */
+    /* A - 取出捕获的棋子（与 En-Passant 不同，参见 A-EP） B - 删除来源 C - 添加到目的地（与促销不同，参见 C-P） D - 仅适用于王位易位 */
     public void movePiece() {
         int sqSrc = SRC(mvList[moveNum]);
         int sqDst = DST(mvList[moveNum]);
         int pcCaptured = squares[sqDst];
         if (pcCaptured > 0) {
-            delPiece(sqDst, pcCaptured); // A
+            delPiece(sqDst, pcCaptured); // 一个
         }
         int pc = squares[sqSrc];
-        // __ASSERT((pcCaptured & SIDE_TAG(sdPlayer)) == 0);
-        // __ASSERT((pc & SIDE_TAG(sdPlayer)) != 0);
-        delPiece(sqSrc, pc); // B
+        // __ASSERT((pcCaptured & SIDE_TAG(sdPlayer)) == 0); __ASSERT((pc & SIDE_TAG(sdPlayer)) != 0);
+        delPiece(sqSrc, pc); // 乙
         addPiece(sqDst, pc); // C
         pcList[moveNum] = pcCaptured;
         specialMoveList[moveNum] = false;
         castlingBitsList[moveNum] = castlingBits();
         sqEnPassantList[moveNum] = 0;
-        // CASTLING -> Set Castling Bits for Rook's Capture
+        // CASTLING -> 设置 Rook 捕获的易位位
         if (PIECE_TYPE(pcCaptured) == PIECE_ROOK) {
             int castling = (1 - sdPlayer) << 1;
             if (sqDst == CASTLING_ROOK_SRC[castling]) {
@@ -432,39 +427,38 @@ public class Position {
             }
         }
         if (PIECE_TYPE(pc) == PIECE_KING) {
-            // CASTLING -> Move both King and Rook
+            // CASTLING -> 移动国王和车
             if (!KING_SPAN(sqSrc, sqDst)) {
                 int castling = CASTLING_TYPE(sdPlayer, sqSrc, sqDst);
                 delPiece(CASTLING_ROOK_SRC[castling], pc - PIECE_KING + PIECE_ROOK); // D
                 addPiece(CASTLING_ROOK_DST[castling], pc - PIECE_KING + PIECE_ROOK); // D
                 specialMoveList[moveNum] = true;
             }
-            // CASTLING -> Set Castling Bits for King's Move
+            // CASTLING -> 设置国王移动的易位位
             castlingBitsList[moveNum] &= ~(3 << (sdPlayer << 1));
         } else if (PIECE_TYPE(pc) == PIECE_PAWN) {
             if (PAWN_PROMOTION(sqDst, sdPlayer)) {
-                // PROMOTION -> Add a Queen instead of a Pawn
+                // PROMOTION -> 添加皇后而不是棋子
                 delPiece(sqDst, pc); // C-P
                 addPiece(sqDst, pc - PIECE_PAWN + PIECE_QUEEN); // C-P
                 specialMoveList[moveNum] = true;
             } else if (sqDst == enPassantSquare()) {
-                // EN-PASSANT -> Reset the Captured Piece for En-Passant Move
+                // EN-PASSANT -> 重置捕获的棋子以进行过路移动
                 int sqCaptured = sqDst - FORWARD_DELTA(sdPlayer);
                 pcCaptured = squares[sqCaptured];
-                // __ASSERT(sqSrc == sqCaptured + 1 || sqSrc == sqCaptured - 1);
-                // __ASSERT(pcCaptured == OPP_SIDE_TAG(sdPlayer) + PIECE_PAWN);
+
                 delPiece(sqCaptured, pcCaptured); // A-EP
                 pcList[moveNum] = pcCaptured;
                 specialMoveList[moveNum] = true;
             } else {
-                // EN-PASSANT -> Set En-Passant Square for Pawn's Double-Move
+                // EN-PASSANT -> 设置 Pawn 的双步经过方格
                 int delta = FORWARD_DELTA(sdPlayer);
                 if (sqDst == sqSrc + (delta << 1)) {
                     sqEnPassantList[moveNum] = sqSrc + delta;
                 }
             }
         } else if (PIECE_TYPE(pc) == PIECE_ROOK) {
-            // CASTLING -> Set Castling Bits for Rook's Move
+            // CASTLING -> 设置车易位
             int castling = sdPlayer << 1;
             if (sqSrc == CASTLING_ROOK_SRC[castling]) {
                 castlingBitsList[moveNum] &= ~(1 << castling);
@@ -474,40 +468,30 @@ public class Position {
         }
     }
 
-    /* A - Return Captured Piece (Different in En-Passant, see A-EP)
-     * B - Add into Source (Different in Promotion, see B-P)
-     * C - Remove Destination
-     * D - for Castling only
-     */
+    /* A - 返回捕获的棋子（与 En-Passant 不同，参见 A-EP） B - 添加到源（与 Promotion 不同，参见 B-P） C - 删除目标 D - 仅适用于王位易位 */
     public void undoMovePiece() {
         int sqSrc = SRC(mvList[moveNum]);
         int sqDst = DST(mvList[moveNum]);
         int pc = squares[sqDst];
-        // __ASSERT((pcList[moveNum] & SIDE_TAG(sdPlayer)) == 0);
-        // __ASSERT((pc & SIDE_TAG(sdPlayer)) != 0);
+        // __ASSERT((pcList[moveNum] & SIDE_TAG(sdPlayer)) == 0); __ASSERT((pc & SIDE_TAG(sdPlayer)) != 0);
         delPiece(sqDst, pc); // C
-        addPiece(sqSrc, pc); // B
+        addPiece(sqSrc, pc); // 乙
         if (pcList[moveNum] > 0) {
-            addPiece(sqDst, pcList[moveNum]); // A
+            addPiece(sqDst, pcList[moveNum]); // 一个
         }
         if (specialMoveList[moveNum]) {
             if (PIECE_TYPE(pc) == PIECE_KING) {
-                // CASTLING -> Move both King and Rook
+                // CASTLING -> 移动国王和车
                 int castling = CASTLING_TYPE(sdPlayer, sqSrc, sqDst);
-                // __ASSERT((castlingBits() & (1 << castling)) != 0);
-                // __ASSERT(squares[CASTLING_ROOK_DST[castling]] == SIDE_TAG(sdPlayer) + PIECE_ROOK);
-                // __ASSERT(squares[CASTLING_ROOK_SRC[castling]] == 0);
+
                 delPiece(CASTLING_ROOK_DST[castling], pc - PIECE_KING + PIECE_ROOK); // D
                 addPiece(CASTLING_ROOK_SRC[castling], pc - PIECE_KING + PIECE_ROOK); // D
             } else if (PAWN_PROMOTION(sqDst, sdPlayer)) {
-                // PROMOTION -> Add a Pawn instead of a Queen
-                // __ASSERT(pc == SIDE_TAG(sdPlayer) + PIECE_QUEEN);
+                // PROMOTION -> 添加 Pawn 而不是 Queen __ASSERT(pc == SIDE_TAG(sdPlayer) + PIECE_QUEEN);
                 delPiece(sqSrc, pc); // B-P
                 addPiece(sqSrc, pc - PIECE_QUEEN + PIECE_PAWN); // B-P
             } else {
-                // __ASSERT(sqDst == enPassantSquare());
-                // EN-PASSANT -> Adjust the Captured Pawn
-                // __ASSERT(pcList[moveNum] == OPP_SIDE_TAG(sdPlayer) + PIECE_PAWN);
+                // __ASSERT(sqDst == enPassantSquare()); EN-PASSANT -> 调整捕获的 Pawn __ASSERT(pcList[moveNum] == OPP_SIDE_TAG(sdPlayer) + PIECE_PAWN);
                 delPiece(sqDst, pcList[moveNum]); // A-EP
                 addPiece(sqDst - FORWARD_DELTA(sdPlayer), pcList[moveNum]); // A-EP
             }
@@ -632,7 +616,7 @@ public class Position {
         if (sdPlayer == (fen.charAt(index) == 'b' ? 0 : 1)) {
             changeSide();
         }
-        index++; // Skip a ' '
+        index++; // 跳过一个''
         if (index == fen.length()) {
             setIrrev(0, 0);
             return;
@@ -733,7 +717,7 @@ public class Position {
         int moves = 0;
         int pcSelfSide = SIDE_TAG(sdPlayer);
         int pcOppSide = OPP_SIDE_TAG(sdPlayer);
-        // CASTLING -> Begin Generating Castling Moves
+        // CASTLING -> 开始生成易位移动
         if (vls == null) {
             for (int i = 0; i < 2; i++) {
                 int castling = (sdPlayer << 1) + i;
@@ -743,7 +727,7 @@ public class Position {
                 }
             }
         }
-        // CASTLING -> End Generating Castling Moves
+        // CASTLING -> 结束生成易位移动
         for (int sqSrc = 0; sqSrc < 128; sqSrc++) {
             int pcSrc = squares[sqSrc];
             if ((pcSrc & pcSelfSide) == 0) {
@@ -879,7 +863,7 @@ public class Position {
                             }
                         }
                     } else {
-                        // PROMOTION -> Promotions are regarded as Capture Moves
+                        // PROMOTION -> 升级被视为捕获动作
                         if (PAWN_PROMOTION(sqDst, sdPlayer) && squares[sqDst] == 0) {
                             mvs[moves] = MOVE(sqSrc, sqDst);
                             vls[moves] = MVV_LVA(PIECE_QUEEN, 1);
@@ -893,7 +877,7 @@ public class Position {
                             continue;
                         }
                         int pcDst = squares[sqDst];
-                        // EN-PASSANT -> En-passant considered
+                        // EN-PASSANT -> 考虑过路人
                         if (sqDst == enPassantSquare()) {
                             pcDst = squares[sqDst - delta];
                         }
@@ -929,7 +913,7 @@ public class Position {
                 if (KING_SPAN(sqSrc, sqDst)) {
                     return true;
                 }
-                // CASTLING -> Castling considered
+                // CASTLING -> 考虑易位
                 int castling = CASTLING_TYPE(sdPlayer, sqSrc, sqDst);
                 return (CASTLING_KING_DST[castling] == sqDst && canCastling(castling));
             case PIECE_KNIGHT:
@@ -965,7 +949,7 @@ public class Position {
                         }
                         delta = (sqDst < sqSrc ? -17 : 17);
                         break;
-                    default: // Never Occurs
+                    default: // 从未发生过
                         throw new RuntimeException();
                 }
                 int sqTmp = sqSrc + delta;
@@ -979,7 +963,7 @@ public class Position {
             case PIECE_PAWN:
                 delta = FORWARD_DELTA(sdPlayer);
                 sqTmp = sqSrc + delta;
-                // EN-PASSANT -> En-passant is a capture move but "pcDst != 0"
+                // EN-PASSANT -> En-passant 是一个捕获动作，但“pcDst != 0”
                 if (pcDst != 0 || sqDst == enPassantSquare()) {
                     return (sqDst == sqTmp - 1 || sqDst == sqTmp + 1);
                 }
@@ -1115,7 +1099,7 @@ public class Position {
         if (bookSize == 0) {
             return 0;
         }
-        int lock = zobristLock >>> 1; // Convert into Unsigned
+        int lock = zobristLock >>> 1; // 转换为无符号
         int index = Util.binarySearch(lock, bookLock, 0, bookSize);
         if (index < 0) {
             return 0;

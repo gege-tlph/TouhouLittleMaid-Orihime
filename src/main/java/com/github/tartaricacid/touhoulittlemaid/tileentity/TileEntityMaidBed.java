@@ -1,5 +1,8 @@
 package com.github.tartaricacid.touhoulittlemaid.tileentity;
 
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import cn.sh1rocu.touhoulittlemaid.api.extension.IBlockEntityPersistentData;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBlocks;
 import net.minecraft.core.BlockPos;
@@ -17,7 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import javax.annotation.Nullable;
 
 public class TileEntityMaidBed extends BlockEntity implements IBlockEntityPersistentData {
-    public static final BlockEntityType<TileEntityMaidBed> TYPE = BlockEntityType.Builder.of(TileEntityMaidBed::new, InitBlocks.MAID_BED).build(null);
+    public static final BlockEntityType<TileEntityMaidBed> TYPE = FabricBlockEntityTypeBuilder.create(TileEntityMaidBed::new, InitBlocks.MAID_BED).build();
     private static final String COLOR_TAG = "BedColor";
     private DyeColor color = DyeColor.PINK;
 
@@ -31,15 +34,15 @@ public class TileEntityMaidBed extends BlockEntity implements IBlockEntityPersis
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    public void saveAdditional(ValueOutput output){
         tlm$getPersistentData().putInt(COLOR_TAG, color.getId());
-        super.saveAdditional(tag, registries);
+        super.saveAdditional(output);
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        color = DyeColor.byId(tlm$getPersistentData().getInt(COLOR_TAG));
+    public void loadAdditional(ValueInput input){
+        super.loadAdditional(input);
+        color = DyeColor.byId(tlm$getPersistentData().getIntOr(COLOR_TAG, 0));
     }
 
     @Override

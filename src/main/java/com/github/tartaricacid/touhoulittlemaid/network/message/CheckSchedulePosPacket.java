@@ -1,22 +1,16 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message;
 
-import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.AbstractMaidContainerGui;
-import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.other.CheckSchedulePosGui;
+import com.github.tartaricacid.touhoulittlemaid.network.client.CheckSchedulePosPacketProxy;
 import io.netty.buffer.ByteBuf;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record CheckSchedulePosPacket(String tips) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<CheckSchedulePosPacket> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("check_schedule_pos"));
+    public static final CustomPacketPayload.Type<CheckSchedulePosPacket> TYPE = new CustomPacketPayload.Type<>(modLoc("check_schedule_pos"));
     public static final StreamCodec<ByteBuf, CheckSchedulePosPacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8,
             CheckSchedulePosPacket::tips,
@@ -24,22 +18,11 @@ public record CheckSchedulePosPacket(String tips) implements CustomPacketPayload
     );
 
     public static void handle(CheckSchedulePosPacket message, ClientPlayNetworking.Context context) {
-        context.client().execute(() -> onHandle(message));
-    }
-
-    @Environment(EnvType.CLIENT)
-    private static void onHandle(CheckSchedulePosPacket message) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) {
-            return;
-        }
-        if (mc.screen instanceof AbstractMaidContainerGui<?> parent) {
-            mc.setScreen(new CheckSchedulePosGui(parent, Component.translatable(message.tips)));
-        }
+        context.client().execute(() -> CheckSchedulePosPacketProxy.handle(message));
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

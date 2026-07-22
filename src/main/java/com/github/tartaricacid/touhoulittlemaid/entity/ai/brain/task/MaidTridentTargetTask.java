@@ -83,8 +83,7 @@ public class MaidTridentTargetTask extends Behavior<EntityMaid> {
                     // 否则开始进行远程攻击
                     int ticksUsingItem = owner.getTicksUsingItem();
 
-                    // 物品最大使用计数大于 30 才可以
-                    // 如果有引雷，必须 6 格之外（安全范围，以免波及自身）
+
                     RegistryAccess access = owner.level.registryAccess();
                     boolean hasChanneling = getEnchantmentLevel(access, Enchantments.CHANNELING, owner.getMainHandItem()) > 0;
                     boolean canUseChanneling = owner.level.isThundering() && !owner.isUnderWater() && hasChanneling;

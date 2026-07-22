@@ -21,6 +21,9 @@ import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.component.Consumable;
+import net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect;
+import net.minecraft.world.item.consume_effects.ConsumeEffect;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PotionItem;
 import net.minecraft.world.item.alchemy.PotionContents;
@@ -33,8 +36,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 女仆在水下，空气值不足时，会尝试吃任何可以补充空气的东西
- * 如果没有找到，则会尝试寻找可以呼吸的位置
+ * 女仆在水下，空气值不足时，会尝试吃任何可以补充空气的东西 如果没有找到，则会尝试寻找可以呼吸的位置
  */
 public class MaidBreathAirTask extends Behavior<EntityMaid> {
     private static final int MAX_PROBABILITY = 5;
@@ -155,7 +157,7 @@ public class MaidBreathAirTask extends Behavior<EntityMaid> {
     private void startEatBreatheItem(EntityMaid maid, ItemStack stack, InteractionHand hand) {
         maid.getSwimManager().setEatBreatheItem(true);
 
-        //FoodProperties foodProperties = stack.getFoodProperties(maid);
+
         FoodProperties foodProperties = stack.get(DataComponents.FOOD);
         float total = 0;
         if (foodProperties != null) {
@@ -188,19 +190,21 @@ public class MaidBreathAirTask extends Behavior<EntityMaid> {
             return false;
         }
 
-        // 或者能提供水下呼吸的食物
-        //FoodProperties foodProperties = stack.getFoodProperties(maid);
-        FoodProperties foodProperties = stack.get(DataComponents.FOOD);
-        if (foodProperties == null) {
+        Consumable consumable = stack.get(DataComponents.CONSUMABLE);
+        if (consumable == null) {
             return false;
         }
-        List<FoodProperties.PossibleEffect> effects = foodProperties.effects();
+        List<ConsumeEffect> effects = consumable.onConsumeEffects();
         if (effects.isEmpty()) {
             return false;
         }
-        for (FoodProperties.PossibleEffect effect : effects) {
-            if (effect.effect().getEffect() == MobEffects.WATER_BREATHING) {
-                return true;
+        for (ConsumeEffect customEffect : effects) {
+            if (customEffect instanceof ApplyStatusEffectsConsumeEffect applyStatusEffectsConsumeEffect) {
+                for (MobEffectInstance effect : applyStatusEffectsConsumeEffect.effects()) {
+                    if (effect.getEffect() == MobEffects.WATER_BREATHING) {
+                        return true;
+                    }
+                }
             }
         }
         return false;
@@ -218,7 +222,7 @@ public class MaidBreathAirTask extends Behavior<EntityMaid> {
         Optional<BlockPos> match = pathFinding.find(blockPos -> this.givesAir(maid, blockPos));
         pathFinding.finish();
 
-        // FIXME: BFS 算法找到的目标点在 A* 算法中可能会需要更多步骤才能走到，当超过了寻路长度后可能会被截断导致无法找到路径
+
         if (match.isPresent() && maid.canPathReach(match.get())) {
             maid.getSwimManager().setGoingToBreath(true);
             BehaviorUtils.setWalkAndLookTargetMemories(maid, match.get(), 0.5f, 1);

@@ -4,6 +4,9 @@ import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
 import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
@@ -23,23 +26,23 @@ public final class MaidKillRecordManager {
     private int witherCount;
     private int enderDragonCount;
 
-    void addAdditionalSaveData(CompoundTag compound) {
+
+    void addAdditionalSaveData(ValueOutput output) {
         CompoundTag killRecord = new CompoundTag();
         killRecord.putInt(KILL_RECORD, totalCount);
         killRecord.putInt(SLIME_COUNT, slimeCount);
         killRecord.putInt(WITHER_COUNT, witherCount);
         killRecord.putInt(ENDER_DRAGON_COUNT, enderDragonCount);
-        compound.put(KILL_RECORD, killRecord);
+        output.store(KILL_RECORD, CustomData.COMPOUND_TAG_CODEC, killRecord);
     }
 
-    void readAdditionalSaveData(CompoundTag compound) {
-        if (compound.contains(KILL_RECORD)) {
-            CompoundTag killRecord = compound.getCompound(KILL_RECORD);
-            totalCount = killRecord.getInt(TOTAL_COUNT);
-            slimeCount = killRecord.getInt(SLIME_COUNT);
-            witherCount = killRecord.getInt(WITHER_COUNT);
-            enderDragonCount = killRecord.getInt(ENDER_DRAGON_COUNT);
-        }
+    void readAdditionalSaveData(ValueInput input) {
+        input.read(KILL_RECORD, CustomData.COMPOUND_TAG_CODEC).ifPresent(killRecord -> {
+            totalCount = killRecord.getIntOr(TOTAL_COUNT, 0);
+            slimeCount = killRecord.getIntOr(SLIME_COUNT, 0);
+            witherCount = killRecord.getIntOr(WITHER_COUNT, 0);
+            enderDragonCount = killRecord.getIntOr(ENDER_DRAGON_COUNT, 0);
+        });
     }
 
     public void onTargetDeath(EntityMaid maid, LivingEntity target) {

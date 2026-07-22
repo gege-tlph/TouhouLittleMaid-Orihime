@@ -1,22 +1,23 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.item;
 
 import com.github.tartaricacid.touhoulittlemaid.client.entity.GeckoChairEntity;
-import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.BedrockModel;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.CustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ChairConfig;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemChair;
 import com.github.tartaricacid.touhoulittlemaid.network.message.OpenChairGuiPackage;
+import com.mojang.serialization.Codec;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -29,6 +30,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -41,16 +44,17 @@ import java.util.UUID;
 
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent.*;
 
-public class EntityChair extends AbstractEntityFromItem {
+public class EntityChair extends AbstractEntityFromItem implements OwnableEntity {
     public static final EntityType<EntityChair> TYPE = EntityType.Builder.<EntityChair>of(EntityChair::new, MobCategory.MISC)
             .sized(0.875f, 0.5f)
             .clientTrackingRange(10)
-            .build("chair");
+            .build(ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath("touhou_little_maid", "chair")));
 
     private static final EntityDataAccessor<String> MODEL_ID = SynchedEntityData.defineId(EntityChair.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Float> MOUNTED_HEIGHT = SynchedEntityData.defineId(EntityChair.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> TAMEABLE_CAN_RIDE = SynchedEntityData.defineId(EntityChair.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Optional<UUID>> OWNER_UUID = SynchedEntityData.defineId(EntityChair.class, EntityDataSerializers.OPTIONAL_UUID);
+    private static final EntityDataAccessor<Optional<EntityReference<LivingEntity>>> OWNER =
+            SynchedEntityData.defineId(EntityChair.class, EntityDataSerializers.OPTIONAL_LIVING_ENTITY_REFERENCE);
 
     private static final String DEFAULT_MODEL_ID = "touhou_little_maid:cushion";
 
@@ -80,7 +84,7 @@ public class EntityChair extends AbstractEntityFromItem {
         builder.define(MODEL_ID, DEFAULT_MODEL_ID);
         builder.define(MOUNTED_HEIGHT, 0f);
         builder.define(TAMEABLE_CAN_RIDE, true);
-        builder.define(OWNER_UUID, Optional.empty());
+        builder.define(OWNER, Optional.empty());
     }
 
     @Override
@@ -88,7 +92,7 @@ public class EntityChair extends AbstractEntityFromItem {
         if (!isTameableCanRide()) {
             return;
         }
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             List<TamableAnimal> list = level.getEntitiesOfClass(TamableAnimal.class,
                     getBoundingBox().expandTowards(0, 0.5, 0),
                     e -> !e.isInSittingPose() && !e.isPassenger() && e.getPassengers().isEmpty());
@@ -97,13 +101,12 @@ public class EntityChair extends AbstractEntityFromItem {
     }
 
     /**
-     * 此参数会影响钓鱼钩和客户端的渲染交互。
-     * 所以将其设计为仅修改服务端，避免影响客户端渲染交互，同时不会在服务端被钓鱼钩影响
+     * 此参数会影响钓鱼钩和客户端的渲染交互。 所以将其设计为仅修改服务端，避免影响客户端渲染交互，同时不会在服务端被钓鱼钩影响
      */
     @Override
     public boolean isPickable() {
         //Fabric 不可用
-        return /*!EffectiveSide.get().isServer()*/ FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
+        return FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
     }
 
     @Override
@@ -116,23 +119,13 @@ public class EntityChair extends AbstractEntityFromItem {
                 ServerPlayNetworking.send(serverPlayer, new OpenChairGuiPackage(getId()));
             }
         } else {
-            if (!level.isClientSide && getPassengers().isEmpty() && !player.isPassenger()) {
+            if (!level.isClientSide() && getPassengers().isEmpty() && !player.isPassenger()) {
                 player.startRiding(this);
             }
         }
         return InteractionResult.SUCCESS;
     }
 
-    @Nonnull
-    @Override
-    @Environment(EnvType.CLIENT)
-    public AABB getBoundingBoxForCulling() {
-        BedrockModel<EntityChair> model = CustomPackLoader.CHAIR_MODELS.getModel(getModelId()).orElse(null);
-        if (model == null) {
-            return super.getBoundingBoxForCulling();
-        }
-        return model.getRenderBoundingBox().move(position());
-    }
 
     @Override
     protected Vec3 getPassengerAttachmentPoint(Entity entity, EntityDimensions dimensions, float partialTick) {
@@ -144,7 +137,8 @@ public class EntityChair extends AbstractEntityFromItem {
         if (ChairConfig.CHAIR_CAN_DESTROYED_BY_ANYONE.get()) {
             return true;
         }
-        return this.getOwnerUUID().map(uuid -> player.getUUID().equals(uuid)).orElse(true);
+        EntityReference<LivingEntity> owner = this.getOwnerReference();
+        return owner == null || owner.matches(player);
     }
 
     @Override
@@ -158,29 +152,22 @@ public class EntityChair extends AbstractEntityFromItem {
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag compound) {
-        super.readAdditionalSaveData(compound);
-        if (compound.contains(MODEL_ID_TAG_NAME, Tag.TAG_STRING)) {
-            setModelId(compound.getString(MODEL_ID_TAG_NAME));
-        }
-        if (compound.contains(MOUNTED_HEIGHT_TAG_NAME, Tag.TAG_FLOAT)) {
-            setMountedHeight(compound.getFloat(MOUNTED_HEIGHT_TAG_NAME));
-        }
-        if (compound.contains(TAMEABLE_CAN_RIDE_TAG_NAME, Tag.TAG_BYTE)) {
-            setTameableCanRide(compound.getBoolean(TAMEABLE_CAN_RIDE_TAG_NAME));
-        }
-        if (compound.contains(OWNER_UUID_TAG_NAME)) {
-            setOwnerUUID(NbtUtils.loadUUID(Objects.requireNonNull(compound.get(OWNER_UUID_TAG_NAME))));
-        }
+    public void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        input.read(MODEL_ID_TAG_NAME, Codec.STRING).ifPresent(this::setModelId);
+        input.read(MOUNTED_HEIGHT_TAG_NAME, Codec.FLOAT).ifPresent(this::setMountedHeight);
+        input.read(TAMEABLE_CAN_RIDE_TAG_NAME, Codec.BOOL).ifPresent(this::setTameableCanRide);
+
+        this.setOwnerReference(EntityReference.read(input, OWNER_UUID_TAG_NAME));
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag compound) {
-        super.addAdditionalSaveData(compound);
-        compound.putString(MODEL_ID_TAG_NAME, getModelId());
-        compound.putFloat(MOUNTED_HEIGHT_TAG_NAME, getMountedHeight());
-        compound.putBoolean(TAMEABLE_CAN_RIDE_TAG_NAME, isTameableCanRide());
-        this.getOwnerUUID().ifPresent(uuid -> compound.putUUID(OWNER_UUID_TAG_NAME, uuid));
+    public void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.store(MODEL_ID_TAG_NAME, Codec.STRING, getModelId());
+        output.store(MOUNTED_HEIGHT_TAG_NAME, Codec.FLOAT, getMountedHeight());
+        output.store(TAMEABLE_CAN_RIDE_TAG_NAME, Codec.BOOL, isTameableCanRide());
+        EntityReference.store(this.getOwnerReference(), output, OWNER_UUID_TAG_NAME);
     }
 
     @Nullable
@@ -218,18 +205,18 @@ public class EntityChair extends AbstractEntityFromItem {
         this.entityData.set(TAMEABLE_CAN_RIDE, canRide);
     }
 
-    public Optional<UUID> getOwnerUUID() {
-        return this.entityData.get(OWNER_UUID);
+    @Override
+    @Nullable
+    public EntityReference<LivingEntity> getOwnerReference() {
+        return this.entityData.get(OWNER).orElse(null);
     }
 
-    public void setOwnerUUID(@Nullable UUID uuid) {
-        this.entityData.set(OWNER_UUID, Optional.ofNullable(uuid));
+    public void setOwnerReference(@Nullable EntityReference<LivingEntity> owner) {
+        this.entityData.set(OWNER, Optional.ofNullable(owner));
     }
 
-    public void setOwner(@Nullable Player player) {
-        if (player != null) {
-            this.setOwnerUUID(player.getUUID());
-        }
+    public void setOwner(@Nullable LivingEntity owner) {
+        this.setOwnerReference(EntityReference.of(owner));
     }
 
     public boolean hasPassenger() {

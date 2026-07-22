@@ -10,8 +10,9 @@ import com.github.tartaricacid.touhoulittlemaid.network.message.MaidSubConfigPac
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import org.anti_ad.mc.ipn.api.IPNButton;
 import org.anti_ad.mc.ipn.api.IPNGuiHint;
@@ -24,7 +25,7 @@ import org.anti_ad.mc.ipn.api.IPNPlayerSideOnly;
 @IPNGuiHint(button = IPNButton.SHOW_EDITOR, horizontalOffset = -5)
 @IPNGuiHint(button = IPNButton.SETTINGS, horizontalOffset = -5)
 public class MaidConfigContainerGui extends AbstractMaidContainerGui<MaidConfigContainer> {
-    private static final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_gui_config.png");
+    private static final Identifier ICON = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_gui_config.png");
     private final MaidConfigManager.SyncNetwork syncNetwork;
 
     public MaidConfigContainerGui(MaidConfigContainer screenContainer, Inventory inv, Component titleIn) {
@@ -35,7 +36,7 @@ public class MaidConfigContainerGui extends AbstractMaidContainerGui<MaidConfigC
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTicks, int x, int y) {
         super.renderBg(graphics, partialTicks, x, y);
-        graphics.blit(ICON, leftPos + 80, topPos + 28, 0, 0, imageWidth, imageHeight);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, ICON, leftPos + 80, topPos + 28, 0F, 0F, imageWidth, imageHeight, 256, 256);
     }
 
     @Override
@@ -144,6 +145,6 @@ public class MaidConfigContainerGui extends AbstractMaidContainerGui<MaidConfigC
 
     @Override
     protected void renderAddition(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        graphics.drawCenteredString(font, Component.translatable("gui.touhou_little_maid.button.maid_config"), leftPos + 167, topPos + 41, 0xFFFFFF);
+        graphics.drawCenteredString(font, Component.translatable("gui.touhou_little_maid.button.maid_config"), leftPos + 167, topPos + 41, 0xFFFFFFFF);
     }
 }

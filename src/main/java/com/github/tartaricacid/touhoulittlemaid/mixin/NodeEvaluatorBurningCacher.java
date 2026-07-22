@@ -1,7 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.mixin;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
-import com.github.tartaricacid.touhoulittlemaid.api.mixin.IBlockBurningCacheMixin;
+import cn.sh1rocu.touhoulittlemaid.api.mixin.IBlockBurningCacheMixin;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.tags.TagKey;

@@ -4,24 +4,12 @@
   "entity": "minecraft:item",
   "group": "altar_recipe",
   "ingredients": [
-    {
-      "tag": "c:dusts/redstone"
-    },
-    {
-      "tag": "c:dusts/redstone"
-    },
-    {
-      "tag": "c:dusts/redstone"
-    },
-    {
-      "tag": "c:ingots/iron"
-    },
-    {
-      "tag": "c:ingots/iron"
-    },
-    {
-      "tag": "c:ingots/iron"
-    }
+    "#c:dusts/redstone",
+    "#c:dusts/redstone",
+    "#c:dusts/redstone",
+    "#c:ingots/iron",
+    "#c:ingots/iron",
+    "#c:ingots/iron"
   ],
   "lang": "jei.touhou_little_maid.altar_craft.item_craft.result",
   "power": 0.2,

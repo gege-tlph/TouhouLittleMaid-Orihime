@@ -1,114 +1,96 @@
 package com.github.tartaricacid.touhoulittlemaid.client.resource.models;
 
-import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
+import com.github.tartaricacid.touhoulittlemaid.api.animation.IAnimation;
 import com.github.tartaricacid.touhoulittlemaid.client.animation.inner.InnerAnimation;
 import com.github.tartaricacid.touhoulittlemaid.client.model.PlayerMaidModel;
-import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.BedrockModel;
+import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.EntityMaidModel;
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.state.EntityMaidRenderState;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelInfo;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
-import com.mojang.authlib.GameProfile;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+import com.google.common.collect.Maps;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.PlayerSkin;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.level.block.entity.SkullBlockEntity;
+import net.minecraft.client.renderer.PlayerSkinRenderCache;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
+import net.minecraft.world.entity.player.PlayerModelType;
+import net.minecraft.world.entity.player.PlayerSkin;
+import net.minecraft.world.item.component.ResolvableProfile;
 
+import javax.annotation.Nullable;
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.function.Function;
 
-@Environment(EnvType.CLIENT)
 public final class PlayerMaidModels {
-    private static final Cache<String, GameProfile> GAME_PROFILE_CACHE = CacheBuilder.newBuilder().expireAfterAccess(30, TimeUnit.MINUTES).build();
-    private static final GameProfile EMPTY_GAME_PROFILE = new GameProfile(UUID.randomUUID(), "alex");
-    private static final PlayerMaidModel PLAYER_MAID_MODEL = new PlayerMaidModel(false);
-    private static final PlayerMaidModel PLAYER_MAID_MODEL_SLIM = new PlayerMaidModel(true);
-    private static final List<ResourceLocation> PLAYER_MAID_ANIMATION_RES = Lists.newArrayList(
-            ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "animation/maid/default/head/default.js"),
-            ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "animation/maid/default/head/beg.js"),
-            ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "animation/maid/default/leg/default.js"),
-            ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "animation/maid/player/arm/default.js"),
-            ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "animation/maid/default/arm/swing.js"),
-            ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "animation/maid/player/sit/default.js")
+    private static @Nullable PlayerMaidModel PLAYER_MAID_MODEL = null;
+    private static @Nullable PlayerMaidModel PLAYER_MAID_MODEL_SLIM = null;
+
+    private static List<IAnimation<EntityMaidRenderState>> PLAYER_MAID_ANIMATIONS = List.of();
+    private static final List<Identifier> PLAYER_MAID_ANIMATION_IDS = Lists.newArrayList(
+            IdentifierUtil.modLoc("animation/maid/default/head/default.js"),
+            IdentifierUtil.modLoc("animation/maid/default/head/beg.js"),
+            IdentifierUtil.modLoc("animation/maid/default/leg/default.js"),
+            IdentifierUtil.modLoc("animation/maid/player/arm/default.js"),
+            IdentifierUtil.modLoc("animation/maid/default/arm/swing.js"),
+            IdentifierUtil.modLoc("animation/maid/player/sit/default.js")
     );
-    private static final ResourceLocation TEXTURE_ALEX = ResourceLocation.withDefaultNamespace("textures/entity/alex.png");
-    private static final List<Object> PLAYER_MAID_ANIMATIONS = Lists.newArrayList();
-    private static MaidModelInfo playerMaidInfo;
-    private static ResourceLocation playerSkin;
+
+    private static final Map<String, MaidModelInfo> INFOS = Maps.newHashMap();
+    private static final Function<String, ResolvableProfile> PROFILE = Util.memoize(ResolvableProfile::createUnresolved);
 
     public static void reload() {
-        PLAYER_MAID_ANIMATIONS.clear();
-        for (ResourceLocation res : PLAYER_MAID_ANIMATION_RES) {
-            PLAYER_MAID_ANIMATIONS.add(InnerAnimation.get(res));
+        PLAYER_MAID_MODEL = null;
+        PLAYER_MAID_MODEL_SLIM = null;
+        INFOS.clear();
+        reloadAnimations();
+    }
+
+    public static EntityMaidModel model(String name) {
+        PlayerModelType type = getSkin(name).model();
+        if (type == PlayerModelType.SLIM) {
+            PlayerMaidModel slimModel = PLAYER_MAID_MODEL_SLIM;
+            if (slimModel == null) {
+                slimModel = PlayerMaidModel.create(true);
+                PLAYER_MAID_MODEL_SLIM = slimModel;
+            }
+            return slimModel;
+        } else {
+            PlayerMaidModel model = PLAYER_MAID_MODEL;
+            if (model == null) {
+                model = PlayerMaidModel.create(false);
+                PLAYER_MAID_MODEL = model;
+            }
+            return model;
         }
-        playerMaidInfo = new MaidModelInfo() {
+    }
+
+    public static MaidModelInfo info(String name) {
+        return INFOS.computeIfAbsent(name, s -> new MaidModelInfo() {
             @Override
-            public ResourceLocation getTexture() {
-                return playerSkin;
+            public Identifier getTexture() {
+                return getSkin(s).body().texturePath();
             }
-        };
+        });
     }
 
-    public static BedrockModel<Mob> getPlayerMaidModel(String name) {
-        GameProfile newProfile = null;
-        Minecraft minecraft = Minecraft.getInstance();
-
-        try {
-            newProfile = GAME_PROFILE_CACHE.get(name, () -> {
-                SkullBlockEntity.fetchGameProfile(name).thenApply(gameProfile -> {
-                    GameProfile profile = gameProfile.orElse(EMPTY_GAME_PROFILE);
-                    GAME_PROFILE_CACHE.put(name, profile);
-                    return profile;
-                });
-                return EMPTY_GAME_PROFILE;
-            });
-        } catch (ExecutionException ignore) {
-        }
-
-        if (newProfile != null) {
-            PlayerSkin skin = minecraft.getSkinManager().getInsecureSkin(newProfile);
-            if (skin.model() == PlayerSkin.Model.SLIM) {
-                return PLAYER_MAID_MODEL_SLIM;
-            }
-        }
-        return PLAYER_MAID_MODEL;
+    private static PlayerSkin getSkin(String name) {
+        PlayerSkinRenderCache cache = Minecraft.getInstance().playerSkinRenderCache();
+        ResolvableProfile profile = PROFILE.apply(name);
+        return cache.getOrDefault(profile).playerSkin();
     }
 
-    public static List<Object> getPlayerMaidAnimations() {
+    public static List<IAnimation<EntityMaidRenderState>> animations() {
         return PLAYER_MAID_ANIMATIONS;
     }
 
-    public static MaidModelInfo getPlayerMaidInfo(String name) {
-        playerSkin = getPlayerSkin(name);
-        return playerMaidInfo;
-    }
-
-    public static ResourceLocation getPlayerSkin(String name) {
-        GameProfile newProfile = null;
-        Minecraft minecraft = Minecraft.getInstance();
-
-        try {
-            newProfile = GAME_PROFILE_CACHE.get(name, () -> {
-                SkullBlockEntity.fetchGameProfile(name).thenApply(gameProfile -> {
-                    GameProfile profile = gameProfile.orElse(EMPTY_GAME_PROFILE);
-                    GAME_PROFILE_CACHE.put(name, profile);
-                    return profile;
-                });
-                return EMPTY_GAME_PROFILE;
-            });
-        } catch (ExecutionException ignore) {
+    private static void reloadAnimations() {
+        List<IAnimation<EntityMaidRenderState>> animations = Lists.newArrayList();
+        for (Identifier animationId : PLAYER_MAID_ANIMATION_IDS) {
+            if (InnerAnimation.containsKey(animationId)) {
+                animations.add(InnerAnimation.get(animationId));
+            }
         }
-
-        if (newProfile != null) {
-            PlayerSkin skin = minecraft.getSkinManager().getInsecureSkin(newProfile);
-            return skin.texture();
-        }
-
-        return TEXTURE_ALEX;
+        PLAYER_MAID_ANIMATIONS = List.copyOf(animations);
     }
 }

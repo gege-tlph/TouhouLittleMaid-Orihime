@@ -29,11 +29,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 /**
- * Mutable class that tracks the position of characters
- * when performing lexical analysis
+ * 执行词法分析时跟踪字符位置的可变类
  *
- * <p>Can be used to show the position of lexical errors
- * in a human-readable way</p>
+ * <p>可用于以人类可读的方式显示词汇错误的位置</p>
  *
  * @since 3.0.0
  */
@@ -66,8 +64,7 @@ public final class Cursor implements Cloneable {
     public void push(final int character) {
         index++;
         if (character == '\n') {
-            // if it's a line break,
-            // reset the column
+
             line++;
             column = 1;
         } else {

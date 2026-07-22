@@ -2,7 +2,6 @@ package com.github.tartaricacid.touhoulittlemaid.client.event;
 
 import com.github.tartaricacid.touhoulittlemaid.api.event.client.RenderMaidEvent;
 import com.github.tartaricacid.touhoulittlemaid.client.model.EasterEggModel;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.models.MaidModels;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.models.PlayerMaidModels;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -12,7 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 
-import static com.github.tartaricacid.touhoulittlemaid.client.resource.CustomPackLoader.MAID_MODELS;
+import static com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader.MAID_MODELS;
 
 @Environment(EnvType.CLIENT)
 public final class SpecialMaidRenderEvent {
@@ -22,7 +21,7 @@ public final class SpecialMaidRenderEvent {
      */
     private static final String PLAYER_NAME_PREFIX = "=>";
 
-    //@SubscribeEvent(priority = EventPriority.HIGHEST)
+    // @SubscribeEvent（优先级 = EventPriority.HIGHEST）
     public static void onRenderPlayerNamedMaid(RenderMaidEvent event) {
         Component customName = event.getMaid().asEntity().getCustomName();
         if (customName == null) {
@@ -31,15 +30,15 @@ public final class SpecialMaidRenderEvent {
         String name = customName.getString();
         if (StringUtils.isNotBlank(name) && name.startsWith(PLAYER_NAME_PREFIX)) {
             String playerName = name.substring(2);
-            MaidModels.ModelData data = event.getModelData();
-            data.setModel(PlayerMaidModels.getPlayerMaidModel(playerName));
-            data.setAnimations(PlayerMaidModels.getPlayerMaidAnimations());
-            data.setInfo(PlayerMaidModels.getPlayerMaidInfo(playerName));
+            RenderMaidEvent.ModelData data = event.getModelData();
+            data.setModel(PlayerMaidModels.model(playerName));
+            data.setAnimations(PlayerMaidModels.animations());
+            data.setInfo(PlayerMaidModels.info(playerName));
             event.setCanceled(true);
         }
     }
 
-    //@SubscribeEvent(priority = EventPriority.NORMAL)
+    // @SubscribeEvent（优先级 = EventPriority.NORMAL）
     public static void onRenderEncryptNamedMaid(RenderMaidEvent event) {
         Component customName = event.getMaid().asEntity().getCustomName();
         if (customName == null) {
@@ -47,11 +46,11 @@ public final class SpecialMaidRenderEvent {
         }
         String name = customName.getString();
         if (StringUtils.isNotBlank(name)) {
-            MAID_MODELS.getEasterEggEncryptTagModel(DigestUtils.sha1Hex(name)).ifPresent(data -> modelDataSet(event, data));
+            MAID_MODELS.getEasterEggEncryptTagModelId(DigestUtils.sha1Hex(name)).ifPresent(modelId -> modelDataSet(event, modelId));
         }
     }
 
-    //@SubscribeEvent(priority = EventPriority.LOW)
+    // @SubscribeEvent（优先级 = EventPriority.LOW）
     public static void onRenderNormalNamedMaid(RenderMaidEvent event) {
         Component customName = event.getMaid().asEntity().getCustomName();
         if (customName == null) {
@@ -59,29 +58,32 @@ public final class SpecialMaidRenderEvent {
         }
         String name = customName.getString();
         if (StringUtils.isNotBlank(name)) {
-            MAID_MODELS.getEasterEggNormalTagModel(name).ifPresent(data -> modelDataSet(event, data));
+            MAID_MODELS.getEasterEggNormalTagModelId(name).ifPresent(modelId -> modelDataSet(event, modelId));
         }
     }
 
-    //@SubscribeEvent(priority = EventPriority.LOWEST)
+    // @SubscribeEvent（优先级 = EventPriority.LOWEST）
     public static void onRenderEasterEggModel(RenderMaidEvent event) {
         String id = event.getMaid().getModelId();
         if (EASTER_EGG_MODEL.equals(id)) {
-            MaidModels.ModelData data = event.getModelData();
-            data.setModel(EasterEggModel.getInstance());
+            RenderMaidEvent.ModelData data = event.getModelData();
+            data.setModel(EasterEggModel.model());
             data.setAnimations(Collections.emptyList());
-            data.setInfo(EasterEggModel.getInfo());
+            data.setInfo(EasterEggModel.info());
             event.setCanceled(true);
         }
     }
 
-    private static void modelDataSet(RenderMaidEvent event, MaidModels.ModelData data) {
-        MaidModels.ModelData rawData = event.getModelData();
-        rawData.setModel(data.getModel());
-        rawData.setInfo(data.getInfo());
-        if (data.getAnimations() != null && !data.getAnimations().isEmpty()) {
-            rawData.setAnimations(data.getAnimations());
-        }
+
+    private static void modelDataSet(RenderMaidEvent event, String modelId) {
+        RenderMaidEvent.ModelData rawData = event.getModelData();
+        rawData.setModel(MAID_MODELS.getModel(modelId).orElse(null));
+        MAID_MODELS.getInfo(modelId).ifPresent(rawData::setInfo);
+        MAID_MODELS.getAnimation(modelId).ifPresent(animations -> {
+            if (!animations.isEmpty()) {
+                rawData.setAnimations(animations);
+            }
+        });
         event.setCanceled(true);
     }
 }

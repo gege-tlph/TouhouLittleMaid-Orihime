@@ -9,6 +9,7 @@ public final class GeneralConfig {
     public static ModConfigSpec getConfigSpec() {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         MaidConfig.init(builder);
+        ExperimentalConfig.init(builder);
         ChairConfig.init(builder);
         MiscConfig.init(builder);
         VanillaConfig.init(builder);

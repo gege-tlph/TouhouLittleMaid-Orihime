@@ -6,7 +6,7 @@ import cn.sh1rocu.touhoulittlemaid.api.mixin.LootCollector;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -17,22 +17,22 @@ import org.spongepowered.asm.mixin.injection.At;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-// Porting_Lib
+// 来源：Porting_Lib
 @Mixin(value = LootTable.class, priority = 50_000)
-// high priority to make sure the WrapMethod below catches most injections
+// 高优先级，确保下面的 WrapMethod 捕获大多数注入
 public class LootTableMixin implements ILootTable {
     @Unique
-    private ResourceLocation tlm$lootTableId;
+    private Identifier tlm$lootTableId;
 
     @Override
-    public void tlm$setLootTableId(final ResourceLocation id) {
+    public void tlm$setLootTableId(final Identifier id) {
         if (this.tlm$lootTableId != null)
             throw new IllegalStateException("Attempted to rename loot table from '" + this.tlm$lootTableId + "' to '" + id + "': this is not supported");
         this.tlm$lootTableId = Objects.requireNonNull(id);
     }
 
     @Override
-    public ResourceLocation tlm$getLootTableId() {
+    public Identifier tlm$getLootTableId() {
         return this.tlm$lootTableId;
     }
 
@@ -46,10 +46,10 @@ public class LootTableMixin implements ILootTable {
     @Mixin(LootTable.Builder.class)
     public static class BuilderMixin implements ILootTableBuilder {
         @Unique
-        private ResourceLocation tlm$id;
+        private Identifier tlm$id;
 
         @Override
-        public void tlm$setId(ResourceLocation id) {
+        public void tlm$setId(Identifier id) {
             this.tlm$id = id;
         }
 

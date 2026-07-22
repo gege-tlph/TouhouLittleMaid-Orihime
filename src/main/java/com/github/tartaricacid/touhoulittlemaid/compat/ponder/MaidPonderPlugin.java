@@ -4,7 +4,7 @@ import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import net.createmod.ponder.api.registration.PonderPlugin;
 import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.createmod.ponder.foundation.PonderIndex;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 public class MaidPonderPlugin implements PonderPlugin {
@@ -18,7 +18,7 @@ public class MaidPonderPlugin implements PonderPlugin {
     }
 
     @Override
-    public void registerScenes(@NotNull PonderSceneRegistrationHelper<ResourceLocation> helper) {
+    public void registerScenes(@NotNull PonderSceneRegistrationHelper<Identifier> helper) {
         MaidPonderScenes.register(helper);
     }
 }

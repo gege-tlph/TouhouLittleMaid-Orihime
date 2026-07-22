@@ -12,7 +12,7 @@ import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementRewards;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -25,19 +25,19 @@ public class AdvancementDataGen extends FabricAdvancementProvider {
     @Override
     public void generateAdvancement(HolderLookup.Provider provider, Consumer<AdvancementHolder> consumer) {
         genGiveSmartSlabAdvancement(consumer);
-        genMainAdvancement(consumer);
+        genMainAdvancement(provider, consumer);
     }
 
     private static void genGiveSmartSlabAdvancement(Consumer<AdvancementHolder> consumer) {
         Advancement.Builder.advancement()
                 .addCriterion("tick", GiveSmartSlabConfigTrigger.Instance.instance())
                 .rewards(AdvancementRewards.Builder.loot(LootTableGenerator.GIVE_SMART_SLAB))
-                .save(consumer, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "give_smart_slab").toString());
+                .save(consumer, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "give_smart_slab").toString());
     }
 
-    private static void genMainAdvancement(Consumer<AdvancementHolder> consumer) {
-        BaseAdvancement.generate(consumer);
-        MaidBaseAdvancement.generate(consumer);
+    private static void genMainAdvancement(HolderLookup.Provider provider, Consumer<AdvancementHolder> consumer) {
+        BaseAdvancement.generate(provider, consumer);
+        MaidBaseAdvancement.generate(provider, consumer);
         FavorabilityAdvancement.generate(consumer);
         ChallengeAdvancement.generate(consumer);
     }

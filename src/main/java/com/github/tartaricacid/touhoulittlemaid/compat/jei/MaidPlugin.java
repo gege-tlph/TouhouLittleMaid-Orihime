@@ -6,7 +6,7 @@ import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.backpack.
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.backpack.FurnaceBackpackContainerScreen;
 import com.github.tartaricacid.touhoulittlemaid.compat.jei.altar.AltarRecipeCategory;
 import com.github.tartaricacid.touhoulittlemaid.compat.jei.altar.AltarRecipeMaker;
-import com.github.tartaricacid.touhoulittlemaid.compat.jei.altar.EntityPlaceholderSubtype;
+import com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.backpack.CraftingTableBackpackContainer;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.backpack.FurnaceBackpackContainer;
@@ -16,15 +16,18 @@ import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.handlers.IGuiContainerHandler;
 import mezz.jei.api.registration.*;
+import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
 @JeiPlugin
 public class MaidPlugin implements IModPlugin {
-    private static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "jei");
+    private static final Identifier UID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "jei");
+    private static IJeiRuntime runtime;
+    private static boolean altarRecipesRegistered;
 
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
@@ -33,8 +36,41 @@ public class MaidPlugin implements IModPlugin {
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
-        registration.addRecipes(AltarRecipeCategory.ALTAR, AltarRecipeMaker.getInstance().getAltarRecipes());
+        List<com.github.tartaricacid.touhoulittlemaid.compat.jei.altar.AltarRecipeWrapper> altarRecipes =
+                AltarRecipeMaker.getInstance().getAltarRecipes();
+        registration.addRecipes(AltarRecipeCategory.ALTAR, altarRecipes);
+        altarRecipesRegistered = !altarRecipes.isEmpty();
+        TouhouLittleMaid.LOGGER.info("Registered {} altar recipes with JEI", altarRecipes.size());
         registration.addIngredientInfo(InitItems.GARAGE_KIT.getDefaultInstance(), VanillaTypes.ITEM_STACK, Component.translatable("jei.touhou_little_maid.garage_kit.info"));
+    }
+
+    @Override
+    public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
+        runtime = jeiRuntime;
+        addSyncedAltarRecipesIfNeeded();
+    }
+
+    @Override
+    public void onRuntimeUnavailable() {
+        runtime = null;
+        altarRecipesRegistered = false;
+    }
+
+    public static void onSyncedAltarRecipesAvailable() {
+        addSyncedAltarRecipesIfNeeded();
+    }
+
+    private static void addSyncedAltarRecipesIfNeeded() {
+        if (runtime == null || altarRecipesRegistered) {
+            return;
+        }
+        List<com.github.tartaricacid.touhoulittlemaid.compat.jei.altar.AltarRecipeWrapper> altarRecipes =
+                AltarRecipeMaker.getInstance().getAltarRecipes();
+        if (!altarRecipes.isEmpty()) {
+            runtime.getRecipeManager().addRecipes(AltarRecipeCategory.ALTAR, altarRecipes);
+            altarRecipesRegistered = true;
+            TouhouLittleMaid.LOGGER.info("Added {} synchronized altar recipes to the active JEI runtime", altarRecipes.size());
+        }
     }
 
     @Override
@@ -43,22 +79,25 @@ public class MaidPlugin implements IModPlugin {
     }
 
     @Override
-    @SuppressWarnings("removal")
     public void registerItemSubtypes(ISubtypeRegistration registration) {
-        registration.registerSubtypeInterpreter(VanillaTypes.ITEM_STACK, InitItems.ENTITY_PLACEHOLDER, new EntityPlaceholderSubtype());
+
+        registration.registerFromDataComponentTypes(InitItems.ENTITY_PLACEHOLDER, InitDataComponent.RECIPES_ID_TAG);
+        registration.registerFromDataComponentTypes(InitItems.CHAIR, InitDataComponent.MODEL_ID_TAG);
+        registration.registerFromDataComponentTypes(InitItems.GARAGE_KIT, InitDataComponent.MAID_INFO);
     }
 
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
         registration.addRecipeTransferHandler(CraftingTableBackpackContainer.class, CraftingTableBackpackContainer.TYPE, RecipeTypes.CRAFTING, 62, 9, 0, 61);
         registration.addRecipeTransferHandler(FurnaceBackpackContainer.class, FurnaceBackpackContainer.TYPE, RecipeTypes.SMELTING, 61, 1, 0, 61);
-        registration.addRecipeTransferHandler(FurnaceBackpackContainer.class, FurnaceBackpackContainer.TYPE, RecipeTypes.FUELING, 62, 1, 0, 61);
+        registration.addRecipeTransferHandler(FurnaceBackpackContainer.class, FurnaceBackpackContainer.TYPE, RecipeTypes.SMELTING_FUEL, 62, 1, 0, 61);
     }
 
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
+
         registration.addRecipeClickArea(CraftingTableBackpackContainerScreen.class, 213, 121, 13, 12, RecipeTypes.CRAFTING);
-        registration.addRecipeClickArea(FurnaceBackpackContainerScreen.class, 183, 118, 28, 24, RecipeTypes.SMELTING, RecipeTypes.FUELING);
+        registration.addRecipeClickArea(FurnaceBackpackContainerScreen.class, 183, 118, 28, 24, RecipeTypes.SMELTING, RecipeTypes.SMELTING_FUEL);
         registerTaskListArea(registration);
     }
 
@@ -72,7 +111,7 @@ public class MaidPlugin implements IModPlugin {
     }
 
     @Override
-    public ResourceLocation getPluginUid() {
+    public Identifier getPluginUid() {
         return UID;
     }
 }

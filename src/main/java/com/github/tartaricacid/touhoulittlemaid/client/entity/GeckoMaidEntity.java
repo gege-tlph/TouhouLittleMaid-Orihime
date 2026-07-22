@@ -1,205 +1,211 @@
 package com.github.tartaricacid.touhoulittlemaid.client.entity;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
+import com.github.tartaricacid.touhoulittlemaid.api.client.render.MaidRenderState;
 import com.github.tartaricacid.touhoulittlemaid.api.animation.IMagicCastingState;
-import com.github.tartaricacid.touhoulittlemaid.api.entity.IMaid;
 import com.github.tartaricacid.touhoulittlemaid.client.animation.HardcodedAnimationManger;
-import com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.AnimationManager;
+import com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.molang.MolangEventWrapper;
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.EntityMaidRenderer;
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.gecko.GeckoMaidRenderData;
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.state.EntityMaidRenderState;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelInfo;
-import com.github.tartaricacid.touhoulittlemaid.compat.immersivemelodies.client.ImmersiveMelodiesCompat;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.event.ClientTickEvent;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.AnimatableEntity;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.controller.AnimationController;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.event.predicate.AnimationEvent;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.molang.MolangParser;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.molang.context.AnimationContext;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.processor.IBone;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.IGeoEntity;
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.event.AnimationEvent;
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.molang.value.IValue;
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.GeckoRenderData;
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.RenderContext;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.animated.AnimatedGeoModel;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.animated.ILocationModel;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.model.provider.data.EntityModelData;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.resource.GeckoLibCache;
-import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.render.built.GeoLocatorType;
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.resource.GeckoContainer;
+import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
+import it.unimi.dsi.fastutil.booleans.BooleanList;
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.Mob;
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2f;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import org.joml.Math;
 
-import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
-
-
-@SuppressWarnings("UnstableApiUsage")
-public class GeckoMaidEntity<T extends Mob> extends AnimatableEntity<T> implements IGeoEntity {
+/**
+ * Gecko女仆模型的客户端动画外观。模型包初始化/更新 Molang 处理程序是动画契约的一部分：没有它们，模型可以成功渲染，而每个控制器保持静态。
+ */
+public class GeckoMaidEntity<T extends EntityMaid> extends AnimatableEntity<T> {
     @SuppressWarnings("rawtypes")
-    public static final AttachmentType<GeckoMaidEntity> TYPE = AttachmentRegistry.create(getResourceLocation("gecko_maid"),
+    public static final AttachmentType<GeckoMaidEntity> TYPE = AttachmentRegistry.create(
+            Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "gecko_maid"),
             AttachmentRegistry.Builder::copyOnDeath);
 
-    private static final ResourceLocation GECKO_DEFAULT_ID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "fox_miko");
-    private static final ResourceLocation GECKO_DEFAULT_TEXTURE = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/entity/empty.png");
-    private static final int FPS = 60;
-
-    private final IMaid maid;
-    private final Vector2f headRot = new Vector2f();
-    private final MaidState<T> state;
+    private final EntityMaid maid;
+    private final FloatArrayList headRotBackup = new FloatArrayList(2);
     private MaidModelInfo maidInfo;
-    private float currentTick = -1;
-    private boolean modelDirty = false;
-
-    /**
-     * 沉浸式奏乐兼容数据缓存
-     */
-    private ImmersiveMelodiesCompat.ImmersiveMelodiesData imData = new ImmersiveMelodiesCompat.ImmersiveMelodiesData();
-
-    /**
-     * 上一次的魔法咏唱阶段，用于判断阶段过渡时的动画行为
-     */
+    private boolean fireInitEvent = false;
+    private IValue wrappedUpdateHandler = null;
+    private final BooleanList updateHandlerArgs = new BooleanArrayList(1);
     private IMagicCastingState.CastingPhase lastCastingPhase = IMagicCastingState.CastingPhase.NONE;
 
-    public GeckoMaidEntity(T mob, IMaid maid) {
-        super(mob, FPS);
+    public GeckoMaidEntity(T maid) {
+        super(maid, maid.renderState == MaidRenderState.ENTITY);
         this.maid = maid;
-        this.state = new MaidState<>(mob);
-        registerControllers();
     }
 
-    public void registerControllers() {
-        AnimationManager manager = AnimationManager.getInstance();
-        for (int i = 0; i < 8; i++) {
-            String controllerName = String.format("pre_parallel_%d_controller", i);
-            String animationName = String.format("pre_parallel%d", i);
-            addAnimationController(new AnimationController<>(this, controllerName, 0, e -> manager.predicateParallel(e, animationName)));
+    @Override
+    protected GeckoRenderData createRenderData() {
+        return new GeckoMaidRenderData();
+    }
+
+    @Override
+    @SuppressWarnings("resource")
+    protected void extractRenderData(EntityRenderState state, RenderContext ctx, GeckoRenderData data, boolean ticked) {
+        super.extractRenderData(state, ctx, data, ticked);
+        var maidState = (EntityMaidRenderState) state;
+        var maidData = (GeckoMaidRenderData) data;
+        if (((Object) Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(state)) instanceof EntityMaidRenderer renderer) {
+            data.overlayUV = LivingEntityRenderer.getOverlayCoords(maidState, renderer.getWhiteOverlayProgress(maidState));
         }
-        addAnimationController(new AnimationController<>(this, "main", 2, manager::predicateMain));
-        addAnimationController(new AnimationController<>(this, "hold_offhand", 0, manager::predicateOffhandHold));
-        addAnimationController(new AnimationController<>(this, "hold_mainhand", 0, manager::predicateMainhandHold));
-        addAnimationController(new AnimationController<>(this, "swing", 2, manager::predicateSwing));
-        addAnimationController(new AnimationController<>(this, "use", 2, manager::predicateUse));
-        addAnimationController(new AnimationController<>(this, "magic_casting", 2, manager::predicateMagicCastingAnimation));
-        addAnimationController(new AnimationController<>(this, "misc", 2, manager::predicateMisc));
-        addAnimationController(new AnimationController<>(this, "passenger", 2, manager::predicatePassengerAnimation));
-        for (int i = 0; i < 8; i++) {
-            String controllerName = String.format("parallel_%d_controller", i);
-            String animationName = String.format("parallel%d", i);
-            addAnimationController(new AnimationController<>(this, controllerName, 0, e -> manager.predicateParallel(e, animationName)));
-        }
-        for (EquipmentSlot slot : EquipmentSlot.values()) {
-            if (slot.getType() == EquipmentSlot.Type.ANIMAL_ARMOR) {
-                String controllerName = String.format("%s_controller", slot.getName());
-                addAnimationController(new AnimationController<>(this, controllerName, 0, e -> manager.predicateArmor(e, slot)));
+        maidData.climbRotation = Float.NaN;
+        if (entity.onClimbable()) {
+            Optional<BlockPos> climbablePos = entity.getLastClimbablePos();
+            if (climbablePos.isPresent()) {
+                BlockState blockState = entity.level().getBlockState(climbablePos.get());
+                Optional<Direction> facing = blockState.getOptionalValue(HorizontalDirectionalBlock.FACING);
+                facing.ifPresent(direction -> maidData.climbRotation = direction.getOpposite().get2DDataValue() * 90);
             }
         }
     }
 
     @Override
-    @SuppressWarnings("all")
-    public boolean setCustomAnimations(AnimationContext context, @NotNull AnimationEvent event) {
-        List extraData = event.getExtraData();
-        MolangParser parser = GeckoLibCache.getInstance().parser;
-        if (!Minecraft.getInstance().isPaused() && extraData.size() == 1 && extraData.get(0) instanceof EntityModelData data) {
-            var update = super.setCustomAnimations(context, event);
-            AnimatedGeoModel currentModel = this.getCurrentModel();
-            if (currentModel != null) {
-                this.updateHead(data, currentModel, update);
-                HardcodedAnimationManger.playGeckoMaidAnimation(maid, currentModel, event.getLimbSwing(), event.getLimbSwingAmount(),
-                        maid.asEntity().tickCount + event.getPartialTick(), data.netHeadYaw, data.headPitch);
+    public boolean isPreviewEntity() {
+        return entity.renderState != MaidRenderState.ENTITY;
+    }
 
-                // 更新沉浸式奏乐数据
-                ImmersiveMelodiesCompat.updateMelodyProgress(maid.asEntity(), imData);
+    @Override
+    public boolean asyncUpdate(RenderContext ctx) {
+        return entity.renderState == MaidRenderState.ENTITY
+                || entity.renderState == MaidRenderState.STATUE
+                || entity.renderState == MaidRenderState.GARAGE_KIT;
+    }
+
+    @Override
+    public boolean determinImmutableContext(RenderContext ctx) {
+        return entity.renderState != MaidRenderState.ENTITY || super.determinImmutableContext(ctx);
+    }
+
+    @Override
+    public int getFrameRateLimit() {
+        if (entity.renderState == MaidRenderState.ENTITY) {
+            return super.getFrameRateLimit();
+        } else if (entity.renderState == MaidRenderState.GUI) {
+            return ClientTickEvent.getRefreshRate();
+        }
+        return 30;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected void onSetupAnimationController() {
+        var container = getGeckoContainer();
+        if (container != null) {
+            ((Consumer<GeckoMaidEntity<T>>) container.controllerFactory()).accept(this);
+        }
+    }
+
+    @Override
+    protected void onLoadGeckoContainer(GeckoContainer newModel) {
+        super.onLoadGeckoContainer(newModel);
+        var updateHandlers = newModel.asset().eventHandlers().get(MolangEventWrapper.MAID_UPDATE);
+        wrappedUpdateHandler = updateHandlers == null ? null : MolangEventWrapper.wrap(updateHandlers, updateHandlerArgs);
+    }
+
+    @Override
+    protected void resetGeckoContainer() {
+        super.resetGeckoContainer();
+        wrappedUpdateHandler = null;
+    }
+
+    @Override
+    protected void onLoadGeoModel(AnimatedGeoModel model) {
+        super.onLoadGeoModel(model);
+        var heads = model.locatorGroup(GeoLocatorType.HEAD);
+        headRotBackup.size(heads.size() * 2);
+        for (var i = 0; i < heads.size(); i++) {
+            var rotation = heads.get(i).getRotation();
+            headRotBackup.set(i * 2, rotation.x);
+            headRotBackup.set(i * 2 + 1, rotation.y);
+        }
+    }
+
+    @Override
+    protected void resetGeoModel() {
+        super.resetGeoModel();
+        headRotBackup.clear();
+        fireInitEvent = true;
+    }
+
+    @Override
+    protected void codeAnimation(AnimationEvent<? extends AnimatableEntity<T>> event, boolean shouldUpdate) {
+        var model = getLoadedGeoModel();
+        if (model == null) {
+            return;
+        }
+        var renderData = event.getExtraData();
+        HardcodedAnimationManger.playGeckoMaidAnimation(maid, model,
+                event.getLimbSwing(), event.getLimbSwingAmount(), event.getRenderTicks(),
+                renderData.netHeadYaw, renderData.headPitch);
+        var heads = model.locatorGroup(GeoLocatorType.HEAD);
+        for (var i = 0; i < heads.size(); i++) {
+            var rotation = heads.get(i).getRotation();
+            if (shouldUpdate) {
+                headRotBackup.set(i * 2, rotation.x);
+                headRotBackup.set(i * 2 + 1, rotation.y);
             }
-            return update;
-        } else {
-            return super.setCustomAnimations(context, event);
+            rotation.x = headRotBackup.getFloat(i * 2) + Math.toRadians(renderData.headPitch);
+            rotation.y = headRotBackup.getFloat(i * 2 + 1) + Math.toRadians(renderData.netHeadYaw);
         }
     }
 
-    @SuppressWarnings("all")
-    private void updateHead(EntityModelData data, AnimatedGeoModel currentModel, boolean update) {
-        if (currentModel.head() != null) {
-            IBone head = currentModel.head();
-            if (update) {
-                this.headRot.set(head.getRotationX(), head.getRotationY());
+    @Override
+    protected void recoverLastCodedAnimation(boolean lastFrameUpdated) {
+        var model = getLoadedGeoModel();
+        if (model == null) {
+            return;
+        }
+        var heads = model.locatorGroup(GeoLocatorType.HEAD);
+        for (var i = 0; i < heads.size(); i++) {
+            var rotation = heads.get(i).getRotation();
+            rotation.x = headRotBackup.getFloat(i * 2);
+            rotation.y = headRotBackup.getFloat(i * 2 + 1);
+        }
+    }
+
+    @Override
+    protected void preAnimationSetup(float seekTime, boolean shouldTick) {
+        super.preAnimationSetup(seekTime, shouldTick);
+        if (fireInitEvent) {
+            fireInitEvent = false;
+            var initEvent = getEventHandler(MolangEventWrapper.MAID_INIT);
+            if (initEvent != null) {
+                executeMolangExp(MolangEventWrapper.wrap(initEvent), true, true, null);
             }
-            head.setRotationX(this.headRot.x + (float) Math.toRadians(data.headPitch));
-            head.setRotationY(this.headRot.y + (float) Math.toRadians(data.netHeadYaw));
+        }
+        if (wrappedUpdateHandler != null) {
+            updateHandlerArgs.set(0, shouldTick);
+            executeMolangExp(wrappedUpdateHandler, true, true, null);
         }
     }
 
-    @Override
-    public ResourceLocation getModelLocation() {
-        if (this.maidInfo != null && GeckoLibCache.getInstance().getGeoModels().containsKey(this.maidInfo.getModelId())) {
-            return this.maidInfo.getModelId();
-        }
-        return GECKO_DEFAULT_ID;
-    }
-
-    @Override
-    public ResourceLocation getTextureLocation() {
-        return this.maidInfo != null ? maidInfo.getTexture() : GECKO_DEFAULT_TEXTURE;
-    }
-
-    @Override
-    public ResourceLocation getAnimationFileLocation() {
-        if (this.maidInfo != null && GeckoLibCache.getInstance().getAnimations().containsKey(this.maidInfo.getModelId())) {
-            return this.maidInfo.getModelId();
-        }
-        return GECKO_DEFAULT_ID;
-    }
-
-    @Override
-    protected boolean forceUpdate(AnimationEvent<?> animationEvent) {
-        var tick = (float) getCurrentTick(animationEvent);
-        if (tick > this.currentTick) {
-            this.currentTick = tick;
-            this.state.updateState();
-            this.modelDirty = false;
-            return false;
-        }
-        if (this.modelDirty || !this.state.compareState()) {
-            this.state.updateState();
-            this.modelDirty = false;
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public IMaid getMaid() {
+    public EntityMaid getMaid() {
         return maid;
-    }
-
-    @Override
-    public MaidModelInfo getMaidInfo() {
-        return maidInfo;
-    }
-
-    @Override
-    public ILocationModel getGeoModel() {
-        return this.getCurrentModel();
-    }
-
-    @Override
-    public void setMaidInfo(MaidModelInfo info) {
-        if (this.maidInfo != info) {
-            this.maidInfo = info;
-            this.modelDirty = true;
-        }
-    }
-
-    @Override
-    public void setYsmModel(String modelId, String texture) {
-    }
-
-    @Override
-    public void updateRoamingVars(Object2FloatOpenHashMap<String> roamingVars) {
-    }
-
-    public ImmersiveMelodiesCompat.ImmersiveMelodiesData getImmersiveMelodiesData() {
-        return imData;
     }
 
     public IMagicCastingState.CastingPhase getLastCastingPhase() {
@@ -210,26 +216,22 @@ public class GeckoMaidEntity<T extends Mob> extends AnimatableEntity<T> implemen
         this.lastCastingPhase = phase;
     }
 
-    private static class MaidState<T extends Mob> {
-        private final T maid;
+    public MaidModelInfo getMaidInfo() {
+        return maidInfo;
+    }
 
-        private float yHeadRot = 0;
-        private float yBodyRot = 0;
-
-        private MaidState(T maid) {
-            this.maid = maid;
+    public void setMaidInfo(MaidModelInfo info) {
+        waitForAsyncUpdate();
+        if (this.maidInfo != info) {
+            this.maidInfo = info;
+            setModelId(this.maidInfo.getModelId());
         }
+    }
 
-        public boolean compareState() {
-            if (this.yHeadRot != this.maid.yHeadRot || this.yBodyRot != this.maid.yBodyRot) {
-                return false;
-            }
-            return true;
-        }
-
-        public void updateState() {
-            this.yHeadRot = this.maid.yHeadRot;
-            this.yBodyRot = this.maid.yBodyRot;
-        }
+    @Override
+    public void reset() {
+        waitForAsyncUpdate();
+        super.reset();
+        this.maidInfo = null;
     }
 }

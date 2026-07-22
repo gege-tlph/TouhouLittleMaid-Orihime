@@ -1,5 +1,9 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.item;
 
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
 import cn.sh1rocu.touhoulittlemaid.util.forge.network.IEntityExtension;
 import cn.sh1rocu.touhoulittlemaid.util.forge.network.IEntityWithComplexSpawn;
 import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
@@ -36,8 +40,11 @@ import net.minecraft.world.phys.Vec3;
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataAttachment.POWER_NUM;
 
 public class EntityPowerPoint extends Entity implements IEntityWithComplexSpawn, IEntityExtension {
+
     public static final EntityType<EntityPowerPoint> TYPE = EntityType.Builder.<EntityPowerPoint>of(EntityPowerPoint::new, MobCategory.MISC)
-            .sized(0.5F, 0.5F).clientTrackingRange(6).updateInterval(20).build("power_point");
+            .sized(0.5F, 0.5F).clientTrackingRange(6).updateInterval(20)
+            .build(ResourceKey.create(Registries.ENTITY_TYPE,
+                    Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "power_point")));
     private static final int MAX_AGE = 6000;
     public int tickCount;
     public int age;
@@ -93,7 +100,7 @@ public class EntityPowerPoint extends Entity implements IEntityWithComplexSpawn,
     }
 
     public static void spawnExplosionParticle(Level world, float x, float y, float z, RandomSource rand) {
-        if (!world.isClientSide) {
+        if (!world.isClientSide()) {
             return;
         }
         for (int i = 0; i < 5; ++i) {
@@ -112,9 +119,10 @@ public class EntityPowerPoint extends Entity implements IEntityWithComplexSpawn,
         float x = (float) position().x;
         float y = (float) position().y + 0.125F;
         float z = (float) position().z;
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             spawnExplosionParticle(level, x, y, z, random);
         } else {
+
             NetworkHandler.sendToNearby(this, new BeaconAbsorbPackage(x, y, z));
         }
     }
@@ -158,7 +166,7 @@ public class EntityPowerPoint extends Entity implements IEntityWithComplexSpawn,
         double slipperiness = 0.98;
         if (this.onGround()) {
             BlockPos pos = new BlockPos((int) this.getX(), (int) (this.getY() - 1.0), (int) this.getZ());
-            //slipperiness = this.level.getBlockState(pos).getFriction(this.level, pos, this) * 0.98;
+
             slipperiness = this.level.getBlockState(pos).getBlock().getFriction() * 0.98;
         }
         this.setDeltaMovement(this.getDeltaMovement().multiply(slipperiness, 0.98, slipperiness));
@@ -215,38 +223,38 @@ public class EntityPowerPoint extends Entity implements IEntityWithComplexSpawn,
     protected void doWaterSplashEffect() {
     }
 
+
     @Override
-    public boolean hurt(DamageSource source, float amount) {
-        if (this.level.isClientSide || !this.isAlive()) {
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        if (!this.isAlive() || this.isInvulnerableToBase(source)) {
             return false;
         }
-        if (!this.isInvulnerableTo(source)) {
-            this.markHurt();
-            this.health = (int) ((float) this.health - amount);
-            if (this.health <= 0) {
-                this.discard();
-            }
+        this.markHurt();
+        this.health = (int) ((float) this.health - amount);
+        if (this.health <= 0) {
+            this.discard();
         }
         return false;
     }
 
+
     @Override
-    public void addAdditionalSaveData(CompoundTag compound) {
-        compound.putShort("Health", (short) this.health);
-        compound.putShort("Age", (short) this.age);
-        compound.putShort("Value", (short) this.value);
+    public void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput output) {
+        output.putShort("Health", (short) this.health);
+        output.putShort("Age", (short) this.age);
+        output.putShort("Value", (short) this.value);
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag compound) {
-        this.health = compound.getShort("Health");
-        this.age = compound.getShort("Age");
-        this.value = compound.getShort("Value");
+    public void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput input) {
+        this.health = input.getShortOr("Health", (short) 5);
+        this.age = input.getShortOr("Age", (short) 0);
+        this.value = input.getShortOr("Value", (short) 0);
     }
 
     @Override
     public void playerTouch(Player player) {
-        if (this.level.isClientSide) {
+        if (this.level.isClientSide()) {
             return;
         }
 
@@ -267,6 +275,7 @@ public class EntityPowerPoint extends Entity implements IEntityWithComplexSpawn,
                     player.setAttached(POWER_NUM, new PowerAttachment(power.get()));
                 }
             }
+
             ServerPlayNetworking.send((ServerPlayer) player, new SyncDataPackage(power.get(), maidNum.get()));
             this.discard();
             if (player instanceof ServerPlayer serverPlayer) {
@@ -276,8 +285,11 @@ public class EntityPowerPoint extends Entity implements IEntityWithComplexSpawn,
     }
 
     public void take(Entity player, int quantity) {
-        if (this.isAlive() && !this.level.isClientSide) {
-            ((ServerLevel) this.level).getChunkSource().broadcast(this, new ClientboundTakeItemEntityPacket(this.getId(), player.getId(), quantity));
+        if (this.isAlive() && this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.getChunkSource().sendToTrackingPlayers(
+                    this,
+                    new ClientboundTakeItemEntityPacket(this.getId(), player.getId(), quantity)
+            );
         }
     }
 

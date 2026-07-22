@@ -28,7 +28,7 @@ public class PicnicBasketContainer extends AbstractContainerMenu {
             this.addSlot(new SlotItemHandler(container, i, 8 + i * 18, 18) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
-                    //return stack.getFoodProperties(null) != null;
+
                     return stack.get(DataComponents.FOOD) != null;
                 }
             });
@@ -46,7 +46,7 @@ public class PicnicBasketContainer extends AbstractContainerMenu {
     @Override
     public void clicked(int slotId, int button, ClickType clickTypeIn, Player player) {
         // 禁阻一切对当前手持物品的交互，防止刷物品 bug
-        if (slotId == 36 + player.getInventory().selected) {
+        if (slotId == 36 + player.getInventory().getSelectedSlot()) {
             return;
         }
         if (clickTypeIn == ClickType.SWAP) {

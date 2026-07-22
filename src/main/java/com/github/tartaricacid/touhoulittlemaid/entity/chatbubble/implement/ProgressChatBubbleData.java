@@ -1,21 +1,19 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.implement;
 
-import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble.IChatBubbleRenderer;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble.implement.ProgressChatBubbleRenderer;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class ProgressChatBubbleData implements IChatBubbleData {
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "progress");
+    public static final Identifier ID = IdentifierUtil.modLoc("progress");
 
     private final int existTick;
-    private final ResourceLocation bg;
+    private final Identifier bg;
     private final int priority;
     private final Component text;
     private final int barBackgroundColor;
@@ -23,11 +21,13 @@ public class ProgressChatBubbleData implements IChatBubbleData {
     private final double progress;
     private final boolean alignCenter;
 
-    @Environment(EnvType.CLIENT)
     private IChatBubbleRenderer renderer;
 
-    private ProgressChatBubbleData(int existTick, ResourceLocation bg, int priority, Component text, int barBackgroundColor,
-                                   int barForegroundColor, double progress, boolean alignCenter) {
+    private ProgressChatBubbleData(
+            int existTick, Identifier bg, int priority, Component text,
+            int barBackgroundColor, int barForegroundColor,
+            double progress, boolean alignCenter
+    ) {
         this.existTick = existTick;
         this.bg = bg;
         this.priority = priority;
@@ -38,16 +38,27 @@ public class ProgressChatBubbleData implements IChatBubbleData {
         this.alignCenter = alignCenter;
     }
 
-    public static ProgressChatBubbleData create(int existTick, ResourceLocation bg, int priority, Component text,
-                                                int barBackgroundColor, int barForegroundColor, double progress,
-                                                boolean alignCenter) {
-        return new ProgressChatBubbleData(existTick, bg, priority, text, barBackgroundColor, barForegroundColor,
-                progress, alignCenter);
+    public static ProgressChatBubbleData create(
+            int existTick, Identifier bg, int priority, Component text,
+            int barBackgroundColor, int barForegroundColor, double progress,
+            boolean alignCenter
+    ) {
+        return new ProgressChatBubbleData(
+                existTick, bg, priority, text,
+                barBackgroundColor, barForegroundColor,
+                progress, alignCenter
+        );
     }
 
-    public static ProgressChatBubbleData create(Component text, int barBackgroundColor, int barForegroundColor, double progress, boolean alignCenter) {
-        return new ProgressChatBubbleData(DEFAULT_EXIST_TICK, TYPE_2, DEFAULT_PRIORITY, text, barBackgroundColor,
-                barForegroundColor, progress, alignCenter);
+    public static ProgressChatBubbleData create(
+            Component text, int barBackgroundColor,
+            int barForegroundColor, double progress, boolean alignCenter
+    ) {
+        return new ProgressChatBubbleData(
+                DEFAULT_EXIST_TICK, TYPE_2, DEFAULT_PRIORITY,
+                text, barBackgroundColor,
+                barForegroundColor, progress, alignCenter
+        );
     }
 
     @Override
@@ -56,7 +67,7 @@ public class ProgressChatBubbleData implements IChatBubbleData {
     }
 
     @Override
-    public ResourceLocation id() {
+    public Identifier id() {
         return ID;
     }
 
@@ -66,10 +77,12 @@ public class ProgressChatBubbleData implements IChatBubbleData {
     }
 
     @Override
-    @Environment(EnvType.CLIENT)
     public IChatBubbleRenderer getRenderer(IChatBubbleRenderer.Position position) {
         if (renderer == null) {
-            renderer = new ProgressChatBubbleRenderer(this.bg, this.text, this.barBackgroundColor, this.barForegroundColor, this.progress, this.alignCenter);
+            renderer = new ProgressChatBubbleRenderer(
+                    this.bg, this.text, this.barBackgroundColor,
+                    this.barForegroundColor, this.progress, this.alignCenter
+            );
         }
         return renderer;
     }
@@ -78,14 +91,17 @@ public class ProgressChatBubbleData implements IChatBubbleData {
         @Override
         public IChatBubbleData readFromBuff(FriendlyByteBuf buf) {
             // 往客户端同步的数据里，不需要同步 existTick 和 priority，这两个数据仅在服务端有效
-            return new ProgressChatBubbleData(DEFAULT_EXIST_TICK, buf.readResourceLocation(), DEFAULT_PRIORITY, buf.readJsonWithCodec(ComponentSerialization.CODEC),
-                    buf.readInt(), buf.readInt(), buf.readDouble(), buf.readBoolean());
+            return new ProgressChatBubbleData(
+                    DEFAULT_EXIST_TICK, buf.readIdentifier(), DEFAULT_PRIORITY,
+                    buf.readLenientJsonWithCodec(ComponentSerialization.CODEC),
+                    buf.readInt(), buf.readInt(), buf.readDouble(), buf.readBoolean()
+            );
         }
 
         @Override
         public void writeToBuff(FriendlyByteBuf buf, IChatBubbleData data) {
             ProgressChatBubbleData textChat = (ProgressChatBubbleData) data;
-            buf.writeResourceLocation(textChat.bg);
+            buf.writeIdentifier(textChat.bg);
             buf.writeJsonWithCodec(ComponentSerialization.CODEC, textChat.text);
             buf.writeInt(textChat.barBackgroundColor);
             buf.writeInt(textChat.barForegroundColor);

@@ -5,9 +5,12 @@ import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityJoy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -19,21 +22,21 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 public abstract class BlockJoy extends BaseEntityBlock {
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     protected BlockJoy(BlockBehaviour.Properties properties) {
         super(properties);
     }
 
-    public BlockJoy() {
-        this(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).sound(SoundType.WOOD).strength(2.0F, 3.0F).forceSolidOn().noOcclusion());
+    public BlockJoy(Identifier id) {
+        this(BlockBehaviour.Properties.of().setId(ResourceKey.create(Registries.BLOCK, id)).mapColor(MapColor.WOOD).sound(SoundType.WOOD).strength(2.0F, 3.0F).forceSolidOn().noOcclusion());
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
@@ -49,7 +52,7 @@ public abstract class BlockJoy extends BaseEntityBlock {
     }
 
     @Override
-    public ItemInteractionResult useItemOn(ItemStack itemStack, BlockState state, Level worldIn, BlockPos pos, Player playerIn, InteractionHand hand, BlockHitResult hit) {
+    public InteractionResult useItemOn(ItemStack itemStack, BlockState state, Level worldIn, BlockPos pos, Player playerIn, InteractionHand hand, BlockHitResult hit) {
         if (worldIn instanceof ServerLevel serverLevel && playerIn.getItemInHand(hand).isEmpty() && worldIn.getBlockEntity(pos) instanceof TileEntityJoy joy) {
             Entity oldSitEntity = serverLevel.getEntity(joy.getSitId());
             if (oldSitEntity != null && oldSitEntity.isAlive()) {
@@ -61,7 +64,7 @@ public abstract class BlockJoy extends BaseEntityBlock {
             joy.setSitId(newSitEntity.getUUID());
             joy.setChanged();
             playerIn.startRiding(newSitEntity);
-            return ItemInteractionResult.SUCCESS;
+            return InteractionResult.SUCCESS_SERVER;
         }
         return super.useItemOn(itemStack, state, worldIn, pos, playerIn, hand, hit);
     }
@@ -81,19 +84,6 @@ public abstract class BlockJoy extends BaseEntityBlock {
         }
     }
 
-    @Override
-    public void onRemove(BlockState state, Level worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            BlockEntity blockEntity = worldIn.getBlockEntity(pos);
-            if (blockEntity instanceof TileEntityJoy joy && worldIn instanceof ServerLevel serverLevel) {
-                Entity entity = serverLevel.getEntity(joy.getSitId());
-                if (entity instanceof EntitySit) {
-                    entity.discard();
-                }
-            }
-        }
-        super.onRemove(state, worldIn, pos, newState, isMoving);
-    }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
@@ -103,11 +93,6 @@ public abstract class BlockJoy extends BaseEntityBlock {
     @Override
     public boolean isPathfindable(BlockState state, PathComputationType type) {
         return true;
-    }
-
-    @Override
-    public RenderShape getRenderShape(BlockState pState) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
 

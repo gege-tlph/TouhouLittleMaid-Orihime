@@ -1,7 +1,12 @@
 package com.github.tartaricacid.touhoulittlemaid.item;
 
+import java.util.function.Consumer;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -10,13 +15,13 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public class ItemChairShow extends Item {
-    public ItemChairShow() {
-        super((new Properties()).stacksTo(1));
+    public ItemChairShow(Identifier id) {
+        super((new Properties()).setId(ResourceKey.create(Registries.ITEM, id)).stacksTo(1));
     }
 
 
     @Override
-    public void appendHoverText(ItemStack pStack, @Nullable Item.TooltipContext pLevel, List<Component> tooltip, TooltipFlag pIsAdvanced) {
-        tooltip.add((Component.translatable("tooltips.touhou_little_maid.chair_show.desc")).withStyle(ChatFormatting.GRAY));
+    public void appendHoverText(ItemStack pStack, Item.TooltipContext pLevel, TooltipDisplay tooltipDisplay, Consumer<Component> tooltip, TooltipFlag pIsAdvanced){
+        tooltip.accept((Component.translatable("tooltips.touhou_little_maid.chair_show.desc")).withStyle(ChatFormatting.GRAY));
     }
 }

@@ -20,7 +20,7 @@ import static com.github.tartaricacid.touhoulittlemaid.ai.service.SerializerRegi
 public class AvailableSites {
     private static final String FOLDER_NAME = "sites";
 
-    // 服务端缓存的站点信息，包含秘钥等敏感信息
+
     public static final Map<String, LLMSite> LLM_SITES = Maps.newLinkedHashMap();
     public static final Map<String, TTSSite> TTS_SITES = Maps.newLinkedHashMap();
     public static final Map<String, STTSite> STT_SITES = Maps.newLinkedHashMap();

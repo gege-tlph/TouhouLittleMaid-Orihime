@@ -48,7 +48,7 @@ public class MaidCollectHoneyTask extends MaidCheckRateTask {
     protected boolean checkExtraStartConditions(ServerLevel worldIn, EntityMaid maid) {
         if (super.checkExtraStartConditions(worldIn, maid) && maid.canBrainMoving()) {
             BlockPos beehivePos = findBeehive(worldIn, maid);
-            if (beehivePos != null && maid.isWithinRestriction(beehivePos)) {
+            if (beehivePos != null && maid.isWithinHome(beehivePos)) {
                 if (beehivePos.distToCenterSqr(maid.position()) < Math.pow(this.closeEnoughDist, 2)) {
                     maid.getBrain().setMemory(InitEntities.TARGET_POS, new BlockPosTracker(beehivePos));
                     return true;
@@ -101,7 +101,7 @@ public class MaidCollectHoneyTask extends MaidCheckRateTask {
     }
 
     private boolean collectHoneyComb(ServerLevel level, EntityMaid maid, CombinedInvWrapper maidAvailableInv, BlockState hiveBlockState, BlockPos hivePos) {
-        //boolean hasShears = maid.getMainHandItem().canPerformAction(ItemAbilities.SHEARS_HARVEST);
+
         boolean hasShears = maid.getMainHandItem().is(ConventionalItemTags.SHEAR_TOOLS) || maid.getMainHandItem().getItem() instanceof ShearsItem;
         if (hasShears) {
             ItemStack honeyComb = new ItemStack(Items.HONEYCOMB, 3);
@@ -124,7 +124,7 @@ public class MaidCollectHoneyTask extends MaidCheckRateTask {
     private BlockPos findBeehive(ServerLevel world, EntityMaid maid) {
         BlockPos blockPos = maid.getBrainSearchPos();
         PoiManager poiManager = world.getPoiManager();
-        int range = (int) maid.getRestrictRadius();
+        int range = (int) maid.getHomeRadius();
         return poiManager.getInRange(type -> type.is(PoiTypeTags.BEE_HOME), blockPos, range, PoiManager.Occupancy.ANY)
                 .map(PoiRecord::getPos).filter(pos -> canCollectHoney(world, pos))
                 .min(Comparator.comparingDouble(pos -> pos.distSqr(maid.blockPosition()))).orElse(null);

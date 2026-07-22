@@ -39,10 +39,10 @@ public class YsmCompat {
 
     public static YsmMaidInfo getYsmMaidInfo(CompoundTag maidData) {
         if (isInstalled()) {
-            boolean isYsmModel = maidData.getBoolean(EntityMaid.IS_YSM_MODEL_TAG);
-            String ysmModelId = maidData.getString(EntityMaid.YSM_MODEL_ID_TAG);
-            String ysmTextureId = maidData.getString(EntityMaid.YSM_MODEL_TEXTURE_TAG);
-            String ysmName = maidData.getString(EntityMaid.YSM_MODEL_NAME_TAG);
+            boolean isYsmModel = maidData.getBooleanOr(EntityMaid.IS_YSM_MODEL_TAG, false);
+            String ysmModelId = maidData.getStringOr(EntityMaid.YSM_MODEL_ID_TAG, "");
+            String ysmTextureId = maidData.getStringOr(EntityMaid.YSM_MODEL_TEXTURE_TAG, "");
+            String ysmName = maidData.getStringOr(EntityMaid.YSM_MODEL_NAME_TAG, "");
             return new YsmMaidInfo(isYsmModel, ysmModelId, ysmTextureId, ysmName);
         }
         return YsmMaidInfo.EMPTY;

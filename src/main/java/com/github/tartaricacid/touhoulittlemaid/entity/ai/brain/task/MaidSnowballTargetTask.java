@@ -7,17 +7,23 @@ import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
-import net.minecraft.world.entity.projectile.Snowball;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SnowballItem;
+import net.minecraft.world.phys.AABB;
 
 import java.util.Optional;
 
+/**
+ * 女仆打雪仗行为。雪球不记录原版攻击者，避免误伤其他生物后产生仇恨；
+ * 发射初期仍单独排除创建该雪球的女仆，防止雪球撞上自己。
+ */
 public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
     private static final float CHANCE_STOPPING = 1 / 32F;
     private final int attackCooldown;
@@ -99,8 +105,8 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
     }
 
     private void performRangedAttack(EntityMaid shooter, LivingEntity target) {
-        // 发射的是无 shooter 雪球，避免打中其他生物惹来攻击
-        Snowball snowball = new Snowball(shooter.level(), shooter.getX(), shooter.getY(), shooter.getZ());
+        // 使用不带原版 owner 的雪球，避免误伤其他生物后把仇恨归到女仆身上。
+        Snowball snowball = new MaidPlaySnowball(shooter);
         double x = target.getX() - shooter.getX();
         double y = target.getBoundingBox().minY + target.getBbHeight() / 3.0F - snowball.position().y;
         double z = target.getZ() - shooter.getZ();
@@ -108,6 +114,31 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
         snowball.shoot(x, y + pitch, z, 1.6F, 1);
         shooter.playSound(SoundEvents.SNOWBALL_THROW, 0.5F, 0.4F / (shooter.getRandom().nextFloat() * 0.4F + 0.8F));
         shooter.level().addFreshEntity(snowball);
+    }
+
+
+    private static final class MaidPlaySnowball extends Snowball {
+        private final EntityMaid shooter;
+        private boolean leftShooter;
+
+        private MaidPlaySnowball(EntityMaid shooter) {
+            super(shooter.level(), shooter.getX(), shooter.getY(), shooter.getZ(), Items.SNOWBALL.getDefaultInstance());
+            this.shooter = shooter;
+        }
+
+        @Override
+        public void tick() {
+            if (!leftShooter) {
+                AABB sweptBounds = getBoundingBox().expandTowards(getDeltaMovement()).inflate(1.0);
+                leftShooter = !sweptBounds.intersects(shooter.getBoundingBox());
+            }
+            super.tick();
+        }
+
+        @Override
+        protected boolean canHitEntity(Entity entity) {
+            return (leftShooter || entity != shooter) && super.canHitEntity(entity);
+        }
     }
 
     @Override
@@ -128,7 +159,7 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
 
     private boolean inMaxDistance(EntityMaid maid) {
         Optional<LivingEntity> optional = maid.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET);
-        return optional.isPresent() && maid.isWithinRestriction(optional.get().blockPosition());
+        return optional.isPresent() && maid.isWithinHome(optional.get().blockPosition());
     }
 
     private boolean chanceStop(LivingEntity entity) {

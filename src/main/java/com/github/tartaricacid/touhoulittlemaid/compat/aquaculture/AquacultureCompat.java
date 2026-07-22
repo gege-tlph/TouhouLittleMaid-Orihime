@@ -5,7 +5,7 @@ import com.github.tartaricacid.touhoulittlemaid.compat.aquaculture.client.Aquacu
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.fishing.FishingTypeManager;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class AquacultureCompat {
     private static final String MOD_ID = "aquaculture";
@@ -20,7 +20,7 @@ public class AquacultureCompat {
 
     public static void registerFishingType(FishingTypeManager manager) {
         if (INSTALLED) {
-            //manager.addFishingType(new AquacultureFishingType());
+
         }
     }
 
@@ -32,7 +32,7 @@ public class AquacultureCompat {
     }
 
     private static void register() {
-        ResourceLocation location = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "aquaculture_fishing_hook");
-        //Registry.register(BuiltInRegistries.ENTITY_TYPE, location, AquacultureFishingHook.TYPE);
+        Identifier location = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "aquaculture_fishing_hook");
+
     }
 }

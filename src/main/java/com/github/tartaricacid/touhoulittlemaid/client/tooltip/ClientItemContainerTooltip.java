@@ -32,7 +32,7 @@ public class ClientItemContainerTooltip implements ClientTooltipComponent {
     }
 
     @Override
-    public int getHeight() {
+    public int getHeight(Font font) {
         if (emptyTip != null) {
             return 10;
         }
@@ -48,9 +48,9 @@ public class ClientItemContainerTooltip implements ClientTooltipComponent {
     }
 
     @Override
-    public void renderImage(Font font, int pX, int pY, @NotNull GuiGraphics guiGraphics) {
+    public void renderImage(Font font, int pX, int pY, int width, int height, @NotNull GuiGraphics guiGraphics) {
         if (emptyTip != null) {
-            guiGraphics.drawString(font, emptyTip, pX, pY, ChatFormatting.GRAY.getColor());
+            guiGraphics.drawString(font, emptyTip, pX, pY, 0xFF000000 | ChatFormatting.GRAY.getColor());
         } else {
             int i = 0;
             for (ItemStack stack : this.items) {

@@ -1,5 +1,9 @@
 package com.github.tartaricacid.touhoulittlemaid.crafting;
 
+import javax.annotation.Nullable;
+import net.minecraft.world.item.Item;
+import net.minecraft.core.Holder;
+import java.util.stream.Stream;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
@@ -13,7 +17,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
@@ -31,7 +35,7 @@ public final class FallbackIngredient implements CustomIngredient {
     ).apply(instance, FallbackIngredient::new));
 
     private final List<FallbackEntry> fallbacks;
-    private final Ingredient resolvedIngredient;
+    private final @Nullable Ingredient resolvedIngredient;
 
     public FallbackIngredient(List<FallbackEntry> fallbacks) {
         this.fallbacks = List.copyOf(fallbacks);
@@ -42,19 +46,20 @@ public final class FallbackIngredient implements CustomIngredient {
         return this.fallbacks;
     }
 
+
     @Override
     public boolean test(ItemStack stack) {
-        return this.resolvedIngredient.test(stack);
+        return this.resolvedIngredient != null && this.resolvedIngredient.test(stack);
     }
 
     @Override
-    public List<ItemStack> getMatchingStacks() {
-        return List.of(this.resolvedIngredient.getItems());
+    public Stream<Holder<Item>> getMatchingItems() {
+        return this.resolvedIngredient == null ? Stream.empty() : this.resolvedIngredient.items();
     }
 
     @Override
     public boolean requiresTesting() {
-        return this.resolvedIngredient.requiresTesting();
+        return this.resolvedIngredient != null && this.resolvedIngredient.requiresTesting();
     }
 
     @Override
@@ -62,6 +67,10 @@ public final class FallbackIngredient implements CustomIngredient {
         return Serializer.INSTANCE;
     }
 
+    /**
+     * @return 首个「mod 已加载且 JSON 解析成功」的 Ingredient；均不满足时返回 null（= 什么都不匹配）
+     */
+    @Nullable
     private static Ingredient resolveIngredient(List<FallbackEntry> fallbacks) {
         for (FallbackEntry entry : fallbacks) {
             if (!FabricLoader.getInstance().isModLoaded(entry.modid())) {
@@ -73,7 +82,7 @@ public final class FallbackIngredient implements CustomIngredient {
                 return parsed.get();
             }
         }
-        return Ingredient.EMPTY;
+        return null;
     }
 
     public record FallbackEntry(String modid, JsonElement value) {
@@ -99,18 +108,18 @@ public final class FallbackIngredient implements CustomIngredient {
         return Objects.hash(this.fallbacks);
     }
 
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "fallback_ingredient");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "fallback_ingredient");
 
     public static class Serializer implements CustomIngredientSerializer<FallbackIngredient> {
         public static final Serializer INSTANCE = new Serializer();
 
         @Override
-        public ResourceLocation getIdentifier() {
+        public Identifier getIdentifier() {
             return ID;
         }
 
         @Override
-        public MapCodec<FallbackIngredient> getCodec(boolean b) {
+        public MapCodec<FallbackIngredient> getCodec() {
             return CODEC;
         }
 

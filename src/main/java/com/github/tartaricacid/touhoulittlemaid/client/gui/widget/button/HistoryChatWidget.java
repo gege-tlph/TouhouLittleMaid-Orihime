@@ -2,7 +2,6 @@ package com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.util.GuiTools;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -10,16 +9,20 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 
 import java.util.List;
 
 public class HistoryChatWidget extends AbstractWidget {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_history_chat.png");
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_history_chat.png");
     private static final long TICKS_PER_DAY = 24000;
     private static final long TICKS_PER_HOUR = 1000;
+    public static final float TOOL_TEXT_SCALE = 0.65f;
+    private static final float TIMESTAMP_TEXT_SCALE = 0.65f;
 
     /**
      * 普通的 LLM 返回的聊天消息
@@ -30,10 +33,10 @@ public class HistoryChatWidget extends AbstractWidget {
      */
     private final boolean isTool;
 
-    private final ResourceLocation playerSkin;
+    private final Identifier playerSkin;
     private final Component time;
 
-    public HistoryChatWidget(int pX, int pY, int width, int height, Component message, ResourceLocation playerSkin,
+    public HistoryChatWidget(int pX, int pY, int width, int height, Component message, Identifier playerSkin,
                              long gameTime, boolean isLeft, boolean isTool) {
         super(pX, pY, width, height, message);
         this.isLeft = isLeft;
@@ -67,9 +70,7 @@ public class HistoryChatWidget extends AbstractWidget {
 
     @Override
     protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.setColor(1, 1, 1, this.alpha);
-        RenderSystem.enableBlend();
-        RenderSystem.enableDepthTest();
+
         if (this.isTool) {
             // 工具消息只渲染文本
             this.renderToolText(graphics, Minecraft.getInstance().font);
@@ -82,21 +83,22 @@ public class HistoryChatWidget extends AbstractWidget {
     }
 
     private void renderToolText(GuiGraphics graphics, Font font) {
-        float scale = 0.5f;
-        int width = (int) (this.getWidth() / scale);
+        float scale = TOOL_TEXT_SCALE;
+        int width = getToolTextWidth(this.getWidth());
         float posX = this.getX() / scale + width / 2f;
         float posY = this.getY() / scale;
 
-        graphics.pose().pushPose();
-        graphics.pose().scale(scale, scale, 1);
+
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(scale, scale);
 
         List<FormattedCharSequence> lines = font.split(this.getMessage(), width);
 
         for (int i = 0; i < lines.size(); i++) {
-            graphics.drawCenteredString(font, lines.get(i), (int) posX, (int) posY + i * font.lineHeight, 0x999999);
+            graphics.drawCenteredString(font, lines.get(i), (int) posX, (int) posY + i * font.lineHeight, 0xFF999999);
         }
 
-        graphics.pose().popPose();
+        graphics.pose().popMatrix();
     }
 
     private void drawAvatar(GuiGraphics graphics) {
@@ -104,9 +106,10 @@ public class HistoryChatWidget extends AbstractWidget {
         int offset = 6;
         int xOffset = this.isLeft ? (-size - offset) : this.getWidth() + offset;
         if (isLeft) {
-            graphics.blit(TEXTURE, this.getX() + xOffset, this.getHeightMiddle(size), 0, 16, size, size, 128, 128);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, this.getX() + xOffset, this.getHeightMiddle(size), 0F, 16F, size, size, 128, 128);
         } else {
-            PlayerFaceRenderer.draw(graphics, this.playerSkin, this.getX() + xOffset, this.getHeightMiddle(size), size);
+
+            PlayerFaceRenderer.draw(graphics, this.playerSkin, this.getX() + xOffset, this.getHeightMiddle(size), size, true, false, -1);
         }
     }
 
@@ -114,38 +117,44 @@ public class HistoryChatWidget extends AbstractWidget {
         int heightMiddle = this.getHeightMiddle(14);
         GuiTools.blitNineSliced(graphics, TEXTURE, this.getX(), this.getY(), this.getWidth(), this.getHeight(),
                 8, 4, 100, 16, 0, this.getTextureY());
+
         if (isLeft) {
-            graphics.blit(TEXTURE, this.getX() - 4, heightMiddle, 100, 16, 6, 14);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, this.getX() - 4, heightMiddle, 100F, 16F, 6, 14, 256, 256);
         } else {
-            graphics.blit(TEXTURE, this.getX() + this.getWidth() - 2, heightMiddle, 100, 0, 6, 14);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, this.getX() + this.getWidth() - 2, heightMiddle, 100F, 0F, 6, 14, 256, 256);
         }
     }
 
     public void renderString(GuiGraphics graphics, Font font) {
         Component message = this.getMessage();
-        graphics.setColor(1, 1, 1, 1);
+
         if (isLeft) {
-            graphics.drawWordWrap(font, message, this.getX() + 5, this.getY() + 5, this.getWidth() - 10, 0x555555);
+            graphics.drawWordWrap(font, message, this.getX() + 5, this.getY() + 5, this.getWidth() - 10, 0xFF555555);
         } else {
-            graphics.drawWordWrap(font, message, this.getX() + 5, this.getY() + 5, this.getWidth() - 10, 0xFFFFFF);
+            graphics.drawWordWrap(font, message, this.getX() + 5, this.getY() + 5, this.getWidth() - 10, 0xFFFFFFFF);
         }
 
-        float scale = 0.5f;
-        graphics.pose().pushPose();
-        graphics.pose().scale(scale, scale, 0);
+        float scale = TIMESTAMP_TEXT_SCALE;
+        float timeY = this.getY() - font.lineHeight * scale - 2.0f;
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(scale, scale);
         if (isLeft) {
             graphics.drawString(font, this.time.getVisualOrderText(),
                     (int) ((this.getX() + 2) / scale),
-                    (int) ((this.getY() - 5) / scale),
-                    0x999999, false);
+                    Math.round(timeY / scale),
+                    0xFF999999, false);
         } else {
             float width = font.width(this.time) * scale;
             graphics.drawString(font, this.time.getVisualOrderText(),
                     (int) ((this.getX() + this.getWidth() - width - 2) / scale),
-                    (int) ((this.getY() - 5) / scale),
-                    0x999999, false);
+                    Math.round(timeY / scale),
+                    0xFF999999, false);
         }
-        graphics.pose().popPose();
+        graphics.pose().popMatrix();
+    }
+
+    public static int getToolTextWidth(int width) {
+        return Math.max(1, Mth.floor(width / TOOL_TEXT_SCALE));
     }
 
     private int getTextureY() {

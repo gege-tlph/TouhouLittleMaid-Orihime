@@ -3,6 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.input.MouseButtonEvent;
 
 import java.util.function.BiConsumer;
 
@@ -17,9 +18,10 @@ public class WirelessIOButton extends TouhouStateSwitchButton {
     }
 
     @Override
-    public void onClick(double mouseX, double mouseY) {
+
+    public void onClick(MouseButtonEvent event, boolean doubleClick) {
         this.isStateTriggered = !this.isStateTriggered;
-        onClick.accept(mouseX, mouseY);
+        onClick.accept(event.x(), event.y());
     }
 
     @Override

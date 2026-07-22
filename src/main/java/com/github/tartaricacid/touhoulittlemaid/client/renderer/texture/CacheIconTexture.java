@@ -1,43 +1,34 @@
 package com.github.tartaricacid.touhoulittlemaid.client.renderer.texture;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.platform.TextureUtil;
-import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.texture.ReloadableTexture;
+import net.minecraft.client.renderer.texture.TextureContents;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 
-public class CacheIconTexture extends AbstractTexture {
-    private final ResourceLocation modelId;
+import java.io.IOException;
+
+public class CacheIconTexture extends ReloadableTexture {
+    private final Identifier modelId;
     private NativeImage imageIn;
 
-    public CacheIconTexture(ResourceLocation modelId, NativeImage imageIn) {
+    public CacheIconTexture(Identifier modelId, NativeImage imageIn) {
+        super(modelId);
         this.modelId = modelId;
         this.imageIn = imageIn;
     }
 
     @Override
-    public void load(ResourceManager manager) {
-        if (!RenderSystem.isOnRenderThreadOrInit()) {
-            RenderSystem.recordRenderCall(this::doLoad);
-        } else {
-            this.doLoad();
-        }
-    }
-
-    private void doLoad() {
+    public TextureContents loadContents(ResourceManager manager) throws IOException {
         if (imageIn == null) {
-            return;
+            return TextureContents.createMissing();
         }
-        int width = imageIn.getWidth();
-        int height = imageIn.getHeight();
-        TextureUtil.prepareImage(this.getId(), 0, width, height);
-        imageIn.upload(0, 0, 0, 0, 0, width, height, false, false, false, true);
-        // 释放内存
-        imageIn = null;
+        NativeImage image = this.imageIn;
+        this.imageIn = null;
+        return new TextureContents(image, null);
     }
 
-    public ResourceLocation getModelId() {
+    public Identifier getModelId() {
         return modelId;
     }
 }

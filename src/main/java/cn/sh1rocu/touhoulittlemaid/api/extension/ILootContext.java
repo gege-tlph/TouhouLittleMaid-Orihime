@@ -1,9 +1,9 @@
 package cn.sh1rocu.touhoulittlemaid.api.extension;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public interface ILootContext {
-    ResourceLocation tlm$getQueriedLootTableId();
+    Identifier tlm$getQueriedLootTableId();
 
-    void tlm$setQueriedLootTableId(ResourceLocation queriedLootTableId);
+    void tlm$setQueriedLootTableId(Identifier queriedLootTableId);
 }

@@ -6,7 +6,7 @@ import com.github.tartaricacid.touhoulittlemaid.datapack.pojo.BoardStateRecord;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.IoSupplier;
@@ -20,13 +20,13 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class BoardStateDataReloadListener implements ResourceManagerReloadListener, IdentifiableResourceReloadListener {
-    private static final ResourceLocation CHESS_PATH = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "board_states/chess.json");
-    private static final ResourceLocation XIANGQI_PATH = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "board_states/xiangqi.json");
-    private static final ResourceLocation GOMOKU_PATH = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "board_states/gomoku.json");
+    private static final Identifier CHESS_PATH = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "board_states/chess.json");
+    private static final Identifier XIANGQI_PATH = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "board_states/xiangqi.json");
+    private static final Identifier GOMOKU_PATH = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "board_states/gomoku.json");
 
     private static final Gson GSON = new Gson();
 
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "board_states_reload");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "board_states_reload");
 
     @Override
     public void onResourceManagerReload(ResourceManager resourceManager) {
@@ -40,7 +40,7 @@ public class BoardStateDataReloadListener implements ResourceManagerReloadListen
         });
     }
 
-    private static void readData(PackResources packResources, ResourceLocation path, Consumer<List<BoardStateRecord>> adder) {
+    private static void readData(PackResources packResources, Identifier path, Consumer<List<BoardStateRecord>> adder) {
         IoSupplier<InputStream> resource = packResources.getResource(PackType.SERVER_DATA, path);
         if (resource == null) {
             return;
@@ -57,7 +57,7 @@ public class BoardStateDataReloadListener implements ResourceManagerReloadListen
     }
 
     @Override
-    public ResourceLocation getFabricId() {
+    public Identifier getFabricId() {
         return ID;
     }
 }

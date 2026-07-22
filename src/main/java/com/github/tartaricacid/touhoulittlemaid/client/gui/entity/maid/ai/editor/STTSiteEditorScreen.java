@@ -106,7 +106,7 @@ public class STTSiteEditorScreen extends Screen {
         box.active = field.editable;
         box.setValue(field.value);
         if (field.secret) {
-            box.setFormatter((text, pos) -> FormattedCharSequence.forward("·".repeat(text.length()), Style.EMPTY));
+            box.addFormatter((text, pos) -> FormattedCharSequence.forward("·".repeat(text.length()), Style.EMPTY));
         }
         this.addWidget(box);
         field.box = box;
@@ -114,7 +114,6 @@ public class STTSiteEditorScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
         graphics.fillGradient(0, 0, this.width, this.height, 0xc0101010, 0xc0101010);
 
         // 居中标题

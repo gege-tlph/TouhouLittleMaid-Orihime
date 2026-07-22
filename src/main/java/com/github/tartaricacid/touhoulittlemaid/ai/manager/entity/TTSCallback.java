@@ -35,7 +35,7 @@ public class TTSCallback implements ResponseCallback<byte[]> {
                 if (maid.getOwner() instanceof ServerPlayer player) {
                     String cause = throwable.getLocalizedMessage();
                     MutableComponent errorMessage = ErrorCode.getErrorMessage(ServiceType.TTS, errorCode, cause);
-                    player.sendSystemMessage(errorMessage.withStyle(ChatFormatting.RED));
+                    player.displayClientMessage(errorMessage.withStyle(ChatFormatting.RED), false);
                 }
                 maid.getChatBubbleManager().addLLMChatText(chatText, waitingChatBubbleId);
             });

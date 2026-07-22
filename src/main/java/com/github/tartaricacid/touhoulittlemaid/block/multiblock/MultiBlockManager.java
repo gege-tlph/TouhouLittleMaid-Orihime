@@ -18,6 +18,7 @@ public final class MultiBlockManager {
     public static void init() {
         MultiBlockManager manager = new MultiBlockManager();
         manager.add(new MultiBlockAltar());
+
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             littleMaid.addMultiBlock(manager);
         }

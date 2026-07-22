@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.client.input;
 
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaidClient;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.entity.STTCallback;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.AvailableSites;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.stt.STTConfig;
@@ -12,6 +13,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
@@ -26,11 +28,10 @@ import java.util.function.Consumer;
 @Environment(EnvType.CLIENT)
 public class STTChatKey {
     public static final KeyMapping STT_CHAT_KEY = new KeyMapping("key.touhou_little_maid.stt_chat.desc",
-//            KeyConflictContext.IN_GAME,
-//            KeyModifier.NONE,
+// KeyConflictContext.IN_GAME,KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_X,
-            "key.category.touhou_little_maid");
+            TouhouLittleMaidClient.KEY_CATEGORY);
 
     public static void onSttChatPress(int key, int scanCode, int action, int mods) {
         if (keyIsMatch(key, scanCode, action, mods)) {
@@ -61,8 +62,8 @@ public class STTChatKey {
     }
 
     private static boolean keyIsMatch(int key, int scanCode, int action, int mods) {
-        return STT_CHAT_KEY.matches(key, scanCode)
-                /*&& STT_CHAT_KEY.getKeyModifier().equals(KeyModifier.getActiveModifier())*/;
+        return STT_CHAT_KEY.matches(new KeyEvent(key, scanCode, mods))
+;
     }
 
     private static void getNearestMaid(LocalPlayer player, Consumer<EntityMaid> consumer, boolean isStart) {
@@ -76,7 +77,7 @@ public class STTChatKey {
             return;
         }
         if (isStart) {
-            player.sendSystemMessage(Component.translatable("ai.touhou_little_maid.chat.stt.no_maid_found", range));
+            player.displayClientMessage(Component.translatable("ai.touhou_little_maid.chat.stt.no_maid_found", range), false);
         }
     }
 
@@ -105,7 +106,7 @@ public class STTChatKey {
         }
         STTSite sttSite = AvailableSites.getSTTSite(AIConfig.STT_TYPE.get().getName());
         if (!sttSite.enabled()) {
-            player.sendSystemMessage(Component.translatable("ai.touhou_little_maid.chat.stt.empty"));
+            player.displayClientMessage(Component.translatable("ai.touhou_little_maid.chat.stt.empty"), false);
             return;
         }
         tryToStart(maid, player, sttSite);

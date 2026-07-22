@@ -47,7 +47,7 @@ public record YsmMaidModelPackage(int maidId, String modeId, String texture,
                     maid.setYsmModel(message.modeId, message.texture, message.name);
                     InitTrigger.MAID_EVENT.trigger(sender, TriggerType.CHANGE_MAID_MODEL);
                 } else {
-                    sender.sendSystemMessage(Component.translatable("message.touhou_little_maid.change_model.disabled"));
+                    sender.displayClientMessage(Component.translatable("message.touhou_little_maid.change_model.disabled"), false);
                 }
             }
         });

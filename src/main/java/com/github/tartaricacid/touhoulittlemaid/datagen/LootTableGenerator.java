@@ -15,7 +15,7 @@ import net.fabricmc.fabric.api.datagen.v1.provider.SimpleFabricLootTableProvider
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.BedPart;
@@ -65,7 +65,7 @@ public class LootTableGenerator {
     public static final ResourceKey<LootTable> RANDOM_BOARD_STATE = getLootTableKey("chest/random_board_state");
 
     public static ResourceKey<LootTable> getLootTableKey(String name) {
-        return ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, name));
+        return ResourceKey.create(Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, name));
     }
 
     public static class ChestLootTables extends SimpleFabricLootTableProvider {
@@ -230,7 +230,7 @@ public class LootTableGenerator {
 
         @Override
         public void generate(BiConsumer<ResourceKey<LootTable>, LootTable.Builder> consumer) {
-            consumer.accept(InitEntities.BOX.getDefaultLootTable(), LootTable.lootTable().withPool(LootPool.lootPool()
+            consumer.accept(InitEntities.BOX.getDefaultLootTable().orElseThrow(), LootTable.lootTable().withPool(LootPool.lootPool()
                     .setRolls(ConstantValue.exactly(1))
                     .add(LootItem.lootTableItem(Items.PAPER))));
         }

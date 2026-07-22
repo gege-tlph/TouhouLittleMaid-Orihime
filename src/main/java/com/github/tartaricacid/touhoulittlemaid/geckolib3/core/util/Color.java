@@ -1,6 +1,4 @@
-/*
-    Direct copy of https://github.com/shedaniel/cloth-basic-math/blob/master/src/main/java/me/shedaniel/math/Color.java under the unlicense.
- */
+/* 无许可证下直接复制https://github.com/shedaniel/cloth-basic-math/blob/master/src/main/java/me/shedaniel/math/Color.java。 */
 package com.github.tartaricacid.touhoulittlemaid.geckolib3.core.util;
 
 

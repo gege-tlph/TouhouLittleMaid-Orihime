@@ -3,7 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.ai.manager.entity.grounded;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.entity.LLMCallback;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.entity.MaidAIChatManager;
-import com.github.tartaricacid.touhoulittlemaid.ai.manager.entity.summary.HistorySummaryPrompts;
+import com.github.tartaricacid.touhoulittlemaid.ai.manager.entity.HistorySummaryPrompts;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.response.ResponseChat;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.LLMClient;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.LLMMessage;

@@ -1,0 +1,22 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "cases": [
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "touhou_little_maid:item/extinguisher"
+        },
+        "when": [
+          "gui",
+          "fixed"
+        ]
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "touhou_little_maid:item/extinguisher_in_hand"
+    },
+    "property": "minecraft:display_context"
+  }
+}

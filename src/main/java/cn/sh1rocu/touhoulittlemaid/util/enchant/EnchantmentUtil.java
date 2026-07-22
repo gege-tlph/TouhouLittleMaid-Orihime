@@ -10,9 +10,9 @@ import net.minecraft.world.item.enchantment.Enchantment;
 
 public class EnchantmentUtil {
     public static boolean canEnchant(ItemStack stack, ResourceKey<Enchantment> key, RegistryAccess registryAccess) {
-        Registry<Enchantment> registry = registryAccess.registryOrThrow(Registries.ENCHANTMENT);
-        Enchantment enchantment = registry.get(key);
-        return (enchantment != null && enchantment.canEnchant(stack)) ||
-                stack.canBeEnchantedWith(registry.getHolder(key).orElseThrow(), EnchantingContext.ACCEPTABLE);
+        Registry<Enchantment> registry = registryAccess.lookupOrThrow(Registries.ENCHANTMENT);
+        var enchantmentHolder = registry.get(key);
+        return (enchantmentHolder.isPresent() && enchantmentHolder.get().value().canEnchant(stack)) ||
+                stack.canBeEnchantedWith(enchantmentHolder.orElseThrow(), EnchantingContext.ACCEPTABLE);
     }
 }

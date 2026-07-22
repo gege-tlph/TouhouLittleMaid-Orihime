@@ -28,7 +28,7 @@ public class DefaultMaidHealSelfMeal implements IMaidMeal {
 
     @Override
     public void onMaidEat(EntityMaid maid, ItemStack stack, InteractionHand hand) {
-        //FoodProperties foodProperties = stack.getFoodProperties(maid);
+
         FoodProperties foodProperties = stack.get(DataComponents.FOOD);
         if (foodProperties != null) {
             // 调用饰品
@@ -40,7 +40,6 @@ public class DefaultMaidHealSelfMeal implements IMaidMeal {
             maid.startUsingItem(hand);
             int nutrition = foodProperties.nutrition();
             float saturation = foodProperties.saturation();
-            // 1.21 修改了营养值数值大小和相关计算，删去了 saturationModifier，改为直接加和
             float total = nutrition + saturation;
             // 原版的熟牛肉之类的一般在 20 左右（除了迷之炖菜为 34.2）
             if (maid.getRandom().nextInt(MAX_PROBABILITY) < total) {

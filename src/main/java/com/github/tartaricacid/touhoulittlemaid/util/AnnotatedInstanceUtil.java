@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Copy from https://github.com/mezz/JustEnoughItems/blob/1.21.1/Fabric/src/main/java/mezz/jei/fabric/startup/FabricPluginFinder.java
+ * 从 https://github.com/mezz/JustEnoughItems/blob/1.21.1/Fabric/src/main/java/mezz/jei/fabric/startup/FabricPluginFinder.java 复制
  */
 public final class AnnotatedInstanceUtil {
     public static List<ILittleMaid> getModExtensions() {

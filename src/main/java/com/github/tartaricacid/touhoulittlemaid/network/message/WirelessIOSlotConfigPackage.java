@@ -9,15 +9,14 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record WirelessIOSlotConfigPackage(List<Boolean> configData) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<WirelessIOSlotConfigPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("wireless_slot_config"));
+    public static final CustomPacketPayload.Type<WirelessIOSlotConfigPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("wireless_slot_config"));
     public static final StreamCodec<ByteBuf, WirelessIOSlotConfigPackage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL.apply(ByteBufCodecs.list()),
             WirelessIOSlotConfigPackage::configData,
@@ -43,7 +42,7 @@ public record WirelessIOSlotConfigPackage(List<Boolean> configData) implements C
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

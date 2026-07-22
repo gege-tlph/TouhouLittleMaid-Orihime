@@ -1,22 +1,21 @@
 package com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.condition;
 
-import com.google.common.collect.Lists;
-import net.minecraft.core.registries.BuiltInRegistries;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 
-import java.util.List;
+import java.util.Set;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.isValidResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.isValid;
 
 public class ConditionalPassenger {
     private static final String EMPTY = "";
-    private final List<ResourceLocation> idTest = Lists.newArrayList();
-    private final List<TagKey<EntityType<?>>> tagTest = Lists.newArrayList();
+    private final Set<Identifier> idTest = new ReferenceOpenHashSet<>();
+    private final Set<TagKey<EntityType<?>>> tagTest = new ReferenceOpenHashSet<>();
     private final String idPre;
     private final String tagPre;
 
@@ -31,13 +30,13 @@ public class ConditionalPassenger {
             return;
         }
         String substring = name.substring(preSize);
-        if (name.startsWith(idPre) && isValidResourceLocation(substring)) {
-            idTest.add(ResourceLocation.parse(substring));
+        if (name.startsWith(idPre) && isValid(substring)) {
+            idTest.add(Identifier.parse(substring));
         }
-        if (name.startsWith(tagPre) && isValidResourceLocation(substring)) {
+        if (name.startsWith(tagPre) && isValid(substring)) {
             tagTest.add(TagKey.create(
                     Registries.ENTITY_TYPE,
-                    ResourceLocation.parse(substring)
+                    Identifier.parse(substring)
             ));
         }
     }
@@ -54,11 +53,12 @@ public class ConditionalPassenger {
         return result;
     }
 
+    @SuppressWarnings("deprecation")
     private String doIdTest(Entity passenger) {
         if (idTest.isEmpty()) {
             return EMPTY;
         }
-        ResourceLocation registryName = BuiltInRegistries.ENTITY_TYPE.getKey(passenger.getType());
+        Identifier registryName = passenger.getType().builtInRegistryHolder().key().identifier();
         if (idTest.contains(registryName)) {
             return idPre + registryName;
         }
@@ -69,6 +69,10 @@ public class ConditionalPassenger {
         if (tagTest.isEmpty()) {
             return EMPTY;
         }
-        return tagTest.stream().filter(tag -> passenger.getType().is(tag)).findFirst().map(itemTagKey -> tagPre + itemTagKey.location()).orElse(EMPTY);
+        return tagTest.stream()
+                .filter(tag -> passenger.getType().is(tag))
+                .findFirst()
+                .map(itemTagKey -> tagPre + itemTagKey.location())
+                .orElse(EMPTY);
     }
 }

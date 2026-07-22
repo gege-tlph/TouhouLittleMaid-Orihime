@@ -6,7 +6,7 @@ import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.cache.CacheIco
 import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.DirectButton;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.ImageButtonWithId;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.TouhouImageButton;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.CustomPackLoader;
+import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelInfo;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.network.message.SaveSwitcherDataPackage;
@@ -21,18 +21,20 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.List;
 import java.util.UUID;
 
 public class ModelSwitcherGui extends Screen {
-    private static final ResourceLocation BG = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/model_switcher.png");
-    private static final ResourceLocation DEFAULT_MODEL_ID = ResourceLocation.parse("touhou_little_maid:hakurei_reimu");
+    private static final Identifier BG = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/model_switcher.png");
+    private static final Identifier DEFAULT_MODEL_ID = Identifier.parse("touhou_little_maid:hakurei_reimu");
     private final List<TileEntityModelSwitcher.ModeInfo> infoList;
     private final BlockPos pos;
     private final int maxRow = 6;
@@ -147,12 +149,12 @@ public class ModelSwitcherGui extends Screen {
     }
 
     @Override
-    public void resize(Minecraft pMinecraft, int pWidth, int pHeight) {
+    public void resize(int pWidth, int pHeight) {
         String value = "";
         if (this.description != null) {
             value = this.description.getValue();
         }
-        super.resize(pMinecraft, pWidth, pHeight);
+        super.resize(pWidth, pHeight);
         if (this.description != null) {
             this.description.setValue(value);
         }
@@ -163,14 +165,13 @@ public class ModelSwitcherGui extends Screen {
         if (this.maid == null) {
             return;
         }
-        this.renderBackground(graphics, pMouseX, pMouseY, pPartialTick);
-        graphics.blit(BG, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos, topPos, 0F, 0F, imageWidth, imageHeight, 256, 256);
         if (bindUuid != null) {
-            graphics.drawCenteredString(font, bindUuid.toString(), leftPos + 128, topPos - 10, 0xffffff);
+            graphics.drawCenteredString(font, bindUuid.toString(), leftPos + 128, topPos - 10, 0xffffffff);
         } else {
-            graphics.drawCenteredString(font, Component.translatable("gui.touhou_little_maid.model_switcher.uuid.empty"), leftPos + 128, topPos - 10, 0xffffff);
+            graphics.drawCenteredString(font, Component.translatable("gui.touhou_little_maid.model_switcher.uuid.empty"), leftPos + 128, topPos - 10, 0xffffffff);
         }
-        graphics.drawCenteredString(font, String.format("%d/%d", page + 1, (infoList.size() - 1) / maxRow + 1), leftPos + 193, topPos + 12, 0xffffff);
+        graphics.drawCenteredString(font, String.format("%d/%d", page + 1, (infoList.size() - 1) / maxRow + 1), leftPos + 193, topPos + 12, 0xffffffff);
         if (this.description != null) {
             InventoryScreen.renderEntityInInventoryFollowsMouse(
                     graphics,
@@ -198,7 +199,7 @@ public class ModelSwitcherGui extends Screen {
             if (CustomPackLoader.MAID_MODELS.getInfo(modelId).isPresent()) {
                 MaidModelInfo info = CustomPackLoader.MAID_MODELS.getInfo(modelId).get();
                 MutableComponent component = Component.translatable(ParseI18n.getI18nKey(info.getName()));
-                graphics.drawCenteredString(font, component, leftPos + 193, startOffsetY, 0xffffff);
+                graphics.drawCenteredString(font, component, leftPos + 193, startOffsetY, 0xffffffff);
             }
             startOffsetY += 19;
         }
@@ -214,12 +215,12 @@ public class ModelSwitcherGui extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (this.description != null && this.description.mouseClicked(mouseX, mouseY, button)) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (this.description != null && this.description.mouseClicked(event, doubleClick)) {
             this.setFocused(this.description);
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override

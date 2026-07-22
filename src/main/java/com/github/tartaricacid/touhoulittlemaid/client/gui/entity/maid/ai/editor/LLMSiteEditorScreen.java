@@ -112,13 +112,13 @@ public class LLMSiteEditorScreen extends Screen {
         this.siteIdInput = this.addInput(left, this.startY + 30, 124, SITE_ID_NAME, siteIdValue);
         this.siteIdInput.active = this.createMode;
 
-        // URL
+        // 网址
         this.urlInput = this.addInput(left + 132, this.startY + 30, contentWidth - 132, URL_NAME, urlValue);
 
         // 秘钥，隐藏显示
         this.secretInput = this.addInput(left, this.startY + 65, contentWidth, SECRET_KEY_NAME, secretValue);
         // 将秘钥输入框的字符显示为 ·，但末尾两个字符正常显示
-        this.secretInput.setFormatter((text, pos) -> FormattedCharSequence.forward("·".repeat(text.length()), Style.EMPTY));
+        this.secretInput.addFormatter((text, pos) -> FormattedCharSequence.forward("·".repeat(text.length()), Style.EMPTY));
 
         // 模型列表
         this.modelArea = new Rectangle(left, this.startY + 104, contentWidth, BASE_HEIGHT - 103 - 34);
@@ -159,7 +159,6 @@ public class LLMSiteEditorScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
         graphics.fillGradient(0, 0, this.width, this.height, 0xc0101010, 0xc0101010);
 
         // 居中标题

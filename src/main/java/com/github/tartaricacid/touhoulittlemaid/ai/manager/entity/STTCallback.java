@@ -10,6 +10,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.player.Player;
@@ -29,23 +30,27 @@ public class STTCallback implements ResponseCallback<String> {
 
     @Override
     public void onFailure(HttpRequest request, Throwable throwable, int errorCode) {
-        String cause = throwable.getLocalizedMessage();
-        MutableComponent errorMessage = ErrorCode.getErrorMessage(ServiceType.STT, errorCode, cause);
-        player.sendSystemMessage(errorMessage.withStyle(ChatFormatting.RED));
         TouhouLittleMaid.LOGGER.error("STT request failed: {}, error is {}", request, throwable.getMessage());
+        Minecraft.getInstance().execute(() -> {
+            String cause = throwable.getLocalizedMessage();
+            MutableComponent errorMessage = ErrorCode.getErrorMessage(ServiceType.STT, errorCode, cause);
+            player.displayClientMessage(errorMessage.withStyle(ChatFormatting.RED), false);
+        });
     }
 
     @Override
     public void onSuccess(String chatText) {
-        if (StringUtils.isNotBlank(chatText)) {
-            ChatClientInfo clientInfo = ChatClientInfo.fromMaid(this.maid);
-            ClientPlayNetworking.send(new SendUserChatPackage(maid.getId(), chatText, clientInfo));
-            String name = player.getScoreboardName();
-            String format = String.format("<%s> %s", name, chatText);
-            player.sendSystemMessage(Component.literal(format).withStyle(ChatFormatting.GRAY));
-        } else {
-            MutableComponent component = Component.translatable("ai.touhou_little_maid.chat.stt.content_is_empty");
-            player.sendSystemMessage(component.withStyle(ChatFormatting.GRAY));
-        }
+        Minecraft.getInstance().execute(() -> {
+            if (StringUtils.isNotBlank(chatText)) {
+                ChatClientInfo clientInfo = ChatClientInfo.fromMaid(this.maid);
+                ClientPlayNetworking.send(new SendUserChatPackage(maid.getId(), chatText, clientInfo));
+                String name = player.getScoreboardName();
+                String format = String.format("<%s> %s", name, chatText);
+                player.displayClientMessage(Component.literal(format).withStyle(ChatFormatting.GRAY), false);
+            } else {
+                MutableComponent component = Component.translatable("ai.touhou_little_maid.chat.stt.content_is_empty");
+                player.displayClientMessage(component.withStyle(ChatFormatting.GRAY), false);
+            }
+        });
     }
 }

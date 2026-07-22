@@ -1,13 +1,13 @@
 package com.github.tartaricacid.touhoulittlemaid.config.subconfig;
 
 import com.google.common.collect.Lists;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.List;
-
-import static com.github.tartaricacid.touhoulittlemaid.util.ItemsUtil.getItemId;
 
 public final class MaidConfig {
     private static final String TRANSLATE_KEY = "config.touhou_little_maid.maid";
@@ -18,8 +18,6 @@ public final class MaidConfig {
 
     public static ModConfigSpec.ConfigValue<String> MAID_TAMED_ITEM;
     public static ModConfigSpec.ConfigValue<String> MAID_TEMPTATION_ITEM;
-
-    public static ModConfigSpec.BooleanValue ENABLE_MAID_CURIOS;
 
     public static ModConfigSpec.IntValue MAID_WORK_RANGE;
     public static ModConfigSpec.IntValue MAID_IDLE_RANGE;
@@ -56,10 +54,6 @@ public final class MaidConfig {
     public static ModConfigSpec.ConfigValue<List<String>> MAID_HEAL_MEALS_BLOCK_LIST_REGEX;
     public static ModConfigSpec.ConfigValue<List<List<String>>> MAID_EATEN_RETURN_CONTAINER_LIST;
 
-    public static ModConfigSpec.IntValue MAID_GUN_LONG_DISTANCE;
-    public static ModConfigSpec.IntValue MAID_GUN_MEDIUM_DISTANCE;
-    public static ModConfigSpec.IntValue MAID_GUN_NEAR_DISTANCE;
-
     public static void init(ModConfigSpec.Builder builder) {
         builder.translation(TRANSLATE_KEY).push("maid");
 
@@ -78,9 +72,6 @@ public final class MaidConfig {
         builder.comment("The item that can temptation maid", "Use the registered name of the item directly or write tag name with # as prefix")
                 .translation(translateKey("maid_temptation_item"));
         MAID_TEMPTATION_ITEM = builder.define("MaidTemptationItem", "minecraft:cake", MaidConfig::checkItemAndTag);
-
-        builder.comment("When installed Curios mod, whether to enable maid curios slot support");
-        ENABLE_MAID_CURIOS = builder.define("EnableMaidCurios", true);
 
         builder.comment("The max range of maid work mode")
                 .translation(translateKey("maid_work_range"));
@@ -187,16 +178,11 @@ public final class MaidConfig {
                 .translation(translateKey("maid_eaten_return_container_list"));
         MAID_EATEN_RETURN_CONTAINER_LIST = builder.define("MaidEatenReturnContainerList", Lists.newArrayList());
 
-        builder.comment("Recognition distance of a maid under the gun task, Suitable for sniper rifles");
-        MAID_GUN_LONG_DISTANCE = builder.defineInRange("MaidGunLongDistance", 64, 0, 512);
-
-        builder.comment("Recognition distance of a maid under the gun task, Suitable for most types");
-        MAID_GUN_MEDIUM_DISTANCE = builder.defineInRange("MaidGunMediumDistance", 48, 0, 512);
-
-        builder.comment("Recognition distance of a maid under the gun task, Suitable for pistols and shotguns");
-        MAID_GUN_NEAR_DISTANCE = builder.defineInRange("MaidGunNearDistance", 32, 0, 512);
-
         builder.pop();
+    }
+
+    private static String getItemId(Item item) {
+        return BuiltInRegistries.ITEM.getKey(item).toString();
     }
 
     private static String translateKey(String key) {
@@ -214,7 +200,7 @@ public final class MaidConfig {
         if (obj instanceof String text) {
             if (text.startsWith("#")) {
                 text = text.substring(1);
-                return ResourceLocation.tryParse(text) != null;
+                return Identifier.tryParse(text) != null;
             } else {
                 return checkItemId(text);
             }
@@ -224,7 +210,7 @@ public final class MaidConfig {
 
     private static boolean checkItemId(Object obj) {
         if (obj instanceof String text) {
-            return ResourceLocation.tryParse(text) != null;
+            return Identifier.tryParse(text) != null;
         }
         return false;
     }

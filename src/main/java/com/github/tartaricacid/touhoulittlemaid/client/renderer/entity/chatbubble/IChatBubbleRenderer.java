@@ -1,11 +1,8 @@
 package com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble;
 
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.EntityMaidRenderer;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-@Environment(EnvType.CLIENT)
 public interface IChatBubbleRenderer {
     /**
      * 气泡框高度
@@ -32,7 +29,7 @@ public interface IChatBubbleRenderer {
     /**
      * 获取气泡框背景纹理
      */
-    ResourceLocation getBackgroundTexture();
+    Identifier getBackgroundTexture();
 
     /**
      * 渲染位置，是在左侧，右侧还是中间

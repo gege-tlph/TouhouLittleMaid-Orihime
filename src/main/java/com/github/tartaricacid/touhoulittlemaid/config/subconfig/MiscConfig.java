@@ -1,7 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.config.subconfig;
 
 import com.google.common.collect.Lists;
-import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.List;
@@ -39,7 +38,7 @@ public final class MiscConfig {
         builder.comment("The following dimension do not spawn maid fairy")
                 .translation(translateKey("maid_fairy_blacklist_dimension"));
         MAID_FAIRY_BLACKLIST_DIMENSION = builder.defineList("MaidFairyBlacklistDimension",
-                Lists.newArrayList(Level.NETHER.location().toString(), Level.END.location().toString(),
+                Lists.newArrayList("minecraft:the_nether", "minecraft:the_end",
                         "twilightforest:twilight_forest"), MiscConfig::checkId);
 
         builder.comment("Loss power point after player death")

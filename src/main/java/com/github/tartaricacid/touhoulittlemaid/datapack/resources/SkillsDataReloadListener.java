@@ -8,7 +8,7 @@ import com.github.tartaricacid.touhoulittlemaid.ai.agent.skill.SkillParser;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -27,10 +27,10 @@ public class SkillsDataReloadListener implements ResourceManagerReloadListener, 
     private static final Pattern SKILL_FILE_REG = Pattern.compile("skills/([a-z0-9\\-_]+)/skill\\.md");
     private static final Pattern REFERENCES_FILE_REG = Pattern.compile("skills/([a-z0-9\\-_]+)/references/([a-z0-9\\-_]+\\.md)");
 
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "skills_data");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "skills_data");
 
     @Override
-    public ResourceLocation getFabricId() {
+    public Identifier getFabricId() {
         return ID;
     }
 

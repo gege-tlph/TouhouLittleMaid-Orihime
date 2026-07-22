@@ -3,18 +3,22 @@ package com.github.tartaricacid.touhoulittlemaid.client.renderer.texture;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.client.decoder.GifDecoder;
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.renderer.texture.Tickable;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.texture.TextureContents;
+import net.minecraft.client.renderer.texture.TickableTexture;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.io.InputStream;
 
-public class GifTexture extends SizeTexture implements Tickable {
-    private final ResourceLocation texturePath;
+/**
+ * 可按游戏刻更新的 GIF 纹理。首帧通过 {@link TextureContents} 上传，后续帧由 {@link #tick()} 切换。
+ */
+public class GifTexture extends SizeTexture implements TickableTexture {
+    private final Identifier texturePath;
     private NativeImage[] frames;
     private int[] frameDelays;
     private int currentFrame = 0;
@@ -22,21 +26,13 @@ public class GifTexture extends SizeTexture implements Tickable {
     private int width = 16;
     private int height = 16;
 
-    public GifTexture(ResourceLocation texturePath) {
+    public GifTexture(Identifier texturePath) {
+        super(texturePath);
         this.texturePath = texturePath;
     }
 
     @Override
-    public void load(ResourceManager manager) {
-        if (!RenderSystem.isOnRenderThreadOrInit()) {
-            RenderSystem.recordRenderCall(() -> doLoad(manager));
-        } else {
-            this.doLoad(manager);
-        }
-    }
-
-    @SuppressWarnings("all")
-    private void doLoad(ResourceManager manager) {
+    public TextureContents loadContents(ResourceManager manager) throws IOException {
         try (InputStream stream = manager.open(this.texturePath)) {
             GifDecoder decoder = new GifDecoder();
             decoder.read(stream);
@@ -48,7 +44,7 @@ public class GifTexture extends SizeTexture implements Tickable {
             this.width = frameSize.width;
             this.height = frameSize.height;
 
-            // 让图片学习原版序列帧竖向排列
+            // 将每一帧转换为 NativeImage，并记录以游戏刻为单位的持续时间。
             for (int i = 0; i < totalFrames; i++) {
                 NativeImage nativeImage = new NativeImage(this.width, this.height, true);
                 BufferedImage image = decoder.getFrame(i);
@@ -60,19 +56,28 @@ public class GifTexture extends SizeTexture implements Tickable {
                         int g = (argb >> 8) & 0xFF;
                         int b = argb & 0xFF;
 
-                        nativeImage.setPixelRGBA(x, y, (a << 24) | (b << 16) | (g << 8) | r);
+                        nativeImage.setPixelABGR(x, y, (a << 24) | (b << 16) | (g << 8) | r);
                     }
                 }
                 this.frames[i] = nativeImage;
                 this.frameDelays[i] = Math.max(decoder.getDelay(i) / 50, 1);
             }
-            // 上传第一帧
-            TextureUtil.prepareImage(this.getId(), 0, width, height);
-            this.frames[0].upload(0, 0, 0, 0, 0,
-                    width, height, false, false, false, false);
+
+            if (totalFrames > 0) {
+                // 首帧交给引擎上传。frames[] 由本类持有用于后续 tick 切换，
+                // 故此处传入副本，避免 TextureContents（Closeable）关闭我们仍需复用的帧。
+                return new TextureContents(copyOf(this.frames[0]), null);
+            }
         } catch (Exception e) {
             TouhouLittleMaid.LOGGER.error("Failed to load gif texture: {}", this.texturePath, e);
         }
+        return TextureContents.createMissing();
+    }
+
+    private static NativeImage copyOf(NativeImage src) {
+        NativeImage dst = new NativeImage(src.getWidth(), src.getHeight(), true);
+        dst.copyFrom(src);
+        return dst;
     }
 
     @Override
@@ -92,16 +97,15 @@ public class GifTexture extends SizeTexture implements Tickable {
 
     @Override
     public void tick() {
-        if (frames == null || frames.length == 0) {
+        if (frames == null || frames.length == 0 || this.texture == null) {
             return;
         }
         currentFrameDelay++;
         if (currentFrameDelay >= frameDelays[currentFrame]) {
             currentFrameDelay = 0;
             currentFrame = (currentFrame + 1) % frames.length;
-            TextureUtil.prepareImage(this.getId(), 0, width, height);
-            frames[currentFrame].upload(0, 0, 0, 0, 0,
-                    width, height, false, false);
+            RenderSystem.getDevice().createCommandEncoder()
+                    .writeToTexture(this.texture, frames[currentFrame]);
         }
     }
 }

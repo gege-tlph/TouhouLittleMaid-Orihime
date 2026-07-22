@@ -1,5 +1,9 @@
 package com.github.tartaricacid.touhoulittlemaid.tileentity;
 
+import net.minecraft.world.entity.ContainerUser;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import com.github.tartaricacid.touhoulittlemaid.block.BlockSnackCabinet;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBlocks;
 import net.minecraft.core.BlockPos;
@@ -24,9 +28,7 @@ import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class TileEntitySnackCabinet extends RandomizableContainerBlockEntity {
-    public static final BlockEntityType<TileEntitySnackCabinet> TYPE = BlockEntityType.Builder
-            .of(TileEntitySnackCabinet::new, InitBlocks.SNACK_CABINET)
-            .build(null);
+    public static final BlockEntityType<TileEntitySnackCabinet> TYPE = FabricBlockEntityTypeBuilder.create(TileEntitySnackCabinet::new, InitBlocks.SNACK_CABINET).build();
 
     private static final int SLOT_COUNT = 27;
 
@@ -48,7 +50,7 @@ public class TileEntitySnackCabinet extends RandomizableContainerBlockEntity {
         }
 
         @Override
-        protected boolean isOwnContainer(Player player) {
+        public boolean isOwnContainer(Player player) {
             if (player.containerMenu instanceof ChestMenu menu) {
                 return menu.getContainer() == TileEntitySnackCabinet.this;
             } else {
@@ -62,19 +64,19 @@ public class TileEntitySnackCabinet extends RandomizableContainerBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        if (!this.trySaveLootTable(tag)) {
-            ContainerHelper.saveAllItems(tag, this.items, registries);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        if (!this.trySaveLootTable(output)) {
+            ContainerHelper.saveAllItems(output, this.items);
         }
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
         this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-        if (!this.tryLoadLootTable(tag)) {
-            ContainerHelper.loadAllItems(tag, this.items, registries);
+        if (!this.tryLoadLootTable(input)) {
+            ContainerHelper.loadAllItems(input, this.items);
         }
     }
 
@@ -104,16 +106,18 @@ public class TileEntitySnackCabinet extends RandomizableContainerBlockEntity {
     }
 
     @Override
-    public void startOpen(Player player) {
-        if (!this.remove && !player.isSpectator() && this.level != null) {
-            this.openersCounter.incrementOpeners(player, this.level, this.getBlockPos(), this.getBlockState());
+    public void startOpen(ContainerUser user) {
+        if (!this.remove && !user.getLivingEntity().isSpectator() && this.level != null) {
+            this.openersCounter.incrementOpeners(user.getLivingEntity(), this.level, this.getBlockPos(),
+                    this.getBlockState(), user.getContainerInteractionRange());
         }
     }
 
     @Override
-    public void stopOpen(Player player) {
-        if (!this.remove && !player.isSpectator() && this.level != null) {
-            this.openersCounter.decrementOpeners(player, this.level, this.getBlockPos(), this.getBlockState());
+    public void stopOpen(ContainerUser user) {
+        if (!this.remove && !user.getLivingEntity().isSpectator() && this.level != null) {
+            this.openersCounter.decrementOpeners(user.getLivingEntity(), this.level, this.getBlockPos(),
+                    this.getBlockState());
         }
     }
 
@@ -125,7 +129,7 @@ public class TileEntitySnackCabinet extends RandomizableContainerBlockEntity {
 
     void playSound(BlockState state, SoundEvent sound) {
         if (this.level != null) {
-            Vec3i facing = state.getValue(BlockSnackCabinet.FACING).getNormal();
+            Vec3i facing = state.getValue(BlockSnackCabinet.FACING).getUnitVec3i();
             double x = this.worldPosition.getX() + 0.5 + facing.getX() / 2.0;
             double y = this.worldPosition.getY() + 0.5 + facing.getY() / 2.0;
             double z = this.worldPosition.getZ() + 0.5 + facing.getZ() / 2.0;

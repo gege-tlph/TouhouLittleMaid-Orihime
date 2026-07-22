@@ -1,9 +1,7 @@
 /*
  * https://github.com/anlingyi/xechat-idea
  *
- *        Apache License
- *   Version 2.0, January 2004
- * http://www.apache.org/licenses/
+ * Apache 许可证版本 2.0，2004 年 1 月 http://www.apache.org/licenses/
  */
 package com.github.tartaricacid.touhoulittlemaid.api.game.gomoku;
 
@@ -73,9 +71,9 @@ public class Point {
     }
 
     public static Point fromTag(CompoundTag tag) {
-        int x = tag.getInt("x");
-        int y = tag.getInt("y");
-        int type = tag.getInt("type");
+        int x = tag.getInt("x").orElse(0);
+        int y = tag.getInt("y").orElse(0);
+        int type = tag.getInt("type").orElse(0);
         return new Point(x, y, type);
     }
 

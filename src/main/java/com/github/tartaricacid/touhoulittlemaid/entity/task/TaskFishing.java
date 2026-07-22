@@ -11,7 +11,7 @@ import com.github.tartaricacid.touhoulittlemaid.util.TaskEquipUtil;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.item.FishingRodItem;
@@ -24,10 +24,10 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public class TaskFishing implements IMaidTask {
-    public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "fishing");
+    public static final Identifier UID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "fishing");
 
     @Override
-    public ResourceLocation getUid() {
+    public Identifier getUid() {
         return UID;
     }
 
@@ -54,7 +54,7 @@ public class TaskFishing implements IMaidTask {
 
     @Override
     public List<Pair<String, Predicate<EntityMaid>>> getConditionDescription(EntityMaid maid) {
-        return Collections.singletonList(Pair.of("has_fishing_rod", e -> e.getMainHandItem()/*.canPerformAction(ItemAbilities.FISHING_ROD_CAST)*/
+        return Collections.singletonList(Pair.of("has_fishing_rod", e -> e.getMainHandItem()
                 .getItem() instanceof FishingRodItem || e.getMainHandItem().is(ConventionalItemTags.FISHING_ROD_TOOLS)
         ));
     }
@@ -66,10 +66,10 @@ public class TaskFishing implements IMaidTask {
 
     @Override
     public FunctionCallSwitchResult onFunctionCallSwitch(EntityMaid maid) {
-        if (maid.getMainHandItem()/*.canPerformAction(ItemAbilities.FISHING_ROD_CAST)*/.is(ConventionalItemTags.FISHING_ROD_TOOLS) || maid.getMainHandItem().getItem() instanceof FishingRodItem) {
+        if (maid.getMainHandItem().is(ConventionalItemTags.FISHING_ROD_TOOLS) || maid.getMainHandItem().getItem() instanceof FishingRodItem) {
             return FunctionCallSwitchResult.NO_CHANGE;
         }
-        if (TaskEquipUtil.tryEquipFromBackpack(maid, item -> item.is(ConventionalItemTags.FISHING_ROD_TOOLS) || item.getItem() instanceof FishingRodItem /*item.canPerformAction(ItemAbilities.FISHING_ROD_CAST))*/)) {
+        if (TaskEquipUtil.tryEquipFromBackpack(maid, item -> item.is(ConventionalItemTags.FISHING_ROD_TOOLS) || item.getItem() instanceof FishingRodItem)) {
             return FunctionCallSwitchResult.OK;
         }
         return FunctionCallSwitchResult.MISSING_REQUIRED_ITEM;

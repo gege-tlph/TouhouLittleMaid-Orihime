@@ -9,14 +9,12 @@ import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.animal.Parrot;
+import net.minecraft.world.entity.animal.parrot.Parrot;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import static net.minecraft.world.entity.animal.Parrot.getPitch;
 
 @Mixin(Parrot.class)
 public abstract class ParrotMixin {
@@ -33,11 +31,11 @@ public abstract class ParrotMixin {
         if (mob instanceof EntityMaid maid) {
             SoundEvent soundevent = SoundUtil.environmentSound(maid, InitSounds.MAID_IDLE, 0.5f);
             // 服务端发送在鹦鹉坐标播放女仆语音的包
-            if (!level.isClientSide) {
+            if (!level.isClientSide()) {
                 NetworkHandler.sendToNearby(parrot, new PlayMaidSoundAtPosPackage(
-                        soundevent.getLocation(), maid.getSoundPackId(),
+                        soundevent.location(), maid.getSoundPackId(),
                         parrot.getX(), parrot.getY(), parrot.getZ(),
-                        0.7F, getPitch(level.random)
+                        0.7F, (level.random.nextFloat() - level.random.nextFloat()) * 0.2F + 1.0F
                 ), 16);
             }
             cir.setReturnValue(true);

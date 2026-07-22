@@ -1,8 +1,8 @@
 package cn.sh1rocu.touhoulittlemaid.util.forge;
 
 import cn.sh1rocu.touhoulittlemaid.api.event.*;
+import net.minecraft.util.random.WeightedList;
 import net.minecraft.core.BlockPos;
-import net.minecraft.util.random.WeightedRandomList;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
@@ -14,23 +14,27 @@ import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.phys.HitResult;
 
 public class EventHooks {
-    private static final WeightedRandomList<MobSpawnSettings.SpawnerData> NO_SPAWNS = WeightedRandomList.create();
 
-    public static WeightedRandomList<MobSpawnSettings.SpawnerData> getPotentialSpawns(LevelAccessor level, MobCategory category, BlockPos pos, WeightedRandomList<MobSpawnSettings.SpawnerData> oldList) {
+    private static final WeightedList<MobSpawnSettings.SpawnerData> NO_SPAWNS = WeightedList.of();
+
+    public static WeightedList<MobSpawnSettings.SpawnerData> getPotentialSpawns(LevelAccessor level, MobCategory category, BlockPos pos, WeightedList<MobSpawnSettings.SpawnerData> oldList) {
         PotentialSpawnsEvent event = new PotentialSpawnsEvent(level, category, pos, oldList);
         PotentialSpawnsEvent.CALLBACK.invoker().post(event);
         if (event.isCanceled())
             return NO_SPAWNS;
         else if (event.getSpawnerDataList() == oldList.unwrap())
             return oldList;
-        return WeightedRandomList.create(event.getSpawnerDataList());
+        return WeightedList.of(event.getSpawnerDataList());
     }
 
     public static boolean canMountEntity(Entity entityMounting, Entity entityBeingMounted, boolean isMounting) {
         EntityMountEvent event = new EntityMountEvent(entityMounting, entityBeingMounted, entityMounting.level(), isMounting);
         EntityMountEvent.CALLBACK.invoker().post(event);
         if (event.isCanceled()) {
-            entityMounting.absMoveTo(entityMounting.getX(), entityMounting.getY(), entityMounting.getZ(), entityMounting.yRotO, entityMounting.xRotO);
+            entityMounting.setPos(entityMounting.getX(), entityMounting.getY(), entityMounting.getZ());
+
+            entityMounting.setYRot(entityMounting.yRotO);
+            entityMounting.setXRot(entityMounting.xRotO);
             return false;
         } else
             return true;

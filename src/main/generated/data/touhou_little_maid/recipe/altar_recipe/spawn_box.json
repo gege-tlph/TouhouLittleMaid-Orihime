@@ -4,24 +4,12 @@
   "entity": "touhou_little_maid:box",
   "group": "altar_recipe",
   "ingredients": [
-    {
-      "tag": "c:gems/diamond"
-    },
-    {
-      "tag": "c:gems/lapis"
-    },
-    {
-      "tag": "c:ingots/gold"
-    },
-    {
-      "tag": "c:dusts/redstone"
-    },
-    {
-      "tag": "c:ingots/iron"
-    },
-    {
-      "item": "minecraft:coal"
-    }
+    "#c:gems/diamond",
+    "#c:gems/lapis",
+    "#c:ingots/gold",
+    "#c:dusts/redstone",
+    "#c:ingots/iron",
+    "minecraft:coal"
   ],
   "lang": "jei.touhou_little_maid.altar_craft.spawn_box.result",
   "power": 0.5,

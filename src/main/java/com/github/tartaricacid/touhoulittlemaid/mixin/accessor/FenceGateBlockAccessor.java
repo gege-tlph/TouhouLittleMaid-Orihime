@@ -6,18 +6,11 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 /**
- * 因为某些奇怪的原因，FenceGateBlock 类下的 openSound 和 closeSound 没有对应的 SRG 名；
- * 只能用 mixin 进行访问
+ * 因为某些奇怪的原因，FenceGateBlock 类下的 openSound 和 closeSound 没有对应的 SRG 名； 只能用 mixin 进行访问
  */
 @Mixin(FenceGateBlock.class)
 public interface FenceGateBlockAccessor {
-/*    @Final
-    @Accessor(value = "openSound", remap = false)
-    SoundEvent tlmOpenSound();
 
-    @Final
-    @Accessor(value = "closeSound", remap = false)
-    SoundEvent tlmCloseSound();*/
 
     // Fabric通过WoodType间接访问
     @Accessor("type")

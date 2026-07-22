@@ -4,24 +4,12 @@
   "entity": "minecraft:lightning_bolt",
   "group": "altar_recipe",
   "ingredients": [
-    {
-      "tag": "c:gunpowders"
-    },
-    {
-      "tag": "c:gunpowders"
-    },
-    {
-      "tag": "c:gunpowders"
-    },
-    {
-      "item": "minecraft:blaze_powder"
-    },
-    {
-      "item": "minecraft:blaze_powder"
-    },
-    {
-      "item": "minecraft:blaze_powder"
-    }
+    "#c:gunpowders",
+    "#c:gunpowders",
+    "#c:gunpowders",
+    "minecraft:blaze_powder",
+    "minecraft:blaze_powder",
+    "minecraft:blaze_powder"
   ],
   "lang": "jei.touhou_little_maid.altar_craft.spawn_lightning_bolt.result",
   "power": 0.2,

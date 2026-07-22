@@ -31,15 +31,11 @@ import java.util.Objects;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Ternary conditional expression implementation, similar to
- * "if {...} else {...}" expressions in other languages.
+ * 三元条件表达式实现，类似于其他语言中的“if {...} else {...}”表达式。
  *
- * <p>If the {@code conditional} expression evaluates to a
- * truthy value, then {@code trueExpression} is evaluated
- * as the result, otherwise, {@code falseExpression} is.</p>
+ * <p>如果 {@code conditional} 表达式计算结果为真值，则 {@code trueExpression} 计算为结果，否则，{@code falseExpression} 为。</p>
  *
- * <p>Example ternary conditional expressions: {@code true ? 1 : 0},
- * {@code (age > 18) ? 'adult' : 'minor'}, {@code open ? 'open' : 'closed'}</p>
+ * <p>三元条件表达式示例：{@code true ? 1 : 0}、{@code (age > 18) ? 'adult' : 'minor'}、{@code open ? 'open' : 'closed'}</p>
  *
  * @since 3.0.0
  */
@@ -60,7 +56,7 @@ public final class TernaryConditionalExpression implements Expression {
     }
 
     /**
-     * Gets the expression condition.
+     * 获取表达式条件。
      *
      * @since 3.0.0
      */
@@ -69,8 +65,7 @@ public final class TernaryConditionalExpression implements Expression {
     }
 
     /**
-     * Gets the expression that should be used when
-     * condition is evaluated as a truthy value.
+     * 获取当条件被评估为真值时应使用的表达式。
      *
      * @since 3.0.0
      */
@@ -80,8 +75,7 @@ public final class TernaryConditionalExpression implements Expression {
 
 
     /**
-     * Gets the expression that should be used when
-     * condition is evaluated as a falsy value.
+     * 获取当条件计算为假值时应使用的表达式。
      *
      * @since 3.0.0
      */

@@ -1,111 +1,147 @@
 package com.github.tartaricacid.touhoulittlemaid.client.renderer.entity;
 
-import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
-import com.github.tartaricacid.touhoulittlemaid.client.animation.script.GlWrapper;
-import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.BedrockModel;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.CustomPackLoader;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.ChairModelInfo;
+import com.github.tartaricacid.touhoulittlemaid.client.entity.GeckoChairEntity;
+import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.EntityChairModel;
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.gecko.GeckoEntityChairRenderer;
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.state.EntityChairRenderState;
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.state.ModelType;
+import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityChair;
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.event.GeckoUpdateTask;
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.GeckoRenderData;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.gizmos.GizmoStyle;
+import net.minecraft.gizmos.Gizmos;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
-import java.util.List;
+import java.util.Collections;
 
-public class EntityChairRenderer extends LivingEntityRenderer<EntityChair, BedrockModel<EntityChair>> {
-    public static final ResourceLocation DEFAULT_TEXTURE = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/entity/empty.png");
+
+/**
+ * 椅子实体渲染器。按模型信息选择 Bedrock 或 Gecko 路径，并保留动画与碰撞箱显示行为。
+ */
+public class EntityChairRenderer extends LivingEntityRenderer<EntityChair, EntityChairRenderState, EntityChairModel> {
+    public static final Identifier DEFAULT_TEXTURE = IdentifierUtil.modLoc("textures/entity/empty.png");
     private static final String DEFAULT_CHAIR_ID = "touhou_little_maid:cushion";
     public static boolean renderHitBox = true;
-    private ChairModelInfo chairInfo;
-    private List<Object> chairAnimations;
     private final GeckoEntityChairRenderer geckoEntityChairRenderer;
 
-    public EntityChairRenderer(EntityRendererProvider.Context rendererManager) {
-        super(rendererManager, new BedrockModel<>(), 0);
-        this.geckoEntityChairRenderer = new GeckoEntityChairRenderer(rendererManager);
+    public EntityChairRenderer(EntityRendererProvider.Context context) {
+        super(context, new EntityChairModel(), 0);
+        this.geckoEntityChairRenderer = new GeckoEntityChairRenderer(context);
     }
 
     @Override
-    public void render(EntityChair chair, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource bufferIn, int packedLightIn) {
-        LocalPlayer player = Minecraft.getInstance().player;
+    public EntityChairRenderState createRenderState() {
+        return new EntityChairRenderState();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void extractRenderState(EntityChair chair, EntityChairRenderState state, float partialTicks) {
+        state.clear();
+        super.extractRenderState(chair, state, partialTicks);
+
+        state.hasPassenger = chair.hasPassenger();
+        state.passengerYRot = chair.getPassengerYaw();
+        state.passengerXRot = chair.getPassengerPitch();
+
+        CustomPackLoader.CHAIR_MODELS.getModel(DEFAULT_CHAIR_ID).ifPresent(model -> state.bedrockModel = model);
+        CustomPackLoader.CHAIR_MODELS.getInfo(DEFAULT_CHAIR_ID).ifPresent(info -> state.chairInfo = info);
+        CustomPackLoader.CHAIR_MODELS.getModel(chair.getModelId()).ifPresent(model -> state.bedrockModel = model);
+        CustomPackLoader.CHAIR_MODELS.getInfo(chair.getModelId()).ifPresent(info -> state.chairInfo = info);
+
+        if (state.chairInfo != null) {
+            state.chairAnimations = CustomPackLoader.CHAIR_MODELS
+                    .getAnimation(state.chairInfo.getModelId().toString())
+                    .orElse(Collections.emptyList());
+        }
+
+        Player player = Minecraft.getInstance().player;
         if (canShowHitBox(player) && renderHitBox) {
-            renderHitBox(chair, poseStack, bufferIn);
+            state.hitbox = chair.getBoundingBox().move(-state.x, -state.y, -state.z);
+        }
+
+        if (state.chairInfo != null && state.chairInfo.isGeckoModel()) {
+            state.modelType = ModelType.GECKO;
+            GeckoChairEntity geckoEntity = chair.getAnimatableEntity();
+            if (geckoEntity != null) {
+                geckoEntity.setChair(state.chairInfo);
+                state.geckoUpdateTask = (GeckoUpdateTask<GeckoRenderData>) geckoEntity.createUpdateTask(state);
+            }
         } else {
-            renderChair(chair, entityYaw, partialTicks, poseStack, bufferIn, packedLightIn);
+            state.modelType = ModelType.SIMPLE_BEDROCK;
+        }
+    }
+
+    @Override
+    public void submit(EntityChairRenderState state, PoseStack poseStack, SubmitNodeCollector collector,
+                       CameraRenderState camera) {
+        if (state.hitbox != null) {
+            AABB aabb = state.hitbox.move(state.x, state.y, state.z);
+            Gizmos.cuboid(aabb, GizmoStyle.stroke(ARGB.colorFromFloat(1.0F, 1.0F, 0, 0)));
+            return;
+        }
+
+        if (state.modelType == ModelType.GECKO) {
+            this.geckoEntityChairRenderer.submit(state, poseStack, collector, camera);
+            return;
+        }
+        if (state.modelType == ModelType.SIMPLE_BEDROCK && state.bedrockModel != null) {
+            this.model = state.bedrockModel;
+            this.model.setAnimations(state.chairAnimations);
+            this.model.setupAnim(state);
+            super.submit(state, poseStack, collector, camera);
         }
     }
 
     private boolean canShowHitBox(@Nullable Player player) {
-        if (player != null && player.isShiftKeyDown()) {
-            return player.getMainHandItem().getItem() == InitItems.CHAIR_SHOW;
+        return player != null && player.isShiftKeyDown()
+                && player.getMainHandItem().is(InitItems.CHAIR_SHOW);
+    }
+
+    @Override
+    protected void scale(EntityChairRenderState state, PoseStack poseStack) {
+        if (state.chairInfo != null) {
+            float scale = state.chairInfo.getRenderEntityScale();
+            poseStack.scale(scale, scale, scale);
         }
-        return false;
-    }
-
-    private void renderHitBox(EntityChair chair, PoseStack poseStack, MultiBufferSource bufferIn) {
-        AABB aabb = chair.getBoundingBox().move(-chair.getX(), -chair.getY(), -chair.getZ());
-        LevelRenderer.renderLineBox(poseStack, bufferIn.getBuffer(RenderType.lines()), aabb, 1.0F, 0, 0, 1.0F);
-    }
-
-    private void renderChair(EntityChair chair, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource bufferIn, int packedLightIn) {
-        // 读取默认模型，用于清除不存在模型的缓存残留
-        CustomPackLoader.CHAIR_MODELS.getModel(DEFAULT_CHAIR_ID).ifPresent(model -> this.model = model);
-        CustomPackLoader.CHAIR_MODELS.getInfo(DEFAULT_CHAIR_ID).ifPresent(info -> this.chairInfo = info);
-        this.chairAnimations = null;
-
-        // 通过模型 id 获取对应数据
-        CustomPackLoader.CHAIR_MODELS.getModel(chair.getModelId()).ifPresent(model -> this.model = model);
-        CustomPackLoader.CHAIR_MODELS.getInfo(chair.getModelId()).ifPresent(info -> this.chairInfo = info);
-        CustomPackLoader.CHAIR_MODELS.getAnimation(chair.getModelId()).ifPresent(animations -> this.chairAnimations = animations);
-
-        // GeckoLib 接管渲染
-        if (this.chairInfo.isGeckoModel()) {
-            this.geckoEntityChairRenderer.setMainInfo(this.chairInfo);
-            this.geckoEntityChairRenderer.getAnimatableEntity(chair).setChair(this.chairInfo);
-            this.geckoEntityChairRenderer.render(chair, entityYaw, partialTicks, poseStack, bufferIn, packedLightIn);
-            return;
-        }
-
-        // 模型动画设置
-        this.model.setAnimations(this.chairAnimations);
-
-        GlWrapper.setPoseStack(poseStack);
-        super.render(chair, entityYaw, partialTicks, poseStack, bufferIn, packedLightIn);
-        GlWrapper.clearPoseStack();
     }
 
     @Override
-    protected void scale(EntityChair chair, PoseStack poseStack, float partialTickTime) {
-        float scale = chairInfo.getRenderEntityScale();
-        poseStack.scale(scale, scale, scale);
+    public Identifier getTextureLocation(EntityChairRenderState state) {
+        return state.chairInfo == null ? DEFAULT_TEXTURE : state.chairInfo.getTexture();
     }
 
     @Override
-    public ResourceLocation getTextureLocation(EntityChair entity) {
-        if (chairInfo == null) {
-            return DEFAULT_TEXTURE;
-        }
-        return chairInfo.getTexture();
+    protected void setupRotations(EntityChairRenderState state, PoseStack poseStack, float bodyRot, float entityScale) {
+        poseStack.mulPose(Axis.YP.rotationDegrees(180 - bodyRot));
     }
 
     @Override
-    protected void setupRotations(EntityChair chair, PoseStack poseStack, float ageInTicks, float rotationYaw, float partialTicks, float pScale) {
-        poseStack.mulPose(Axis.YP.rotationDegrees(180 - rotationYaw));
-    }
-
-    @Override
-    protected boolean shouldShowName(EntityChair entity) {
+    protected boolean shouldShowName(EntityChair entity, double distanceToCameraSq) {
         return entity.shouldShowName();
+    }
+
+    @Override
+    protected AABB getBoundingBoxForCulling(EntityChair chair) {
+        AABB fallback = super.getBoundingBoxForCulling(chair);
+        return CustomPackLoader.CHAIR_MODELS.getModel(chair.getModelId()).map(model -> {
+            Vec3 position = chair.position();
+            return model.getRenderBoundingBox().move(position);
+        }).orElse(fallback);
     }
 }

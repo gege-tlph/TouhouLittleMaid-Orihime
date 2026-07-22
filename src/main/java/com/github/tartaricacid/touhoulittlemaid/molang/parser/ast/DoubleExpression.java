@@ -29,10 +29,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 /**
- * Literal double expression implementation for Molang
- * numerical values.
+ * Molang 双精度数值字面量表达式。
  *
- * <p>Example double expressions: {@code 2.0}, {@code 59}, {@code 20}, {@code 5.002}</p>
+ * <p>双精度表达式示例：{@code 2.0}、{@code 59}、{@code 20}、{@code 5.002}</p>
  *
  * @since 3.0.0
  */
@@ -48,7 +47,7 @@ public final class DoubleExpression implements Expression {
     }
 
     /**
-     * Gets the double expression value.
+     * 获取该字面量的双精度数值。
      *
      * @since 3.0.0
      */

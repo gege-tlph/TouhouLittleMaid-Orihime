@@ -1,55 +1,84 @@
 package com.github.tartaricacid.touhoulittlemaid.client.renderer.tileentity;
 
-import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
-import com.github.tartaricacid.touhoulittlemaid.block.BlockGomoku;
-import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.SimpleBedrockModel;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.BedrockModelLoader;
+import com.github.tartaricacid.touhoulittlemaid.block.BlockShrine;
 import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityShrine;
+import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.SimpleBedrockModel;
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.blockentity.state.ShrineRenderState;
+import com.github.tartaricacid.touhoulittlemaid.client.resource.bedrock.InternalBedrockModelRegistry;
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.item.ItemModelResolver;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Unit;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
-public class TileEntityShrineRenderer implements BlockEntityRenderer<TileEntityShrine> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/bedrock/block/shrine.png");
-    private final SimpleBedrockModel<Entity> model;
+public class TileEntityShrineRenderer implements BlockEntityRenderer<TileEntityShrine, ShrineRenderState> {
+    private static final Identifier TEXTURE = IdentifierUtil.modLoc("textures/bedrock/block/shrine.png");
+
+    private final SimpleBedrockModel<Unit> model;
+    private final ItemModelResolver resolver;
 
     public TileEntityShrineRenderer(BlockEntityRendererProvider.Context context) {
-        model = BedrockModelLoader.getModel(BedrockModelLoader.SHRINE);
+        model = InternalBedrockModelRegistry.getModel(InternalBedrockModelRegistry.SHRINE);
+        resolver = context.itemModelResolver();
     }
 
     @Override
-    public void render(TileEntityShrine shrine, float partialTick, PoseStack poseStack, MultiBufferSource bufferIn, int combinedLightIn, int combinedOverlayIn) {
-        Direction facing = shrine.getBlockState().getValue(BlockGomoku.FACING);
+    public ShrineRenderState createRenderState() {
+        return new ShrineRenderState();
+    }
+
+    @Override
+    public void extractRenderState(TileEntityShrine shrine, ShrineRenderState state, float partialTick,
+                                   Vec3 cameraPosition, ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(shrine, state, partialTick, cameraPosition, breakProgress);
+
+        state.facing = shrine.getBlockState().getValue(BlockShrine.FACING);
+
+        ItemStack stack = shrine.getStorageItem();
+        state.hasItem = !stack.isEmpty();
+        if (state.hasItem && shrine.getLevel() != null) {
+            state.itemRenderState.clear();
+            resolver.updateForTopItem(
+                    state.itemRenderState, stack, ItemDisplayContext.GROUND,
+                    shrine.getLevel(), null, (int) shrine.getBlockPos().asLong()
+            );
+            state.itemRotation = (shrine.getLevel().getGameTime() + partialTick) % 360;
+        }
+    }
+
+    @Override
+    public void submit(ShrineRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+        Direction facing = state.facing;
+
         poseStack.pushPose();
         poseStack.translate(0.5, 1.5, 0.5);
         poseStack.mulPose(Axis.ZN.rotationDegrees(180));
         poseStack.mulPose(Axis.YN.rotationDegrees(180 - facing.get2DDataValue() * 90));
-        VertexConsumer buffer = bufferIn.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
-        model.renderToBuffer(poseStack, buffer, combinedLightIn, combinedOverlayIn);
+        collector.submitModel(
+                model, Unit.INSTANCE, poseStack, RenderTypes.entityCutoutNoCull(TEXTURE),
+                state.lightCoords, OverlayTexture.NO_OVERLAY, 0, state.breakProgress
+        );
         poseStack.popPose();
 
-        Level level = shrine.getLevel();
-        if (level == null) {
-            return;
+        if (state.hasItem) {
+            poseStack.pushPose();
+            poseStack.translate(0.5, 1.625, 0.5);
+            poseStack.mulPose(Axis.YN.rotationDegrees(state.itemRotation));
+            state.itemRenderState.submit(poseStack, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
+            poseStack.popPose();
         }
-        ItemStack stack = shrine.getStorageItem();
-        poseStack.pushPose();
-        poseStack.translate(0.5, 0.85, 0.5);
-        poseStack.scale(0.5f, 0.5f, 0.5f);
-        float deg = (level.getGameTime() + partialTick) % 360;
-        poseStack.mulPose(Axis.YN.rotationDegrees(deg));
-        Minecraft.getInstance().getItemRenderer().renderStatic(stack, ItemDisplayContext.GROUND, combinedLightIn, combinedOverlayIn, poseStack, bufferIn, level, 0);
-        poseStack.popPose();
     }
 }

@@ -29,13 +29,9 @@ import org.jetbrains.annotations.NotNull;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Unary expression implementation, performs a single operation
- * to a single expression, like logical negation, arithmetical
- * negation, or "return expr;".
+ * 一元表达式实现，对单个表达式执行单个操作，如逻辑非、算术非或“return expr;”。
  *
- * <p>Example unary expressions: {@code -hello}, {@code !p},
- * {@code !q}, {@code -(10 * 5)}, {@code return this},
- * {@code return 5}</p>
+ * <p>一元表达式示例：{@code -hello}、{@code !p}、{@code !q}、{@code -(10 * 5)}、{@code return this}、 {@code return 5}</p>
  *
  * @since 3.0.0
  */
@@ -53,9 +49,9 @@ public final class UnaryExpression implements Expression {
     }
 
     /**
-     * Gets the unary expression operation.
+     * 获取一元表达式运算。
      *
-     * @return The unary expression operation.
+     * @return 一元表达式运算。
      * @since 3.0.0
      */
     public @NotNull Op op() {
@@ -63,9 +59,9 @@ public final class UnaryExpression implements Expression {
     }
 
     /**
-     * Gets the operated expression.
+     * 获取被运算的表达式。
      *
-     * @return The operated expression.
+     * @return 被运算的表达式。
      * @since 3.0.0
      */
     public @NotNull Expression expression() {

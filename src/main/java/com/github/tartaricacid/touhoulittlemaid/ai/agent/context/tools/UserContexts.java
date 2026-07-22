@@ -88,11 +88,14 @@ public final class UserContexts {
                 return EMPTY;
             }
             java.util.List<String> names = com.google.common.collect.Lists.newArrayList();
-            owner.getArmorSlots().forEach(stack -> {
-                if (!stack.isEmpty()) {
-                    names.add(ITEM_AND_COUNT_FORMAT.formatted(stack.getDisplayName().getString(), stack.getCount()));
+            for (EquipmentSlot slot : EquipmentSlot.VALUES) {
+                if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
+                    ItemStack stack = owner.getItemBySlot(slot);
+                    if (!stack.isEmpty()) {
+                        names.add(ITEM_AND_COUNT_FORMAT.formatted(stack.getDisplayName().getString(), stack.getCount()));
+                    }
                 }
-            });
+            }
             if (names.isEmpty()) {
                 return EMPTY;
             }

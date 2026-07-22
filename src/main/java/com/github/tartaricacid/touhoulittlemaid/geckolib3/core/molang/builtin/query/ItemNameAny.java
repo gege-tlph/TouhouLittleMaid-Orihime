@@ -6,7 +6,7 @@ import com.github.tartaricacid.touhoulittlemaid.geckolib3.util.MolangUtils;
 import com.github.tartaricacid.touhoulittlemaid.molang.runtime.ExecutionContext;
 import com.github.tartaricacid.touhoulittlemaid.util.EquipmentUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -20,21 +20,21 @@ public class ItemNameAny extends LivingEntityFunction {
         }
 
         ItemStack itemStack = EquipmentUtil.getEquippedItem(context.entity().entity(), slotType);
-        if (itemStack.isEmpty()) {
+        if(itemStack.isEmpty()) {
             return false;
         }
 
-        ResourceLocation actualId = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
-        if (actualId.equals(BuiltInRegistries.ITEM.getDefaultKey())) {
+        Identifier actualId = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
+        if(actualId == BuiltInRegistries.ITEM.getDefaultKey()) {
             return false;
         }
 
         for (int i = 1; i < arguments.size(); i++) {
-            ResourceLocation id = MolangUtils.parseResourceLocation(context.entity(), arguments.getAsString(context, i));
+            Identifier id = arguments.getAsResourceLocation(context, i);
             if (id == null) {
                 return null;
             }
-            if (id.equals(actualId)) {
+            if(id.equals(actualId)) {
                 return true;
             }
         }

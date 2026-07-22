@@ -24,8 +24,10 @@
 
 package com.github.tartaricacid.touhoulittlemaid.molang.runtime;
 
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.molang.context.IContext;
 import com.github.tartaricacid.touhoulittlemaid.molang.parser.ast.Expression;
 import com.github.tartaricacid.touhoulittlemaid.molang.runtime.binding.ValueConversions;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,24 +35,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a Molang function. Receives a certain amount of
- * parameters and (optionally) returns a value. Can be called
- * from Molang code using call expressions: {@code my_function(1, 2, 3)}
+ * 代表 Molang 函数。接收一定数量的参数并（可选）返回一个值。可以使用调用表达式从 Molang 代码调用：{@code my_function(1, 2, 3)}
  *
- * <p>This is a very low-level function that is "expression-sensitive",
- * this means, it takes the raw expression arguments instead of the
- * evaluated expression argument values.</p>
+ * <p>这是一个非常低级的函数，“表达式敏感”，这意味着，它采用原始表达式参数而不是计算的表达式参数值。</p>
  *
  * @since 3.0.0
  */
 @FunctionalInterface
 public interface Function {
     /**
-     * Executes this function with the given arguments.
+     * 使用给定参数执行此函数。
      *
-     * @param context   The execution context
-     * @param arguments The arguments
-     * @return The function result
+     * @param context 执行上下文
+     * @param arguments 论点
+     * @return 函数结果
      * @since 3.0.0
      */
     @Nullable Object evaluate(final @NotNull ExecutionContext<?> context, final @NotNull ArgumentCollection arguments);
@@ -76,6 +74,10 @@ public interface Function {
             return ValueConversions.asString(ctx.eval(arguments.get(index)));
         }
 
+        public int getAsPooledString(@NotNull ExecutionContext<?> ctx, final int index) {
+            return ValueConversions.asPooledString(ctx.eval(arguments.get(index)));
+        }
+
         public double getAsDouble(@NotNull ExecutionContext<?> ctx, final int index) {
             return ValueConversions.asDouble(ctx.eval(arguments.get(index)));
         }
@@ -90,6 +92,23 @@ public interface Function {
 
         public boolean getAsBoolean(@NotNull ExecutionContext<?> ctx, final int index) {
             return ValueConversions.asBoolean(ctx.eval(arguments.get(index)));
+        }
+
+        /**
+         * 解析参数为 {@link Identifier}，失败时返回 null 并打印诊断信息。
+         *
+         * <p>行为等价于 1.21.1 的 {@code MolangUtils.parseResourceLocation(ctx.entity(), getAsString(ctx, index))} （该方法原本就只是 {@code tryParse}，其 context 参数未被使用），额外加上 26.1 的 debugPrint 诊断。</p>
+         *
+         * <p><b>与 26.1 的有意差异</b>：26.1 在此处缓存解析结果到 {@code StringExpression.cachedValue}， 其前提是 26.1 把 {@code ExpressionEvaluatorImpl.visitString} 改为返回 AST 节点本身； 本仓库的 {@code visitString} 返回 {@code expression.value()}（String）， 故该缓存分支在此永远不成立。移植缓存需连带迁移求值器语义（波及所有字符串消费方）， 属优化而非 1.21.11 强制的 API 变更，故不引入。</p>
+         */
+        @Nullable
+        public Identifier getAsResourceLocation(@NotNull ExecutionContext<? extends IContext<?>> ctx, final int index) {
+            String value = getAsString(ctx, index);
+            Identifier id = (value == null) ? null : Identifier.tryParse(value);
+            if (id == null) {
+                ctx.entity().debugPrint("Illegal resource location: %s", value);
+            }
+            return id;
         }
 
         public Object getValue(@NotNull ExecutionContext<?> ctx, final int index) {

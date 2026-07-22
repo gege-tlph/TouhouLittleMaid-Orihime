@@ -6,12 +6,12 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "ArrowMixin",
+    "BlocksAttacksMixin",
     "BlockBurningCache",
     "ConduitBlockEntityMixin",
     "EntityMixin",
     "FishingHookPredicateMixin",
     "MixinCrossbowItem",
-    "MobInteractMixin",
     "NavigationMixin",
     "NodeEvaluatorBurningCacher",
     "ParrotMixin",
@@ -27,10 +27,14 @@
     "accessor.LivingEntityAccessor"
   ],
   "client": [
+    "client.AvatarRendererMixin",
+    "client.AvatarRenderStateMixin",
     "client.ClientPacketListenerMixin",
+    "client.FishingRodCastMixin",
     "client.HumanoidModelMixin",
-    "client.ItemPropertiesMixin",
+    "client.InventoryScreenMixin",
     "client.LanguageMixin",
+    "client.LevelRendererMixin",
     "client.LivingEntityRendererMixin"
   ],
   "injectors": {

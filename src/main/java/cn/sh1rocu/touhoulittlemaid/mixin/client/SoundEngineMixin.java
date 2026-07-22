@@ -19,11 +19,11 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.function.Consumer;
 
-// From Kilt https://github.com/KiltMC/Kilt/blob/version/1.21.1/src/main/java/xyz/bluspring/kilt/forgeinjects/client/sounds/SoundEngineInject.java
+// 来自 Kilt https://github.com/KiltMC/Kilt/blob/version/1.21.1/src/main/java/xyz/bluspring/kilt/forgeinjects/client/sounds/SoundEngineInject.java
 @Environment(EnvType.CLIENT)
 @Mixin(SoundEngine.class)
 public abstract class SoundEngineMixin {
@@ -41,8 +41,9 @@ public abstract class SoundEngineMixin {
         return refInstance.get() != null && original.call(refInstance.get());
     }
 
+
     @Inject(method = "play", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/sounds/ChannelAccess$ChannelHandle;execute(Ljava/util/function/Consumer;)V", shift = At.Shift.AFTER))
-    private void tlm$prepareChannelInfo(SoundInstance soundInstance, CallbackInfo ci, @Local ChannelAccess.ChannelHandle channelHandle, @Local Sound sound) {
+    private void tlm$prepareChannelInfo(SoundInstance soundInstance, CallbackInfoReturnable<SoundEngine.PlayResult> cir, @Local ChannelAccess.ChannelHandle channelHandle, @Local Sound sound) {
         var injection = ((ChannelAccessHandleInjection) channelHandle);
 
         if (sound.shouldStream())
@@ -61,9 +62,5 @@ public abstract class SoundEngineMixin {
     }
 
     // 暂时用不到
-/*    @ModifyArg(method = "method_19758", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/sounds/ChannelAccess$ChannelHandle;execute(Ljava/util/function/Consumer;)V"))
-    private static Consumer<Channel> kilt$storeStreamConsumer(Consumer<Channel> consumer) {
-        SoundConsumerStorage.soundConsumerChannels.add(consumer);
-        return consumer;
-    }*/
+
 }

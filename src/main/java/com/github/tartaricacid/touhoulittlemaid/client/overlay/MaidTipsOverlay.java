@@ -11,11 +11,11 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.LayeredDraw;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -31,8 +31,8 @@ import java.util.Map;
 
 import static com.github.tartaricacid.touhoulittlemaid.config.subconfig.RenderConfig.*;
 
-public class MaidTipsOverlay implements LayeredDraw.Layer {
-    private static final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_tips_icon.png");
+public class MaidTipsOverlay {
+    private static final Identifier ICON = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_tips_icon.png");
 
     private static Map<Item, MutableComponent> TIPS = Maps.newHashMap();
     private static Map<Item, ModConfigSpec.BooleanValue> TIPS_CONFIG = Maps.newHashMap();
@@ -90,7 +90,6 @@ public class MaidTipsOverlay implements LayeredDraw.Layer {
         return null;
     }
 
-    @Override
     public void render(@NotNull GuiGraphics guiGraphics, @NotNull DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
         Options options = minecraft.options;
@@ -139,10 +138,12 @@ public class MaidTipsOverlay implements LayeredDraw.Layer {
             List<FormattedCharSequence> split = minecraft.font.split(tip, 120);
             int offset = (screenHeight / 2 - 5) - split.size() * 10;
             guiGraphics.renderItem(itemStack, screenWidth / 2 + 32, offset);
-            guiGraphics.blit(ICON, screenWidth / 2 + 42, offset - 4, 16, 16, 16, 16, 16, 16);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, ICON,
+                    screenWidth / 2 + 42, offset - 4,
+                    0, 0, 16, 16, 16, 16);
             offset += 18;
             for (FormattedCharSequence sequence : split) {
-                guiGraphics.drawString(minecraft.font, sequence, screenWidth / 2 + 32, offset, 0xFFFFFF);
+                guiGraphics.drawString(minecraft.font, sequence, screenWidth / 2 + 32, offset, 0xFFFFFFFF);
                 offset += 10;
             }
         }

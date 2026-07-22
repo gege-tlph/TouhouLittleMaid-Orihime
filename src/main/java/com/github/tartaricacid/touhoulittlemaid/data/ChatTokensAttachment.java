@@ -6,12 +6,12 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
 @SuppressWarnings("UnstableApiUsage")
 public class ChatTokensAttachment {
-    public static final AttachmentType<ChatTokensAttachment> TYPE = AttachmentRegistry.create(ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "chat_tokens"),
+    public static final AttachmentType<ChatTokensAttachment> TYPE = AttachmentRegistry.create(Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "chat_tokens"),
             builder -> builder
                     .initializer(() -> new ChatTokensAttachment(0))
                     .copyOnDeath()

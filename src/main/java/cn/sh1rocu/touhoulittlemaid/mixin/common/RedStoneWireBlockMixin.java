@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * From Porting_Lib
+ * 来自 Porting_Lib
  */
 @Mixin(RedStoneWireBlock.class)
 public class RedStoneWireBlockMixin {
@@ -21,9 +21,7 @@ public class RedStoneWireBlockMixin {
     )
     private static void tlm$shouldConnectTo(BlockState state, Direction side, CallbackInfoReturnable<Boolean> cir) {
         if (state.getBlock() instanceof IRedstoneConnect connect) {
-            // Passing null for world and pos here just for extra upstream compat, not properly implementing it because
-            // 1. world and pos are never used in Create
-            // 2. extra work :help_me:
+            // 在这里为 world 和 pos 传递 null 只是为了额外的上游兼容性，没有正确实现它，因为 1. world 和 pos 从未在 Create 中使用 2. 额外的工作 :help_me:
             cir.setReturnValue(connect.tlm$canConnectRedstone(state, null, null, side));
         }
     }

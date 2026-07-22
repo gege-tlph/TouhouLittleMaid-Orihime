@@ -1,6 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.mixin;
 
-import com.github.tartaricacid.touhoulittlemaid.api.mixin.INavigationMixin;
+import cn.sh1rocu.touhoulittlemaid.api.mixin.INavigationMixin;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

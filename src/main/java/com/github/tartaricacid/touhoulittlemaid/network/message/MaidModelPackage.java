@@ -10,25 +10,24 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
-public record MaidModelPackage(int id, ResourceLocation modelId) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<MaidModelPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("maid_model"));
+public record MaidModelPackage(int id, Identifier modelId) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<MaidModelPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("maid_model"));
     public static final StreamCodec<ByteBuf, MaidModelPackage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT,
             MaidModelPackage::id,
-            ResourceLocation.STREAM_CODEC,
+            Identifier.STREAM_CODEC,
             MaidModelPackage::modelId,
             MaidModelPackage::new
     );
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 
@@ -38,7 +37,6 @@ public record MaidModelPackage(int id, ResourceLocation modelId) implements Cust
             Entity entity = sender.level.getEntity(message.id);
             if (entity instanceof EntityMaid maid && maid.isOwnedBy(sender)) {
                 if (sender.isCreative() || MaidConfig.MAID_CHANGE_MODEL.get()) {
-                    maid.setIsYsmModel(false);
                     maid.setModelId(message.modelId.toString());
                     InitTrigger.MAID_EVENT.trigger(sender, TriggerType.CHANGE_MAID_MODEL);
                 } else {

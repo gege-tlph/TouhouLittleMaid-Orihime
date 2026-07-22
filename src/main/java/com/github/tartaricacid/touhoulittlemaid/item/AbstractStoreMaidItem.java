@@ -2,15 +2,21 @@ package com.github.tartaricacid.touhoulittlemaid.item;
 
 import cn.sh1rocu.touhoulittlemaid.api.extension.IItemEntity;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidAndItemTransformEvent;
-import com.github.tartaricacid.touhoulittlemaid.compat.ysm.YsmCompat;
+
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent;
 import com.github.tartaricacid.touhoulittlemaid.inventory.tooltip.ItemMaidTooltip;
 import com.github.tartaricacid.touhoulittlemaid.inventory.tooltip.YsmMaidInfo;
+import com.github.tartaricacid.touhoulittlemaid.compat.ysm.YsmCompat;
 import com.mojang.serialization.Codec;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.util.Util;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -40,8 +46,11 @@ public abstract class AbstractStoreMaidItem extends Item implements IItemEntity 
     public static void storeMaidData(ItemStack stack, EntityMaid maid) {
         CustomData compoundData = stack.get(InitDataComponent.MAID_INFO);
         if (compoundData == null) {
-            CompoundTag tag = new CompoundTag();
-            maid.saveWithoutId(tag);
+
+            TagValueOutput valueOutput = TagValueOutput.createWithContext(
+                    ProblemReporter.DISCARDING, maid.registryAccess());
+            maid.saveWithoutId(valueOutput);
+            CompoundTag tag = valueOutput.buildResult();
             var event = new MaidAndItemTransformEvent.ToItem(maid, stack, tag);
             MaidAndItemTransformEvent.TO_ITEM.invoker().onToItem(event);
             stack.set(InitDataComponent.MAID_INFO, CustomData.of(tag));
@@ -57,7 +66,7 @@ public abstract class AbstractStoreMaidItem extends Item implements IItemEntity 
             entity.setInvulnerable(true);
         }
         Vec3 position = entity.position();
-        int minY = entity.level.getMinBuildHeight();
+        int minY = entity.level.getMinY();
         if (position.y < minY) {
             entity.setNoGravity(true);
             entity.setDeltaMovement(Vec3.ZERO);
@@ -73,13 +82,16 @@ public abstract class AbstractStoreMaidItem extends Item implements IItemEntity 
         if (maidInfo == null) {
             return Optional.empty();
         }
-        Optional<String> modelId = maidInfo.read(Codec.STRING.fieldOf(MODEL_ID_TAG_NAME)).result();
+
+        CompoundTag infoTag = maidInfo.copyTag();
+        Optional<String> modelId = infoTag.read(Codec.STRING.fieldOf(MODEL_ID_TAG_NAME));
         if (modelId.isEmpty()) {
             return Optional.empty();
         }
-        String customName = maidInfo.read(Codec.STRING.fieldOf(CUSTOM_NAME)).result().orElse(StringUtils.EMPTY);
-        // YSM 渲染相关数据
-        YsmMaidInfo ysmMaidInfo = YsmCompat.getYsmMaidInfo(maidInfo.copyTag());
+
+        String customName = infoTag.getString(CUSTOM_NAME).orElse(StringUtils.EMPTY);
+
+        YsmMaidInfo ysmMaidInfo = YsmCompat.getYsmMaidInfo(infoTag);
         return Optional.of(new ItemMaidTooltip(modelId.get(), customName, ysmMaidInfo));
     }
 
@@ -88,7 +100,8 @@ public abstract class AbstractStoreMaidItem extends Item implements IItemEntity 
         CustomData compoundData = stack.get(InitDataComponent.MAID_INFO);
         if (compoundData != null) {
             CompoundTag maidCompound = compoundData.copyTag();
-            UUID ownerUid = maidCompound.getUUID(MAID_OWNER);
+
+            UUID ownerUid = maidCompound.read(MAID_OWNER, UUIDUtil.CODEC).orElse(Util.NIL_UUID);
             if (!player.getUUID().equals(ownerUid)) {
                 return InteractionResult.FAIL;
             }
@@ -96,18 +109,20 @@ public abstract class AbstractStoreMaidItem extends Item implements IItemEntity 
             var event = new MaidAndItemTransformEvent.ToMaid(maid, stack, maidCompound);
             MaidAndItemTransformEvent.TO_MAID.invoker().onToMaid(event);
 
-            maid.load(maidCompound);
-            maid.moveTo(context.getClickedPos().above(), 0, 0);
+
+            maid.load(TagValueInput.create(ProblemReporter.DISCARDING, maid.registryAccess(), maidCompound));
+
+            maid.snapTo(context.getClickedPos().above(), 0, 0);
             if (worldIn instanceof ServerLevel) {
                 worldIn.addFreshEntity(maid);
             }
             maid.spawnExplosionParticle();
             maid.playSound(SoundEvents.PLAYER_SPLASH, 1.0F, worldIn.random.nextFloat() * 0.1F + 0.9F);
             runnable.run();
-            return InteractionResult.sidedSuccess(worldIn.isClientSide);
+            return InteractionResult.SUCCESS;
         } else {
-            if (worldIn.isClientSide) {
-                player.sendSystemMessage(Component.translatable("message.touhou_little_maid.photo.have_no_nbt_data"));
+            if (worldIn.isClientSide()) {
+                player.displayClientMessage(Component.translatable("message.touhou_little_maid.photo.have_no_nbt_data"), false);
             }
         }
         return super.useOn(context);

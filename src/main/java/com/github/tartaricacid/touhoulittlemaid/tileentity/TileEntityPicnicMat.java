@@ -1,16 +1,19 @@
 package com.github.tartaricacid.touhoulittlemaid.tileentity;
 
+import net.minecraft.nbt.IntArrayTag;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import cn.sh1rocu.touhoulittlemaid.api.extension.IBlockEntityPersistentData;
 import cn.sh1rocu.touhoulittlemaid.util.itemhandler.ItemStackHandler;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBlocks;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -25,14 +28,14 @@ import javax.annotation.Nullable;
 import java.util.UUID;
 
 public class TileEntityPicnicMat extends BlockEntity implements IBlockEntityPersistentData {
-    public static final BlockEntityType<TileEntityPicnicMat> TYPE = BlockEntityType.Builder.of(TileEntityPicnicMat::new, InitBlocks.PICNIC_MAT).build(null);
+    public static final BlockEntityType<TileEntityPicnicMat> TYPE = FabricBlockEntityTypeBuilder.create(TileEntityPicnicMat::new, InitBlocks.PICNIC_MAT).build();
     private static final String CENTER_POS_NAME = "CenterPos";
     private static final String STORAGE_ITEM = "StorageItem";
     private static final String SIT_IDS = "SitIds";
     private final ItemStackHandler handler = new ItemStackHandler(9) {
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return /*stack.getFoodProperties(null)*/stack.get(DataComponents.FOOD) != null;
+            return stack.get(DataComponents.FOOD) != null;
         }
     };
     private final UUID[] sitIds = new UUID[]{Util.NIL_UUID, Util.NIL_UUID, Util.NIL_UUID, Util.NIL_UUID};
@@ -87,30 +90,31 @@ public class TileEntityPicnicMat extends BlockEntity implements IBlockEntityPers
     }
 
     @Override
-    protected void saveAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
-        tlm$getPersistentData().put(CENTER_POS_NAME, NbtUtils.writeBlockPos(centerPos));
-        tlm$getPersistentData().put(STORAGE_ITEM, handler.serializeNBT(pRegistries));
+    protected void saveAdditional(ValueOutput output){
+        tlm$getPersistentData().putIntArray(CENTER_POS_NAME,
+                new int[]{centerPos.getX(), centerPos.getY(), centerPos.getZ()});
+        tlm$getPersistentData().put(STORAGE_ITEM, handler.serializeNBT(tlm$registries()));
         ListTag listTag = new ListTag();
         for (UUID uuid : sitIds) {
-            listTag.add(NbtUtils.createUUID(uuid));
+            listTag.add(new IntArrayTag(UUIDUtil.uuidToIntArray(uuid)));
         }
         tlm$getPersistentData().put(SIT_IDS, listTag);
-        super.saveAdditional(pTag, pRegistries);
+        super.saveAdditional(output);
     }
 
     @Override
-    public void loadAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
-        super.loadAdditional(pTag, pRegistries);
-        NbtUtils.readBlockPos(tlm$getPersistentData(), CENTER_POS_NAME).ifPresent(pos -> centerPos = pos);
-        this.handler.deserializeNBT(pRegistries, tlm$getPersistentData().getCompound(STORAGE_ITEM));
-        ListTag sitIdsTag = tlm$getPersistentData().getList(SIT_IDS, Tag.TAG_INT_ARRAY);
-        int i = 0;
-        for (Tag tag : sitIdsTag) {
-            this.sitIds[i] = NbtUtils.loadUUID(tag);
-            i = i + 1;
-            if (i >= 4) {
-                break;
-            }
+    public void loadAdditional(ValueInput input){
+        super.loadAdditional(input);
+        tlm$getPersistentData().getIntArray(CENTER_POS_NAME)
+                .filter(a -> a.length == 3)
+                .map(a -> new BlockPos(a[0], a[1], a[2]))
+                .ifPresent(pos -> centerPos = pos);
+        this.handler.deserializeNBT(input.lookup(), tlm$getPersistentData().getCompound(STORAGE_ITEM).orElse(new CompoundTag()));
+        ListTag sitIdsTag = tlm$getPersistentData().getListOrEmpty(SIT_IDS);
+        for (int i = 0; i < sitIdsTag.size() && i < 4; i++) {
+            int finalI = i;
+            sitIdsTag.getIntArray(i).map(UUIDUtil::uuidFromIntArray)
+                    .ifPresent(u -> this.sitIds[finalI] = u);
         }
     }
 
@@ -135,5 +139,10 @@ public class TileEntityPicnicMat extends BlockEntity implements IBlockEntityPers
 
     public BlockPos getWorldPosition() {
         return this.worldPosition;
+    }
+
+    @javax.annotation.Nullable
+    private HolderLookup.Provider tlm$registries() {
+        return this.level != null ? this.level.registryAccess() : null;
     }
 }

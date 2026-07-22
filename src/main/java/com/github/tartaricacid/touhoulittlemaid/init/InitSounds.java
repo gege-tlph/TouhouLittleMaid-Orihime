@@ -3,7 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.init;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 
 public final class InitSounds {
@@ -54,9 +54,10 @@ public final class InitSounds {
     public static final SoundEvent FAIRY_HURT = registerSound("entity.fairy.hurt");
     public static final SoundEvent RECORDING_START = registerSound("ui.recording_start");
     public static final SoundEvent RECORDING_END = registerSound("ui.recording_end");
+    public static final SoundEvent GECKO_CUSTOM = registerSound("gecko_custom");
 
     private static SoundEvent registerSound(String name) {
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, name);
+        Identifier id = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, name);
         return Registry.register(BuiltInRegistries.SOUND_EVENT, id, SoundEvent.createFixedRangeEvent(id, 16.0F));
     }
 }

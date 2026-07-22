@@ -1,0 +1,44 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - port/1.21.11-fabric
+  pull_request:
+    branches:
+      - port/1.21.11-fabric
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build
+        run: ./gradlew build --no-daemon
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: touhoulittlemaid-fabric-1.21.11
+          path: |
+            build/libs/*.jar
+            !build/libs/*-sources.jar
+            !build/libs/*-shadow.jar
+          if-no-files-found: error
+          retention-days: 14

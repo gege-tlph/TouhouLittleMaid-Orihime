@@ -5,29 +5,21 @@ import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.molang.function.e
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.util.MolangUtils;
 import com.github.tartaricacid.touhoulittlemaid.molang.runtime.ExecutionContext;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 
 public class RelativeBlockHasAnyTag extends EntityFunction {
     @Override
     protected Object eval(ExecutionContext<IContext<Entity>> ctx, ArgumentCollection arguments) {
-        Entity entity = ctx.entity().entity();
-
-        int offsetX = arguments.getAsInt(ctx, 0);
-        int offsetY = arguments.getAsInt(ctx, 1);
-        int offsetZ = arguments.getAsInt(ctx, 2);
-        if (Math.abs(offsetX) > 8 || Math.abs(offsetY) > 8 || Math.abs(offsetZ) > 8) {
-            return false;
+        var block = MolangUtils.getRelativeBlock(ctx, arguments);
+        if (block == null) {
+            return null;
         }
-
-        BlockState block = ctx.entity().entity().level().getBlockState(entity.blockPosition());
-
         for (int i = 3; i < arguments.size(); i++) {
-            ResourceLocation tagId = MolangUtils.parseResourceLocation(ctx.entity(), arguments.getAsString(ctx, i));
-            if (tagId == null) {
+            Identifier tagId = arguments.getAsResourceLocation(ctx, i);
+            if(tagId == null) {
                 return null;
             }
 

@@ -13,19 +13,24 @@ public class RotationValue implements IValue {
 
     public static float processValue(double value, boolean flip) {
         float ret = (float) Math.toRadians(value);
-        if (flip) {
+        if(flip) {
             ret = -ret;
         }
         return ret;
     }
 
     @Override
-    public double evalAsDouble(ExpressionEvaluator<?> evaluator) {
-        return processValue(this.value.evalAsDouble(evaluator), this.flip);
+    public float evalAsFloat(ExpressionEvaluator<?> evaluator) {
+        return processValue(this.value.evalAsFloat(evaluator), this.flip);
+    }
+
+    @Override
+    public Object eval(ExpressionEvaluator<?> evaluator) {
+        return evalAsFloat(evaluator);
     }
 
     @Override
     public Object evalUnsafe(ExpressionEvaluator<?> evaluator) {
-        return evalAsDouble(evaluator);
+        return evalAsFloat(evaluator);
     }
 }

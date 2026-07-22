@@ -72,18 +72,7 @@ public final class MaidBrain {
     }
 
     private static void registerSchedule(Brain<EntityMaid> brain, EntityMaid maid) {
-        switch (maid.getSchedule()) {
-            case ALL:
-                brain.setSchedule(InitEntities.MAID_ALL_DAY_SCHEDULES);
-                break;
-            case NIGHT:
-                brain.setSchedule(InitEntities.MAID_NIGHT_SHIFT_SCHEDULES);
-                break;
-            case DAY:
-            default:
-                brain.setSchedule(InitEntities.MAID_DAY_SHIFT_SCHEDULES);
-                break;
-        }
+        brain.setSchedule(maid.getSchedule().getEnvironmentAttribute());
     }
 
     private static void registerCoreGoals(Brain<EntityMaid> brain) {

@@ -2,6 +2,7 @@ package cn.sh1rocu.touhoulittlemaid.mixin.common;
 
 import cn.sh1rocu.touhoulittlemaid.api.event.LivingAttackEvent;
 import cn.sh1rocu.touhoulittlemaid.util.forge.EventHooks;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,8 +30,9 @@ public abstract class PlayerMixin extends LivingEntity {
         EventHooks.firePlayerTickPost((Player) (Object) this);
     }
 
-    @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
-    public void tlm$attackEvent(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+
+    @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
+    public void tlm$attackEvent(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         LivingAttackEvent event = new LivingAttackEvent(this, source, amount);
         LivingAttackEvent.CALLBACK.invoker().onLivingAttack(event);
         if (event.isCanceled())

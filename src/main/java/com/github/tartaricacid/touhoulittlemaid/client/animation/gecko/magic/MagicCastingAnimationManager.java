@@ -12,11 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * 魔法咏唱动画管理器
- * <p>
- * 用于注册和管理魔法咏唱动画提供器
- * <p>
- * 仅在客户端使用
+ * 魔法咏唱动画管理器 <p> 用于注册和管理魔法咏唱动画提供器 <p> 仅在客户端使用
  *
  * @author Gardel &lt;gardel741@outlook.com&gt;
  * @since 2026-01-03
@@ -26,9 +22,7 @@ public class MagicCastingAnimationManager {
     private static List<IMagicCastingAnimationProvider> PROVIDERS = Lists.newArrayList();
 
     /**
-     * 初始化魔法咏唱动画管理器
-     * <p>
-     * 在 ClientSetupEvent 中调用
+     * 初始化魔法咏唱动画管理器 <p> 在 ClientSetupEvent 中调用
      */
     public static void init() {
         MagicCastingAnimationManager manager = new MagicCastingAnimationManager();
@@ -53,9 +47,7 @@ public class MagicCastingAnimationManager {
     }
 
     /**
-     * 获取所有已注册的提供器
-     * <p>
-     * 仅供内部使用
+     * 获取所有已注册的提供器 <p> 仅供内部使用
      *
      * @return 提供器列表，按优先级排序
      */
@@ -64,9 +56,7 @@ public class MagicCastingAnimationManager {
     }
 
     /**
-     * 清空所有注册的提供器
-     * <p>
-     * 在资源重载或模组初始化时调用
+     * 清空所有注册的提供器 <p> 在资源重载或模组初始化时调用
      */
     public static void clear() {
         PROVIDERS.clear();

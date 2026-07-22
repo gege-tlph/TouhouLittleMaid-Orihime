@@ -7,13 +7,17 @@ import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
 import com.github.tartaricacid.touhoulittlemaid.init.InitRecipes;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemFilm;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.Level;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
@@ -24,25 +28,29 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-public class AltarRecipe extends ShapelessRecipe {
+
+public class AltarRecipe implements Recipe<CraftingInput> {
     private final String group;
     private final CraftingBookCategory category;
+    private final NonNullList<Ingredient> ingredients;
     private final float power;
     private final ItemStack result;
-    private final ResourceLocation entityType;
+    private final Identifier entityType;
     private final String langKey;
+    @Nullable
+    private PlacementInfo placementInfo;
 
-    public AltarRecipe(String group, CraftingBookCategory category, NonNullList<Ingredient> ingredients, float power, ItemStack result, ResourceLocation entityType, String langKey) {
-        super(group, category, result, ingredients);
+    public AltarRecipe(String group, CraftingBookCategory category, NonNullList<Ingredient> ingredients, float power, ItemStack result, Identifier entityType, String langKey) {
         this.group = group;
         this.category = category;
+        this.ingredients = ingredients;
         this.power = power;
         this.result = result;
         this.entityType = entityType;
         this.langKey = langKey;
     }
 
-    public ResourceLocation getId() {
+    public Identifier getId() {
         return BuiltInRegistries.RECIPE_TYPE.getKey(InitRecipes.ALTAR_CRAFTING);
     }
 
@@ -56,7 +64,8 @@ public class AltarRecipe extends ShapelessRecipe {
     }
 
     public void spawnOutputEntity(ServerLevel world, BlockPos pos, @Nullable List<ItemStack> list) {
-        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(entityType);
+        // 实体类型来自默认注册表；无法解析的 ID 会得到注册表后备值，不会返回 null。
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(entityType);
 
         if (type == EntityType.ITEM) {
             this.spawnItem(world, pos);
@@ -74,7 +83,7 @@ public class AltarRecipe extends ShapelessRecipe {
         }
 
         // 生成类型为 EVENT 也许更合适
-        type.spawn(world, pos, MobSpawnType.EVENT);
+        type.spawn(world, pos, EntitySpawnReason.EVENT);
     }
 
     private void rebornMaid(ServerLevel world, BlockPos pos, @Nullable List<ItemStack> list) {
@@ -86,9 +95,11 @@ public class AltarRecipe extends ShapelessRecipe {
         CustomData compoundData = itemFilm.get(InitDataComponent.MAID_INFO);
         if (compoundData != null) {
             CompoundTag maidCompound = compoundData.copyTag();
-            maid.readAdditionalSaveData(maidCompound);
+
+            maid.readAdditionalSaveData(TagValueInput.create(
+                    ProblemReporter.DISCARDING, world.registryAccess(), maidCompound));
         } else {
-            maid.finalizeSpawn(world, world.getCurrentDifficultyAt(pos), MobSpawnType.SPAWN_EGG, null);
+            maid.finalizeSpawn(world, world.getCurrentDifficultyAt(pos), EntitySpawnReason.SPAWN_ITEM_USE, null);
         }
         maid.setPos(pos.getX(), pos.getY(), pos.getZ());
         world.addFreshEntity(maid);
@@ -100,8 +111,9 @@ public class AltarRecipe extends ShapelessRecipe {
 
         EntityMaid maid = new EntityMaid(world);
         maid.setPos(pos.getX(), pos.getY(), pos.getZ());
-        maid.finalizeSpawn(world, world.getCurrentDifficultyAt(pos), MobSpawnType.SPAWN_EGG, null);
-        maid.startRiding(box, true);
+        maid.finalizeSpawn(world, world.getCurrentDifficultyAt(pos), EntitySpawnReason.SPAWN_ITEM_USE, null);
+
+        maid.startRiding(box, true, true);
 
         world.tryAddFreshEntityWithPassengers(box);
     }
@@ -111,21 +123,70 @@ public class AltarRecipe extends ShapelessRecipe {
         world.addFreshEntity(itemEntity);
     }
 
+    // ==== Recipe<CraftingInput> 接口实现（matches/placementInfo 复刻 vanilla ShapelessRecipe，逐字节等价行为）====
     @Override
-    public @NotNull RecipeType<?> getType() {
+    public boolean matches(CraftingInput input, Level level) {
+        if (input.ingredientCount() != this.ingredients.size()) {
+            return false;
+        }
+        return input.size() == 1 && this.ingredients.size() == 1
+                ? this.ingredients.getFirst().test(input.getItem(0))
+                : input.stackedContents().canCraft(this, null);
+    }
+
+    @Override
+    public ItemStack assemble(CraftingInput input, HolderLookup.Provider provider) {
+        return this.result.copy();
+    }
+
+    @Override
+    public @NotNull RecipeType<AltarRecipe> getType() {
         return InitRecipes.ALTAR_CRAFTING;
     }
 
     @Override
-    public RecipeSerializer<?> getSerializer() {
+    public RecipeSerializer<AltarRecipe> getSerializer() {
         return InitRecipes.ALTAR_RECIPE_SERIALIZER;
+    }
+
+    @Override
+    public PlacementInfo placementInfo() {
+        if (this.placementInfo == null) {
+            this.placementInfo = PlacementInfo.create(this.ingredients);
+        }
+        return this.placementInfo;
+    }
+
+    @Override
+    public RecipeBookCategory recipeBookCategory() {
+        // ALTAR_CRAFTING 是独立 RecipeType（非 minecraft:crafting）→ 不进合成配方书；此值仅为接口占位
+        return RecipeBookCategories.CRAFTING_MISC;
+    }
+
+    @Override
+    public boolean isSpecial() {
+        return true;
+    }
+
+    @Override
+    public boolean showNotification() {
+        return false;
+    }
+
+    @Override
+    public String group() {
+        return group;
+    }
+
+    // ==== 序列化器 / 配方查看器消费方需要的 getter（getGroup/getIngredients 无 @Override，因接口方法名不同）====
+    public NonNullList<Ingredient> getIngredients() {
+        return ingredients;
     }
 
     public float getPower() {
         return power;
     }
 
-    @Override
     public String getGroup() {
         return group;
     }
@@ -138,7 +199,7 @@ public class AltarRecipe extends ShapelessRecipe {
         return result;
     }
 
-    public ResourceLocation getEntityType() {
+    public Identifier getEntityType() {
         return entityType;
     }
 

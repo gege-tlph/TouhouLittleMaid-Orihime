@@ -29,201 +29,199 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 /**
- * An enum of token kinds. Represents a single token kind.
+ * Molang 词元类型枚举。
  *
- * <p>Tokens are, commonly, a sequence of one or more continuous
- * characters, like "??", "->", "!", "true", "1.0", "2.0", ...</p>
+ * <p>一个词元通常由一个或多个连续字符组成，例如 {@code ??}、{@code ->}、{@code !}、
+ * {@code true} 或 {@code 1.0}。</p>
  *
- * <p>Tokens do not have an specific behavior, they just group
- * certain characters that can be used by the parser.</p>
+ * <p>词元本身不执行行为，只负责将输入字符归类后交给解析器。</p>
  *
  * @since 3.0.0
  */
 public enum TokenKind {
 
     /**
-     * End-of-file token, means that the end was reached
+     * 文件结束词元。
      */
     EOF,
 
     /**
-     * Error token, means that there was an error there
+     * 词法错误词元。
      */
     ERROR(Tag.HAS_VALUE),
 
     /**
-     * Identifier token, has a string value of the identifier name
+     * 标识符词元，其值为标识符名称。
      */
     IDENTIFIER(Tag.HAS_VALUE),
 
     /**
-     * String literal token, has a string value of its content
+     * 字符串字面量词元，其值为字符串内容。
      */
     STRING(Tag.HAS_VALUE),
 
     /**
-     * Float literal token, has a string value of its content,
-     * which can be parsed to a floating-point number
+     * 浮点数字面量词元，其字符串值可解析为浮点数。
      */
     FLOAT(Tag.HAS_VALUE),
 
     /**
-     * 'True' literal boolean token
+     * {@code true} 布尔字面量。
      */
     TRUE,
 
     /**
-     * 'False' literal boolean token
+     * {@code false} 布尔字面量。
      */
     FALSE,
 
     /**
-     * The "break" keyword
+     * {@code break} 关键字。
      */
     BREAK,
 
     /**
-     * The "continue" keyword
+     * {@code continue} 关键字。
      */
     CONTINUE,
 
     /**
-     * The "return" keyword
+     * {@code return} 关键字。
      */
     RETURN,
 
     /**
-     * The dot symbol (.)
+     * 点符号 (.)
      */
     DOT,
 
     /**
-     * The bang or exclamation symbol (!)
+     * 感叹号 ({@code !})。
      */
     BANG,
 
     /**
-     * Double ampersand token (&&)
+     * 逻辑与符号 ({@code &&})。
      */
     AMPAMP,
 
     /**
-     * Double bar token (||)
+     * 逻辑或符号 ({@code ||})。
      */
     BARBAR,
 
     /**
-     * Less-than token (<)
+     * 小于标记 (<)
      */
     LT,
 
     /**
-     * Less-than-or-equal token (<=)
+     * 小于或等于标记 (<=)
      */
     LTE,
 
     /**
-     * Greater-than token (>)
+     * 大于标记 (>)
      */
     GT,
 
     /**
-     * Greater-than-or-equal token (>=)
+     * 大于或等于标记 (>=)
      */
     GTE,
 
     /**
-     * Equal symbol (=)
+     * 等号 (=)
      */
     EQ,
 
     /**
-     * Equal-equal token (==)
+     * 相等标记 (==)
      */
     EQEQ,
 
     /**
-     * Bang-eq token (!=)
+     * 不等于符号 ({@code !=})。
      */
     BANGEQ,
 
     /**
-     * Star symbol (*)
+     * 星号 (*)
      */
     STAR,
 
     /**
-     * Slash symbol (/)
+     * 斜线符号 (/)
      */
     SLASH,
 
     /**
-     * Plus symbol (+)
+     * 加号 (+)
      */
     PLUS,
 
     /**
-     * Hyphen/sub symbol (-)
+     * 减号 ({@code -})。
      */
     SUB,
 
     /**
-     * Left-parenthesis symbol "("
+     * 左括号符号“(”
      */
     LPAREN,
 
     /**
-     * Right-parenthesis symbol ")"
+     * 右括号符号“)”
      */
     RPAREN,
 
     /**
-     * Left-brace symbol "{"
+     * 左大括号符号“{”
      */
     LBRACE,
 
     /**
-     * Right-brace symbol "}"
+     * 右大括号符号“}”
      */
     RBRACE,
 
     /**
-     * Question-question token (??)
+     * 空值合并符号 ({@code ??})。
      */
     QUESQUES,
 
     /**
-     * Question symbol (?)
+     * 问号（？）
      */
     QUES,
 
     /**
-     * Colon symbol (:)
+     * 冒号符号 (:)
      */
     COLON,
 
     /**
-     * Arrow token (->)
+     * 箭头标记 (->)
      */
     ARROW,
 
     /**
-     * Left-bracket token "["
+     * 左括号标记“[”
      */
     LBRACKET,
 
     /**
-     * Right-bracket "]
+     * 右方括号 ({@code ]})。
      */
     RBRACKET,
 
     /**
-     * Comma symbol (,)
+     * 逗号符号 (,)
      */
     COMMA,
 
     /**
-     * Semicolon symbol (;)
+     * 分号符号 (;)
      */
     SEMICOLON;
 
@@ -238,12 +236,10 @@ public enum TokenKind {
     }
 
     /**
-     * Determines if this token kind has a certain
-     * tag.
+     * 判断此词元类型是否具有指定标签。
      *
-     * @param tag The tag to check.
-     * @return True if this token kind is tagged with
-     * the given tag
+     * @param tag 要检查的标签。
+     * @return 具有指定标签时返回 {@code true}
      * @since 3.0.0
      */
     public boolean hasTag(final @NotNull Tag tag) {
@@ -252,17 +248,14 @@ public enum TokenKind {
     }
 
     /**
-     * An enum of tags for token kinds. Tags specify
-     * certain features of token kinds.
+     * 词元类型特征标签。
      *
      * @since 3.0.0
      */
     public enum Tag {
 
         /**
-         * A token kind with HAS_VALUE tag will have a variable value,
-         * for example, double or string literal tokens have variable
-         * values, but they are still parsed with the same token kind.
+         * 表示该词元类型携带值，例如浮点数、字符串或标识符词元。
          *
          * @since 3.0.0
          */

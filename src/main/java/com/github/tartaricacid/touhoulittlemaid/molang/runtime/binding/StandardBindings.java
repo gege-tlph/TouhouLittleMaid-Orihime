@@ -31,17 +31,13 @@ import com.github.tartaricacid.touhoulittlemaid.molang.runtime.Function;
 import java.util.Arrays;
 
 /**
- * Class holding some default bindings and
- * static utility methods for ease working
- * with bindings
+ * 包含一些默认绑定和静态实用方法的类，以便于使用绑定
  */
 public final class StandardBindings {
     private static final int MAX_LOOP_ROUND = 1024;
 
     public static final Function LOOP_FUNC = (ctx, args) -> {
-        // Parameters:
-        // - double:           How many times should we loop
-        // - CallableBinding:  The looped expressions
+        // 参数： - double：我们应该循环多少次 - CallableBinding：循环表达式
 
         if (args.size() < 2) {
             return null;
@@ -58,9 +54,7 @@ public final class StandardBindings {
                     if (value == StatementExpression.Op.BREAK) {
                         break;
                     }
-                    // (not necessary, callable already exits when returnValue
-                    //  is set to any non-null value)
-                    // if (value == StatementExpression.Op.CONTINUE) continue;
+
                 }
             }
         }
@@ -68,10 +62,7 @@ public final class StandardBindings {
     };
 
     public static final Function FOR_EACH_FUNC = (ctx, args) -> {
-        // Parameters:
-        // - any:              Variable
-        // - array:            Any array
-        // - CallableBinding:  The looped expressions
+        // 参数： - any：变量 - array：任意数组 - CallableBinding：循环表达式
 
         if (args.size() < 3) {
             return null;
@@ -79,9 +70,7 @@ public final class StandardBindings {
 
         final Expression variableExpr = args.getExpression(0);
         if (!(variableExpr instanceof AssignableVariableExpression)) {
-            // first argument must be an access expression,
-            // e.g. 'variable.test', 'v.pig', 't.entity' or
-            // 't.entity.location.world'
+            // 第一个参数必须是访问表达式，例如'variable.test'、'v.pig'、't.entity' 或 't.entity.location.world'
             return null;
         }
         final AssignableVariable variableAccess = ((AssignableVariableExpression) variableExpr).target();
@@ -93,7 +82,7 @@ public final class StandardBindings {
         } else if (array instanceof Iterable<?>) {
             arrayIterable = (Iterable<?>) array;
         } else {
-            // second argument must be an array or iterable
+            // 第二个参数必须是数组或可迭代
             return null;
         }
 
@@ -103,8 +92,7 @@ public final class StandardBindings {
             Function callable = ((ExecutionScopeExpression) expr).buildFunction((ExpressionVisitor<?>) ctx);
             if (callable != null) {
                 for (final Object val : arrayIterable) {
-                    // set 'val' as current value
-                    // eval (objectExpr.propertyName = val)
+                    // 将 'val' 设置为当前值 eval (objectExpr.propertyName = val)
                     variableAccess.assign(ctx, val);
                     final Object returnValue = callable.evaluate(ctx, Function.EMPTY_ARGUMENT);
 

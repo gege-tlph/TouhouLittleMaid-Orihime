@@ -10,12 +10,11 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record SetBeaconOverflowPackage(BlockPos pos, boolean overflowDelete) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<SetBeaconOverflowPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("set_beacon_overflow"));
+    public static final CustomPacketPayload.Type<SetBeaconOverflowPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("set_beacon_overflow"));
     public static final StreamCodec<ByteBuf, SetBeaconOverflowPackage> STREAM_CODEC = StreamCodec.composite(
             BlockPos.STREAM_CODEC,
             SetBeaconOverflowPackage::pos,
@@ -38,7 +37,7 @@ public record SetBeaconOverflowPackage(BlockPos pos, boolean overflowDelete) imp
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

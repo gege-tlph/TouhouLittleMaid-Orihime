@@ -12,7 +12,7 @@ import com.github.tartaricacid.touhoulittlemaid.util.SoundUtil;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -33,10 +33,10 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public class TaskAttack implements IAttackTask {
-    public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "attack");
+    public static final Identifier UID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "attack");
 
     @Override
-    public ResourceLocation getUid() {
+    public Identifier getUid() {
         return UID;
     }
 
@@ -52,8 +52,8 @@ public class TaskAttack implements IAttackTask {
 
     @Override
     public List<Pair<Integer, BehaviorControl<? super EntityMaid>>> createBrainTasks(EntityMaid maid) {
-        BehaviorControl<EntityMaid> supplementedTask = StartAttacking.create(this::hasAssaultWeapon, IAttackTask::findFirstValidAttackTarget);
-        BehaviorControl<EntityMaid> findTargetTask = StopAttackingIfTargetInvalid.create(target -> !hasAssaultWeapon(maid) || farAway(target, maid));
+        BehaviorControl<EntityMaid> supplementedTask = StartAttacking.create((level, e) -> hasAssaultWeapon(e), (level, e) -> IAttackTask.findFirstValidAttackTarget(e));
+        BehaviorControl<EntityMaid> findTargetTask = StopAttackingIfTargetInvalid.create((level, target) -> !hasAssaultWeapon(maid) || farAway(target, maid));
         BehaviorControl<Mob> moveToTargetTask = SetWalkTargetFromAttackTargetIfTargetOutOfReach.create(0.6f);
         BehaviorControl<EntityMaid> attackTargetTask = MaidMeleeAttack.create(20);
         MaidUseShieldTask maidUseShieldTask = new MaidUseShieldTask();
@@ -69,8 +69,8 @@ public class TaskAttack implements IAttackTask {
 
     @Override
     public List<Pair<Integer, BehaviorControl<? super EntityMaid>>> createRideBrainTasks(EntityMaid maid) {
-        BehaviorControl<EntityMaid> supplementedTask = StartAttacking.create(this::hasAssaultWeapon, IAttackTask::findFirstValidAttackTarget);
-        BehaviorControl<EntityMaid> findTargetTask = StopAttackingIfTargetInvalid.create(target -> !hasAssaultWeapon(maid) || farAway(target, maid));
+        BehaviorControl<EntityMaid> supplementedTask = StartAttacking.create((level, e) -> hasAssaultWeapon(e), (level, e) -> IAttackTask.findFirstValidAttackTarget(e));
+        BehaviorControl<EntityMaid> findTargetTask = StopAttackingIfTargetInvalid.create((level, target) -> !hasAssaultWeapon(maid) || farAway(target, maid));
         BehaviorControl<EntityMaid> attackTargetTask = MaidMeleeAttack.create(20);
         MaidUseShieldTask maidUseShieldTask = new MaidUseShieldTask();
 
@@ -107,7 +107,7 @@ public class TaskAttack implements IAttackTask {
 
     @Override
     public boolean isWeapon(EntityMaid maid, ItemStack stack) {
-        ItemAttributeModifiers attributeModifiers = stack./*getAttributeModifiers()*/get(DataComponents.ATTRIBUTE_MODIFIERS);
+        ItemAttributeModifiers attributeModifiers = stack./* getAttributeModifiers() */get(DataComponents.ATTRIBUTE_MODIFIERS);
         return attributeModifiers != null && attributeModifiers.modifiers()
                 .stream()
                 .anyMatch(modifier -> modifier.attribute().is(Attributes.ATTACK_DAMAGE));
@@ -126,7 +126,7 @@ public class TaskAttack implements IAttackTask {
             return true;
         }
         boolean enable = maid.isHomeModeEnable();
-        float radius = maid.getRestrictRadius();
+        float radius = maid.getHomeRadius();
         if (!enable && maid.getOwner() != null) {
             return maid.getOwner().distanceTo(target) > radius;
         }

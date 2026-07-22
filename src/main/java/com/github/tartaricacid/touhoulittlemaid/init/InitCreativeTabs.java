@@ -13,12 +13,13 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.EnchantedBookItem;
+
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
-import vazkii.patchouli.common.item.ItemModBook;
+
 
 import java.util.Optional;
 
@@ -33,9 +34,7 @@ public class InitCreativeTabs {
             .title(Component.translatable("item_group.touhou_little_maid.main"))
             .icon(() -> InitItems.HAKUREI_GOHEI.getDefaultInstance())
             .displayItems((par, output) -> {
-                if (FabricLoader.getInstance().isModLoaded("patchouli")) {
-                    output.accept(ItemModBook.forBook(MEMORIZABLE_GENSOKYO_LOCATION));
-                }
+
                 output.accept(MAID_SPAWN_EGG);
                 output.accept(FAIRY_SPAWN_EGG);
                 output.accept(HAKUREI_GOHEI);
@@ -98,12 +97,14 @@ public class InitCreativeTabs {
                 if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
                     ItemEntityPlaceholder.fillItemCategory(output);
                 }
+
                 par.holders().lookup(Registries.ENCHANTMENT).ifPresent(reg -> {
                     addEnchantmentBook(reg.get(EnchantmentKeys.IMPEDING), output);
                     addEnchantmentBook(reg.get(EnchantmentKeys.SPEEDY), output);
                     addEnchantmentBook(reg.get(EnchantmentKeys.ENDERS_ENDER), output);
                 });
             }).build());
+
 
     public static CreativeModeTab GARAGE_KIT_TAB = register("chair", FabricItemGroup.builder()
             .title(Component.translatable("item_group.touhou_little_maid.chair"))
@@ -126,11 +127,12 @@ public class InitCreativeTabs {
     private static void addEnchantmentBook(Optional<Holder.Reference<Enchantment>> holder, CreativeModeTab.Output output) {
         holder.ifPresent(ref -> {
             EnchantmentInstance instance = new EnchantmentInstance(ref, ref.value().getMaxLevel());
-            output.accept(EnchantedBookItem.createForEnchantment(instance));
+
+            output.accept(EnchantmentHelper.createBook(instance));
         });
     }
 
     private static CreativeModeTab register(String id, CreativeModeTab tab) {
-        return Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), tab);
+        return Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), tab);
     }
 }

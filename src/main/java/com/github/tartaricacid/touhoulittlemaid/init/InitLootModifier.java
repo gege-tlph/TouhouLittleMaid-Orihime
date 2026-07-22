@@ -11,7 +11,7 @@ import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.entries.NestedLootTable;
@@ -20,9 +20,9 @@ import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
 
 public class InitLootModifier {
-    public static final ResourceLocation UNKNOWN_LOOT_TABLE = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "unknown_loot_table");
+    public static final Identifier UNKNOWN_LOOT_TABLE = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "unknown_loot_table");
 
-    private static final ResourceLocation LAST = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "last");
+    private static final Identifier LAST = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "last");
 
     public static final LootItemConditionType LOOT_TABLE_TYPE = registerCondition("loot_table_type", new LootItemConditionType(LootTableTypeCondition.CODEC));
 
@@ -36,18 +36,18 @@ public class InitLootModifier {
             registerFunction("set_init_maid_owner", new LootItemFunctionType<>(SetInitMaidOwnerFunction.CODEC));
 
     private static LootItemConditionType registerCondition(String id, LootItemConditionType condition) {
-        return Registry.register(BuiltInRegistries.LOOT_CONDITION_TYPE, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), condition);
+        return Registry.register(BuiltInRegistries.LOOT_CONDITION_TYPE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), condition);
     }
 
     private static <T extends LootItemConditionalFunction> LootItemFunctionType<T> registerFunction(String id, LootItemFunctionType<T> function) {
-        return Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), function);
+        return Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), function);
     }
 
     public static void init() {
-        // Global Modifier
+
         LootTableEvents.MODIFY.register((key, builder, source, provider) -> {
-                    // all chests
-                    if (key.location().toString().startsWith("minecraft:chests"))
+                    // 所有箱子
+                    if (key.identifier().toString().startsWith("minecraft:chests"))
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.CHEST_POWER_POINT)));
 
                     if (key.equals(BuiltInLootTables.SPAWN_BONUS_CHEST))
@@ -98,7 +98,7 @@ public class InitLootModifier {
 
         LootTableEvents.MODIFY.addPhaseOrdering(Event.DEFAULT_PHASE, LAST);
         LootTableEvents.MODIFY.register(LAST,
-                (key, builder, source, provider) -> ((ILootTableBuilder) builder).tlm$setId(key.location())
+                (key, builder, source, provider) -> ((ILootTableBuilder) builder).tlm$setId(key.identifier())
         );
     }
 }

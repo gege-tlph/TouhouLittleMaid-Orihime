@@ -3,10 +3,12 @@ package com.github.tartaricacid.touhoulittlemaid.compat.cloth;
 import com.github.tartaricacid.touhoulittlemaid.api.event.client.AddClothConfigEvent;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.*;
 import com.github.tartaricacid.touhoulittlemaid.event.MaidMealRegConfigEvent;
+import com.github.tartaricacid.touhoulittlemaid.init.registry.CompatRegistry;
 import com.google.common.collect.Lists;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
@@ -20,6 +22,7 @@ public class MenuIntegration {
         root.setGlobalizedExpanded(false);
         ConfigEntryBuilder entryBuilder = root.entryBuilder();
         maidConfig(root, entryBuilder);
+        experimentalConfig(root, entryBuilder);
         chairConfig(root, entryBuilder);
         miscConfig(root, entryBuilder);
         vanillaConfig(root, entryBuilder);
@@ -27,6 +30,21 @@ public class MenuIntegration {
         GlobalAIIntegration.aiChat(root, entryBuilder);
         AddClothConfigEvent.CALLBACK.invoker().post(new AddClothConfigEvent(root, entryBuilder));
         return root;
+    }
+
+    private static void experimentalConfig(ConfigBuilder root, ConfigEntryBuilder entryBuilder) {
+        ConfigCategory experimental = root.getOrCreateCategory(
+                Component.translatable("config.touhou_little_maid.experimental"));
+
+        experimental.addEntry(entryBuilder.startBooleanToggle(
+                        Component.translatable("config.touhou_little_maid.experimental.smooth_follow"),
+                        ExperimentalConfig.SMOOTH_FOLLOW.get())
+                .setDefaultValue(false)
+                .setTooltip(Component.translatable("config.touhou_little_maid.experimental.smooth_follow.tooltip"))
+                .setSaveConsumer(enabled -> {
+                    ExperimentalConfig.SMOOTH_FOLLOW.set(enabled);
+                    ExperimentalConfig.SMOOTH_FOLLOW.save();
+                }).build());
     }
 
     @SuppressWarnings("all")
@@ -63,15 +81,6 @@ public class MenuIntegration {
                 .setSaveConsumer(s -> {
                     MaidConfig.MAID_TEMPTATION_ITEM.set(s);
                     MaidConfig.MAID_TEMPTATION_ITEM.save();
-                }).build());
-
-        maid.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.maid.enable_maid_curios"),
-                        MaidConfig.ENABLE_MAID_CURIOS.get())
-                .setDefaultValue(MaidConfig.ENABLE_MAID_CURIOS.getDefault())
-                .setTooltip(Component.translatable("config.touhou_little_maid.maid.enable_maid_curios.tooltip"))
-                .setSaveConsumer(s -> {
-                    MaidConfig.ENABLE_MAID_CURIOS.set(s);
-                    MaidConfig.ENABLE_MAID_CURIOS.save();
                 }).build());
 
         maid.addEntry(entryBuilder.startIntSlider(Component.translatable("config.touhou_little_maid.maid.maid_work_range"), MaidConfig.MAID_WORK_RANGE.get(), 3, 64)
@@ -287,29 +296,6 @@ public class MenuIntegration {
                     MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST.save();
                 }).build());
 
-        maid.addEntry(entryBuilder.startIntField(Component.translatable("config.touhou_little_maid.maid.maid_gun_long_distance"), MaidConfig.MAID_GUN_LONG_DISTANCE.get())
-                .setDefaultValue(64).setMin(0).setMax(512)
-                .setTooltip(Component.translatable("config.touhou_little_maid.maid.maid_gun_long_distance.tooltip"))
-                .setSaveConsumer(i -> {
-                    MaidConfig.MAID_GUN_LONG_DISTANCE.set(i);
-                    MaidConfig.MAID_GUN_LONG_DISTANCE.save();
-                }).build());
-
-        maid.addEntry(entryBuilder.startIntField(Component.translatable("config.touhou_little_maid.maid.maid_gun_medium_distance"), MaidConfig.MAID_GUN_MEDIUM_DISTANCE.get())
-                .setDefaultValue(48).setMin(0).setMax(512)
-                .setTooltip(Component.translatable("config.touhou_little_maid.maid.maid_gun_medium_distance.tooltip"))
-                .setSaveConsumer(i -> {
-                    MaidConfig.MAID_GUN_MEDIUM_DISTANCE.set(i);
-                    MaidConfig.MAID_GUN_MEDIUM_DISTANCE.save();
-                }).build());
-
-        maid.addEntry(entryBuilder.startIntField(Component.translatable("config.touhou_little_maid.maid.maid_gun_near_distance"), MaidConfig.MAID_GUN_NEAR_DISTANCE.get())
-                .setDefaultValue(32).setMin(0).setMax(512)
-                .setTooltip(Component.translatable("config.touhou_little_maid.maid.maid_gun_near_distance.tooltip"))
-                .setSaveConsumer(i -> {
-                    MaidConfig.MAID_GUN_NEAR_DISTANCE.set(i);
-                    MaidConfig.MAID_GUN_NEAR_DISTANCE.save();
-                }).build());
     }
 
     private static void chairConfig(ConfigBuilder root, ConfigEntryBuilder entryBuilder) {
@@ -371,12 +357,14 @@ public class MenuIntegration {
                     MiscConfig.GIVE_SMART_SLAB.save();
                 }).build());
 
-        misc.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.misc.give_patchouli_book"), MiscConfig.GIVE_PATCHOULI_BOOK.get())
-                .setDefaultValue(true).setTooltip(Component.translatable("config.touhou_little_maid.misc.give_patchouli_book.tooltip"))
-                .setSaveConsumer(b -> {
-                    MiscConfig.GIVE_PATCHOULI_BOOK.set(b);
-                    MiscConfig.GIVE_PATCHOULI_BOOK.save();
-                }).build());
+        if (FabricLoader.getInstance().isModLoaded(CompatRegistry.PATCHOULI)) {
+            misc.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.misc.give_patchouli_book"), MiscConfig.GIVE_PATCHOULI_BOOK.get())
+                    .setDefaultValue(true).setTooltip(Component.translatable("config.touhou_little_maid.misc.give_patchouli_book.tooltip"))
+                    .setSaveConsumer(b -> {
+                        MiscConfig.GIVE_PATCHOULI_BOOK.set(b);
+                        MiscConfig.GIVE_PATCHOULI_BOOK.save();
+                    }).build());
+        }
 
         misc.addEntry(entryBuilder.startDoubleField(Component.translatable("config.touhou_little_maid.misc.shrine_lamp_effect_cost"), MiscConfig.SHRINE_LAMP_EFFECT_COST.get())
                 .setDefaultValue(0.9).setMin(0).setMax(Double.MAX_VALUE)

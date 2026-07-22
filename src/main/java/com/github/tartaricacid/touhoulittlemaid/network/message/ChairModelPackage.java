@@ -10,20 +10,19 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
-public record ChairModelPackage(int id, ResourceLocation modelId, float mountedHeight, boolean tameableCanRide,
+public record ChairModelPackage(int id, Identifier modelId, float mountedHeight, boolean tameableCanRide,
                                 boolean noGravity) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<ChairModelPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("chair_model"));
+    public static final CustomPacketPayload.Type<ChairModelPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("chair_model"));
     public static final StreamCodec<ByteBuf, ChairModelPackage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT,
             ChairModelPackage::id,
-            ResourceLocation.STREAM_CODEC,
+            Identifier.STREAM_CODEC,
             ChairModelPackage::modelId,
             ByteBufCodecs.FLOAT,
             ChairModelPackage::mountedHeight,
@@ -35,7 +34,7 @@ public record ChairModelPackage(int id, ResourceLocation modelId, float mountedH
     );
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

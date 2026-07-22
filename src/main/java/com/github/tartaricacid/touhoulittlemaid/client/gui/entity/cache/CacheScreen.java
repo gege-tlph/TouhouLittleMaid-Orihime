@@ -5,7 +5,6 @@ import com.github.tartaricacid.touhoulittlemaid.client.renderer.texture.CacheIco
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.IModelInfo;
 import com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.IconCache;
-import com.mojang.blaze3d.platform.NativeImage;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
@@ -13,7 +12,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
@@ -33,6 +33,10 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
     protected final int totalCount;
     protected final StopWatch stopWatch;
 
+
+    private E processingInfo = null;
+    private boolean captureScheduled = false;
+
     public CacheScreen(Screen parent, EntityType<T> entityType, Queue<E> modelInfos, EntityRender<T, E> entityRender) {
         super(Component.literal("Cache Screen"));
         this.parent = parent;
@@ -51,7 +55,7 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
         }
         T entity;
         try {
-            entity = (T) EntityCacheUtil.ENTITY_CACHE.get(entityType, () -> entityType.create(world));
+            entity = (T) EntityCacheUtil.ENTITY_CACHE.get(entityType, () -> entityType.create(world, EntitySpawnReason.COMMAND));
         } catch (ExecutionException | ClassCastException e) {
             e.fillInStackTrace();
             return;
@@ -63,7 +67,7 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
 
-        if (modelInfos.isEmpty()) {
+        if (modelInfos.isEmpty() && processingInfo == null) {
             stopWatch.stop();
             double timeCost = stopWatch.getTime(TimeUnit.MILLISECONDS) / 1000.0;
             TouhouLittleMaid.LOGGER.info("Cache icon time: {} seconds", timeCost);
@@ -71,35 +75,39 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
             return;
         }
 
-        // 每帧尝试缓存 5 个
-        graphics.pose().pushPose();
-        for (int i = 0; i < 5; i++) {
-            if (modelInfos.isEmpty()) {
-                return;
-            }
-            graphics.pose().translate(0, 0, 200);
-            doCacheIcon(graphics);
-        }
-        graphics.pose().popPose();
+
+        doCacheIcon(graphics);
 
         int finishSize = totalCount - modelInfos.size();
-        graphics.drawCenteredString(font, Component.translatable("gui.touhou_little_maid.cache_screen.progress", finishSize, totalCount), this.width / 2, this.height - 42, 0xFFFFFF);
-        graphics.drawCenteredString(font, Component.translatable("gui.touhou_little_maid.cache_screen.desc"), this.width / 2, this.height - 30, 0xFFFFFF);
+        graphics.drawCenteredString(font, Component.translatable("gui.touhou_little_maid.cache_screen.progress", finishSize, totalCount), this.width / 2, this.height - 42, 0xFFFFFFFF);
+        graphics.drawCenteredString(font, Component.translatable("gui.touhou_little_maid.cache_screen.desc"), this.width / 2, this.height - 30, 0xFFFFFFFF);
     }
 
     protected void doCacheIcon(GuiGraphics graphics) {
-        E modelInfo = modelInfos.poll();
+        if (this.processingInfo == null) {
+            this.processingInfo = modelInfos.poll();
+            this.captureScheduled = false;
+        }
+        E modelInfo = this.processingInfo;
         if (modelInfo != null) {
             double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
             int scaleModified = (int) Math.ceil((256 / guiScale));
 
+            // 等待回读期间每帧重复提交同一模型的绘制，保证回读落点帧的画面内容正确
             graphics.fill(0, 0, scaleModified, scaleModified + 2, IconCache.BACKGROUND_COLOR);
             this.drawEntity(graphics, 0, 0, modelInfo, scaleModified);
-            NativeImage nativeImage = IconCache.exportImageFromScreenshot(256, IconCache.BACKGROUND_COLOR_SHIFTED);
 
-            ResourceLocation modelId = modelInfo.getModelId();
-            CacheIconTexture cacheIconTexture = new CacheIconTexture(modelId, nativeImage);
-            Minecraft.getInstance().getTextureManager().register(modelInfo.getCacheIconId(), cacheIconTexture);
+            if (!this.captureScheduled) {
+                this.captureScheduled = true;
+                // execute 任务在下一帧 tick 前执行，此时主 RenderTarget 仍持有本帧（含 GUI）完整内容
+                Minecraft.getInstance().execute(() ->
+                        IconCache.exportImageFromScreenshot(256, IconCache.BACKGROUND_COLOR_SHIFTED, nativeImage -> {
+                            Identifier modelId = modelInfo.getModelId();
+                            CacheIconTexture cacheIconTexture = new CacheIconTexture(modelId, nativeImage);
+                            Minecraft.getInstance().getTextureManager().register(modelInfo.getCacheIconId(), cacheIconTexture);
+                            this.processingInfo = null;
+                        }));
+            }
         }
     }
 

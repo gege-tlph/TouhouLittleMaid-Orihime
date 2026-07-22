@@ -1,0 +1,89 @@
+package com.github.tartaricacid.touhoulittlemaid.network.message;
+
+import com.github.tartaricacid.touhoulittlemaid.crafting.AltarRecipe;
+import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
+import com.github.tartaricacid.touhoulittlemaid.init.InitRecipes;
+import com.github.tartaricacid.touhoulittlemaid.item.ItemEntityPlaceholder;
+import com.github.tartaricacid.touhoulittlemaid.network.client.ClientAltarRecipeCache;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeManager;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
+
+/**
+ * 通过标准 Fabric 自定义载荷向客户端同步祭坛配方的最小显示摘要。
+ * 载荷不替代或修改原版数据包，也不发送完整服务端配方对象。
+ */
+public record SyncAltarRecipesPackage(List<AltarRecipeSummary> recipes) implements CustomPacketPayload {
+    public static final Type<SyncAltarRecipesPackage> TYPE = new Type<>(modLoc("sync_altar_recipes"));
+
+    private static final StreamCodec<RegistryFriendlyByteBuf, List<ItemStack>> ITEM_STACK_LIST_CODEC =
+            ByteBufCodecs.collection(ArrayList::new, ItemStack.STREAM_CODEC, 4096);
+    private static final StreamCodec<RegistryFriendlyByteBuf, List<List<ItemStack>>> INGREDIENT_LIST_CODEC =
+            ByteBufCodecs.collection(ArrayList::new, ITEM_STACK_LIST_CODEC, 64);
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, AltarRecipeSummary> SUMMARY_STREAM_CODEC =
+            StreamCodec.composite(
+                    ByteBufCodecs.STRING_UTF8, AltarRecipeSummary::recipeString,
+                    INGREDIENT_LIST_CODEC, AltarRecipeSummary::inputs,
+                    ItemStack.STREAM_CODEC, AltarRecipeSummary::output,
+                    ByteBufCodecs.FLOAT, AltarRecipeSummary::powerCost,
+                    ByteBufCodecs.STRING_UTF8, AltarRecipeSummary::langKey,
+                    ByteBufCodecs.STRING_UTF8, AltarRecipeSummary::entityType,
+                    AltarRecipeSummary::new);
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, SyncAltarRecipesPackage> STREAM_CODEC =
+            StreamCodec.composite(
+                    ByteBufCodecs.collection(ArrayList::new, SUMMARY_STREAM_CODEC, 1024),
+                    SyncAltarRecipesPackage::recipes,
+                    SyncAltarRecipesPackage::new);
+
+    public static SyncAltarRecipesPackage from(RecipeManager recipeManager) {
+        List<AltarRecipeSummary> recipes = recipeManager.getRecipes().stream()
+                .filter(holder -> holder.value().getType() == InitRecipes.ALTAR_CRAFTING)
+                .map(holder -> (AltarRecipe) holder.value())
+                .map(AltarRecipeSummary::from)
+                .toList();
+        return new SyncAltarRecipesPackage(recipes);
+    }
+
+    public static void handle(SyncAltarRecipesPackage message, ClientPlayNetworking.Context context) {
+        context.client().execute(() -> ClientAltarRecipeCache.replace(message.recipes()));
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    public record AltarRecipeSummary(String recipeString, List<List<ItemStack>> inputs,
+                                     ItemStack output, float powerCost, String langKey, String entityType) {
+        private static AltarRecipeSummary from(AltarRecipe recipe) {
+            List<List<ItemStack>> inputs = recipe.getIngredients().stream()
+                    .filter(ingredient -> !ingredient.isEmpty())
+                    .map(ingredient -> ingredient.items().map(ItemStack::new).toList())
+                    .toList();
+            ItemStack output = recipe.getResult().copy();
+            if (!recipe.isItemCraft()) {
+                output = InitItems.ENTITY_PLACEHOLDER.getDefaultInstance();
+                ItemEntityPlaceholder.setRecipeId(output, recipe.getRecipeString());
+            }
+            return new AltarRecipeSummary(recipe.getRecipeString(), inputs, output,
+                    recipe.getPower(), recipe.getLangKey(), recipe.getEntityType().toString());
+        }
+
+        public AltarRecipeSummary copy() {
+            return new AltarRecipeSummary(recipeString,
+                    inputs.stream().map(items -> items.stream().map(ItemStack::copy).toList()).toList(),
+                    output.copy(), powerCost, langKey, entityType);
+        }
+    }
+}

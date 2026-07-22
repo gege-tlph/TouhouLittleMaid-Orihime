@@ -2,7 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.client.gui.mod;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -39,8 +39,7 @@ public class PatchouliWarningScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
-        this.renderBackground(graphics, pMouseX, pMouseY, pPartialTick);
-        this.message.renderCentered(graphics, this.width / 2, 80);
+        this.message.visitLines(net.minecraft.client.gui.TextAlignment.CENTER, this.width / 2, 80, 9, graphics.textRenderer());
         super.render(graphics, pMouseX, pMouseY, pPartialTick);
     }
 

@@ -1,5 +1,9 @@
 package com.github.tartaricacid.touhoulittlemaid.tileentity;
 
+import com.github.tartaricacid.touhoulittlemaid.item.ItemMaidBeacon;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import cn.sh1rocu.touhoulittlemaid.api.extension.IBlockEntityPersistentData;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityPowerPoint;
@@ -29,7 +33,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public class TileEntityMaidBeacon extends BlockEntity implements IBlockEntityPersistentData {
-    public static final BlockEntityType<TileEntityMaidBeacon> TYPE = BlockEntityType.Builder.of(TileEntityMaidBeacon::new, InitBlocks.MAID_BEACON).build(null);
+    public static final BlockEntityType<TileEntityMaidBeacon> TYPE = FabricBlockEntityTypeBuilder.create(TileEntityMaidBeacon::new, InitBlocks.MAID_BEACON).build();
     public static final String POTION_INDEX_TAG = "PotionIndex";
     public static final String STORAGE_POWER_TAG = "StoragePower";
     public static final String OVERFLOW_DELETE_TAG = "OverflowDelete";
@@ -42,7 +46,7 @@ public class TileEntityMaidBeacon extends BlockEntity implements IBlockEntityPer
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, TileEntityMaidBeacon beacon) {
-        if (beacon.level != null && !level.isClientSide && level.getGameTime() % 80L == 0L) {
+        if (beacon.level != null && !level.isClientSide() && level.getGameTime() % 80L == 0L) {
             if (beacon.potionIndex != -1 && beacon.storagePower >= beacon.getEffectCost()) {
                 beacon.storagePower = beacon.storagePower - beacon.getEffectCost();
                 beacon.updateBeaconEffect(level, BeaconEffect.getEffectByIndex(beacon.potionIndex).getEffect());
@@ -77,25 +81,25 @@ public class TileEntityMaidBeacon extends BlockEntity implements IBlockEntityPer
     }
 
     @Override
-    public void saveAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
+    public void saveAdditional(ValueOutput output){
         tlm$getPersistentData().putInt(POTION_INDEX_TAG, potionIndex);
         tlm$getPersistentData().putFloat(STORAGE_POWER_TAG, storagePower);
         tlm$getPersistentData().putBoolean(OVERFLOW_DELETE_TAG, overflowDelete);
-        super.saveAdditional(pTag, pRegistries);
+        super.saveAdditional(output);
     }
 
     @Override
-    public void loadAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
-        super.loadAdditional(pTag, pRegistries);
-        potionIndex = tlm$getPersistentData().getInt(POTION_INDEX_TAG);
-        storagePower = tlm$getPersistentData().getFloat(STORAGE_POWER_TAG);
-        overflowDelete = tlm$getPersistentData().getBoolean(OVERFLOW_DELETE_TAG);
+    public void loadAdditional(ValueInput input){
+        super.loadAdditional(input);
+        potionIndex = tlm$getPersistentData().getIntOr(POTION_INDEX_TAG, 0);
+        storagePower = tlm$getPersistentData().getFloatOr(STORAGE_POWER_TAG, 0.0F);
+        overflowDelete = tlm$getPersistentData().getBooleanOr(OVERFLOW_DELETE_TAG, false);
     }
 
     public void loadData(CompoundTag data) {
-        potionIndex = data.getInt(POTION_INDEX_TAG);
-        storagePower = data.getFloat(STORAGE_POWER_TAG);
-        overflowDelete = data.getBoolean(OVERFLOW_DELETE_TAG);
+        potionIndex = data.getIntOr(POTION_INDEX_TAG, 0);
+        storagePower = data.getFloatOr(STORAGE_POWER_TAG, 0.0F);
+        overflowDelete = data.getBooleanOr(OVERFLOW_DELETE_TAG, false);
     }
 
     @Override
@@ -153,11 +157,11 @@ public class TileEntityMaidBeacon extends BlockEntity implements IBlockEntityPer
     }
 
     public enum BeaconEffect {
-        // Effects
-        SPEED(MobEffects.MOVEMENT_SPEED),
+        // 效果
+        SPEED(MobEffects.SPEED),
         FIRE_RESISTANCE(MobEffects.FIRE_RESISTANCE),
-        STRENGTH(MobEffects.DAMAGE_BOOST),
-        RESISTANCE(MobEffects.DAMAGE_RESISTANCE),
+        STRENGTH(MobEffects.STRENGTH),
+        RESISTANCE(MobEffects.RESISTANCE),
         REGENERATION(MobEffects.REGENERATION);
 
         private final Holder<MobEffect> effect;
@@ -175,5 +179,18 @@ public class TileEntityMaidBeacon extends BlockEntity implements IBlockEntityPer
         }
     }
 
+
+    /**
+     * 1.21.2+ 方块移除重设计：{@code Block.onRemove(state, Level, pos, newState, isMoving)} 已完全移除。 掉落改由 {@code BlockEntity.preRemoveSideEffects} 负责（LevelChunk 在 BE 尚存活时调用； {@code Block.affectNeighborsAfterRemoval} 只管邻居更新）。其默认实现仅对 {@code implements Container} 的 BE 自动掉落——本类是 {@code extends BlockEntity} + 自研 handler，**不会**被自动处理， 故在此显式恢复原本位于 Block.onRemove 的逻辑。
+     */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (this.level == null || this.level.isClientSide()) {
+            return;
+        }
+        Block.popResource(this.level, pos,
+                ItemMaidBeacon.tileEntityToItemStack(this.level.registryAccess(), this));
+    }
 
 }

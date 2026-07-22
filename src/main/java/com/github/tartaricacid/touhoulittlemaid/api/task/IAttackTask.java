@@ -13,7 +13,7 @@ import com.github.tartaricacid.touhoulittlemaid.util.TaskEquipUtil;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.Entity;
@@ -38,26 +38,26 @@ public interface IAttackTask extends IMaidTask {
      */
     static Optional<? extends LivingEntity> findFirstValidAttackTarget(EntityMaid maid) {
         return maid.getBrain().getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES).flatMap(
-                mobs -> mobs.findClosest((e) -> maid.canAttack(e) && maid.isWithinRestriction(e.blockPosition())));
+                mobs -> mobs.findClosest((e) -> maid.canAttack(e) && maid.isWithinHome(e.blockPosition())));
     }
 
     /**
      * 能否攻击该对象
      *
-     * @param maid   女仆
+     * @param maid 女仆
      * @param target 攻击的目标
      * @return 能否攻击？
      */
     default boolean canAttack(EntityMaid maid, LivingEntity target) {
         // 获取实体 ID
-        ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
+        Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
 
         // 排除一些盔甲架，还有本模组的实体，以及玩家
         if (target instanceof ArmorStand || target instanceof AbstractEntityFromItem || target instanceof Player) {
             return false;
         }
-        // 有主的宠物也不攻击
-        if (target instanceof TamableAnimal tamableAnimal && tamableAnimal.getOwnerUUID() != null) {
+
+        if (target instanceof TamableAnimal tamableAnimal && tamableAnimal.getOwnerReference() != null) {
             return false;
         }
         // 特殊命名的怪物，因为有的玩家会使用怪物做刷怪塔，会被女仆误杀
@@ -83,10 +83,9 @@ public interface IAttackTask extends IMaidTask {
     }
 
     /**
-     * 是否拥有额外攻击方式，用于一些额外增伤的设计
-     * 比如女仆副手持有灭火器，会额外对下界生物造成二次伤害
+     * 是否拥有额外攻击方式，用于一些额外增伤的设计 比如女仆副手持有灭火器，会额外对下界生物造成二次伤害
      *
-     * @param maid   女仆
+     * @param maid 女仆
      * @param target 攻击目标
      * @return 是否有额外攻击方式
      */
@@ -97,7 +96,7 @@ public interface IAttackTask extends IMaidTask {
     /**
      * 执行额外伤害
      *
-     * @param maid   女仆
+     * @param maid 女仆
      * @param target 攻击目标
      * @return 是否成功造成伤害
      */
@@ -108,7 +107,7 @@ public interface IAttackTask extends IMaidTask {
     /**
      * 是适合的攻击武器么，用于女仆 AI 判断当前武器在当前模式下是否能正常使用
      *
-     * @param maid  女仆
+     * @param maid 女仆
      * @param stack 检查的物品
      * @return 在当前模式下是否能正常使用
      */
@@ -154,10 +153,7 @@ public interface IAttackTask extends IMaidTask {
                 return false;
             }
 
-/*            @Override
-            public boolean shouldTriggerClientSideContainerClosingOnOpen() {
-                return false;
-            }*/
+
         };
     }
 

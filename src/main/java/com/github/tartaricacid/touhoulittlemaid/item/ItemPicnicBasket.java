@@ -1,21 +1,21 @@
 package com.github.tartaricacid.touhoulittlemaid.item;
 
-import cn.sh1rocu.touhoulittlemaid.api.extension.IItemRenderer;
 import cn.sh1rocu.touhoulittlemaid.util.itemhandler.ItemStackHandler;
-import com.github.tartaricacid.touhoulittlemaid.client.renderer.tileentity.PicnicBasketRender;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.other.PicnicBasketContainer;
 import com.github.tartaricacid.touhoulittlemaid.inventory.tooltip.ItemContainerTooltip;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -30,17 +30,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Optional;
 
-public class ItemPicnicBasket extends BlockItem implements ExtendedScreenHandlerFactory<ItemStack>, IItemRenderer {
-    @Environment(EnvType.CLIENT)
-    @Override
-    public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-        return PicnicBasketRender.INSTANCE.get();
-    }
-
+public class ItemPicnicBasket extends BlockItem implements ExtendedScreenHandlerFactory<ItemStack> {
     private static final int PICNIC_BASKET_SIZE = 9;
 
-    public ItemPicnicBasket(Block block) {
-        super(block, (new Properties()).stacksTo(1));
+    public ItemPicnicBasket(Identifier id, Block block) {
+
+        super(block, (new Properties()).setId(ResourceKey.create(Registries.ITEM, id)).stacksTo(1).overrideDescription("item.touhou_little_maid.picnic_basket"));
     }
 
     public static ItemStackHandler getContainer(ItemStack stack) {
@@ -69,10 +64,10 @@ public class ItemPicnicBasket extends BlockItem implements ExtendedScreenHandler
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level worldIn, Player playerIn, InteractionHand handIn) {
+    public InteractionResult use(Level worldIn, Player playerIn, InteractionHand handIn) {
         if (handIn == InteractionHand.MAIN_HAND && playerIn instanceof ServerPlayer serverPlayer) {
-            serverPlayer.openMenu(this/*, data -> ItemStack.STREAM_CODEC.encode(data, serverPlayer.getMainHandItem())*/);
-            return InteractionResultHolder.success(playerIn.getMainHandItem());
+            serverPlayer.openMenu(this/* , 数据 -> ItemStack.STREAM_CODEC.encode(data, serverPlayer.getMainHandItem()) */);
+            return InteractionResult.SUCCESS_SERVER;
         }
         return super.use(worldIn, playerIn, handIn);
     }
@@ -81,11 +76,6 @@ public class ItemPicnicBasket extends BlockItem implements ExtendedScreenHandler
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
         ItemStackHandler container = getContainer(stack);
         return Optional.of(new ItemContainerTooltip(container));
-    }
-
-    @Override
-    public String getDescriptionId() {
-        return "item.touhou_little_maid.picnic_basket";
     }
 
     @Override

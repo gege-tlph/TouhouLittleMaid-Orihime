@@ -2,7 +2,8 @@
   "parent": "block/block",
   "texture_size": [128, 128],
   "textures": {
-    "0": "touhou_little_maid:bedrock/block/snack_cabinet"
+    "0": "touhou_little_maid:bedrock/block/snack_cabinet",
+    "particle": "#0"
   },
   "elements": [
     {

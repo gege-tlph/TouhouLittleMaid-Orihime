@@ -9,7 +9,6 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.EntityEvent;
 import net.minecraft.world.item.ItemStack;
 
 public class UndyingTotemBauble implements IMaidBauble {
@@ -22,7 +21,7 @@ public class UndyingTotemBauble implements IMaidBauble {
             maid.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 900, 1));
             maid.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 100, 1));
             maid.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 800, 0));
-            maid.level.broadcastEntityEvent(maid, EntityEvent.TALISMAN_ACTIVATE);
+            maid.level.broadcastEntityEvent(maid, (byte) 35);
             if (maid.getOwner() instanceof ServerPlayer serverPlayer) {
                 InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.USE_UNDEAD_BAUBLE);
             }

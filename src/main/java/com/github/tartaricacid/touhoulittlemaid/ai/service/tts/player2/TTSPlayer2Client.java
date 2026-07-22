@@ -60,24 +60,26 @@ public class TTSPlayer2Client implements TTSClient, TTSSystemServices {
         HttpRequest httpRequest = builder.build();
 
         // 本地运行的时候，直接使用 APP 播放音频，故不会使用回调
-        httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofByteArray()).whenComplete((response, throwable) -> {
-            LocalPlayer player = Minecraft.getInstance().player;
-            if (player == null) {
-                return;
-            }
-            if (throwable != null) {
-                String cause = throwable.getLocalizedMessage();
-                MutableComponent errorMessage = ErrorCode.getErrorMessage(ServiceType.TTS, ErrorCode.REQUEST_SENDING_ERROR, cause);
-                player.sendSystemMessage(errorMessage.withStyle(ChatFormatting.RED));
-                TouhouLittleMaid.LOGGER.error("TTS request failed: {}, error is {}", request, throwable.getMessage());
-            }
-            if (!isSuccessful(response)) {
-                String string = new String(response.body(), StandardCharsets.UTF_8);
-                String cause = String.format("HTTP Error Code: %d, Response %s", response.statusCode(), string);
-                MutableComponent errorMessage = ErrorCode.getErrorMessage(ServiceType.TTS, ErrorCode.REQUEST_RECEIVED_ERROR, cause);
-                player.sendSystemMessage(errorMessage.withStyle(ChatFormatting.RED));
-                TouhouLittleMaid.LOGGER.error("TTS request failed: {}, error is {}", request, cause);
-            }
-        });
+        httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofByteArray()).whenComplete((response, throwable) ->
+                Minecraft.getInstance().execute(() -> {
+                    LocalPlayer player = Minecraft.getInstance().player;
+                    if (player == null) {
+                        return;
+                    }
+                    if (throwable != null) {
+                        String cause = throwable.getLocalizedMessage();
+                        MutableComponent errorMessage = ErrorCode.getErrorMessage(ServiceType.TTS, ErrorCode.REQUEST_SENDING_ERROR, cause);
+                        player.displayClientMessage(errorMessage.withStyle(ChatFormatting.RED), false);
+                        TouhouLittleMaid.LOGGER.error("TTS request failed: {}", request, throwable);
+                        return;
+                    }
+                    if (!isSuccessful(response)) {
+                        String string = new String(response.body(), StandardCharsets.UTF_8);
+                        String cause = String.format("HTTP Error Code: %d, Response %s", response.statusCode(), string);
+                        MutableComponent errorMessage = ErrorCode.getErrorMessage(ServiceType.TTS, ErrorCode.REQUEST_RECEIVED_ERROR, cause);
+                        player.displayClientMessage(errorMessage.withStyle(ChatFormatting.RED), false);
+                        TouhouLittleMaid.LOGGER.error("TTS request failed: {}, error is {}", request, cause);
+                    }
+                }));
     }
 }

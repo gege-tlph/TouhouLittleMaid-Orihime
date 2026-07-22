@@ -11,20 +11,20 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.ApiStatus;
-// From NeoForge && PortingLib
+// 来自 NeoForge && PortingLib
 
 /**
- * Payload that can be sent from the server to the client to add an entity to the world, with custom data.
+ * 可以从服务器发送到客户端以使用自定义数据向世界添加实体的有效负载。
  *
- * @param entityId      The id of the entity to add.
- * @param customPayload The custom data of the entity to add.
+ * @param entityId 要添加的实体的 ID。
+ * @param customPayload 要添加的实体的自定义数据。
  */
 @ApiStatus.Internal
 public record AdvancedAddEntityPayload(int entityId, byte[] customPayload) implements CustomPacketPayload {
-    public static final Type<AdvancedAddEntityPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "advanced_add_entity"));
+    public static final Type<AdvancedAddEntityPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "advanced_add_entity"));
     public static final StreamCodec<FriendlyByteBuf, AdvancedAddEntityPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT,
             AdvancedAddEntityPayload::entityId,

@@ -9,7 +9,7 @@ import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
@@ -22,10 +22,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.List;
 
 public class TaskCocoa implements IFarmTask {
-    public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "cocoa");
+    public static final Identifier UID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "cocoa");
 
     @Override
-    public ResourceLocation getUid() {
+    public Identifier getUid() {
         return UID;
     }
 
@@ -81,7 +81,7 @@ public class TaskCocoa implements IFarmTask {
                     Level world = maid.level();
                     BlockState cocoaState = Blocks.COCOA.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, direction.getOpposite());
                     world.setBlock(directionPos, cocoaState, Block.UPDATE_ALL_IMMEDIATE);
-                    //SoundType soundType = cocoaState.getSoundType(world, directionPos, maid);
+
                     SoundType soundType = cocoaState.getSoundType();
                     world.playSound(null, directionPos, soundType.getPlaceSound(), SoundSource.BLOCKS,
                             (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);

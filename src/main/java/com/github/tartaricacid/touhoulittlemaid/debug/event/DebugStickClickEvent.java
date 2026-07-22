@@ -21,13 +21,14 @@ public class DebugStickClickEvent {
         EntityMaid maid = event.getMaid();
         if (player.getMainHandItem().is(Items.DEBUG_STICK) && TouhouLittleMaid.DEBUG) {
             if (player.isShiftKeyDown()) {
-                maid.setOwnerUUID(UUID.randomUUID());
+
+                maid.setOwnerReference(net.minecraft.world.entity.EntityReference.of(UUID.randomUUID()));
                 maid.level.broadcastEntityEvent(maid, EntityEvent.TAMING_SUCCEEDED);
-                if (!event.getWorld().isClientSide) {
-                    player.sendSystemMessage(Component.translatable("debug.touhou_little_maid.debug_stick.random_owner_uuid"));
+                if (!event.getWorld().isClientSide()) {
+                    player.displayClientMessage(Component.translatable("debug.touhou_little_maid.debug_stick.random_owner_uuid"), false);
                 }
             } else {
-                if (!event.getWorld().isClientSide) {
+                if (!event.getWorld().isClientSide()) {
                     DebugMaidManager.triggerDebuggingMaid((ServerPlayer) player, maid);
                 }
             }

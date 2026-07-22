@@ -11,6 +11,9 @@ import net.minecraft.world.phys.AABB;
 
 import javax.annotation.Nullable;
 import java.util.EnumSet;
+import net.minecraft.server.level.ServerLevel;
+
+import java.util.Comparator;
 import java.util.List;
 
 public class FairyNearestAttackableTargetGoal<T extends LivingEntity> extends TargetGoal {
@@ -39,11 +42,15 @@ public class FairyNearestAttackableTargetGoal<T extends LivingEntity> extends Ta
     }
 
     private void findTarget() {
-        Level level = this.mob.level;
-        AABB searchArea = this.getTargetSearchArea(this.getFollowDistance());
-        List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, searchArea,
-                e -> e.getType().is(TagEntity.MAID_FAIRY_ATTACK_GOAL));
-        this.target = level.getNearestEntity(entities, this.targetConditions, this.mob, this.mob.getX(), this.mob.getEyeY(), this.mob.getZ());
+
+        if (this.mob.level instanceof ServerLevel serverLevel) {
+            AABB searchArea = this.getTargetSearchArea(this.getFollowDistance());
+            List<LivingEntity> entities = serverLevel.getEntitiesOfClass(LivingEntity.class, searchArea,
+                    e -> e.getType().is(TagEntity.MAID_FAIRY_ATTACK_GOAL) && this.targetConditions.test(serverLevel, this.mob, e));
+            this.target = entities.stream().min(Comparator.comparingDouble(this.mob::distanceToSqr)).orElse(null);
+        } else {
+            this.target = null;
+        }
     }
 
     @Override

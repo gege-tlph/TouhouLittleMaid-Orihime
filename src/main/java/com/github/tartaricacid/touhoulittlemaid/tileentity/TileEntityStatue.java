@@ -1,5 +1,9 @@
 package com.github.tartaricacid.touhoulittlemaid.tileentity;
 
+import net.minecraft.nbt.IntArrayTag;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import cn.sh1rocu.touhoulittlemaid.api.extension.IBlockEntityPersistentData;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBlocks;
 import com.google.common.collect.Lists;
@@ -9,8 +13,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -24,7 +26,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public class TileEntityStatue extends BlockEntity implements IBlockEntityPersistentData {
-    public static final BlockEntityType<TileEntityStatue> TYPE = BlockEntityType.Builder.of(TileEntityStatue::new, InitBlocks.STATUE).build(null);
+    public static final BlockEntityType<TileEntityStatue> TYPE = FabricBlockEntityTypeBuilder.create(TileEntityStatue::new, InitBlocks.STATUE).build();
     private static final String STATUE_SIZE_TAG = "StatueSize";
     private static final String CORE_BLOCK_TAG = "CoreBlock";
     private static final String CORE_BLOCK_POS_TAG = "CoreBlockPos";
@@ -55,38 +57,42 @@ public class TileEntityStatue extends BlockEntity implements IBlockEntityPersist
     }
 
     @Override
-    public void saveAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
+    public void saveAdditional(ValueOutput output){
         tlm$getPersistentData().putInt(STATUE_SIZE_TAG, size.ordinal());
         tlm$getPersistentData().putBoolean(CORE_BLOCK_TAG, isCoreBlock);
-        tlm$getPersistentData().put(CORE_BLOCK_POS_TAG, NbtUtils.writeBlockPos(coreBlockPos));
+        tlm$getPersistentData().putIntArray(CORE_BLOCK_POS_TAG,
+                new int[]{coreBlockPos.getX(), coreBlockPos.getY(), coreBlockPos.getZ()});
         tlm$getPersistentData().putString(STATUE_FACING_TAG, facing.getSerializedName());
         ListTag blockList = new ListTag();
         for (BlockPos pos : allBlocks) {
-            blockList.add(NbtUtils.writeBlockPos(pos));
+            blockList.add(new IntArrayTag(new int[]{pos.getX(), pos.getY(), pos.getZ()}));
         }
         tlm$getPersistentData().put(ALL_BLOCKS_TAG, blockList);
         if (extraMaidData != null) {
             tlm$getPersistentData().put(EXTRA_MAID_DATA, extraMaidData);
         }
-        super.saveAdditional(pTag, pRegistries);
+        super.saveAdditional(output);
     }
 
     @Override
-    public void loadAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
-        super.loadAdditional(pTag, pRegistries);
-        size = Size.getSizeByIndex(tlm$getPersistentData().getInt(STATUE_SIZE_TAG));
-        isCoreBlock = tlm$getPersistentData().getBoolean(CORE_BLOCK_TAG);
-        NbtUtils.readBlockPos(tlm$getPersistentData(), CORE_BLOCK_POS_TAG).ifPresent(pos -> coreBlockPos = pos);
-        facing = Direction.byName(tlm$getPersistentData().getString(STATUE_FACING_TAG));
+    public void loadAdditional(ValueInput input){
+        super.loadAdditional(input);
+        size = Size.getSizeByIndex(tlm$getPersistentData().getIntOr(STATUE_SIZE_TAG, 0));
+        isCoreBlock = tlm$getPersistentData().getBooleanOr(CORE_BLOCK_TAG, false);
+        tlm$getPersistentData().getIntArray(CORE_BLOCK_POS_TAG)
+                .filter(a -> a.length == 3)
+                .map(a -> new BlockPos(a[0], a[1], a[2]))
+                .ifPresent(pos -> coreBlockPos = pos);
+        facing = Direction.byName(tlm$getPersistentData().getStringOr(STATUE_FACING_TAG, ""));
         allBlocks.clear();
-        ListTag blockList = tlm$getPersistentData().getList(ALL_BLOCKS_TAG, Tag.TAG_COMPOUND);
+        ListTag blockList = tlm$getPersistentData().getListOrEmpty(ALL_BLOCKS_TAG);
         for (int i = 0; i < blockList.size(); i++) {
-            int[] pos = blockList.getIntArray(i);
-            allBlocks.add(new BlockPos(pos[0], pos[1], pos[2]));
+            blockList.getIntArray(i)
+                    .filter(a -> a.length == 3)
+                    .ifPresent(a -> allBlocks.add(new BlockPos(a[0], a[1], a[2])));
         }
-        if (tlm$getPersistentData().contains(EXTRA_MAID_DATA, Tag.TAG_COMPOUND)) {
-            extraMaidData = tlm$getPersistentData().getCompound(EXTRA_MAID_DATA);
-        }
+        // getCompound 仅在键存在且为 Compound 时返回值，语义与旧的 contains(k, TAG_COMPOUND) 一致
+        tlm$getPersistentData().getCompound(EXTRA_MAID_DATA).ifPresent(t -> extraMaidData = t);
     }
 
     public BlockPos getWorldPosition() {

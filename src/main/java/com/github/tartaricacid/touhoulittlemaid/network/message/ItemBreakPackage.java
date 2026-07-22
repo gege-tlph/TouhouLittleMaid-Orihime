@@ -2,21 +2,20 @@ package com.github.tartaricacid.touhoulittlemaid.network.message;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record ItemBreakPackage(int id, ItemStack item) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<ItemBreakPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("item_break"));
+    public static final CustomPacketPayload.Type<ItemBreakPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("item_break"));
     public static final StreamCodec<RegistryFriendlyByteBuf, ItemBreakPackage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT,
             ItemBreakPackage::id,
@@ -26,23 +25,24 @@ public record ItemBreakPackage(int id, ItemStack item) implements CustomPacketPa
     );
 
     public static void handle(ItemBreakPackage message, ClientPlayNetworking.Context context) {
-        context.client().execute(() -> handleBreakItem(message));
+        context.client().execute(() -> breakItem(message));
     }
 
+
     @Environment(EnvType.CLIENT)
-    private static void handleBreakItem(ItemBreakPackage message) {
+    private static void breakItem(ItemBreakPackage message) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) {
             return;
         }
-        Entity e = mc.level.getEntity(message.id);
+        Entity e = mc.level.getEntity(message.id());
         if (e instanceof LivingEntity livingEntity && livingEntity.isAlive()) {
-            livingEntity.breakItem(message.item);
+            livingEntity.breakItem(message.item());
         }
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

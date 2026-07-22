@@ -64,7 +64,7 @@ public class DownloadInfo implements ProgressListener {
     private List<Long> oldVersion = Lists.newArrayList();
 
     /**
-     * type: maid, chair, sound
+     * 类型：女仆、椅子、声音
      */
     @SerializedName("type")
     private List<String> type = Lists.newArrayList();

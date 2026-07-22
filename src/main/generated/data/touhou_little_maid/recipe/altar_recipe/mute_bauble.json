@@ -4,12 +4,8 @@
   "entity": "minecraft:item",
   "group": "altar_recipe",
   "ingredients": [
-    {
-      "tag": "minecraft:wool"
-    },
-    {
-      "item": "minecraft:clay_ball"
-    }
+    "#minecraft:wool",
+    "minecraft:clay_ball"
   ],
   "lang": "jei.touhou_little_maid.altar_craft.item_craft.result",
   "power": 0.2,

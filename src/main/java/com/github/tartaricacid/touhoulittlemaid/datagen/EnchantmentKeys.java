@@ -26,6 +26,7 @@ public class EnchantmentKeys {
         return ResourceKey.create(Registries.ENCHANTMENT, getResourceLocation(name));
     }
 
+
     public static void bootstrap(BootstrapContext<Enchantment> context) {
         HolderGetter<DamageType> damageTypes = context.lookup(Registries.DAMAGE_TYPE);
         HolderGetter<Enchantment> enchantments = context.lookup(Registries.ENCHANTMENT);
@@ -70,7 +71,7 @@ public class EnchantmentKeys {
     }
 
     private static void register(BootstrapContext<Enchantment> context, ResourceKey<Enchantment> key, Enchantment.Builder builder) {
-        context.register(key, builder.build(key.location()));
+        context.register(key, builder.build(key.identifier()));
     }
 
     public static int getEnchantmentLevel(RegistryAccess access, ResourceKey<Enchantment> enchantmentResourceKey, ItemStack mainHandItem) {
@@ -78,6 +79,7 @@ public class EnchantmentKeys {
     }
 
     public static Holder<Enchantment> getEnchantmentHolder(RegistryAccess access, ResourceKey<Enchantment> enchantmentResourceKey) {
-        return access.registryOrThrow(Registries.ENCHANTMENT).getHolderOrThrow(enchantmentResourceKey);
+
+        return access.lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(enchantmentResourceKey);
     }
 }

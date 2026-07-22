@@ -14,17 +14,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record MaidConfigPackage(int id, boolean home, boolean pick, boolean ride,
                                 MaidSchedule schedule) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<MaidConfigPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("maid_config"));
+    public static final CustomPacketPayload.Type<MaidConfigPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("maid_config"));
     public static final StreamCodec<ByteBuf, MaidConfigPackage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT,
             MaidConfigPackage::id,
@@ -59,9 +58,9 @@ public record MaidConfigPackage(int id, boolean home, boolean pick, boolean ride
                 }
                 if (maid.getSchedule() != message.schedule) {
                     maid.setSchedule(message.schedule);
-                    maid.getSchedulePos().restrictTo(maid);
+                    maid.getSchedulePos().setHomeTo(maid);
                     if (maid.isHomeModeEnable()) {
-                        BehaviorUtils.setWalkAndLookTargetMemories(maid, maid.getRestrictCenter(), 0.7f, 3);
+                        BehaviorUtils.setWalkAndLookTargetMemories(maid, maid.getHomePosition(), 0.7f, 3);
                     }
                     if (maid.getOwner() instanceof ServerPlayer serverPlayer) {
                         InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.SWITCH_SCHEDULE);
@@ -83,8 +82,8 @@ public record MaidConfigPackage(int id, boolean home, boolean pick, boolean ride
         if (message.home) {
             SchedulePos schedulePos = maid.getSchedulePos();
             if (schedulePos.isConfigured()) {
-                ResourceLocation dimension = schedulePos.getDimension();
-                if (!dimension.equals(maid.level.dimension().location())) {
+                Identifier dimension = schedulePos.getDimension();
+                if (!dimension.equals(maid.level.dimension().identifier())) {
                     CheckSchedulePosPacket tips = new CheckSchedulePosPacket("message.touhou_little_maid.check_schedule_pos.dimension");
                     ServerPlayNetworking.send(sender, tips);
                     return;
@@ -98,13 +97,13 @@ public record MaidConfigPackage(int id, boolean home, boolean pick, boolean ride
             }
             schedulePos.setHomeModeEnable(maid, maid.blockPosition());
         } else {
-            maid.restrictTo(BlockPos.ZERO, MaidConfig.MAID_NON_HOME_RANGE.get());
+            maid.setHomeTo(BlockPos.ZERO, MaidConfig.MAID_NON_HOME_RANGE.get());
         }
         maid.setHomeModeEnable(message.home);
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

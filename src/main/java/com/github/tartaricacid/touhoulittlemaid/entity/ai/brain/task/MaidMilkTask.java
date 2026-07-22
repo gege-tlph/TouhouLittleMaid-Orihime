@@ -14,7 +14,7 @@ import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.NearestVisibleLivingEntities;
-import net.minecraft.world.entity.animal.Cow;
+import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -35,7 +35,7 @@ public class MaidMilkTask extends MaidCheckRateTask {
         if (super.checkExtraStartConditions(worldIn, owner)) {
             CombinedInvWrapper availableInv = owner.getAvailableInv(true);
             return ItemsUtil.isStackIn(availableInv, stack -> stack.getItem() == Items.BUCKET) &&
-                    ItemsUtil.isStackIn(availableInv, stack -> stack == ItemStack.EMPTY);
+                    ItemsUtil.isStackIn(availableInv, ItemStack::isEmpty);
         }
         return false;
     }
@@ -44,7 +44,7 @@ public class MaidMilkTask extends MaidCheckRateTask {
     protected void start(ServerLevel worldIn, EntityMaid maid, long gameTimeIn) {
         milkTarget = null;
         this.getEntities(maid)
-                .find(e -> maid.isWithinRestriction(e.blockPosition()))
+                .find(e -> maid.isWithinHome(e.blockPosition()))
                 .filter(Entity::isAlive)
                 .filter(e -> e instanceof Cow)
                 .filter(e -> !e.isBaby())
@@ -52,7 +52,8 @@ public class MaidMilkTask extends MaidCheckRateTask {
                 .findFirst()
                 .ifPresent(e -> {
                     milkTarget = e;
-                    BehaviorUtils.setWalkAndLookTargetMemories(maid, e, this.speedModifier, 0);
+
+                    BehaviorUtils.setWalkAndLookTargetMemories(maid, e, this.speedModifier, 1);
                 });
 
         if (milkTarget != null && milkTarget.closerThan(maid, 2)) {

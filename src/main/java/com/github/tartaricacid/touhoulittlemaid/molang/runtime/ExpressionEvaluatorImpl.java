@@ -48,14 +48,13 @@ public final class ExpressionEvaluatorImpl<TEntity> implements ExpressionEvaluat
             arithmetic((a, b) -> a.eval() - b.eval()),
             arithmetic((a, b) -> a.eval() * b.eval()),
             arithmetic((a, b) -> {
-                // Molang allows division by zero,
-                // which is always equal to 0
+                // Molang 允许除以零，它始终等于 0
                 float dividend = a.eval();
                 float divisor = b.eval();
                 if (divisor == 0) return 0;
                 else return dividend / divisor;
             }),
-            (evaluator, a, b) -> { // arrow
+            (evaluator, a, b) -> { // 箭头
                 final Object val = a.visit(evaluator);
                 if (val == null) {
                     return null;
@@ -63,7 +62,7 @@ public final class ExpressionEvaluatorImpl<TEntity> implements ExpressionEvaluat
                     return b.visit(evaluator.createChild(val));
                 }
             },
-            (evaluator, a, b) -> { // null coalesce
+            (evaluator, a, b) -> { // 空合并
                 Object val = a.visit(evaluator);
                 if (val == null) {
                     return b.visit(evaluator);
@@ -71,7 +70,7 @@ public final class ExpressionEvaluatorImpl<TEntity> implements ExpressionEvaluat
                     return val;
                 }
             },
-            (evaluator, a, b) -> { // assignation
+            (evaluator, a, b) -> { // 指派
                 Object val = b.visit(evaluator);
                 if (a instanceof AssignableVariableExpression) {
                     AssignableVariable var = ((AssignableVariableExpression) a).target();
@@ -97,10 +96,10 @@ public final class ExpressionEvaluatorImpl<TEntity> implements ExpressionEvaluat
                         ((Struct) value).putProperty(exp.path(), val);
                     }
                 }
-                // TODO: (else case) This isn't fail-fast, we can only assign to access expressions
+
                 return val;
             },
-            (evaluator, a, b) -> { // conditional
+            (evaluator, a, b) -> { // 有条件的
                 Object condition = a.visit(evaluator);
                 if (ValueConversions.asBoolean(condition)) {
                     return b.visit(evaluator);
@@ -120,7 +119,7 @@ public final class ExpressionEvaluatorImpl<TEntity> implements ExpressionEvaluat
                     return right.equals(left);
                 }
                 return false;
-            }, // eq
+            }, // 情商
             (evaluator, a, b) -> {
                 Object left = a.visit(evaluator);
                 Object right = b.visit(evaluator);
@@ -177,8 +176,7 @@ public final class ExpressionEvaluatorImpl<TEntity> implements ExpressionEvaluat
 
     @Override
     public @NotNull ExpressionEvaluator<TEntity> createChild() {
-        // Note that it will have its own returnValue, but same bindings
-        // (Should we create new bindings?)
+        // 请注意，它将有自己的 returnValue，但具有相同的绑定（我们应该创建新的绑定吗？）
         return new ExpressionEvaluatorImpl<>(this.entity);
     }
 
@@ -212,9 +210,9 @@ public final class ExpressionEvaluatorImpl<TEntity> implements ExpressionEvaluat
         return (context, arguments) -> {
             Object lastResult = null;
             for (Expression expression : expressions) {
-                // eval expression, ignore result
+                // eval 表达式，忽略结果
                 lastResult = evaluatorForThisScope.eval(expression);
-                // check for return values
+                // 检查返回值
                 Object returnValue = evaluatorForThisScope.popReturnValue();
                 if (returnValue != null) {
                     return returnValue;

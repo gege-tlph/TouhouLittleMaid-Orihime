@@ -31,13 +31,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 /**
- * Identifier expression implementation for Molang.
+ * Molang 的标识符表达式实现。
  *
- * <p>Note that, identifiers in Molang are always
- * <b>case-insensitive</b></p>
+ * <p>请注意，Molang 中的标识符始终 <b> 不区分大小写</b></p>
  *
- * <p>Example identifier expressions: {@code math},
- * {@code name}, {@code this}, {@code print}</p>
+ * <p>标识符表达式示例：{@code math}、{@code name}、{@code this}、{@code print}</p>
  *
  * @since 3.0.0
  */
@@ -49,7 +47,7 @@ public final class IdentifierExpression implements Expression {
     private IdentifierExpression(final @NotNull String name, Object target) {
         Objects.requireNonNull(name, "name");
 
-        this.name = name.toLowerCase(); // case-insensitive
+        this.name = name.toLowerCase(); // 不区分大小写
         this.target = target;
     }
 
@@ -67,9 +65,9 @@ public final class IdentifierExpression implements Expression {
     }
 
     /**
-     * Gets the identifier name.
+     * 获取标识符名称。
      *
-     * @return The identifier name.
+     * @return 标识符名称。
      * @since 3.0.0
      */
     public @NotNull String name() {

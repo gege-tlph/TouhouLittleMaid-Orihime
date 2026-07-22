@@ -41,8 +41,9 @@ public final class SerializerRegister {
         register.register(ServiceType.TTS, TTSFishAudioSite.API_TYPE, new TTSFishAudioSite.Serializer());
         register.register(ServiceType.TTS, TTSGptSovitsSite.API_TYPE, new TTSGptSovitsSite.Serializer());
         register.register(ServiceType.TTS, TTSPlayer2Site.API_TYPE, new TTSPlayer2Site.Serializer());
-        register.register(ServiceType.TTS, TTSSiliconflowSite.API_TYPE, new TTSSiliconflowSite.Serializer());
         register.register(ServiceType.TTS, TTSMiniMaxSite.API_TYPE, new TTSMiniMaxSite.Serializer());
+        register.register(ServiceType.TTS, TTSSiliconflowSite.API_TYPE, new TTSSiliconflowSite.Serializer());
+
 
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             littleMaid.registerAIChatSerializer(register);

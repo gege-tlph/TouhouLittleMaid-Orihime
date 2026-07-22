@@ -32,9 +32,7 @@ import java.util.Objects;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Class representing a Molang token. Each token has some
- * information set by the lexer (i.e. start/end position,
- * token kind and optional value)
+ * 表示一个 Molang 词元，记录类型、可选值以及在输入中的起止位置。
  *
  * @since 3.0.0
  */
@@ -56,7 +54,7 @@ public final class Token {
         this.start = start;
         this.end = end;
 
-        // verify state, token kinds that have HAS_VALUE tag, must have a non-null value
+        // 带 HAS_VALUE 标签的词元类型必须具有非空值。
         if (kind.hasTag(TokenKind.Tag.HAS_VALUE) && value == null) {
             throw new IllegalArgumentException("A token with kind "
                     + kind + " must have a non-null value");
@@ -64,9 +62,9 @@ public final class Token {
     }
 
     /**
-     * Gets the token kind.
+     * 获取词元类型。
      *
-     * @return The token kind
+     * @return 词元类型
      * @since 3.0.0
      */
     public @NotNull TokenKind kind() {
@@ -74,10 +72,9 @@ public final class Token {
     }
 
     /**
-     * Gets the token value. Null if this kind
-     * of tokens doesn't allow values.
+     * 获取词元值；不携带值的词元返回 {@code null}。
      *
-     * @return The token value
+     * @return 词元值
      * @since 3.0.0
      */
     public String value() {
@@ -85,9 +82,9 @@ public final class Token {
     }
 
     /**
-     * Gets the start index of this token.
+     * 获取词元的起始索引。
      *
-     * @return The token start
+     * @return 起始索引
      * @since 3.0.0
      */
     public int start() {
@@ -95,9 +92,9 @@ public final class Token {
     }
 
     /**
-     * Gets the end index of this token.
+     * 获取词元的结束索引。
      *
-     * @return The token end
+     * @return 结束索引
      * @since 3.0.0
      */
     public int end() {

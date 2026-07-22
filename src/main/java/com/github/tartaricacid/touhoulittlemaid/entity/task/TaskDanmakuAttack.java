@@ -3,6 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.entity.task;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IRangedAttackTask;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
+
 import com.github.tartaricacid.touhoulittlemaid.datagen.EnchantmentKeys;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidAttackStrafingTask;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidRangedWalkToTarget;
@@ -16,7 +17,7 @@ import com.github.tartaricacid.touhoulittlemaid.util.SoundUtil;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -37,13 +38,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
+
 import static com.github.tartaricacid.touhoulittlemaid.datagen.EnchantmentKeys.getEnchantmentLevel;
 
 public class TaskDanmakuAttack implements IRangedAttackTask {
-    public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "danmaku_attack");
+    public static final Identifier UID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "danmaku_attack");
 
     @Override
-    public ResourceLocation getUid() {
+    public Identifier getUid() {
         return UID;
     }
 
@@ -60,8 +62,8 @@ public class TaskDanmakuAttack implements IRangedAttackTask {
 
     @Override
     public List<Pair<Integer, BehaviorControl<? super EntityMaid>>> createBrainTasks(EntityMaid maid) {
-        BehaviorControl<EntityMaid> supplementedTask = StartAttacking.create(this::hasGohei, IRangedAttackTask::findFirstValidAttackTarget);
-        BehaviorControl<EntityMaid> findTargetTask = StopAttackingIfTargetInvalid.create((target) -> !hasGohei(maid) || farAway(target, maid));
+        BehaviorControl<EntityMaid> supplementedTask = StartAttacking.create((level, e) -> hasGohei(e), (level, e) -> IRangedAttackTask.findFirstValidAttackTarget(e));
+        BehaviorControl<EntityMaid> findTargetTask = StopAttackingIfTargetInvalid.create((level, target) -> !hasGohei(maid) || farAway(target, maid));
         BehaviorControl<EntityMaid> moveToTargetTask = MaidRangedWalkToTarget.create(0.6f);
         BehaviorControl<EntityMaid> maidAttackStrafingTask = new MaidAttackStrafingTask();
         BehaviorControl<EntityMaid> shootTargetTask = new MaidShootTargetTask();
@@ -77,8 +79,8 @@ public class TaskDanmakuAttack implements IRangedAttackTask {
 
     @Override
     public List<Pair<Integer, BehaviorControl<? super EntityMaid>>> createRideBrainTasks(EntityMaid maid) {
-        BehaviorControl<EntityMaid> supplementedTask = StartAttacking.create(this::hasGohei, IRangedAttackTask::findFirstValidAttackTarget);
-        BehaviorControl<EntityMaid> findTargetTask = StopAttackingIfTargetInvalid.create((target) -> !hasGohei(maid) || farAway(target, maid));
+        BehaviorControl<EntityMaid> supplementedTask = StartAttacking.create((level, e) -> hasGohei(e), (level, e) -> IRangedAttackTask.findFirstValidAttackTarget(e));
+        BehaviorControl<EntityMaid> findTargetTask = StopAttackingIfTargetInvalid.create((level, target) -> !hasGohei(maid) || farAway(target, maid));
         BehaviorControl<EntityMaid> shootTargetTask = new MaidShootTargetTask();
 
         return Lists.newArrayList(
@@ -97,8 +99,8 @@ public class TaskDanmakuAttack implements IRangedAttackTask {
     public AABB searchDimension(EntityMaid maid) {
         if (hasGohei(maid)) {
             float searchRange = this.searchRadius(maid);
-            if (maid.hasRestriction()) {
-                return new AABB(maid.getRestrictCenter()).inflate(searchRange);
+            if (maid.hasHome()) {
+                return new AABB(maid.getHomePosition()).inflate(searchRange);
             } else {
                 return maid.getBoundingBox().inflate(searchRange);
             }
@@ -129,6 +131,7 @@ public class TaskDanmakuAttack implements IRangedAttackTask {
                     attackValue = (float) attackDamage.getBaseValue();
                 }
                 RegistryAccess access = shooter.level.registryAccess();
+
 
                 int impedingLevel = getEnchantmentLevel(access, EnchantmentKeys.IMPEDING, mainHandItem);
                 int speedyLevel = getEnchantmentLevel(access, EnchantmentKeys.SPEEDY, mainHandItem);

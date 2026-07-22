@@ -2,9 +2,11 @@ package com.github.tartaricacid.touhoulittlemaid.entity.backpack.data;
 
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.IBackpackData;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-import net.fabricmc.fabric.api.registry.FuelRegistry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.nbt.Tag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.SimpleContainer;
@@ -12,6 +14,7 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.*;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 
@@ -68,11 +71,12 @@ public class FurnaceBackpackData extends SimpleContainer implements IBackpackDat
 
     @Override
     public void load(CompoundTag tag, EntityMaid maid) {
-        this.litTime = tag.getInt("BurnTime");
-        this.cookingProgress = tag.getInt("CookTime");
-        this.cookingTotalTime = tag.getInt("CookTimeTotal");
+        this.litTime = tag.getIntOr("BurnTime", 0);
+        this.cookingProgress = tag.getIntOr("CookTime", 0);
+        this.cookingTotalTime = tag.getIntOr("CookTimeTotal", 0);
         this.litDuration = this.getBurnDuration(this.getItem(FUEL_INDEX));
-        this.fromTag(tag.getList("Items", Tag.TAG_COMPOUND), this.level.registryAccess());
+
+        this.fromItemList(TagValueInput.create(ProblemReporter.DISCARDING, this.level.registryAccess(), tag).listOrEmpty("Items", ItemStack.CODEC));
     }
 
     @Override
@@ -80,7 +84,10 @@ public class FurnaceBackpackData extends SimpleContainer implements IBackpackDat
         tag.putInt("BurnTime", this.litTime);
         tag.putInt("CookTime", this.cookingProgress);
         tag.putInt("CookTimeTotal", this.cookingTotalTime);
-        tag.put("Items", this.createTag(this.level.registryAccess()));
+
+        TagValueOutput itemsOutput = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, this.level.registryAccess());
+        this.storeAsItemList(itemsOutput.list("Items", ItemStack.CODEC));
+        tag.put("Items", itemsOutput.buildResult().getListOrEmpty("Items"));
     }
 
     @Override
@@ -99,7 +106,7 @@ public class FurnaceBackpackData extends SimpleContainer implements IBackpackDat
             // 从缓存中获取配方
             SmeltingRecipe recipe = null;
             if (inputNotEmpty) {
-                recipe = this.quickCheck.getRecipeFor(new SingleRecipeInput(this.getItem(INPUT_INDEX)), level).map(RecipeHolder::value).orElse(null);
+                recipe = this.quickCheck.getRecipeFor(new SingleRecipeInput(this.getItem(INPUT_INDEX)), (ServerLevel) level).map(RecipeHolder::value).orElse(null);
             }
 
             int maxStackSize = this.getMaxStackSize();
@@ -110,7 +117,7 @@ public class FurnaceBackpackData extends SimpleContainer implements IBackpackDat
                 // 如果此时点燃了
                 if (this.isLit()) {
                     // 如果燃料有残留物，比如熔岩桶燃烧后残留一个桶
-                    if (fuelItem.getItem().hasCraftingRemainingItem()) {
+                    if (!fuelItem.getItem().getCraftingRemainder().isEmpty()) {
                         this.setItem(FUEL_INDEX, fuelItem.getRecipeRemainder());
                     } else if (fuelNotEmpty) {
                         // 普通燃料减一
@@ -129,10 +136,10 @@ public class FurnaceBackpackData extends SimpleContainer implements IBackpackDat
                 // 如果进度满了，重置，并给出产物
                 if (this.cookingProgress == this.cookingTotalTime) {
                     this.cookingProgress = 0;
-                    this.cookingTotalTime = getTotalCookTime(level);
+                    this.cookingTotalTime = getTotalCookTime((ServerLevel) level);
                     // 如果烧制成功，把经验给女仆
                     if (this.burn(level.registryAccess(), recipe, this, maxStackSize)) {
-                        int exp = this.createExperience(recipe.getExperience());
+                        int exp = this.createExperience(recipe.experience());
                         maid.setExperience(maid.getExperience() + exp);
                     }
                 }
@@ -151,8 +158,9 @@ public class FurnaceBackpackData extends SimpleContainer implements IBackpackDat
         ItemStack slotItem = this.getItem(index);
         boolean isSameItem = !stack.isEmpty() && ItemStack.isSameItemSameComponents(slotItem, stack);
         super.setItem(index, stack);
-        if (index == 0 && !isSameItem) {
-            this.cookingTotalTime = getTotalCookTime(this.level);
+        // 客户端也会更新槽位，但配方缓存只能由服务端重算；计时值随后通过容器数据同步。
+        if (index == INPUT_INDEX && !isSameItem && this.level instanceof ServerLevel serverLevel) {
+            this.cookingTotalTime = getTotalCookTime(serverLevel);
             this.cookingProgress = 0;
         }
     }
@@ -171,13 +179,7 @@ public class FurnaceBackpackData extends SimpleContainer implements IBackpackDat
     }
 
     private int getBurnDuration(ItemStack fuel) {
-        if (fuel.isEmpty()) {
-            return 0;
-        } else {
-            //return fuel.getBurnTime(RecipeType.SMELTING);
-            Integer burnTime = FuelRegistry.INSTANCE.get(fuel.getItem());
-            return burnTime == null ? 0 : burnTime;
-        }
+        return fuel.isEmpty() ? 0 : this.level.fuelValues().burnDuration(fuel);
     }
 
     private boolean canBurn(RegistryAccess access, @Nullable SmeltingRecipe recipe, SimpleContainer container, int maxStackSize) {
@@ -198,10 +200,10 @@ public class FurnaceBackpackData extends SimpleContainer implements IBackpackDat
                     // 不同物品，不行
                     return false;
                 } else if (output.getCount() + result.getCount() <= maxStackSize && output.getCount() + result.getCount() <= output.getMaxStackSize()) {
-                    // Forge fix: make furnace respect stack sizes in furnace recipes
+                    // 锻造修复：使熔炉尊重熔炉配方中的堆叠尺寸
                     return true;
                 } else {
-                    // Forge fix: make furnace respect stack sizes in furnace recipes
+                    // 锻造修复：使熔炉尊重熔炉配方中的堆叠尺寸
                     return output.getCount() + result.getCount() <= result.getMaxStackSize();
                 }
             }
@@ -234,8 +236,9 @@ public class FurnaceBackpackData extends SimpleContainer implements IBackpackDat
         }
     }
 
-    private int getTotalCookTime(Level level) {
+    private int getTotalCookTime(ServerLevel level) {
+
         return quickCheck.getRecipeFor(new SingleRecipeInput(this.getItem(INPUT_INDEX)), level).map(recipeHolder ->
-                recipeHolder.value().getCookingTime()).orElse(200);
+                recipeHolder.value().cookingTime()).orElse(200);
     }
 }

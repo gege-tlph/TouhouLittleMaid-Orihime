@@ -29,11 +29,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 /**
- * Statement expression implementation. Statement expressions
- * do not have children expressions, they just have a single
- * operation type.
+ * 语句表达式的实现。语句表达式没有子表达式，它们只有一个操作类型。
  *
- * <p>Example statement expressions: {@code break}, {@code continue}</p>
+ * <p>语句表达式示例：{@code break}、{@code continue}</p>
  *
  * @since 3.0.0
  */
@@ -46,9 +44,9 @@ public final class StatementExpression implements Expression {
     }
 
     /**
-     * Gets the operation/type of this statement.
+     * 获取该语句的操作/类型。
      *
-     * @return The statement operation/type.
+     * @return 语句操作/类型。
      * @since 3.0.0
      */
     public @NotNull Op op() {
@@ -62,21 +60,20 @@ public final class StatementExpression implements Expression {
 
 
     /**
-     * Enum containing all the possible operations/types
-     * of statement expressions.
+     * 包含所有可能的操作/语句表达式类型的枚举。
      *
      * @since 3.0.0
      */
     public enum Op {
         /**
-         * The break statement type
+         * Break语句类型
          *
          * @since 3.0.0
          */
         BREAK,
 
         /**
-         * The continue statement type
+         * continue 语句类型
          *
          * @since 3.0.0
          */

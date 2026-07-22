@@ -1,10 +1,10 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.passive;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 import static com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid.*;
 
@@ -44,12 +44,12 @@ public class MaidConfigManager {
         builder.define(ACTIVE_CLIMBING, true);
     }
 
-    void addAdditionalSaveData(CompoundTag compound) {
-        compound.putBoolean(PICKUP_TAG, isPickup());
-        compound.putBoolean(HOME_TAG, isHomeModeEnable());
-        compound.putBoolean(RIDEABLE_TAG, isRideable());
+    void addAdditionalSaveData(ValueOutput output) {
+        output.putBoolean(PICKUP_TAG, isPickup());
+        output.putBoolean(HOME_TAG, isHomeModeEnable());
+        output.putBoolean(RIDEABLE_TAG, isRideable());
 
-        CompoundTag maidSubConfig = new CompoundTag();
+        ValueOutput maidSubConfig = output.child(MAID_SUB_CONFIG_TAG);
         maidSubConfig.putBoolean(BACKPACK_SHOW_TAG, isShowBackpack());
         maidSubConfig.putBoolean(BACK_ITEM_SHOW_TAG, isShowBackItem());
         maidSubConfig.putBoolean(CHATBUBBLE_SHOW_TAG, isChatBubbleShow());
@@ -58,46 +58,22 @@ public class MaidConfigManager {
         maidSubConfig.putBoolean(OPEN_DOOR_TAG, isOpenDoor());
         maidSubConfig.putBoolean(OPEN_FENCE_GATE_TAG, isOpenFenceGate());
         maidSubConfig.putBoolean(ACTIVE_CLIMBING_TAG, isActiveClimbing());
-        compound.put(MAID_SUB_CONFIG_TAG, maidSubConfig);
     }
 
-    void readAdditionalSaveData(CompoundTag compound) {
-        if (compound.contains(PICKUP_TAG, Tag.TAG_BYTE)) {
-            setPickup(compound.getBoolean(PICKUP_TAG));
-        }
-        if (compound.contains(HOME_TAG, Tag.TAG_BYTE)) {
-            setHomeModeEnable(compound.getBoolean(HOME_TAG));
-        }
-        if (compound.contains(RIDEABLE_TAG, Tag.TAG_BYTE)) {
-            setRideable(compound.getBoolean(RIDEABLE_TAG));
-        }
-        if (compound.contains(MAID_SUB_CONFIG_TAG, Tag.TAG_COMPOUND)) {
-            CompoundTag maidSubConfig = compound.getCompound(MAID_SUB_CONFIG_TAG);
-            if (maidSubConfig.contains(BACKPACK_SHOW_TAG)) {
-                setShowBackpack(maidSubConfig.getBoolean(BACKPACK_SHOW_TAG));
-            }
-            if (maidSubConfig.contains(BACK_ITEM_SHOW_TAG)) {
-                setShowBackItem(maidSubConfig.getBoolean(BACK_ITEM_SHOW_TAG));
-            }
-            if (maidSubConfig.contains(CHATBUBBLE_SHOW_TAG)) {
-                setChatBubbleShow(maidSubConfig.getBoolean(CHATBUBBLE_SHOW_TAG));
-            }
-            if (maidSubConfig.contains(SOUND_FREQ_TAG)) {
-                setSoundFreq(maidSubConfig.getFloat(SOUND_FREQ_TAG));
-            }
-            if (maidSubConfig.contains(PICKUP_TYPE_TAG)) {
-                setPickupType(PickType.values()[maidSubConfig.getInt(PICKUP_TYPE_TAG)]);
-            }
-            if (maidSubConfig.contains(OPEN_DOOR_TAG)) {
-                setOpenDoor(maidSubConfig.getBoolean(OPEN_DOOR_TAG));
-            }
-            if (maidSubConfig.contains(OPEN_FENCE_GATE_TAG)) {
-                setOpenFenceGate(maidSubConfig.getBoolean(OPEN_FENCE_GATE_TAG));
-            }
-            if (maidSubConfig.contains(ACTIVE_CLIMBING_TAG)) {
-                setActiveClimbing(maidSubConfig.getBoolean(ACTIVE_CLIMBING_TAG));
-            }
-        }
+    void readAdditionalSaveData(ValueInput input) {
+        setPickup(input.getBooleanOr(PICKUP_TAG, false));
+        setHomeModeEnable(input.getBooleanOr(HOME_TAG, false));
+        setRideable(input.getBooleanOr(RIDEABLE_TAG, false));
+        input.child(MAID_SUB_CONFIG_TAG).ifPresent(maidSubConfig -> {
+            setShowBackpack(maidSubConfig.getBooleanOr(BACKPACK_SHOW_TAG, false));
+            setShowBackItem(maidSubConfig.getBooleanOr(BACK_ITEM_SHOW_TAG, false));
+            setChatBubbleShow(maidSubConfig.getBooleanOr(CHATBUBBLE_SHOW_TAG, false));
+            setSoundFreq(maidSubConfig.getFloatOr(SOUND_FREQ_TAG, 0f));
+            setPickupType(PickType.values()[maidSubConfig.getIntOr(PICKUP_TYPE_TAG, 0)]);
+            setOpenDoor(maidSubConfig.getBooleanOr(OPEN_DOOR_TAG, false));
+            setOpenFenceGate(maidSubConfig.getBooleanOr(OPEN_FENCE_GATE_TAG, false));
+            setActiveClimbing(maidSubConfig.getBooleanOr(ACTIVE_CLIMBING_TAG, false));
+        });
     }
 
     boolean isHomeModeEnable() {

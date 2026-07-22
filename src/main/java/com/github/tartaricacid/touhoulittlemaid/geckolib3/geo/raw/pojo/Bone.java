@@ -1,48 +1,29 @@
 package com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.raw.pojo;
 
 import com.google.gson.annotations.SerializedName;
+import org.jetbrains.annotations.Debug;
 
-import java.util.Map;
-
+@Debug.Renderer(text = "name + \" <- \" + parent")
 public class Bone {
-    @SerializedName("bind_pose_rotation")
-    private double[] bindPoseRotation;
     @SerializedName("cubes")
     private Cube[] cubes;
     @SerializedName("debug")
     private Boolean debug;
     @SerializedName("inflate")
-    private Double inflate;
-    @SerializedName("locators")
-    private Map<String, LocatorValue> locators;
+    private Float inflate;
     @SerializedName("mirror")
     private Boolean mirror;
     @SerializedName("name")
     private String name;
-    @SerializedName("neverRender")
-    private Boolean neverRender;
     @SerializedName("parent")
     private String parent;
     @SerializedName("pivot")
-    private double[] pivot = new double[]{0, 0, 0};
-    @SerializedName("poly_mesh")
-    private PolyMesh polyMesh;
-    @SerializedName("render_group_id")
-    private Long renderGroupID;
+    private float[] pivot = new float[]{0, 0, 0};
     @SerializedName("reset")
     private Boolean reset;
     @SerializedName("rotation")
-    private double[] rotation = new double[]{0, 0, 0};
-    @SerializedName("texture_meshes")
-    private TextureMesh[] textureMeshes;
+    private float[] rotation = new float[]{0, 0, 0};
 
-    public double[] getBindPoseRotation() {
-        return bindPoseRotation;
-    }
-
-    public void setBindPoseRotation(double[] value) {
-        this.bindPoseRotation = value;
-    }
 
     public Cube[] getCubes() {
         return cubes;
@@ -60,20 +41,12 @@ public class Bone {
         this.debug = value;
     }
 
-    public Double getInflate() {
+    public Float getInflate() {
         return inflate;
     }
 
-    public void setInflate(Double value) {
+    public void setInflate(Float value) {
         this.inflate = value;
-    }
-
-    public Map<String, LocatorValue> getLocators() {
-        return locators;
-    }
-
-    public void setLocators(Map<String, LocatorValue> value) {
-        this.locators = value;
     }
 
     public Boolean getMirror() {
@@ -92,14 +65,6 @@ public class Bone {
         this.name = value;
     }
 
-    public Boolean getNeverRender() {
-        return neverRender;
-    }
-
-    public void setNeverRender(Boolean value) {
-        this.neverRender = value;
-    }
-
     public String getParent() {
         return parent;
     }
@@ -108,28 +73,12 @@ public class Bone {
         this.parent = value;
     }
 
-    public double[] getPivot() {
+    public float[] getPivot() {
         return pivot;
     }
 
-    public void setPivot(double[] value) {
+    public void setPivot(float[] value) {
         this.pivot = value;
-    }
-
-    public PolyMesh getPolyMesh() {
-        return polyMesh;
-    }
-
-    public void setPolyMesh(PolyMesh value) {
-        this.polyMesh = value;
-    }
-
-    public Long getRenderGroupID() {
-        return renderGroupID;
-    }
-
-    public void setRenderGroupID(Long value) {
-        this.renderGroupID = value;
     }
 
     public Boolean getReset() {
@@ -140,19 +89,13 @@ public class Bone {
         this.reset = value;
     }
 
-    public double[] getRotation() {
+    public float[] getRotation() {
         return rotation;
     }
 
-    public void setRotation(double[] value) {
+    public void setRotation(float[] value) {
         this.rotation = value;
     }
 
-    public TextureMesh[] getTextureMeshes() {
-        return textureMeshes;
-    }
 
-    public void setTextureMeshes(TextureMesh[] value) {
-        this.textureMeshes = value;
-    }
 }

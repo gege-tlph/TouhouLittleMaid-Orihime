@@ -1,9 +1,11 @@
 package cn.sh1rocu.touhoulittlemaid.util.itemhandler;
 
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -136,7 +138,15 @@ public class ItemStackHandler implements IItemHandler, IItemHandlerModifiable, I
             if (!stacks.get(i).isEmpty()) {
                 CompoundTag itemTag = new CompoundTag();
                 itemTag.putInt("Slot", i);
-                nbtTagList.add(stacks.get(i).save(provider, itemTag));
+                ItemStack.CODEC.encodeStart(provider.createSerializationContext(NbtOps.INSTANCE), stacks.get(i))
+                        .resultOrPartial(err -> TouhouLittleMaid.LOGGER.error("Failed to save item stack: {}", err))
+                        .ifPresent(t -> {
+                            if (t instanceof CompoundTag ct) {
+                                nbtTagList.add(itemTag.merge(ct));
+                            } else {
+                                nbtTagList.add(itemTag);
+                            }
+                        });
             }
         }
         CompoundTag nbt = new CompoundTag();
@@ -147,16 +157,20 @@ public class ItemStackHandler implements IItemHandler, IItemHandlerModifiable, I
 
     @Override
     public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
-        setSize(nbt.contains("Size", Tag.TAG_INT) ? nbt.getInt("Size") : stacks.size());
-        ListTag tagList = nbt.getList("Items", Tag.TAG_COMPOUND);
-        for (int i = 0; i < tagList.size(); i++) {
-            CompoundTag itemTags = tagList.getCompound(i);
-            int slot = itemTags.getInt("Slot");
+        setSize(nbt.contains("Size") ? nbt.getInt("Size").orElse(stacks.size()) : stacks.size());
+        nbt.getList("Items").ifPresent(tagList -> {
+            for (int i = 0; i < tagList.size(); i++) {
+                tagList.getCompound(i).ifPresent(itemTags -> {
+                    int slot = itemTags.getInt("Slot").orElse(-1);
 
-            if (slot >= 0 && slot < stacks.size()) {
-                ItemStack.parse(provider, itemTags).ifPresent(stack -> stacks.set(slot, stack));
+                    if (slot >= 0 && slot < stacks.size()) {
+                        ItemStack.CODEC.parse(provider.createSerializationContext(NbtOps.INSTANCE), itemTags)
+                                .resultOrPartial(err -> TouhouLittleMaid.LOGGER.error("Tried to load invalid item: {}", err))
+                                .ifPresent(stack -> stacks.set(slot, stack));
+                    }
+                });
             }
-        }
+        });
         onLoad();
     }
 

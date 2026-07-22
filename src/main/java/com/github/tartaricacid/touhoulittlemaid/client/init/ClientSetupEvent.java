@@ -12,24 +12,21 @@ import com.github.tartaricacid.touhoulittlemaid.client.overlay.MaidTipsOverlay;
 import com.github.tartaricacid.touhoulittlemaid.client.overlay.ShowPowerOverlay;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.LegacyPackRepositorySource;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.listener.EmojiReloadListener;
-import com.github.tartaricacid.touhoulittlemaid.compat.embeddium.EmbeddiumCompat;
-import com.github.tartaricacid.touhoulittlemaid.compat.immersivemelodies.client.ImmersiveMelodiesCompat;
-import com.github.tartaricacid.touhoulittlemaid.compat.oculus.OculusCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.iris.IrisCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.patpat.PatPatCompat;
-import com.github.tartaricacid.touhoulittlemaid.compat.ponder.PonderCompat;
-import com.github.tartaricacid.touhoulittlemaid.compat.simplehats.SimpleHatsCompat;
-import com.github.tartaricacid.touhoulittlemaid.compat.sodium.SodiumCompat;
+
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 
 @Environment(EnvType.CLIENT)
 public class ClientSetupEvent {
-    // private static final ResourceLocation CROSSHAIR = ResourceLocation.withDefaultNamespace("hud/crosshair");
-    // private static final ResourceLocation HOTBAR = ResourceLocation.withDefaultNamespace("hud/hotbar");
+
 
     public static void onClientSetup() {
         AnimationRegister.registerAnimationState();
@@ -41,22 +38,19 @@ public class ClientSetupEvent {
         AddPackFindersEvent.CALLBACK.register(ClientSetupEvent::onAddPackFinders);
 
         // 客户端兼容
-        SimpleHatsCompat.init();
-        ImmersiveMelodiesCompat.init();
-        OculusCompat.init();
-        SodiumCompat.init();
-        EmbeddiumCompat.init();
+        IrisCompat.init();
+        // Sodium 可直接处理当前提交式几何；不要另建会重复执行面剔除的快速路径。
         PatPatCompat.init();
-        PonderCompat.register();
+
     }
 
     public static void onRegisterGuiLayers() {
-        // event.registerAbove(CROSSHAIR, getResourceLocation("tlm_maid_tips"), new MaidTipsOverlay());
-        // event.registerAbove(CROSSHAIR, getResourceLocation("tlm_broom_tips"), new BroomTipsOverlay());
-        // event.registerAbove(HOTBAR, getResourceLocation("tlm_show_power"), new ShowPowerOverlay());
-        HudRenderCallback.EVENT.register(MaidTipsOverlay.INSTANCE::render);
-        HudRenderCallback.EVENT.register(BroomTipsOverlay.INSTANCE::render);
-        HudRenderCallback.EVENT.register(ShowPowerOverlay.INSTANCE::render);
+        HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR,
+                Identifier.fromNamespaceAndPath("touhou_little_maid", "maid_tips"), MaidTipsOverlay.INSTANCE::render);
+        HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR,
+                Identifier.fromNamespaceAndPath("touhou_little_maid", "broom_tips"), BroomTipsOverlay.INSTANCE::render);
+        HudElementRegistry.attachElementAfter(VanillaHudElements.HOTBAR,
+                Identifier.fromNamespaceAndPath("touhou_little_maid", "show_power"), ShowPowerOverlay.INSTANCE::render);
     }
 
     public static void resisterKeyMappings() {

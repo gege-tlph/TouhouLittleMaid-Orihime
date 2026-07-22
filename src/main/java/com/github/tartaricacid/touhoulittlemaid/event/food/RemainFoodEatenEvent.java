@@ -6,7 +6,7 @@ import com.github.tartaricacid.touhoulittlemaid.api.event.MaidAfterEatEvent;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.util.ItemsUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -45,8 +45,10 @@ public class RemainFoodEatenEvent {
     }
 
     private static ItemStack getItemStack(String itemId) {
-        ResourceLocation resourceLocation = ResourceLocation.parse(itemId);
-        Item value = BuiltInRegistries.ITEM.get(resourceLocation);
-        return new ItemStack(value);
+        Identifier resourceLocation = Identifier.parse(itemId);
+
+        return BuiltInRegistries.ITEM.get(resourceLocation)
+                .map(ref -> new ItemStack(ref.value()))
+                .orElse(ItemStack.EMPTY);
     }
 }

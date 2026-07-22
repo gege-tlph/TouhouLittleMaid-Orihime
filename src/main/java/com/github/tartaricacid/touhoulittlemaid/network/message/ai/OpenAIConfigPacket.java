@@ -3,26 +3,25 @@ package com.github.tartaricacid.touhoulittlemaid.network.message.ai;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.AvailableSites;
 import com.github.tartaricacid.touhoulittlemaid.util.GameModeUtil;
 import io.netty.buffer.ByteBuf;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record OpenAIConfigPacket() implements CustomPacketPayload {
-    public static final Type<OpenAIConfigPacket> TYPE = new Type<>(getResourceLocation("open_ai_config"));
+    public static final CustomPacketPayload.Type<OpenAIConfigPacket> TYPE = new CustomPacketPayload.Type<>(modLoc("open_ai_config"));
+    public static final StreamCodec<ByteBuf, OpenAIConfigPacket> STREAM_CODEC = StreamCodec.of(
+            (byteBuf, message) -> {
+            },
+            byteBuf -> new OpenAIConfigPacket()
+    );
 
-    public static final OpenAIConfigPacket INSTANCE = new OpenAIConfigPacket();
-    public static final StreamCodec<ByteBuf, OpenAIConfigPacket> STREAM_CODEC = StreamCodec.unit(INSTANCE);
-
-    @Environment(EnvType.CLIENT)
     public static void sendToServer() {
         ClientPlayNetworking.send(new OpenAIConfigPacket());
     }

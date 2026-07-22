@@ -21,7 +21,7 @@ public final class TeleportHelper {
     }
 
     public static boolean teleportToRestrictCenter(EntityMaid maid) {
-        BlockPos blockPos = maid.getRestrictCenter();
+        BlockPos blockPos = maid.getHomePosition();
         if (!maid.level.isClientSide() && maid.isAlive()) {
             int x = blockPos.getX() + randomIntInclusive(maid.getRandom(), -3, 3);
             // 防止有人搭建二楼，所以向上搜索
@@ -35,7 +35,7 @@ public final class TeleportHelper {
 
     private static boolean teleport(EntityMaid maid, double x, double y, double z) {
         BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos(x, y, z);
-        while (blockPos.getY() > maid.level.getMinBuildHeight() && !maid.level.getBlockState(blockPos).blocksMotion()) {
+        while (blockPos.getY() > maid.level.getMinY() && !maid.level.getBlockState(blockPos).blocksMotion()) {
             blockPos.move(Direction.DOWN);
         }
         BlockState blockState = maid.level.getBlockState(blockPos);

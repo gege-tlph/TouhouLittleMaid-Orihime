@@ -1,11 +1,12 @@
 package com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.molang.functions.physics;
 
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.util.MathUtil;
 import net.minecraft.util.Mth;
 
 /**
  * @author MicroCraft
  *
- * <a href="https://www.youtube.com/watch?v=KPoeNZZ6H4s">Giving Personality to Procedural Animations using Math</a>
+ * <a href="https://www.youtube.com/watch?v=KPoeNZZ6H4s">使用数学赋予程序动画个性</a>
  */
 public class SecondOrder implements IPhysics {
     private float inputFunction = 0;
@@ -30,9 +31,9 @@ public class SecondOrder implements IPhysics {
         float coefficient = Mth.clamp(arg2, 0, 1);
         float response = arg3;
 
-        float k1 = coefficient / Mth.PI / frequency;
-        float k2 = 1 / (2 * Mth.PI * frequency) / (2 * Mth.PI * frequency);
-        float k3 = response * coefficient / 2 / Mth.PI / frequency;
+        float k1 = coefficient / MathUtil.PI / frequency;
+        float k2 = 1 / (2 * MathUtil.PI * frequency) / (2 * MathUtil.PI * frequency);
+        float k3 = response * coefficient / 2 / MathUtil.PI / frequency;
 
         float inputFunctionDot = (input - this.inputFunction) / timeStep;
         this.inputFunction = input;

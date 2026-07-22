@@ -31,12 +31,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Execution scope expression implementation. Execution
- * scopes define a new scope and a new sequence of
- * expressions to evaluate.
+ * 执行范围表达式实现。执行作用域定义了一个新的作用域和一个新的要计算的表达式序列。
  *
- * <p>Execution scope expression examples: {@code { print('a'); print('b'); }},
- * {@code { doThisFirst(); thenDoThis(); }}, {@code { v.x = v.x + 1; }}</p>
+ * <p>执行范围表达式示例：{@code { print('a'); print('b'); }}、{@code { doThisFirst(); thenDoThis(); }}、{@code { v.x = v.x + 1; }}</p>
  *
  * @since 3.0.0
  */
@@ -49,8 +46,7 @@ public final class ExecutionScopeExpression implements Expression {
     }
 
     /**
-     * Returns the expressions inside this
-     * execution scope, never null
+     * 返回此执行范围内的表达式，绝不为 null
      */
     public @NotNull List<Expression> expressions() {
         return expressions;

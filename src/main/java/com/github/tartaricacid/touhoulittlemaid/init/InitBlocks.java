@@ -5,31 +5,35 @@ import com.github.tartaricacid.touhoulittlemaid.block.*;
 import com.github.tartaricacid.touhoulittlemaid.tileentity.*;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+
+import java.util.function.Function;
 
 public final class InitBlocks {
     public static void init() {
 
     }
 
-    public static Block MAID_BED = registerBlock("maid_bed", new BlockMaidBed());
-    public static Block ALTAR = registerBlock("altar", new BlockAltar());
-    public static Block STATUE = registerBlock("statue", new BlockStatue());
-    public static Block GARAGE_KIT = registerBlock("garage_kit", new BlockGarageKit());
-    public static Block MAID_BEACON = registerBlock("maid_beacon", new BlockMaidBeacon());
-    public static Block MODEL_SWITCHER = registerBlock("model_switcher", new BlockModelSwitcher());
-    public static Block PICNIC_MAT = registerBlock("picnic_mat", new BlockPicnicMat());
-    public static Block GOMOKU = registerBlock("gomoku", new BlockGomoku());
-    public static Block CCHESS = registerBlock("cchess", new BlockCChess());
-    public static Block WCHESS = registerBlock("wchess", new BlockWChess());
-    public static Block KEYBOARD = registerBlock("keyboard", new BlockKeyboard());
-    public static Block BOOKSHELF = registerBlock("bookshelf", new BlockBookshelf());
-    public static Block COMPUTER = registerBlock("computer", new BlockComputer());
-    public static Block SHRINE = registerBlock("shrine", new BlockShrine());
-    public static Block SCARECROW = registerBlock("scarecrow", new BlockScarecrow());
-    public static Block SNACK_CABINET = registerBlock("snack_cabinet", new BlockSnackCabinet());
+    public static Block MAID_BED = registerBlock("maid_bed", BlockMaidBed::new);
+    public static Block ALTAR = registerBlock("altar", BlockAltar::new);
+    public static Block STATUE = registerBlock("statue", BlockStatue::new);
+    public static Block GARAGE_KIT = registerBlock("garage_kit", BlockGarageKit::new);
+    public static Block MAID_BEACON = registerBlock("maid_beacon", BlockMaidBeacon::new);
+    public static Block MODEL_SWITCHER = registerBlock("model_switcher", BlockModelSwitcher::new);
+    public static Block PICNIC_MAT = registerBlock("picnic_mat", BlockPicnicMat::new);
+    public static Block GOMOKU = registerBlock("gomoku", BlockGomoku::new);
+    public static Block CCHESS = registerBlock("cchess", BlockCChess::new);
+    public static Block WCHESS = registerBlock("wchess", BlockWChess::new);
+    public static Block KEYBOARD = registerBlock("keyboard", BlockKeyboard::new);
+    public static Block BOOKSHELF = registerBlock("bookshelf", BlockBookshelf::new);
+    public static Block COMPUTER = registerBlock("computer", BlockComputer::new);
+    public static Block SHRINE = registerBlock("shrine", BlockShrine::new);
+    public static Block SCARECROW = registerBlock("scarecrow", BlockScarecrow::new);
+    public static Block SNACK_CABINET = registerBlock("snack_cabinet", BlockSnackCabinet::new);
 
     public static BlockEntityType<TileEntityAltar> ALTAR_TE = registerBlockEntityType("altar", TileEntityAltar.TYPE);
     public static BlockEntityType<TileEntityStatue> STATUE_TE = registerBlockEntityType("statue", TileEntityStatue.TYPE);
@@ -47,11 +51,12 @@ public final class InitBlocks {
     public static BlockEntityType<TileEntityMaidBed> MAID_BED_TE = registerBlockEntityType("maid_bed", TileEntityMaidBed.TYPE);
     public static BlockEntityType<TileEntitySnackCabinet> SNACK_CABINET_TE = registerBlockEntityType("snack_cabinet", TileEntitySnackCabinet.TYPE);
 
-    private static Block registerBlock(String id, Block block) {
-        return Registry.register(BuiltInRegistries.BLOCK, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), block);
+    private static <B extends Block> B registerBlock(String id, Function<Identifier, ? extends B> func) {
+        Identifier loc = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id);
+        return Registry.register(BuiltInRegistries.BLOCK, loc, func.apply(loc));
     }
 
     private static <T extends BlockEntityType<?>> T registerBlockEntityType(String id, T block) {
-        return Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), block);
+        return Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), block);
     }
 }

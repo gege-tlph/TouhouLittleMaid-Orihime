@@ -29,10 +29,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 /**
- * String literal expression implementation for Molang.
+ * Molang 的字符串文字表达式实现。
  *
- * <p>Example string expressions: {@code 'hello world'},
- * {@code 'hey there'}, {@code 'name'}, {@code 'the game'}</p>
+ * <p>字符串表达式示例：{@code 'hello world'}、{@code 'hey there'}、{@code 'name'}、{@code 'the game'}</p>
  *
  * @since 3.0.0
  */
@@ -45,9 +44,9 @@ public final class StringExpression implements Expression {
     }
 
     /**
-     * Gets the string value for this expression.
+     * 获取此表达式的字符串值。
      *
-     * @return The string value.
+     * @return 字符串值。
      * @since 3.0.0
      */
     public @NotNull String value() {

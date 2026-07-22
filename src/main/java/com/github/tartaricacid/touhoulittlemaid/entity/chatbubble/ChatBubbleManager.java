@@ -1,6 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.chatbubble;
 
-import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.implement.TextChatBubbleData;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.implement.WaitingChatBubbleData;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -8,7 +8,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.Nullable;
@@ -16,6 +16,7 @@ import javax.annotation.Nullable;
 import static com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData.DEFAULT_PRIORITY;
 import static com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData.TYPE_2;
 import static com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid.getChatBubbleKey;
+
 
 public class ChatBubbleManager {
     private final EntityMaid maid;
@@ -89,7 +90,7 @@ public class ChatBubbleManager {
 
     public long addThinkingText(String langKey, @Nullable Component secondaryText) {
         MutableComponent component = Component.translatable(langKey).withStyle(ChatFormatting.GRAY).withStyle(ChatFormatting.ITALIC);
-        ResourceLocation icon = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/entity/chat_bubble/yinyang_orb.png");
+        Identifier icon = IdentifierUtil.modLoc("textures/entity/chat_bubble/yinyang_orb.png");
         return this.addChatBubble(WaitingChatBubbleData.create(90 * 20, TYPE_2, DEFAULT_PRIORITY, component, secondaryText, icon));
     }
 

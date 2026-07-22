@@ -1,10 +1,11 @@
 package cn.sh1rocu.touhoulittlemaid.mixin.common;
 
 import cn.sh1rocu.touhoulittlemaid.api.extension.IBlockEntityPersistentData;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,16 +18,14 @@ public abstract class BlockEntityMixin implements IBlockEntityPersistentData {
     private CompoundTag tlm$persistentData = null;
 
     @Inject(method = "loadAdditional", at = @At("RETURN"))
-    private void tlm$loadAdditional(CompoundTag tag, HolderLookup.Provider registries, CallbackInfo ci) {
-        if (tag.contains(PERSISTENT_DATA, Tag.TAG_COMPOUND)) {
-            tlm$persistentData = tag.getCompound(PERSISTENT_DATA);
-        }
+    private void tlm$loadAdditional(ValueInput input, CallbackInfo ci) {
+        tlm$persistentData = input.read(PERSISTENT_DATA, CustomData.COMPOUND_TAG_CODEC).orElse(null);
     }
 
     @Inject(method = "saveAdditional", at = @At("RETURN"))
-    private void tlm$saveAdditional(CompoundTag tag, HolderLookup.Provider provider, CallbackInfo ci) {
+    private void tlm$saveAdditional(ValueOutput output, CallbackInfo ci) {
         if (tlm$persistentData != null) {
-            tag.put(PERSISTENT_DATA, tlm$persistentData);
+            output.store(PERSISTENT_DATA, CustomData.COMPOUND_TAG_CODEC, tlm$persistentData);
         }
     }
 
