@@ -38,6 +38,7 @@ public final class MaidCombatManager {
     private long reentrySuppressedUntil;
     private long targetStickyUntil;
     private long lastLocalThreatTick;
+    private UUID ownerCommandedAttackTarget;
 
     public MaidCombatManager(EntityMaid maid) {
         this.maid = maid;
@@ -108,6 +109,7 @@ public final class MaidCombatManager {
 
     public void onPlayerCommand() {
         ownerIntentCandidates.clear();
+        this.ownerCommandedAttackTarget = null;
         cancelEmergency(true);
     }
 
@@ -173,6 +175,7 @@ public final class MaidCombatManager {
 
     public void onBrainRefresh() {
         ownerIntentCandidates.clear();
+        this.ownerCommandedAttackTarget = null;
         this.target = null;
         this.targetingContext = MaidTargetingContext.SELF_DEFENSE;
         this.targetStickyUntil = 0;
@@ -212,6 +215,19 @@ public final class MaidCombatManager {
 
     public LivingEntity getTarget() {
         return target;
+    }
+
+    /**
+     * The entity the owner explicitly commanded the maid to attack (via a skill / LLM tool call),
+     * if any. Such a target obeys only the hard-safety rules — it may be a peaceful or non-angry
+     * neutral mob that autonomous targeting would never pick on its own.
+     */
+    public UUID getOwnerCommandedAttackTarget() {
+        return ownerCommandedAttackTarget;
+    }
+
+    public void setOwnerCommandedAttackTarget(UUID target) {
+        this.ownerCommandedAttackTarget = target;
     }
 
     public MaidTargetingContext getTargetingContext() {

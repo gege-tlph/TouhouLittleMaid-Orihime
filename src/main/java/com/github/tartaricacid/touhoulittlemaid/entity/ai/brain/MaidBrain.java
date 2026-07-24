@@ -27,7 +27,7 @@ public final class MaidBrain {
      * Work and opportunity behaviors use priorities 5-20, so owner following must run later
      * or its WALK_TARGET prevents those behaviors from starting at all.
      */
-    private static final int FOLLOW_OWNER_FALLBACK_PRIORITY = 50;
+    private static final int FOLLOW_OWNER_PRIORITY = 4;
 
     public static ImmutableList<MemoryModuleType<?>> getMemoryTypes() {
         List<MemoryModuleType<?>> defaultTypes = Lists.newArrayList(
@@ -80,6 +80,7 @@ public final class MaidBrain {
         MaidUpdateActivityFromSchedule.updateActivityFromSchedule(maid, brain);
     }
 
+    // 1.21.11: setSchedule(Schedule) → setSchedule(EnvironmentAttribute<Activity>)（MaidSchedule.getEnvironmentAttribute 映射）
     private static void registerSchedule(Brain<EntityMaid> brain, EntityMaid maid) {
         brain.setSchedule(maid.getSchedule().getEnvironmentAttribute());
     }
@@ -94,8 +95,8 @@ public final class MaidBrain {
         Pair<Integer, BehaviorControl<? super EntityMaid>> maidAwait = Pair.of(1, new MaidAwaitTask());
         Pair<Integer, BehaviorControl<? super EntityMaid>> interactWithDoor = Pair.of(2, MaidInteractWithDoor.create());
         Pair<Integer, BehaviorControl<? super EntityMaid>> walkToTarget = Pair.of(2, new MoveToTargetSink());
-        Pair<Integer, BehaviorControl<? super EntityMaid>> followOwner = Pair.of(FOLLOW_OWNER_FALLBACK_PRIORITY, new MaidFollowOwnerTask(0.5f, 2));
-        Pair<Integer, BehaviorControl<? super EntityMaid>> followOwnerVehicle = Pair.of(FOLLOW_OWNER_FALLBACK_PRIORITY, new MaidFollowOwnerVehicleTask(0.5f, 2));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> followOwner = Pair.of(FOLLOW_OWNER_PRIORITY, new MaidFollowOwnerTask(0.5f, 2));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> followOwnerVehicle = Pair.of(FOLLOW_OWNER_PRIORITY, new MaidFollowOwnerVehicleTask(0.5f, 2));
         Pair<Integer, BehaviorControl<? super EntityMaid>> healSelf = Pair.of(3, new MaidHealSelfTask());
         Pair<Integer, BehaviorControl<? super EntityMaid>> pickupItem = Pair.of(10, new MaidPickupEntitiesTask(EntityMaid::isPickup, 0.6f));
         Pair<Integer, BehaviorControl<? super EntityMaid>> clearSleep = Pair.of(99, new MaidClearSleepTask());

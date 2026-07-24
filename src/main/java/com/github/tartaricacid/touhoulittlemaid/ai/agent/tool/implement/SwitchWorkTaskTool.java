@@ -33,13 +33,11 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
     public static final String TOOL_ID = "switch_work_task";
 
     private static final String TOOL_DESC = """
-            Use this when the user wants to change the maid's permanent player-selected work task.
-            Do not use this tool to simulate one-off emergency combat, self-defense, or retaliation.
-            A valid explicit command stops any current temporary threat response.
-            
-            For attack tasks, first query the latest nearby-entity context. Call this tool only when exactly one target is identified, and provide that entity id. Existing server attack rules are final; a rejected target leaves the work task unchanged.
-            Non-attack tasks do not need an entity id.
-            
+            Use this when the user wants to change the current work task.
+
+            For attack tasks, should first obtain the context of nearby entities, then provide the target entity id as parameter to switch immediately after switching task.
+            Non attack tasks not need to provide entity id.
+
             Reply with the entity name ONLY, omit internal data (e.g., ID, distance).
             """.trim();
 
@@ -56,7 +54,7 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
 
     private static final String TARGET_NOT_PROVIDED = "Work task was not changed: no attack target entity id was provided";
     private static final String TARGET_NOT_FOUND = "Work task was not changed: no live living entity with id %d was found";
-    private static final String TARGET_NOT_ALLOWED = "Work task was not changed: cannot attack %s because it is excluded by server attack rules";
+    private static final String TARGET_NOT_ALLOWED = "Work task was not changed: %s is a protected target (player, pet, ally, or maid) and cannot be attacked";
     private static final String TARGET_SUCCESS = "The task switch succeeded, and the attack target is successfully set to %s";
 
     private static final Codec<Result> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -118,8 +116,8 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
         int entityId = result.entityId();
 
         LivingEntity attackTarget = null;
-        if (task instanceof IAttackTask attackTask) {
-            AttackTargetValidation validation = this.validateAttackTarget(maid, attackTask, entityId);
+        if (task instanceof IAttackTask) {
+            AttackTargetValidation validation = this.validateAttackTarget(maid, entityId);
             if (!validation.valid()) {
                 return callback.addToolResult(validation.message(), toolId);
             }
@@ -143,6 +141,9 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
 
         if (attackTarget != null) {
             maid.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, attackTarget);
+            // Mark this as an explicit owner order so execution keeps attacking it even if it is a
+            // peaceful / non-angry neutral mob that autonomous targeting would otherwise drop.
+            maid.getCombatManager().setOwnerCommandedAttackTarget(attackTarget.getUUID());
             return callback.addToolResult(withThreatResult(
                     TARGET_SUCCESS.formatted(attackTarget.getName().getString()), emergencyStopped), toolId);
         }
@@ -181,7 +182,7 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
         return stopped ? result + " Temporary threat response stopped." : result;
     }
 
-    private AttackTargetValidation validateAttackTarget(EntityMaid maid, IAttackTask attackTask, int entityId) {
+    private AttackTargetValidation validateAttackTarget(EntityMaid maid, int entityId) {
         if (entityId == -1) {
             return AttackTargetValidation.invalid(TARGET_NOT_PROVIDED);
         }
@@ -191,10 +192,10 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
             return AttackTargetValidation.invalid(TARGET_NOT_FOUND.formatted(entityId));
         }
 
-        String targetName = target.getName().getString();
-        if (!MaidTargetingPolicy.canAttackForTask(
-                maid, target, MaidTargetingContext.PLANNED_ATTACK, attackTask)) {
-            return AttackTargetValidation.invalid(TARGET_NOT_ALLOWED.formatted(targetName));
+        // An explicit owner command obeys for any living target except the hard-safety set
+        // (players, tamed pets, allies, other maids, protected / ignored types).
+        if (!MaidTargetingPolicy.canAttackOnOwnerCommand(maid, target)) {
+            return AttackTargetValidation.invalid(TARGET_NOT_ALLOWED.formatted(target.getName().getString()));
         }
         return AttackTargetValidation.valid(target);
     }

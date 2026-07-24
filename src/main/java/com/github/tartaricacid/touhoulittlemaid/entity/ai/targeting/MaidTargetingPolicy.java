@@ -23,6 +23,7 @@ import net.minecraft.world.entity.npc.Npc;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -57,6 +58,11 @@ public final class MaidTargetingPolicy {
 
     public static boolean canAttack(EntityMaid maid, LivingEntity target,
                                     MaidTargetingContext context) {
+        if (context == MaidTargetingContext.PLANNED_ATTACK && isOwnerCommandedTarget(maid, target)) {
+            // An explicit owner order obeys regardless of default hostility (peaceful / non-angry
+            // neutral targets included); only the hard-safety set can still refuse it.
+            return canAttackOnOwnerCommand(maid, target);
+        }
         return context == MaidTargetingContext.PLANNED_ATTACK
                 ? canAttackForCurrentTask(maid, target, context)
                 : canAttackByDefaultRules(maid, target, context);
@@ -85,6 +91,23 @@ public final class MaidTargetingPolicy {
             return true;
         }
         return configuredOrDefaultHostility(maid, target);
+    }
+
+    /**
+     * Whether an explicit owner command (a skill / LLM tool call) may attack this target. Owner
+     * orders are obeyed even for peaceful or non-angry neutral mobs — only the immutable hard-safety
+     * set (players, pets, allies, other maids, protected / ignored types) and PROTECTED adapters
+     * win. Autonomous targeting still uses the normal hostility rules; this bypass is command-only.
+     */
+    public static boolean canAttackOnOwnerCommand(EntityMaid maid, LivingEntity target) {
+        return !failsHardSafety(maid, target, MaidTargetingContext.PLANNED_ATTACK)
+                && adapterDecision(maid, target, MaidTargetingContext.PLANNED_ATTACK)
+                != MaidHostilityDecision.PROTECTED;
+    }
+
+    private static boolean isOwnerCommandedTarget(EntityMaid maid, LivingEntity target) {
+        UUID commanded = maid.getCombatManager().getOwnerCommandedAttackTarget();
+        return commanded != null && commanded.equals(target.getUUID());
     }
 
     /**

@@ -19,6 +19,7 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,8 +37,7 @@ public class MaidFarmPlantTask extends Behavior<EntityMaid> {
         Brain<EntityMaid> brain = owner.getBrain();
         return brain.getMemory(InitEntities.TARGET_POS).map(targetPos -> {
             BlockPos interactionBasePos = targetPos.currentBlockPosition();
-            if (!MaidFarmMoveTask.isWithinInteractionRange(owner.blockPosition(), interactionBasePos,
-                    task.getCloseEnoughDist())) {
+            if (!isCloseEnoughToInteract(owner, interactionBasePos)) {
                 Optional<WalkTarget> walkTarget = brain.getMemory(MemoryModuleType.WALK_TARGET);
                 if (walkTarget.isEmpty() || !MaidFarmMoveTask.isWithinInteractionRange(
                         walkTarget.get().getTarget().currentBlockPosition(), interactionBasePos,
@@ -48,6 +48,20 @@ public class MaidFarmPlantTask extends Behavior<EntityMaid> {
             }
             return true;
         }).orElse(false);
+    }
+
+    /**
+     * Harvest as soon as the maid is actually near the crop. The move task parks the maid on a
+     * reachable node BESIDE the crop (on 1.21.11 it often cannot path into the crop column), so
+     * gate on the maid's real position with a tolerance that covers an adjacent stand node. This
+     * matches the origin/1.21.1 baseline, which harvested from within the crop column via a
+     * forgiving Vec3 distance check. The prior integer block-coordinate check was too strict: the
+     * maid frequently settles one block off the exact stand node and would never satisfy it, so it
+     * kept re-pathing to the crop without ever harvesting (only occasionally landing exactly right).
+     */
+    private boolean isCloseEnoughToInteract(EntityMaid owner, BlockPos interactionBasePos) {
+        double reach = task.getCloseEnoughDist() + 1.0D;
+        return owner.distanceToSqr(Vec3.atCenterOf(interactionBasePos.above())) <= reach * reach;
     }
 
     @Override
