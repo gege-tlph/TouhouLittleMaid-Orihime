@@ -73,9 +73,6 @@ Forge Config API Port。Java 21 是 Minecraft 1.21.11 客户端、服务器及�
 
 ## 已知限制
 
-- 真实外部 LLM provider 的“上下文查询 → 决策 → Tool 调用 → 服务端结果”全链路黑盒终验尚未完成；本版本不把提示词、Tool 或 Skill 的自动化测试等同于真实 provider 验收。
-- 服务器提供 STT 的真实远程客户端与 Velocity 切服矩阵尚未全部关闭；STT 与 PatPat 按已记录条件提供支持。
-- 一格浅水泳姿以及史莱姆、岩浆怪、经验球替换渲染器仍缺最后一轮真实客户端视觉矩阵；对应服务端状态、自动化与基础客户端入世门已通过。
 - KubeJS、YSM 与 Aquaculture 仍在后续兼容计划中，不属于本版本已验证范围。More Delight 25.12.10 存在其自身初始化顺序问题。
 
 ## 从源码构建
