@@ -37,11 +37,17 @@ public class MaidStealEdibleUseTask extends Behavior<EntityMaid> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel worldIn, EntityMaid owner) {
         Brain<EntityMaid> brain = owner.getBrain();
+        MaidEdibleBlockAction action = brain.getMemory(InitEntities.MAID_EDIBLE_BLOCK_ACTION).orElse(null);
+        if (action == MaidEdibleBlockAction.TRY_STEAL && !owner.getConfigManager().isTableFoodAllowed()) {
+            return false;
+        }
         return brain.getMemory(InitEntities.TARGET_POS).map(targetPos -> {
             Vec3 targetV3d = targetPos.currentPosition();
             if (owner.distanceToSqr(targetV3d) > Math.pow(closeEnoughDist, 2)) {
                 Optional<WalkTarget> walkTarget = brain.getMemory(MemoryModuleType.WALK_TARGET);
-                if (walkTarget.isEmpty() || !walkTarget.get().getTarget().currentPosition().equals(targetV3d)) {
+                if (walkTarget.isEmpty()
+                        || walkTarget.get().getTarget().currentPosition().distanceToSqr(targetV3d)
+                        > Math.pow(closeEnoughDist, 2)) {
                     brain.eraseMemory(InitEntities.TARGET_POS);
                 }
                 return false;

@@ -3,7 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.client.resource.listener;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.google.common.collect.Lists;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.util.Mth;
@@ -20,7 +20,7 @@ public class EmojiReloadListener implements ResourceManagerReloadListener, Ident
     private static final int MIN_SIZE = 8;
     private static final int MAX_SIZE = 256;
 
-    private static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "emoji_reload");
+    private static final Identifier ID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "emoji_reload");
 
     @Override
     public void onResourceManagerReload(ResourceManager resourceManager) {
@@ -30,7 +30,7 @@ public class EmojiReloadListener implements ResourceManagerReloadListener, Ident
         paths.forEach(res -> EMOJI_RESOURCES.add(EmojiResource.parse(res)));
     }
 
-    public static boolean filterEmojiResource(ResourceLocation res) {
+    public static boolean filterEmojiResource(Identifier res) {
         String path = res.getPath();
         return path.endsWith(".png") || path.endsWith(".gif");
     }
@@ -44,14 +44,14 @@ public class EmojiReloadListener implements ResourceManagerReloadListener, Ident
     }
 
     @Override
-    public ResourceLocation getFabricId() {
+    public Identifier getFabricId() {
         return ID;
     }
 
-    public record EmojiResource(ResourceLocation location, Format format, int width, int height) {
+    public record EmojiResource(Identifier location, Format format, int width, int height) {
         private static final Pattern SIZE_PATTERN = Pattern.compile("^.*?-(\\d+)x(\\d+)\\.(png|gif)$");
 
-        public static EmojiResource parse(ResourceLocation res) {
+        public static EmojiResource parse(Identifier res) {
             String path = res.getPath();
             var matcher = SIZE_PATTERN.matcher(path);
             Format format = path.endsWith(".gif") ? Format.GIF : Format.PNG;

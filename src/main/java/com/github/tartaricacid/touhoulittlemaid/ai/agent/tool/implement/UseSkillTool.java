@@ -13,6 +13,7 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.LLMClient;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.Lists;
 import com.mojang.serialization.Codec;
+import net.minecraft.network.chat.Component;
 
 import java.util.List;
 import java.util.Locale;
@@ -24,8 +25,8 @@ public class UseSkillTool implements ITool<String> {
     public static final String TOOL_ID = "use_skill";
     private static final String NAME_PARAMETER_ID = "name";
     private static final String SUMMARY = """
-            Load a skill to get detailed instructions for a specific task.
-            Skills provide specialized knowledge and guidance. Use this when a task matches an available skill.
+            Load a skill to answer gameplay questions or obtain detailed instructions.
+            Skills provide reference knowledge; they do not replace live game context queries or direct state tools.
             """.trim();
     private static final String PARAMETER_DESC = """
             The exact skill name to load.
@@ -101,7 +102,7 @@ public class UseSkillTool implements ITool<String> {
                                 finalResult.complete(callback.addToolResult(error, toolCallId));
                             } else {
                                 // 将子 Agent 提取的知识回填给主 Agent
-                                String handleSummary = "Source: Minecraft Wiki\nSummary: " + summary;
+                                String handleSummary = formatKnowledgeResult(summary);
                                 finalResult.complete(callback.addToolResult(handleSummary, toolCallId));
                             }
                         });
@@ -117,7 +118,16 @@ public class UseSkillTool implements ITool<String> {
 
     @Override
     public String invocationSummary(String result) {
-        return "%s { %s }".formatted(TOOL_ID, result);
+        return "Consulting maid gameplay knowledge";
+    }
+
+    @Override
+    public Component invocationSummaryComponent(String result) {
+        return Component.translatable("ai.touhou_little_maid.chat.tool_call.use_skill");
+    }
+
+    static String formatKnowledgeResult(String summary) {
+        return "Source: loaded gameplay knowledge skill\nSummary: " + summary;
     }
 
     private String getKnowledge(SkillInstance selected, MaidAIChatManager chatManager) {

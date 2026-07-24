@@ -4,8 +4,9 @@ import com.github.tartaricacid.touhoulittlemaid.ai.agent.context.AbstractMaidCon
 import com.github.tartaricacid.touhoulittlemaid.ai.agent.context.GameContextRegister;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.schedule.Activity;
 
 import static com.github.tartaricacid.touhoulittlemaid.ai.manager.setting.papi.StringConstant.HEALTHY_FORMAT;
 
@@ -24,7 +25,11 @@ public final class MaidContexts {
         register.registerContext(CATEGORY, new SittingContext());
         register.registerContext(CATEGORY, new RideContext());
         register.registerContext(CATEGORY, new ScheduleModeContext());
-        register.registerContext(CATEGORY, new CurrentActivityContext());
+        register.registerContext(CATEGORY, new ScheduledActivityContext());
+        register.registerContext(CATEGORY, new ActiveActivityContext());
+        register.registerContext(CATEGORY, new ResponsePolicyContext());
+        register.registerContext(CATEGORY, new EmergencyStateContext());
+        register.registerContext(CATEGORY, new ThreatSourceContext());
         register.registerContext(CATEGORY, new CurrentTaskContext());
     }
 
@@ -85,7 +90,7 @@ public final class MaidContexts {
             if (vehicle == null) {
                 return "not";
             }
-            ResourceLocation type = BuiltInRegistries.ENTITY_TYPE.getKey(vehicle.getType());
+            Identifier type = BuiltInRegistries.ENTITY_TYPE.getKey(vehicle.getType());
             if (type == null) {
                 return "not";
             }
@@ -108,25 +113,83 @@ public final class MaidContexts {
         }
     }
 
-    private static final class CurrentActivityContext extends AbstractMaidContext {
-        private CurrentActivityContext() {
-            super("activity", "Activity");
+    private static final class ScheduledActivityContext extends AbstractMaidContext {
+        private ScheduledActivityContext() {
+            super("scheduled_activity", "scheduled_activity");
         }
 
         @Override
         public String getValue(EntityMaid maid) {
-            return maid.getScheduleDetail().getName();
+            return canonicalActivityName(maid.getScheduleDetail());
+        }
+    }
+
+    private static final class ActiveActivityContext extends AbstractMaidContext {
+        private ActiveActivityContext() {
+            super("active_activity", "active_activity");
+        }
+
+        @Override
+        public String getValue(EntityMaid maid) {
+            return maid.getBrain().getActiveNonCoreActivity()
+                    .map(MaidContexts::canonicalActivityName)
+                    .orElse("none");
         }
     }
 
     private static final class CurrentTaskContext extends AbstractMaidContext {
         private CurrentTaskContext() {
-            super("work_task", "Work task");
+            super("work_task", "work_task");
         }
 
         @Override
         public String getValue(EntityMaid maid) {
             return maid.getTask().getUid().toString();
         }
+    }
+
+    private static final class EmergencyStateContext extends AbstractMaidContext {
+        private EmergencyStateContext() {
+            super("emergency_state", "emergency_state");
+        }
+
+        @Override
+        public String getValue(EntityMaid maid) {
+            return maid.isEmergencyCombatActive() ? "active" : "inactive";
+        }
+    }
+
+    private static final class ResponsePolicyContext extends AbstractMaidContext {
+        private ResponsePolicyContext() {
+            super("response_policy", "response_policy");
+        }
+
+        @Override
+        public String getValue(EntityMaid maid) {
+            return maid.getCombatManager().getResponsePolicy().name().toLowerCase(java.util.Locale.ROOT);
+        }
+    }
+
+    private static final class ThreatSourceContext extends AbstractMaidContext {
+        private ThreatSourceContext() {
+            super("threat_source", "threat_source");
+        }
+
+        @Override
+        public String getValue(EntityMaid maid) {
+            if (!maid.isEmergencyCombatActive()) {
+                return "none";
+            }
+            return switch (maid.getCombatManager().getTargetingContext()) {
+                case SELF_DEFENSE -> "self_defense";
+                case PROTECT_OWNER -> "protect_owner";
+                case PLANNED_ATTACK -> "none";
+            };
+        }
+    }
+
+    private static String canonicalActivityName(Activity activity) {
+        String name = activity.getName();
+        return name.startsWith("tlm_") ? name.substring("tlm_".length()) : name;
     }
 }

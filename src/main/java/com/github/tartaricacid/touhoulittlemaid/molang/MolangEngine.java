@@ -35,32 +35,28 @@ import java.io.StringReader;
 import java.util.List;
 
 /**
- * The engine's entry class. Provides methods to evaluate
- * and parse Molang code from strings and readers.
+ * 发动机的入门级。提供从字符串和读取器评估和解析 Molang 代码的方法。
  *
  * @since 3.0.0
  */
 public interface MolangEngine {
 
     /**
-     * Parses the data from the given {@code reader}
-     * to a {@link List} of {@link Expression}
+     * 将给定 {@code reader} 中的数据解析为 {@link Expression} 的 {@link List}
      *
-     * <strong>Note that this method won't close
-     * the given {@code reader}</strong>
+     * <strong>请注意，此方法不会关闭给定的 {@code reader}</strong>
      *
-     * @throws ParseException If read failed or there
-     *                        are syntax errors in the script
+     * @throws ParseException 如果读取失败或出现
+     * 脚本中有语法错误吗
      */
     List<Expression> parse(Reader reader) throws IOException;
 
     /**
-     * Parses the given {@code string} to a list of
-     * {@link Expression}
+     * 将给定的 {@code string} 解析为 {@link Expression} 列表
      *
-     * @param string The MoLang string
-     * @return The list of parsed expressions
-     * @throws ParseException If parsing fails
+     * @param string MoLang 字符串
+     * @return 已解析表达式列表
+     * @throws ParseException 如果解析失败
      */
     default List<Expression> parse(String string) throws ParseException {
         try (Reader reader = new StringReader(string)) {

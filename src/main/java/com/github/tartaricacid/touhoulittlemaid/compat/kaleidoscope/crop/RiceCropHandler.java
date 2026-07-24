@@ -17,9 +17,14 @@ import org.jetbrains.annotations.NotNull;
 public class RiceCropHandler implements ISpecialCropHandler {
     public static void addCropHandlers(SpecialCropManager manager) {
         RiceCropHandler handler = new RiceCropHandler();
-        manager.addSeed(ModItems.RICE_SEED, handler);
-        manager.addSeed(ModItems.WILD_RICE_SEED, handler);
-        manager.addCrop(ModBlocks.RICE_CROP, handler);
+        // TLM may initialize before Cookery because the compatibility is optional and therefore
+        // cannot impose a Fabric dependency order. Reading these fields here would initialize
+        // every Cookery item before ModEffects.registerEffects(), permanently capturing null
+        // holders in food components. Resolve them once at SERVER_STARTING, after every mod
+        // initializer has completed and before farming behavior can query these maps.
+        manager.addLazySeed(() -> ModItems.RICE_SEED, handler);
+        manager.addLazySeed(() -> ModItems.WILD_RICE_SEED, handler);
+        manager.addLazyCrop(() -> ModBlocks.RICE_CROP, handler);
     }
 
     @Override

@@ -1,6 +1,11 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message.ai;
 
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.AvailableSites;
+import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.SiteConfigStorage;
+import com.github.tartaricacid.touhoulittlemaid.command.subcommand.AIChatCommand;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import java.util.Map;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializableSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializerRegister;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.ServiceType;
@@ -16,11 +21,11 @@ import net.minecraft.server.level.ServerPlayer;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record SaveTTSSitePacket(Action action, @Nullable String siteId, boolean enabled,
                                 @Nullable TTSSite site) implements CustomPacketPayload {
-    public static final Type<SaveTTSSitePacket> TYPE = new Type<>(getResourceLocation("save_tts_site"));
+    public static final CustomPacketPayload.Type<SaveTTSSitePacket> TYPE = new CustomPacketPayload.Type<>(modLoc("save_tts_site"));
     public static final StreamCodec<ByteBuf, SaveTTSSitePacket> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public SaveTTSSitePacket decode(ByteBuf byteBuf) {
@@ -79,31 +84,45 @@ public record SaveTTSSitePacket(Action action, @Nullable String siteId, boolean 
             return;
         }
 
+        final Map<String, TTSSite> sites;
+        try {
+            sites = SiteConfigStorage.readTTS();
+        } catch (IllegalStateException exception) {
+            return;
+        }
         boolean changed = switch (message.action) {
-            case UPDATE -> updateSite(message.site);
-            case TOGGLE -> toggleSite(message.siteId, message.enabled);
+            case UPDATE -> updateSite(sites, message.site);
+            case TOGGLE -> toggleSite(sites, message.siteId, message.enabled);
         };
         if (!changed) {
             return;
         }
 
-        AvailableSites.saveSites();
-        ServerPlayNetworking.send(player, new SyncAISitesPacket(AvailableSites.LLM_SITES, AvailableSites.TTS_SITES, false));
+        if (!SiteConfigStorage.writeTTS(sites)) {
+            return;
+        }
+        if (player.level().getServer().isDedicatedServer()) {
+            SyncAISitesPacket.syncToSiteEditors(player.level().getServer());
+            player.displayClientMessage(Component.translatable("config.touhou_little_maid.ai_sites.save.reload_required")
+                    .withStyle(ChatFormatting.YELLOW), false);
+        } else {
+            AIChatCommand.reload(player.level().getServer());
+        }
     }
 
-    private static boolean updateSite(@Nullable TTSSite site) {
+    private static boolean updateSite(Map<String, TTSSite> sites, @Nullable TTSSite site) {
         if (site == null || StringUtils.isBlank(site.id())) {
             return false;
         }
-        AvailableSites.TTS_SITES.put(site.id(), site);
+        sites.put(site.id(), site);
         return true;
     }
 
-    private static boolean toggleSite(@Nullable String siteId, boolean enabled) {
+    private static boolean toggleSite(Map<String, TTSSite> sites, @Nullable String siteId, boolean enabled) {
         if (StringUtils.isBlank(siteId)) {
             return false;
         }
-        TTSSite site = AvailableSites.TTS_SITES.get(siteId);
+        TTSSite site = sites.get(siteId);
         if (site == null) {
             return false;
         }
@@ -112,7 +131,7 @@ public record SaveTTSSitePacket(Action action, @Nullable String siteId, boolean 
     }
 
     @SuppressWarnings("unchecked")
-    private static SerializableSite<TTSSite> getSerializer(String apiType) {
+    private static @Nullable SerializableSite<TTSSite> getSerializer(String apiType) {
         SerializableSite<? extends Site> serializer = SerializerRegister.getSerializer(ServiceType.TTS, apiType);
         if (serializer == null) {
             return null;

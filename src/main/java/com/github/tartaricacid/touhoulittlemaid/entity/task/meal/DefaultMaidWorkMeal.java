@@ -3,6 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.entity.task.meal;
 import com.github.tartaricacid.touhoulittlemaid.api.task.meal.IMaidMeal;
 import com.github.tartaricacid.touhoulittlemaid.api.task.meal.MaidMealType;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.favorability.Type;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.event.MaidMealRegConfigEvent;
@@ -18,7 +19,8 @@ public class DefaultMaidWorkMeal implements IMaidMeal {
 
     public static boolean isWorkMeal(ItemStack stack) {
         return stack.get(DataComponents.FOOD) != null
-                && !IMaidMeal.isBlockList(stack, MaidConfig.MAID_WORK_MEALS_BLOCK_LIST.get())
+                && !MaidMealManager.isWorkMealExcluded(stack)
+                && !IMaidMeal.isBlockList(stack, ServerRuleConfig.get(MaidConfig.MAID_WORK_MEALS_BLOCK_LIST))
                 && !IMaidMeal.isBlockList(stack, MaidMealRegConfigEvent.WORK_MEAL_REGEX);
     }
 
@@ -29,7 +31,7 @@ public class DefaultMaidWorkMeal implements IMaidMeal {
 
     @Override
     public void onMaidEat(EntityMaid maid, ItemStack stack, InteractionHand hand) {
-        //FoodProperties foodProperties = stack.getFoodProperties(maid);
+
         FoodProperties foodProperties = stack.get(DataComponents.FOOD);
         if (foodProperties != null) {
             // 调用饰品

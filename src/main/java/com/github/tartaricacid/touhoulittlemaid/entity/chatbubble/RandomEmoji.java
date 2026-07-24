@@ -2,16 +2,17 @@ package com.github.tartaricacid.touhoulittlemaid.entity.chatbubble;
 
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidDamageEvent;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.datapack.KaomojiData;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.implement.EmojiChatBubbleData;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 
 public final class RandomEmoji {
     static void tick(EntityMaid maid) {
-        if (!MaidConfig.ENABLE_EMOJI.get()) {
+        if (!ServerRuleConfig.get(MaidConfig.ENABLE_EMOJI)) {
             return;
         }
-        int checkRate = MaidConfig.EMOJI_CHECK_RATE.get();
+        int checkRate = ServerRuleConfig.get(MaidConfig.EMOJI_CHECK_RATE);
         long offset = maid.getUUID().getLeastSignificantBits() % checkRate;
         if ((maid.tickCount + offset) % checkRate != 0) {
             return;
@@ -22,8 +23,8 @@ public final class RandomEmoji {
             return;
         }
         // 依据权重随机选择表情包类型
-        int imageWeight = MaidConfig.IMAGE_EMOJI_WEIGHT.get();
-        int kaomojiWeight = MaidConfig.KAOMOJI_EMOJI_WEIGHT.get();
+        int imageWeight = ServerRuleConfig.get(MaidConfig.IMAGE_EMOJI_WEIGHT);
+        int kaomojiWeight = ServerRuleConfig.get(MaidConfig.KAOMOJI_EMOJI_WEIGHT);
         int totalWeight = imageWeight + kaomojiWeight;
         int randomWeight = maid.getRandom().nextInt(totalWeight);
         if (randomWeight < imageWeight) {
@@ -34,7 +35,7 @@ public final class RandomEmoji {
     }
 
     public static void addHurtChatText(MaidDamageEvent event) {
-        if (!MaidConfig.ENABLE_EMOJI.get()) {
+        if (!ServerRuleConfig.get(MaidConfig.ENABLE_EMOJI)) {
             return;
         }
         EntityMaid maid = event.getMaid();

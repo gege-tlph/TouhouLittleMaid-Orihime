@@ -24,7 +24,6 @@ public class AutoGenSettingCallback extends LLMCallback {
     public AutoGenSettingCallback(MaidAIChatManager chatManager, List<LLMMessage> messages) {
         super(chatManager, messages, true);
         this.needAddTools = false;
-        // 添加自己的提示聊天气泡
         MutableComponent component = Component.translatable("ai.touhou_little_maid.chat.llm.role_no_setting_and_gen_setting");
         TextChatBubbleData bubbleData = TextChatBubbleData.create(30 * 20, component, TYPE_2, DEFAULT_PRIORITY);
         this.waitingChatBubbleId = this.getMaid().getChatBubbleManager().addChatBubble(bubbleData);
@@ -47,7 +46,7 @@ public class AutoGenSettingCallback extends LLMCallback {
 
         LivingEntity owner = maid.getOwner();
         if (owner instanceof Player player) {
-            player.sendSystemMessage(Component.translatable("ai.touhou_little_maid.chat.llm.auto_gen_setting").withStyle(ChatFormatting.GRAY));
+            player.displayClientMessage(Component.translatable("ai.touhou_little_maid.chat.llm.auto_gen_setting").withStyle(ChatFormatting.GRAY), false);
         }
         if (maid.level instanceof ServerLevel serverLevel) {
             MinecraftServer server = serverLevel.getServer();

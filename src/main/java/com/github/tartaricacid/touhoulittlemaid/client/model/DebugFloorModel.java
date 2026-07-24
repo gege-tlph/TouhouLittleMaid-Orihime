@@ -2,21 +2,19 @@ package com.github.tartaricacid.touhoulittlemaid.client.model;
 
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.resources.Identifier;
 
-public class DebugFloorModel extends AbstractModel<Entity> {
-    public static ModelLayerLocation LAYER = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "main"), "debug_floor");
-    private final ModelPart floor;
+
+public class DebugFloorModel extends AbstractModel<EntityRenderState> {
+    public static ModelLayerLocation LAYER = new ModelLayerLocation(Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "main"), "debug_floor");
 
     public DebugFloorModel(ModelPart root) {
-        this.floor = root.getChild("floor");
+        super(root);
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -27,14 +25,5 @@ public class DebugFloorModel extends AbstractModel<Entity> {
                 PartPose.offsetAndRotation(0.0F, -8.0F, 0.0F, -3.1416F, 0.0F, 3.1416F));
 
         return LayerDefinition.create(meshdefinition, 64, 32);
-    }
-
-    @Override
-    public void setupAnim(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-    }
-
-    @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, int color) {
-        floor.render(poseStack, buffer, packedLight, packedOverlay);
     }
 }

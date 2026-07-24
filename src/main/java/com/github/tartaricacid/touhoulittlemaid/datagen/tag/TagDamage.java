@@ -17,7 +17,7 @@ public class TagDamage extends FabricTagProvider<DamageType> {
 
     @Override
     protected void addTags(HolderLookup.Provider pProvider) {
-        tag(DamageTypeTags.IS_PROJECTILE).add(InitDamage.DANMAKU);
-        tag(DamageTypeTags.ALWAYS_HURTS_ENDER_DRAGONS).add(InitDamage.DANMAKU_ENDER_KILLER);
+        builder(DamageTypeTags.IS_PROJECTILE).add(InitDamage.DANMAKU);
+        builder(DamageTypeTags.ALWAYS_HURTS_ENDER_DRAGONS).add(InitDamage.DANMAKU_ENDER_KILLER);
     }
 }

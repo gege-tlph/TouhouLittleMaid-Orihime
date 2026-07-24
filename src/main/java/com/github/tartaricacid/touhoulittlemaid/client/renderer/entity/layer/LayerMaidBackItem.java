@@ -1,68 +1,53 @@
 package com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.layer;
 
-import com.github.tartaricacid.touhoulittlemaid.api.entity.IMaid;
-import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.BedrockModel;
+import com.github.tartaricacid.simplebedrockmodel.client.bedrock.model.BedrockPart;
+import com.github.tartaricacid.touhoulittlemaid.api.backpack.MaidBackpackRenderData;
+import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.EntityMaidModel;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.EntityMaidRenderer;
-import com.github.tartaricacid.touhoulittlemaid.compat.carryon.RenderFixer;
-import com.github.tartaricacid.touhoulittlemaid.compat.gun.common.GunClientUtil;
-import com.github.tartaricacid.touhoulittlemaid.compat.slashblade.SlashBladeCompat;
-import com.github.tartaricacid.touhoulittlemaid.compat.slashblade.SlashBladeRender;
-import com.github.tartaricacid.touhoulittlemaid.entity.backpack.BackpackManager;
-import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.state.EntityMaidRenderState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TieredItem;
+import net.minecraft.resources.Identifier;
 
-public class LayerMaidBackItem extends RenderLayer<Mob, BedrockModel<Mob>> {
-    private final EntityMaidRenderer renderer;
+import static com.github.tartaricacid.touhoulittlemaid.entity.backpack.BackpackManager.RENDER_DATA_CACHE;
 
+public class LayerMaidBackItem extends RenderLayer<EntityMaidRenderState, EntityMaidModel> {
     public LayerMaidBackItem(EntityMaidRenderer renderer) {
         super(renderer);
-        this.renderer = renderer;
     }
 
     @Override
-    public void render(PoseStack matrixStack, MultiBufferSource bufferIn, int packedLightIn, Mob mob, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
-        IMaid maid = IMaid.convert(mob);
-        if (maid == null) {
-            return;
-        }
-        ItemStack stack = maid.getBackpackShowItem();
-        if (!renderer.getMainInfo().isShowBackpack() || mob.isSleeping()
-                || mob.isInvisible() || RenderFixer.isCarryOnRender(stack, bufferIn)) {
-            return;
-        }
-        if (maid instanceof EntityMaid entityMaid && !entityMaid.getConfigManager().isShowBackItem()) {
-            return;
-        }
+    public void submit(PoseStack poseStack, SubmitNodeCollector submitNode, int light, EntityMaidRenderState state, float yRot, float xRot) {
+        if (!state.backItem.isEmpty() && state.backpack != null) {
+            poseStack.pushPose();
+            EntityMaidModel parentModel = this.getParentModel();
 
-        if (stack.getItem() instanceof TieredItem) {
-            matrixStack.pushPose();
-            matrixStack.mulPose(Axis.ZP.rotationDegrees(180.0F));
-            matrixStack.mulPose(Axis.XP.rotationDegrees(180.0F));
-            matrixStack.translate(0, 0.5, -0.25);
-            if (maid instanceof EntityMaid entityMaid && entityMaid.getConfigManager().isShowBackpack()) {
-                maid.getMaidBackpackType().offsetBackpackItem(matrixStack);
-            } else {
-                BackpackManager.getEmptyBackpack().offsetBackpackItem(matrixStack);
+            // 依据 root 模型的位移对整体进行物品进行偏移、旋转和缩放
+            if (parentModel.root() instanceof BedrockPart part) {
+                part.translateAndRotateBedrock(poseStack);
             }
-            if (SlashBladeCompat.isSlashBladeItem(stack)) {
-                SlashBladeRender.renderMaidBackSlashBlade(matrixStack, bufferIn, packedLightIn, stack);
-            } else {
-                Minecraft.getInstance().getItemRenderer().renderStatic(mob, stack, ItemDisplayContext.FIXED, false, matrixStack, bufferIn, mob.level(), packedLightIn, OverlayTexture.NO_OVERLAY, mob.getId());
-            }
-            matrixStack.popPose();
-            return;
-        }
 
-        // 枪械额外渲染兼容
-        GunClientUtil.renderBackGun(matrixStack, bufferIn, packedLightIn, stack, maid);
+            // 如果有背包，那么和背包适配位移
+            if (parentModel.hasBackpackPositioningModel()) {
+                BedrockPart renderer = parentModel.getBackpackPositioningModel();
+                poseStack.translate(renderer.x * 0.0625, 0.0625 * (renderer.y - 23 + 8), 0.0625 * (renderer.z + 4));
+            } else {
+                poseStack.translate(0, -0.5, 0.25);
+            }
+
+            Identifier id = state.backpack.getId();
+            MaidBackpackRenderData renderData = RENDER_DATA_CACHE.apply(id);
+
+            poseStack.mulPose(Axis.ZP.rotationDegrees(180.0F));
+            poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
+            poseStack.translate(0, 0.5, -0.25);
+            renderData.offsetBackpackItem(poseStack);
+            state.backItem.submit(poseStack, submitNode, state.lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor);
+
+            poseStack.popPose();
+        }
     }
 }

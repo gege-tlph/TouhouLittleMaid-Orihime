@@ -1,23 +1,24 @@
 package com.github.tartaricacid.touhoulittlemaid.client.event;
 
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.network.message.ai.OpenMaidAIChatPacket;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import com.github.tartaricacid.touhoulittlemaid.util.migrate.ScreenUtil;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
-@Environment(EnvType.CLIENT)
 public class PressAIChatKeyEvent {
+
     public static void onOpenConfig(int key, int scanCode, int action, int mods) {
-        if (isInGame() && AIConfig.LLM_ENABLED.get() && keyIsMatch(key, scanCode, action, mods)) {
+        if (isInGame() && ServerRuleConfig.get(AIConfig.LLM_ENABLED) && keyIsMatch(key, scanCode, action, mods)) {
             EntityMaid maid = maidCheck();
             if (maid == null) {
                 return;
@@ -31,8 +32,7 @@ public class PressAIChatKeyEvent {
     private static boolean keyIsMatch(int key, int scanCode, int action, int mods) {
         KeyMapping keyChat = Minecraft.getInstance().options.keyChat;
         return action == GLFW.GLFW_PRESS
-                && keyChat.matches(key, scanCode)
-                /*&&keyChat.getKeyModifier().equals(KeyModifier.getActiveModifier())*/;
+                && keyChat.matches(new KeyEvent(key, scanCode, mods));
     }
 
     @Nullable
@@ -60,11 +60,11 @@ public class PressAIChatKeyEvent {
     private static boolean isInGame() {
         Minecraft mc = Minecraft.getInstance();
         // 不能是加载界面
-        if (mc.getOverlay() != null) {
+        if (ScreenUtil.hasOverlay()) {
             return false;
         }
         // 不能打开任何 GUI
-        if (mc.screen != null) {
+        if (ScreenUtil.getScreen() != null) {
             return false;
         }
         // 当前窗口捕获鼠标操作

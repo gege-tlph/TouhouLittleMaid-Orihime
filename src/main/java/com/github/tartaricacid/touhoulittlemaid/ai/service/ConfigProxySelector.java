@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.ai.service;
 
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -27,7 +28,7 @@ public class ConfigProxySelector extends ProxySelector {
     public synchronized List<Proxy> select(URI uri) {
         String scheme = uri.getScheme().toLowerCase();
         if (HTTP.equals(scheme) || HTTPS.equals(scheme)) {
-            String value = this.config.get();
+            String value = ServerRuleConfig.get(this.config);
             return getProxyFromConfig(value.trim());
         } else {
             return NO_PROXY_LIST;

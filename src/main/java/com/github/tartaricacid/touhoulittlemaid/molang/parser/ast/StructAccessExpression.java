@@ -1,6 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.molang.parser.ast;
 
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.molang.util.StringPool;
+import com.github.tartaricacid.touhoulittlemaid.molang.runtime.StringPool;
 import org.jetbrains.annotations.NotNull;
 
 public class StructAccessExpression implements Expression {

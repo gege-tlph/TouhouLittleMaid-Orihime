@@ -24,6 +24,7 @@
 
 package com.github.tartaricacid.touhoulittlemaid.molang.runtime.binding;
 
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.molang.util.StringPool;
 import org.jetbrains.annotations.Nullable;
 
 public final class ValueConversions {
@@ -35,8 +36,7 @@ public final class ValueConversions {
             return (Boolean) obj;
         }
         if (obj instanceof Number) {
-            // '0' is considered false here, anything else
-            // is considered true.
+            // '0' 在这里被认为是假的，其他任何东西都被认为是真的。
             return ((Number) obj).floatValue() != 0;
         }
         return true;
@@ -87,5 +87,10 @@ public final class ValueConversions {
         } else {
             return null;
         }
+    }
+
+    public static int asPooledString(final @Nullable Object obj) {
+        String value = asString(obj);
+        return value == null ? StringPool.EMPTY : StringPool.computeIfAbsent(value);
     }
 }

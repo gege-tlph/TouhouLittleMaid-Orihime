@@ -19,6 +19,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 public class MicrophoneManager {
@@ -26,6 +27,7 @@ public class MicrophoneManager {
     private static final int MAX_RECORD_TIME_SECONDS = 20;
     private static final ScheduledExecutorService SERVICE = Executors.newSingleThreadScheduledExecutor();
     private static final AtomicBoolean IS_RECORDING = new AtomicBoolean();
+    private static final AtomicLong RECORDING_SESSION = new AtomicLong();
     private static CompletableFuture<?> TASK = null;
 
     @Nullable
@@ -95,10 +97,11 @@ public class MicrophoneManager {
         if (TASK != null && !TASK.isDone()) {
             IS_RECORDING.set(false);
         }
+        long session = RECORDING_SESSION.incrementAndGet();
 
         TASK = CompletableFuture.supplyAsync(() -> {
             // 开始录音
-            doRecord(deviceName, format, consumer);
+            doRecord(deviceName, format, consumer, session);
             return null;
         }, SERVICE).orTimeout(MAX_RECORD_TIME_SECONDS, TimeUnit.SECONDS).exceptionally(throwable -> {
             IS_RECORDING.set(false);
@@ -110,7 +113,12 @@ public class MicrophoneManager {
         IS_RECORDING.set(false);
     }
 
-    private static void doRecord(String deviceName, AudioFormat format, Consumer<byte[]> consumer) {
+    public static void cancelRecord() {
+        RECORDING_SESSION.incrementAndGet();
+        IS_RECORDING.set(false);
+    }
+
+    private static void doRecord(String deviceName, AudioFormat format, Consumer<byte[]> consumer, long session) {
         try (TargetDataLine dataLine = getMicrophone(deviceName, format)) {
             if (dataLine == null) {
                 TouhouLittleMaid.LOGGER.error("Microphone Device is not found: {}", deviceName);
@@ -136,7 +144,9 @@ public class MicrophoneManager {
 
             byte[] byteArray = pcmToWav(stream.toByteArray(), format);
             // debugFile(byteArray);
-            consumer.accept(byteArray);
+            if (RECORDING_SESSION.get() == session) {
+                consumer.accept(byteArray);
+            }
 
             TouhouLittleMaid.LOGGER.debug("Microphone stop record...");
         } catch (LineUnavailableException e) {

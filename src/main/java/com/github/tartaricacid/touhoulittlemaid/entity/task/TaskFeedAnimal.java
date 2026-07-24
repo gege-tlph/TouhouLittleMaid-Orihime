@@ -3,6 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.entity.task;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IAttackTask;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidFeedAnimalTask;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidMeleeAttack;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -17,7 +18,7 @@ import com.mojang.datafixers.util.Pair;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.MenuProvider;
@@ -41,11 +42,11 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 public class TaskFeedAnimal implements IAttackTask {
-    public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "feed_animal");
+    public static final Identifier UID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "feed_animal");
     private static final int MAX_STOP_ATTACK_DISTANCE = 8;
 
     @Override
-    public ResourceLocation getUid() {
+    public Identifier getUid() {
         return UID;
     }
 
@@ -62,14 +63,14 @@ public class TaskFeedAnimal implements IAttackTask {
 
     @Override
     public List<Pair<Integer, BehaviorControl<? super EntityMaid>>> createBrainTasks(EntityMaid maid) {
-        BehaviorControl<EntityMaid> supplementedTask = StartAttacking.create(this::hasAssaultWeapon, this::findFirstValidAttackTarget);
+        BehaviorControl<EntityMaid> supplementedTask = StartAttacking.create((level, e) -> hasAssaultWeapon(e), (level, e) -> findFirstValidAttackTarget(e));
         BehaviorControl<EntityMaid> findTargetTask = StopAttackingIfTargetInvalid.create(
-                (target) -> !hasAssaultWeapon(maid) || farAway(target, maid));
+                (level, target) -> !maid.canAttack(target) || !hasAssaultWeapon(maid) || farAway(target, maid));
         BehaviorControl<Mob> moveToTargetTask = SetWalkTargetFromAttackTargetIfTargetOutOfReach.create(0.6f);
         BehaviorControl<EntityMaid> attackTargetTask = MaidMeleeAttack.create(20);
 
         return Lists.newArrayList(
-                Pair.of(5, new MaidFeedAnimalTask(0.6f, MaidConfig.FEED_ANIMAL_MAX_NUMBER.get())),
+                Pair.of(5, new MaidFeedAnimalTask(0.6f, ServerRuleConfig.get(MaidConfig.FEED_ANIMAL_MAX_NUMBER))),
                 Pair.of(6, supplementedTask),
                 Pair.of(6, findTargetTask),
                 Pair.of(6, moveToTargetTask),
@@ -79,21 +80,22 @@ public class TaskFeedAnimal implements IAttackTask {
 
     private Optional<? extends LivingEntity> findFirstValidAttackTarget(EntityMaid maid) {
         long animalCount = this.getEntities(maid)
-                .find(e -> maid.isWithinRestriction(e.blockPosition()))
+                .find(e -> maid.isWithinHome(e.blockPosition()))
                 .filter(Entity::isAlive)
                 .filter(e -> e instanceof Animal).count();
 
-        if (animalCount < (MaidConfig.FEED_ANIMAL_MAX_NUMBER.get() - 2)) {
+        if (animalCount < (ServerRuleConfig.get(MaidConfig.FEED_ANIMAL_MAX_NUMBER) - 2)) {
             return Optional.empty();
         }
 
         return this.getEntities(maid)
-                .find(e -> maid.isWithinRestriction(e.blockPosition()))
+                .find(e -> maid.isWithinHome(e.blockPosition()))
                 .filter(Entity::isAlive)
                 .filter(e -> e instanceof Animal)
                 .filter(e -> ((Animal) e).getAge() == 0)
                 .filter(e -> ((Animal) e).canFallInLove())
                 .filter(e -> ItemsUtil.isStackIn(maid.getAvailableInv(false), ((Animal) e)::isFood))
+                .filter(maid::canAttack)
                 .filter(maid::canPathReach)
                 .findFirst();
     }
@@ -136,7 +138,7 @@ public class TaskFeedAnimal implements IAttackTask {
 
     @Override
     public boolean isWeapon(EntityMaid maid, ItemStack stack) {
-        ItemAttributeModifiers attributeModifiers = stack/*.getAttributeModifiers()*/.get(DataComponents.ATTRIBUTE_MODIFIERS);
+        ItemAttributeModifiers attributeModifiers = stack.get(DataComponents.ATTRIBUTE_MODIFIERS);
         return attributeModifiers != null && attributeModifiers.modifiers()
                 .stream()
                 .anyMatch(modifier -> modifier.attribute().is(Attributes.ATTACK_DAMAGE));
@@ -147,7 +149,7 @@ public class TaskFeedAnimal implements IAttackTask {
     }
 
     private boolean hasAssaultWeapon(EntityMaid maid) {
-        ItemAttributeModifiers attributeModifiers = maid.getMainHandItem()/*.getAttributeModifiers()*/.get(DataComponents.ATTRIBUTE_MODIFIERS);
+        ItemAttributeModifiers attributeModifiers = maid.getMainHandItem().get(DataComponents.ATTRIBUTE_MODIFIERS);
         return attributeModifiers != null && attributeModifiers.modifiers()
                 .stream()
                 .anyMatch(modifier -> modifier.attribute().is(Attributes.ATTACK_DAMAGE));

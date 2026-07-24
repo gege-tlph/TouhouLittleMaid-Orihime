@@ -1,44 +1,41 @@
 package com.github.tartaricacid.touhoulittlemaid.util;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRendering;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import org.joml.Matrix4f;
 
 import java.util.Optional;
 
 
 /**
- * From JEI: <a href="https://github.com/mezz/JustEnoughItems/blob/1.20/Fabric/src/main/java/mezz/jei/fabric/platform/FluidHelper.java">...</a>
+ * 从 JEI：<a href="https://github.com/mezz/JustEnoughItems/blob/1.20/Fabric/src/main/java/mezz/jei/fabric/platform/FluidHelper.java">...</a>
  */
 @Environment(EnvType.CLIENT)
 public final class MaidFluidRender {
     private static final int TEXTURE_SIZE = 16;
 
     public static Component getFluidName(String fluidId, long amount) {
-        Fluid fluid = BuiltInRegistries.FLUID.get(ResourceLocation.parse(fluidId));
+
+        Fluid fluid = BuiltInRegistries.FLUID.getValue(Identifier.parse(fluidId));
         if (amount <= 0 || fluid == null || fluid.isSame(Fluids.EMPTY)) {
             return Component.translatable("tooltips.touhou_little_maid.tank_backpack.empty_fluid");
         }
-        //return fluid.getFluidType().getDescription();
+
         return FluidVariantAttributes.getName(FluidVariant.of(fluid));
     }
 
     public static void drawFluid(GuiGraphics graphics, int x, int y, int width, int height, String fluidId, long amount, long capacity) {
-        Fluid fluid = BuiltInRegistries.FLUID.get(ResourceLocation.parse(fluidId));
+        Fluid fluid = BuiltInRegistries.FLUID.getValue(Identifier.parse(fluidId));
         if (amount <= 0 || fluid == null || fluid.isSame(Fluids.EMPTY)) {
             return;
         }
@@ -53,38 +50,28 @@ public final class MaidFluidRender {
             if (scaledAmount > height) {
                 scaledAmount = height;
             }
-            graphics.pose().pushPose();
-            graphics.pose().translate(x, y, 0);
+
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(x, y);
             drawTiledSprite(graphics, width, height, fluidColor, scaledAmount, fluidStillSprite);
-            graphics.pose().popPose();
+            graphics.pose().popMatrix();
         });
     }
 
     public static int getColorTint(FluidVariant ingredient) {
-        //Fluid fluid = ingredient.getFluid();
-        //IClientFluidTypeExtensions renderProperties = IClientFluidTypeExtensions.of(fluid);
-        //return renderProperties.getTintColor(ingredient);
+
         return FluidVariantRendering.getColor(ingredient);
     }
 
     public static Optional<TextureAtlasSprite> getStillFluidSprite(FluidVariant fluidStack) {
-        //Fluid fluid = fluidStack.getFluid();
-        //IClientFluidTypeExtensions renderProperties = IClientFluidTypeExtensions.of(fluid);
-        //ResourceLocation fluidStill = renderProperties.getStillTexture(fluidStack);
+
         TextureAtlasSprite fluidStill = FluidVariantRendering.getSprite(fluidStack);
         return Optional.ofNullable(fluidStill)
-/*                .map(f -> Minecraft.getInstance()
-                        .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
-                        .apply(f)
-                )
-                .filter(s -> s.atlasLocation() != MissingTextureAtlasSprite.getLocation())*/;
+;
     }
 
     private static void drawTiledSprite(GuiGraphics guiGraphics, final int tiledWidth, final int tiledHeight, int color, long scaledAmount, TextureAtlasSprite sprite) {
-        RenderSystem.setShaderTexture(0, InventoryMenu.BLOCK_ATLAS);
-        Matrix4f matrix = guiGraphics.pose().last().pose();
-        setGLColorFromInt(color);
-
+        // 贴图来自精灵所属图集，颜色参数使用 ARGB 乘算。
         final int xTileCount = tiledWidth / TEXTURE_SIZE;
         final int xRemainder = tiledWidth - (xTileCount * TEXTURE_SIZE);
         final long yTileCount = scaledAmount / TEXTURE_SIZE;
@@ -99,37 +86,16 @@ public final class MaidFluidRender {
                 if (width > 0 && height > 0) {
                     long maskTop = TEXTURE_SIZE - height;
                     int maskRight = TEXTURE_SIZE - width;
-                    drawTextureWithMasking(matrix, x, y, sprite, maskTop, maskRight, 100);
+                    drawTextureWithMasking(guiGraphics, x, y, sprite, maskTop, maskRight, color);
                 }
             }
         }
     }
 
-    private static void setGLColorFromInt(int color) {
-        float red = (color >> 16 & 0xFF) / 255.0F;
-        float green = (color >> 8 & 0xFF) / 255.0F;
-        float blue = (color & 0xFF) / 255.0F;
-        float alpha = ((color >> 24) & 0xFF) / 255F;
+    private static void drawTextureWithMasking(GuiGraphics guiGraphics, int xCoord, int yCoord, TextureAtlasSprite textureSprite, long maskTop, long maskRight, int color) {
 
-        RenderSystem.setShaderColor(red, green, blue, alpha);
-    }
-
-    private static void drawTextureWithMasking(Matrix4f matrix, float xCoord, float yCoord, TextureAtlasSprite textureSprite, long maskTop, long maskRight, float zLevel) {
-        float uMin = textureSprite.getU0();
-        float uMax = textureSprite.getU1();
-        float vMin = textureSprite.getV0();
-        float vMax = textureSprite.getV1();
-        uMax = uMax - (maskRight / 16F * (uMax - uMin));
-        vMax = vMax - (maskTop / 16F * (vMax - vMin));
-
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-
-        Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder bufferBuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        bufferBuilder.addVertex(matrix, xCoord, yCoord + 16, zLevel).setUv(uMin, vMax);
-        bufferBuilder.addVertex(matrix, xCoord + 16 - maskRight, yCoord + 16, zLevel).setUv(uMax, vMax);
-        bufferBuilder.addVertex(matrix, xCoord + 16 - maskRight, yCoord + maskTop, zLevel).setUv(uMax, vMin);
-        bufferBuilder.addVertex(matrix, xCoord, yCoord + maskTop, zLevel).setUv(uMin, vMin);
-        BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
+        guiGraphics.enableScissor(xCoord, yCoord + (int) maskTop, xCoord + TEXTURE_SIZE - (int) maskRight, yCoord + TEXTURE_SIZE);
+        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, textureSprite, xCoord, yCoord + (int) maskTop, TEXTURE_SIZE, TEXTURE_SIZE, color);
+        guiGraphics.disableScissor();
     }
 }

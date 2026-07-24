@@ -2,9 +2,11 @@ package com.github.tartaricacid.touhoulittlemaid.event;
 
 import cn.sh1rocu.touhoulittlemaid.api.event.ProjectileImpactEvent;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.phys.EntityHitResult;
@@ -17,8 +19,10 @@ public final class EntityHurtEvent {
         if (attacker instanceof TamableAnimal thrower && ray instanceof EntityHitResult hitResult) {
             Entity victim = hitResult.getEntity();
             if (victim instanceof TamableAnimal tameable) {
-                // 同一主人，那么免伤
-                if (tameable.getOwnerUUID() != null && tameable.getOwnerUUID().equals(thrower.getOwnerUUID())) {
+                EntityReference<LivingEntity> victimOwner = tameable.getOwnerReference();
+                EntityReference<LivingEntity> throwerOwner = thrower.getOwnerReference();
+                if (victimOwner != null && throwerOwner != null
+                        && victimOwner.getUUID().equals(throwerOwner.getUUID())) {
                     event.setCanceled(true);
                 }
             }
@@ -28,8 +32,8 @@ public final class EntityHurtEvent {
                     event.setCanceled(true);
                 }
             }
-            ResourceLocation registryName = BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType());
-            if (MaidConfig.MAID_RANGED_ATTACK_IGNORE.get().contains(registryName.toString())) {
+            Identifier registryName = BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType());
+            if (ServerRuleConfig.get(MaidConfig.MAID_RANGED_ATTACK_IGNORE).contains(registryName.toString())) {
                 event.setCanceled(true);
             }
         }

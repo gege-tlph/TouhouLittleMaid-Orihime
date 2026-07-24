@@ -23,6 +23,7 @@ public class ToolRegister {
         register.register(new SwitchScheduleTool());
         register.register(new SwitchSitTool());
 
+
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             littleMaid.registerAITool(register);
         }

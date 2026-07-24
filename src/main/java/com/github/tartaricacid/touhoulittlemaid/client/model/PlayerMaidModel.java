@@ -1,39 +1,38 @@
 package com.github.tartaricacid.touhoulittlemaid.client.model;
 
-import com.github.tartaricacid.simplebedrockmodel.client.bedrock.pojo.BedrockModelPOJO;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
-import com.github.tartaricacid.touhoulittlemaid.client.animation.script.ModelRendererWrapper;
-import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.BedrockModel;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.CustomPackLoader;
+import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.EntityMaidModel;
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.world.entity.Mob;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 
-public class PlayerMaidModel extends BedrockModel<Mob> {
-    private static final ResourceLocation STEVE = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "models/bedrock/entity/player_maid.json");
-    private static final ResourceLocation ALEX = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "models/bedrock/entity/player_maid_slim.json");
+public class PlayerMaidModel extends EntityMaidModel {
+    private static final Identifier STEVE = IdentifierUtil.modLoc("models/bedrock/entity/player_maid.json");
+    private static final Identifier ALEX = IdentifierUtil.modLoc("models/bedrock/entity/player_maid_slim.json");
 
-    public PlayerMaidModel(boolean smallArms) {
+    public PlayerMaidModel(InputStream stream) {
+        super(stream);
+    }
+
+    public PlayerMaidModel() {
+    }
+
+    public static PlayerMaidModel create(boolean smallArms) {
         ResourceManager manager = Minecraft.getInstance().getResourceManager();
-        if (smallArms) {
-            try (InputStream stream = manager.open(ALEX)) {
-                loadNewModel(CustomPackLoader.GSON.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), BedrockModelPOJO.class));
-            } catch (IOException exception) {
-                TouhouLittleMaid.LOGGER.error("Failed to load alex player maid model", exception);
-            }
-        } else {
-            try (InputStream stream = manager.open(STEVE)) {
-                loadLegacyModel(CustomPackLoader.GSON.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), BedrockModelPOJO.class));
-            } catch (IOException exception) {
-                TouhouLittleMaid.LOGGER.error("Failed to load steve player maid model", exception);
+        try (InputStream stream = manager.open(smallArms ? ALEX : STEVE)) {
+            return new PlayerMaidModel(stream);
+        } catch (IOException e) {
+            if (smallArms) {
+                TouhouLittleMaid.LOGGER.error("Failed to load alex player maid model", e);
+            } else {
+                TouhouLittleMaid.LOGGER.error("Failed to load steve player maid model", e);
             }
         }
-        this.modelMap.forEach((key, model) -> modelMapWrapper.put(key, new ModelRendererWrapper(model)));
+        // 不太可能触发
+        return new PlayerMaidModel();
     }
 }

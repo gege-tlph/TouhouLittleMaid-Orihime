@@ -10,17 +10,17 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.LayeredDraw;
+
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-public class ShowPowerOverlay implements LayeredDraw.Layer {
+public class ShowPowerOverlay {
     private static ItemStack POWER_POINT;
 
     public static final ShowPowerOverlay INSTANCE = new ShowPowerOverlay();
 
-    @Override
+
     public void render(@NotNull GuiGraphics guiGraphics, @NotNull DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
         Options options = minecraft.options;
@@ -38,6 +38,6 @@ public class ShowPowerOverlay implements LayeredDraw.Layer {
         }
         guiGraphics.renderItem(POWER_POINT, 5, 5);
         PowerAttachment cap = player.getAttachedOrCreate(InitDataAttachment.POWER_NUM, () -> new PowerAttachment(0));
-        guiGraphics.drawString(font, String.format("%s×%.2f", ChatFormatting.BOLD, cap.get()), 20, 10, 0xffffff);
+        guiGraphics.drawString(font, String.format("%s×%.2f", ChatFormatting.BOLD, cap.get()), 20, 10, 0xFFFFFFFF);
     }
 }

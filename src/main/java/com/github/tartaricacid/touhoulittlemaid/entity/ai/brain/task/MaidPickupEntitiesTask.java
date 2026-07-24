@@ -36,7 +36,8 @@ public class MaidPickupEntitiesTask extends Behavior<EntityMaid> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel worldIn, EntityMaid owner) {
-        return owner.isTame() && owner.canBrainMoving() && predicate.test(owner);
+        return !owner.getCombatManager().isEmergencyActive()
+                && owner.isTame() && owner.canBrainMoving() && predicate.test(owner);
     }
 
     @Override
@@ -45,7 +46,7 @@ public class MaidPickupEntitiesTask extends Behavior<EntityMaid> {
         var pathFinding = new MaidPathFindingBFS(maid.getNavigation().getNodeEvaluator(), worldIn, maid);
         for (Entity entity : items) {
             BlockPos blockPos = entity.blockPosition();
-            if (maid.isWithinRestriction(blockPos)
+            if (maid.isWithinHome(blockPos)
                     && entity.isAlive()
                     && !entity.isInWater()
                     && pathFinding.canPathReach(blockPos)) {

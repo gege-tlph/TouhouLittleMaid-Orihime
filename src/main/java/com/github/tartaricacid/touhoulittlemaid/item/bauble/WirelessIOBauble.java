@@ -90,7 +90,7 @@ public class WirelessIOBauble implements IMaidBauble {
             if (bindingPos == null) {
                 return;
             }
-            float maxDistance = maid.getRestrictRadius();
+            float maxDistance = maid.getHomeRadius();
             if (maid.distanceToSqr(bindingPos.getX(), bindingPos.getY(), bindingPos.getZ()) > (maxDistance * maxDistance)) {
                 return;
             }
@@ -106,8 +106,8 @@ public class WirelessIOBauble implements IMaidBauble {
                 if (openCount > 0) {
                     return;
                 }
-                //IItemHandler chestInv = maid.level.getCapability(Capabilities.ItemHandler.BLOCK, te.getBlockPos(), null);
-                Storage<ItemVariant> chestInv = ItemStorage.SIDED.find(maid.level, te.getBlockPos(), te.getBlockState(), te, null);
+                Storage<ItemVariant> chestInv = ItemStorage.SIDED.find(
+                        maid.level, te.getBlockPos(), te.getBlockState(), te, null);
                 if (chestInv != null) {
                     IItemHandler maidInv = maid.getAvailableInv(false);
                     boolean isMaidToChest = ItemWirelessIO.isMaidToChest(baubleItem);
@@ -124,13 +124,15 @@ public class WirelessIOBauble implements IMaidBauble {
                     IItemHandler filterList = ItemWirelessIO.getFilterList(maid.registryAccess(), baubleItem);
 
                     if (isMaidToChest) {
-                        var event = new MaidWirelessIOEvent.MaidToChest(maid, maidInv, chestInv, filterList, isBlacklist, slotConfigData);
+                        var event = new MaidWirelessIOEvent.MaidToChest(
+                                maid, maidInv, chestInv, filterList, isBlacklist, slotConfigData);
                         MaidWirelessIOEvent.MAID_TO_CHEST.invoker().post(event);
                         if (!event.isCanceled()) {
                             maidToChest(maidInv, chestInv, isBlacklist, filterList, slotConfigData);
                         }
                     } else {
-                        var event = new MaidWirelessIOEvent.ChestToMaid(maid, maidInv, chestInv, filterList, isBlacklist, slotConfigData);
+                        var event = new MaidWirelessIOEvent.ChestToMaid(
+                                maid, maidInv, chestInv, filterList, isBlacklist, slotConfigData);
                         MaidWirelessIOEvent.CHEST_TO_MAID.invoker().post(event);
                         if (!event.isCanceled()) {
                             chestToMaid(chestInv, maidInv, isBlacklist, filterList, slotConfigData);
@@ -164,12 +166,7 @@ public class WirelessIOBauble implements IMaidBauble {
             }
             if (allowMove) {
                 int beforeCount = maidInvItem.getCount();
-/*                ItemStack after = ItemHandlerHelper.insertItemStacked(chest, maidInvItem.copy(), false);
-                int afterCount = after.getCount();
-                // Sync Client & Server
-                if (beforeCount != afterCount) {
-                    maid.extractItem(i, beforeCount - afterCount, false);
-                }*/
+
                 try (Transaction transaction = Transaction.openOuter()) {
                     long inserted = chest.insert(ItemVariant.of(maidInvItem.copy()), beforeCount, transaction);
                     if (inserted > 0) {
@@ -197,9 +194,9 @@ public class WirelessIOBauble implements IMaidBauble {
                 int beforeCount = (int) view.getAmount();
                 ItemStack after = insertItemStacked(maid, chestInvStack.toStack(beforeCount).copy(), false, slotConfig);
                 int afterCount = after.getCount();
-                // Sync Client & Server
+                // 同步客户端和服务器
                 if (beforeCount != afterCount) {
-                    //chest.extractItem(i, beforeCount - afterCount, false);
+
                     try (Transaction transaction = Transaction.openOuter()) {
                         chest.extract(view.getResource(), beforeCount - afterCount, transaction);
                         transaction.commit();

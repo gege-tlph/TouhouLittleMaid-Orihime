@@ -1,25 +1,20 @@
 plugins {
-    id 'fabric-loom' version '1.15.5'
+    id 'fabric-loom' version '1.17.14'
     id 'maven-publish'
     id 'com.gradleup.shadow' version '9.4.1'
-    // OpenRewrite 插件，用于自动化处理 Minecraft 或者 NeoForge/Fabric 更新时的代码修改
+
     id "org.openrewrite.rewrite" version "7.32.2"
 }
-
 version = project.mod_version
 group = project.maven_group
-
 base {
     archivesName = "${archives_base_name}"
 }
-
-
 fabricApi {
     configureDataGeneration {
         client = true
     }
 }
-
 loom {
     accessWidenerPath = file("src/main/resources/touhou_little_maid.accesswidener")
     mixin {
@@ -29,17 +24,30 @@ loom {
         datagen {
             property "fabric-api.datagen.modid", "touhou_little_maid"
         }
+        gametest {
+            server()
+            name = "Game Test"
+            vmArg "-Dfabric-api.gametest"
+            vmArg "-Dfabric-api.gametest.report-file=${projectDir}/build/gametest/report.xml"
+            runDir "build/gametest"
+        }
     }
 }
-
 repositories {
     // ./libs 目录为库
     flatDir {
         dir "libs"
     }
-    // mavenLocal 为本机仓库
+
     mavenLocal()
     mavenCentral()
+    maven {
+        name = "GegePatchouli"
+        url = "https://raw.githubusercontent.com/gege-tlph/Patchouli/maven/"
+        content {
+            includeGroup "vazkii.patchouli"
+        }
+    }
     maven {
         name = 'ParchmentMC'
         url = 'https://maven.parchmentmc.org'
@@ -64,42 +72,19 @@ repositories {
         }
     }
     maven {
-        name = "TerraformersMC"
-        url = "https://maven.terraformersmc.com/"
-        content {
-            includeGroup "dev.emi"
-        }
-    }
-    maven {
         name 'cursemaven'
         url "https://www.cursemaven.com"
         content {
             includeGroup "curse.maven"
         }
     }
-    maven { // for TOP
-        url "https://maven.k-4u.nl/"
-        content {
-            includeGroup "mcjty.theoneprobe"
-        }
-    }
     maven {
-        url = "https://maven.theillusivec4.top/"
-        content {
-            includeGroup "top.theillusivec4.curios"
-        }
-    }
-    maven {// CCA
         name = "Ladysnake Mods"
         url = 'https://maven.ladysnake.org/releases'
     }
-    maven {// Forge Config API Port
+    maven {
         name = "Fuzs Mod Resources"
         url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
-    }
-    maven {// ModMenu
-        name = "Terraformers"
-        url = "https://maven.terraformersmc.com/"
     }
     maven {
         url = "https://maven.modmuss50.me/"
@@ -147,10 +132,8 @@ repositories {
         url = "https://staging.alexiil.uk/maven/"
     }
 }
-
 configurations {
     runtimeClasspath.extendsFrom localRuntime
-
     mcLib
     implementation {
         extendsFrom mcLib
@@ -159,181 +142,105 @@ configurations {
         extendsFrom mcLib
     }
 }
-
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    //mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    mappings loom.layered() {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${project.parchment_minecraft_version}:${project.parchment_mappings_version}@zip")
-    }
+    mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    // JS
     implementation(include("org.openjdk.nashorn:nashorn-core:15.4"))
-
     modCompileOnly 'com.google.code.findbugs:jsr305:3.0.2'
     annotationProcessor 'com.google.code.findbugs:jsr305:3.0.2'
 
-    // Opus 音频解码库
     mcLib("org.gagravarr:vorbis-java-core:0.8")
     mcLib("io.github.jaredmdobson:concentus:1.0.2")
 
-    // MP3 音频解码库
     mcLib "com.googlecode.soundlibs:mp3spi:1.9.5.4"
 
-    // YAML 库
     mcLib("org.yaml:snakeyaml:2.4")
 
-    // 拆分出来的基岩版模型加载库
-    // 又合并回来了
-    // modImplementation(include("libs:simplebedrockmodel:1.3.0-fabric+mc1.21.1"))
-
-    // JEI
     modImplementation "maven.modrinth:jei:${jei_version}"
-    // REI
+
     modCompileOnly "maven.modrinth:architectury-api:${architectury_api_version}"
-    modCompileOnly "me.shedaniel:RoughlyEnoughItems-fabric:${rei_version}"
+    modCompileOnly "maven.modrinth:rei:${rei_version}"
     modImplementation("me.shedaniel.cloth:cloth-config-fabric:${cloth_config_version}") {
         exclude group: 'net.fabricmc.fabric-api'
     }
-    // EMI
-    modImplementation "maven.modrinth:emi:${emi_version}"
-
     modImplementation "maven.modrinth:jade:${jade_version}"
-    modImplementation "maven.modrinth:cyberanner-ironchest:${iron_chests_version}"
-    modImplementation "maven.modrinth:carry-on:${carry_on_version}"
-    modImplementation "maven.modrinth:patchouli:${patchouli_version}"
 
-    // IPN
-    modImplementation "net.fabricmc:fabric-language-kotlin:1.13.4+kotlin.2.2.0"
-    modImplementation "maven.modrinth:libipn:fabric-1.21-6.5.0"
-    modImplementation "maven.modrinth:inventory-profiles-next:fabric-1.21.1-2.1.8"
+    modCompileOnly("vazkii.patchouli:Patchouli:1.21.11-94.1-FABRIC") {
+        // Patchouli 的静态 Maven POM 仍包含发布环境版本；依赖由本项目统一管理。
+        transitive = false
+    }
+    // 背包排序兼容
+    modImplementation "net.fabricmc:fabric-language-kotlin:1.13.10+kotlin.2.3.20"
+    modImplementation "maven.modrinth:libipn:fabric-1.21.11-6.6.3"
+    modImplementation "maven.modrinth:inventory-profiles-next:fabric-1.21.11-2.2.6"
 
-    modCompileOnly "maven.modrinth:sodium:mc1.21.1-0.6.13-fabric"
-    modCompileOnly "maven.modrinth:iris:1.8.8+1.21.1-fabric"
+    // 图形模组兼容
+    modCompileOnly "maven.modrinth:sodium:mc1.21.11-0.8.11-fabric"
+    modCompileOnly "maven.modrinth:iris:1.10.7+1.21.11-fabric"
 
-    // Forge Config API Port
-    modApi "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:21.1.3"
+    modApi "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:21.11.1"
 
-    // ModMenu
-    modImplementation("com.terraformersmc:modmenu:11.0.3")
-
-    // Simple Hats
-    modCompileOnly "maven.modrinth:simple-hats:nV0q5j3l"
-
-    // Accessories
-    modImplementation "io.wispforest:accessories-fabric:1.1.0-beta.48+1.21.1"
-    modRuntimeOnly("maven.modrinth:potion-ring-reforged:LpwbSRNh")
-    modRuntimeOnly("maven.modrinth:accessories-tc-layer:3.10.0+beta.28")
-
-    // Immersive Melodies
-    modImplementation "immersive_melodies:immersive_melodies-fabric:0.6.2+1.21.1"
-
-    // Ponder
-    modImplementation("net.createmod.ponder:Ponder-Fabric-${minecraft_version}:1.0.61")
-
-    // 精妙背包
-    modCompileOnly("libs:sophisticatedbackpacks:1.21.1-3.23.4.3.106")
-    modCompileOnly("libs:sophisticatedcore:1.21.1-1.2.9.17.157")
-    modCompileOnly(files("libs/compile_only/core-3.1.0-beta.47+1.21.1.jar"))
-    modCompileOnly(files("libs/compile_only/transfer-3.1.0-beta.47+1.21.1.jar"))
+    // Modrinth 与 Terraformers Maven 发布的是同一制品；直接取 JAR，避免远端 POM 故障阻断冷构建。
+    modImplementation "maven.modrinth:modmenu:17.0.0@jar"
 
     // 森罗物语：烹饪
-    modCompileOnly "maven.modrinth:kaleidoscope-cookery-refabricated:1.2.0-fabric+mc1.21.1"
+    modCompileOnly "maven.modrinth:kaleidoscope-cookery-refabricated:1.3.0.9-fabric+mc1.21.11"
+    modCompileOnly "maven.modrinth:kaleidoscope-tavern-refabricated:1.1.2.4-fabric+mc1.21.11"
 
-    // Improved Mobs
-    modImplementation "maven.modrinth:improved-mobs:1.21.1-1.14.2-fabric"
-    modImplementation "maven.modrinth:tenshilib:1.21.1-2.1.1-fabric"
-
-    // TACZ
-    modImplementation("libs:TACZ-Refabricated:1.21.1-0.0.7")
-    implementation(minecraftLibraries('org.apache.commons:commons-math3:3.6.1'))
-    implementation('com.github.FiguraMC.luaj:luaj-core:3.0.8-figura') {
-        exclude group: 'org.apache.commons', module: 'commons-lang3'
-    }
-    implementation('com.github.FiguraMC.luaj:luaj-jse:3.0.8-figura') {
-        exclude group: 'org.apache.commons', module: 'commons-lang3'
-    }
-    implementation('org.apache.bcel:bcel:6.6.1') {
-        exclude group: 'org.apache.commons', module: 'commons-lang3'
-    }
-    modImplementation "curse.maven:nonconflictkeys-fabric-865546:4572953"
-
-    // PatPat
-    modImplementation "maven.modrinth:patpat:1.2.1+1.21.1"
-    modImplementation "maven.modrinth:proxlib:0.2.4+1.21"
-    modImplementation "maven.modrinth:fabric-permissions-api:0.3.1"
-
-    // 卓越前线
+    modCompileOnly "maven.modrinth:patpat:1.2.4+1.21.11"
     modCompileOnly "software.bernie.geckolib:geckolib-fabric-1.21.1:4.7.5"
-    // TODO: 1.21没移植完，暂时用1.20通过编译
-    modCompileOnly(files("libs/compile_only/superbwarfare-fabric-0.0.1-forge0.8.7.jar"))
-
-    // 地图相关模组兼容
-    modRuntimeOnly "maven.modrinth:xaeros-minimap:25.2.10_Fabric_1.21"
-    modRuntimeOnly "maven.modrinth:xaeros-world-map:1.39.12_Fabric_1.21"
-
-    // 拔刀剑
-    modImplementation "cn.sh1rocu:slashblade-refabricated:1.21.1-1.4.2-Resharped-1.9.65"
 
     // 农夫乐事
-    modImplementation("vectorwing:FarmersDelight:1.21.1-3.2.2+refabricated") {
-        exclude(group: "net.fabricmc")
-    }
-    // 更多蛋糕
-    modImplementation("maven.modrinth:common-network:1.0.21-1.21.1-fabric")
-    modImplementation("maven.modrinth:just-more-cakes:1.19.2-fabric,1.21.1")
-
-    // 旅行者背包
-    modCompileOnly("maven.modrinth:travelersbackpack:85PLLyUF")
-
-    // 不加就无法run的各种前置
-    modImplementation "io.github.cottonmc:LibGui:11.1.0+1.21"
+    modCompileOnly "maven.modrinth:farmers-delight-refabricated:1.21.11-3.4.9"
     modImplementation "me.zeroeightsix:fiber:0.23.0-SNAPSHOT"
+
+    testImplementation platform("org.junit:junit-bom:5.11.4")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testImplementation "org.mockito:mockito-core:5.15.2"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    workingDir layout.buildDirectory.dir("test-working")
+    doFirst {
+        workingDir.mkdirs()
+    }
+}
 shadowJar {
     configurations = [project.configurations.mcLib]
-
     dependencies {
         exclude(dependency('junit:junit'))
     }
-
     archiveClassifier.set("shadow")
-
     enableAutoRelocation = true
     relocationPrefix = "com.github.tartaricacid.touhoulittlemaid.libs"
-
     exclude 'META-INF/maven/**/*'
     exclude 'META-INF/versions/**/*'
     exclude 'META-INF/LICENSE'
     exclude '.cache/**'
-
     mergeServiceFiles()
     minimize()
 }
-
 remapJar {
     dependsOn(shadowJar)
     inputFile = shadowJar.archiveFile
 }
-
 processResources {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     inputs.property "version", project.version
     inputs.property "minecraft_version", project.minecraft_version
     inputs.property "loader_version", project.loader_version
     filteringCharset "UTF-8"
-
     filesMatching("fabric.mod.json") {
         expand "version": project.version,
                 "minecraft_version": project.minecraft_version,
                 "loader_version": project.loader_version
     }
 }
-
 def targetJavaVersion = 21
 tasks.withType(JavaCompile).configureEach {
     it.options.encoding = "UTF-8"
@@ -341,7 +248,6 @@ tasks.withType(JavaCompile).configureEach {
         it.options.release.set(targetJavaVersion)
     }
 }
-
 tasks.withType(Jar).configureEach {
     duplicatesStrategy = DuplicatesStrategy.WARN
 }
@@ -351,7 +257,6 @@ tasks.withType(Zip).configureEach {
 tasks.withType(Copy).configureEach {
     duplicatesStrategy = DuplicatesStrategy.WARN
 }
-
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     if (JavaVersion.current() < javaVersion) {
@@ -359,11 +264,9 @@ java {
     }
     withSourcesJar()
 }
-
 rewrite {
     activeRecipe("com.github.tartaricacid.Upgrade")
 }
-
 jar {
     from("LICENSE-MIT") {
         rename { "${it}_${project.archives_base_name}" }
@@ -373,6 +276,9 @@ jar {
     }
 }
 
+// 尚无可用依赖的可选兼容模块
+sourceSets.main.java.exclude 'cn/sh1rocu/touhoulittlemaid/mixin/compat/**'
+sourceSets.main.java.exclude 'cn/sh1rocu/touhoulittlemaid/util/compat/**'
 publishing {
     publications {
         create("mavenJava", MavenPublication) {
@@ -380,7 +286,6 @@ publishing {
             from components.java
         }
     }
-
     repositories {
         maven {
             url "file:///D:/github_maven/Sh1roCu_MCRepo/repository"

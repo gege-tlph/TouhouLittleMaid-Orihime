@@ -1,10 +1,11 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -39,7 +40,8 @@ public class MaidAttackStrafingAnyItemTask extends Behavior<EntityMaid> {
     protected boolean checkExtraStartConditions(ServerLevel worldIn, EntityMaid owner) {
         return weaponTest.test(owner.getMainHandItem()) &&
                 owner.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET)
-                        .filter(Entity::isAlive)
+                        .filter(target -> MaidTargetingPolicy.canContinueTargeting(
+                                owner, target, MaidTargetingContext.PLANNED_ATTACK))
                         .isPresent();
     }
 

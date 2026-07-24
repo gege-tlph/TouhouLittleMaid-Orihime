@@ -1,7 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.compat.kaleidoscope.edible;
 
 import com.github.tartaricacid.touhoulittlemaid.api.block.IMaidEdibleBlock;
-import com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagBlock;
+
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.ysbbbbbb.kaleidoscopecookery.block.food.FoodBiteBlock;
 import com.github.ysbbbbbb.kaleidoscopecookery.item.BowlFoodBlockItem;
@@ -44,7 +44,7 @@ public class BlockFoodEdible implements IMaidEdibleBlock {
         } else {
             maid.destroyBlock(pos);
         }
-        maid.playSound(SoundEvents.GENERIC_EAT);
+        maid.playSound(SoundEvents.GENERIC_EAT.value());
         return true;
     }
 

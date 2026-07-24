@@ -4,24 +4,12 @@
   "entity": "minecraft:item",
   "group": "altar_recipe",
   "ingredients": [
-    {
-      "item": "minecraft:quartz_block"
-    },
-    {
-      "item": "minecraft:quartz_block"
-    },
-    {
-      "item": "minecraft:quartz_block"
-    },
-    {
-      "item": "minecraft:quartz_block"
-    },
-    {
-      "tag": "c:obsidians"
-    },
-    {
-      "tag": "c:obsidians"
-    }
+    "minecraft:quartz_block",
+    "minecraft:quartz_block",
+    "minecraft:quartz_block",
+    "minecraft:quartz_block",
+    "#c:obsidians",
+    "#c:obsidians"
   ],
   "lang": "jei.touhou_little_maid.altar_craft.item_craft.result",
   "power": 0.2,

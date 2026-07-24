@@ -1,24 +1,18 @@
 package com.github.tartaricacid.touhoulittlemaid.geckolib3.resource;
 
-import com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.molang.CtrlBinding;
-import com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.molang.TLMBinding;
-import com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.molang.YSMBinding;
+import com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.molang.*;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.molang.MolangParser;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.file.AnimationFile;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.render.built.GeoModel;
-import com.github.tartaricacid.touhoulittlemaid.molang.runtime.binding.ObjectBinding;
 import com.google.common.collect.Maps;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class GeckoLibCache {
-    private static final Map<String, ObjectBinding> EXTRA_BINDING = new HashMap<>();
+    private static final Map<String, Object> EXTRA_BINDING = new HashMap<>();
     private static GeckoLibCache INSTANCE;
-    public final MolangParser parser = createMolangParser();
-    private final Map<ResourceLocation, AnimationFile> animations = Maps.newHashMap();
-    private final Map<ResourceLocation, GeoModel> geoModels = Maps.newHashMap();
+    public final ThreadLocal<MolangParser> parser = ThreadLocal.withInitial(GeckoLibCache::createMolangParser);
+    private final Map<Identifier, GeckoContainer> models = Maps.newHashMap();
 
     public static GeckoLibCache getInstance() {
         if (INSTANCE == null) {
@@ -28,18 +22,20 @@ public class GeckoLibCache {
         return INSTANCE;
     }
 
-    public Map<ResourceLocation, AnimationFile> getAnimations() {
-        return animations;
-    }
-
-    public Map<ResourceLocation, GeoModel> getGeoModels() {
-        return geoModels;
+    public Map<Identifier, GeckoContainer> getModels() {
+        return models;
     }
 
     private static MolangParser createMolangParser() {
-        EXTRA_BINDING.put("ysm", YSMBinding.INSTANCE);
-        EXTRA_BINDING.put("tlm", TLMBinding.INSTANCE);
-        EXTRA_BINDING.put("ctrl", CtrlBinding.INSTANCE);
-        return new MolangParser(EXTRA_BINDING);
+        try {
+            EXTRA_BINDING.put("ysm", YSMBinding.INSTANCE.get());
+            EXTRA_BINDING.put("tlm", TLMBinding.INSTANCE.get());
+            EXTRA_BINDING.put("ctrl", CtrlBinding.INSTANCE.get());
+            EXTRA_BINDING.put("args", UserFunctionArgument.INSTANCE);
+            EXTRA_BINDING.put("fn", new UserFunctionBinding());
+            return new MolangParser(EXTRA_BINDING);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

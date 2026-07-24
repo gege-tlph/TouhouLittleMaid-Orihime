@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.event.maid;
 
 import cn.sh1rocu.touhoulittlemaid.api.event.LivingEntityUseItemFinishEvent;
+import net.minecraft.server.level.ServerLevel;
 import cn.sh1rocu.touhoulittlemaid.util.itemhandler.CombinedInvWrapper;
 import cn.sh1rocu.touhoulittlemaid.util.itemhandler.ItemHandlerHelper;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -18,9 +19,9 @@ public class PotionItemUse {
             if (!potionStack.isEmpty()) {
                 CombinedInvWrapper inv = maid.getAvailableInv(false);
                 ItemStack leftStack = ItemHandlerHelper.insertItemStacked(inv, new ItemStack(Items.GLASS_BOTTLE), false);
-                // 如果背包满了，那就生成掉落物，预防一些改动物品堆叠的模组
-                if (!leftStack.isEmpty()) {
-                    maid.spawnAtLocation(leftStack);
+
+                if (!leftStack.isEmpty() && maid.level instanceof ServerLevel serverLevel) {
+                    maid.spawnAtLocation(serverLevel, leftStack);
                 }
                 event.setResultStack(potionStack);
             } else {

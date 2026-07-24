@@ -9,7 +9,7 @@ import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.NearestVisibleLivingEntities;
-import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.entity.vehicle.boat.Boat;
 
 public class MaidFindSitTask extends MaidCheckRateTask {
     private static final int MAX_DELAY_TIME = 12;
@@ -25,46 +25,38 @@ public class MaidFindSitTask extends MaidCheckRateTask {
     }
 
     @Override
-    protected boolean checkExtraStartConditions(ServerLevel worldIn, EntityMaid owner) {
-        return super.checkExtraStartConditions(worldIn, owner) && owner.getVehicle() == null;
+    protected boolean checkExtraStartConditions(ServerLevel world, EntityMaid maid) {
+        return super.checkExtraStartConditions(world, maid) && maid.getVehicle() == null;
     }
 
     @Override
-    protected void start(ServerLevel worldIn, EntityMaid maid, long gameTimeIn) {
+    protected void start(ServerLevel world, EntityMaid maid, long gameTime) {
         this.sitEntity = null;
-        this.getEntities(maid)
-                .find(e -> filterEntity(maid, e))
-                .findFirst()
-                .ifPresentOrElse(entity -> {
-                    this.sitEntity = entity;
-                    BehaviorUtils.setWalkAndLookTargetMemories(maid, this.sitEntity, this.speedModifier, 0);
-                }, () -> {
-                    String langKey = "chat_bubble.touhou_little_maid.inner.fishing.no_sit";
-                    this.chatBubbleKey = maid.getChatBubbleManager().addTextChatBubbleIfTimeout(langKey, this.chatBubbleKey);
-                });
+        this.getEntities(maid).find(e -> filterEntity(maid, e)).findFirst().ifPresentOrElse(entity -> {
+            this.sitEntity = entity;
+            BehaviorUtils.setWalkAndLookTargetMemories(maid, this.sitEntity, this.speedModifier, 0);
+        }, () -> {
+            // 聊天气泡反馈通过聊天气泡子系统恢复；任务行为不受影响。
+        });
 
         if (sitEntity != null && sitEntity.isAlive() && sitEntity.closerThan(maid, 2)) {
             if (sitEntity.getPassengers().isEmpty()) {
-                maid.startRiding(this.sitEntity, true);
+                maid.startRiding(this.sitEntity, true, true);
             }
             this.sitEntity = null;
         }
     }
 
     private boolean filterEntity(EntityMaid maid, Entity entity) {
-        if (!entity.isAlive()) {
+        if (!entity.isAlive() || !maid.isWithinHome(entity.blockPosition()) || !entity.getPassengers().isEmpty()) {
             return false;
         }
-        if (!maid.isWithinRestriction(entity.blockPosition())) {
-            return false;
-        }
-        if (!entity.getPassengers().isEmpty()) {
-            return false;
-        }
+
         return entity instanceof EntityChair || entity instanceof Boat;
     }
 
     private NearestVisibleLivingEntities getEntities(EntityMaid maid) {
-        return maid.getBrain().getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES).orElse(NearestVisibleLivingEntities.empty());
+        return maid.getBrain().getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES)
+                .orElse(NearestVisibleLivingEntities.empty());
     }
 }

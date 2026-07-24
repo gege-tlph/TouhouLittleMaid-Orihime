@@ -73,7 +73,9 @@ public abstract class AIChatSettingsHubScreen extends Screen {
         this.startY = (this.height - BASE_HEIGHT) / 2;
 
         int sideY = this.startY + 5;
-        sideY = this.addSiteSideButtons(sideY);
+        if (!this.state.sttOnly) {
+            sideY = this.addSiteSideButtons(sideY);
+        }
         this.addSTTSideButtons(sideY);
 
         this.initContent();
@@ -230,7 +232,6 @@ public abstract class AIChatSettingsHubScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
@@ -239,7 +240,7 @@ public abstract class AIChatSettingsHubScreen extends Screen {
         if (this.parent instanceof AIChatScreen chatScreen && chatScreen.getMaid().isAlive()) {
             ClientPlayNetworking.send(new OpenMaidAIChatPacket(chatScreen.getMaid()));
         } else {
-            Screens.getClient(this).setScreen(null);
+            Screens.getClient(this).setScreen(this.parent);
         }
     }
 
@@ -255,6 +256,12 @@ public abstract class AIChatSettingsHubScreen extends Screen {
             boolean insufficientPermissions
     ) {
         return new AIChatSettingsLLMSiteScreen(parent, llmSites, ttsSites, insufficientPermissions);
+    }
+
+    public static AIChatSettingsHubScreen openSTTConfig(@Nullable Screen parent) {
+        SharedState state = SharedState.create(Map.of(), Map.of());
+        state.sttOnly = true;
+        return new AIChatSettingsSTTConfigScreen(parent, state, false);
     }
 
     public static final class SharedState {
@@ -273,6 +280,7 @@ public abstract class AIChatSettingsHubScreen extends Screen {
         public int ttsListScrollOffset;
         public int sttSiteListScrollOffset;
         public @Nullable String selectedSttSiteId;
+        private boolean sttOnly;
 
         private SharedState(Map<String, LLMSite> llmSites,
                             Map<String, TTSSite> ttsSites,
@@ -299,6 +307,7 @@ public abstract class AIChatSettingsHubScreen extends Screen {
             this.ttsListScrollOffset = ttsListScrollOffset;
             this.sttSiteListScrollOffset = sttSiteListScrollOffset;
             this.selectedSttSiteId = selectedSttSiteId;
+            this.sttOnly = false;
         }
 
         private static SharedState create(Map<String, LLMSite> llmSites, Map<String, TTSSite> ttsSites) {

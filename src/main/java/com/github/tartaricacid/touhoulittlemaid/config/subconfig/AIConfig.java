@@ -4,6 +4,7 @@ import com.electronwill.nightconfig.core.EnumGetMethod;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.stt.STTApiType;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.StringUtils;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class AIConfig {
     private static final String TRANSLATE_KEY = "config.touhou_little_maid.global_ai";
@@ -26,6 +27,11 @@ public class AIConfig {
     public static ModConfigSpec.ConfigValue<String> STT_PROXY_ADDRESS;
 
     public static void init(ModConfigSpec.Builder builder) {
+        initServer(builder);
+        initClient(builder);
+    }
+
+    public static void initServer(ModConfigSpec.Builder builder) {
         builder.push("ai");
 
         builder.comment("Whether or not to enable the AI LLM feature").translation(translateKey("llm_enabled"));
@@ -52,6 +58,12 @@ public class AIConfig {
         builder.comment("TTS Proxy Address, such as 127.0.0.1:1080, empty is no proxy, SOCKS proxies are not supported").translation(translateKey("tts_proxy_address"));
         TTS_PROXY_ADDRESS = builder.define("TTSProxyAddress", "");
 
+        builder.pop();
+    }
+
+    public static void initClient(ModConfigSpec.Builder builder) {
+        builder.push("ai");
+
         builder.comment("Whether or not to enable the STT feature").translation(translateKey("stt_enabled"));
         STT_ENABLED = builder.define("STTEnabled", true);
 
@@ -75,6 +87,6 @@ public class AIConfig {
     }
 
     public static int getMaidHistoryCompressTokenLimit() {
-        return MAID_HISTORY_COMPRESS_TOKEN_LIMIT.get() * TOKEN_LIMIT_K_UNIT;
+        return ServerRuleConfig.get(MAID_HISTORY_COMPRESS_TOKEN_LIMIT) * TOKEN_LIMIT_K_UNIT;
     }
 }

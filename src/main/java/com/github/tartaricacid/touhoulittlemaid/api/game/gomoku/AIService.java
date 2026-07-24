@@ -1,9 +1,7 @@
 /*
  * https://github.com/anlingyi/xechat-idea
  *
- *        Apache License
- *   Version 2.0, January 2004
- * http://www.apache.org/licenses/
+ * Apache 许可证版本 2.0，2004 年 1 月 http://www.apache.org/licenses/
  */
 package com.github.tartaricacid.touhoulittlemaid.api.game.gomoku;
 
@@ -16,7 +14,7 @@ public interface AIService {
      * 获取AI棋位
      *
      * @param chessData 已下棋子数据
-     * @param point     对手棋位
+     * @param point 对手棋位
      */
     Point getPoint(byte[][] chessData, Point point);
 
@@ -24,7 +22,7 @@ public interface AIService {
      * 获取棋局状态
      *
      * @param chessData 已下棋子数据
-     * @param point     落子棋位
+     * @param point 落子棋位
      */
     Statue getStatue(int[][] chessData, Point point);
 
@@ -41,7 +39,7 @@ public interface AIService {
          */
         private final int maxNodes;
         /**
-         * debug
+         * 调试
          */
         private final boolean debug;
         /**

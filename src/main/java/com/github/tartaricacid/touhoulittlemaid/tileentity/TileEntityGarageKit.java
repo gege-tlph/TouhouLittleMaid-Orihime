@@ -1,8 +1,14 @@
 package com.github.tartaricacid.touhoulittlemaid.tileentity;
 
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import cn.sh1rocu.touhoulittlemaid.api.extension.IBlockEntityPersistentData;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBlocks;
+import com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -17,7 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import javax.annotation.Nullable;
 
 public class TileEntityGarageKit extends BlockEntity implements IBlockEntityPersistentData {
-    public static final BlockEntityType<TileEntityGarageKit> TYPE = BlockEntityType.Builder.of(TileEntityGarageKit::new, InitBlocks.GARAGE_KIT).build(null);
+    public static final BlockEntityType<TileEntityGarageKit> TYPE = FabricBlockEntityTypeBuilder.create(TileEntityGarageKit::new, InitBlocks.GARAGE_KIT).build();
     private static final String FACING_TAG = "GarageKitFacing";
     private static final String EXTRA_DATA = "ExtraData";
     private Direction facing = Direction.NORTH;
@@ -28,17 +34,17 @@ public class TileEntityGarageKit extends BlockEntity implements IBlockEntityPers
     }
 
     @Override
-    public void saveAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
+    public void saveAdditional(ValueOutput output){
         tlm$getPersistentData().putString(FACING_TAG, facing.getSerializedName());
         tlm$getPersistentData().put(EXTRA_DATA, extraData);
-        super.saveAdditional(pTag, pRegistries);
+        super.saveAdditional(output);
     }
 
     @Override
-    public void loadAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
-        super.loadAdditional(pTag, pRegistries);
-        facing = Direction.byName(tlm$getPersistentData().getString(FACING_TAG));
-        extraData = tlm$getPersistentData().getCompound(EXTRA_DATA);
+    public void loadAdditional(ValueInput input){
+        super.loadAdditional(input);
+        facing = Direction.byName(tlm$getPersistentData().getStringOr(FACING_TAG, ""));
+        extraData = tlm$getPersistentData().getCompoundOrEmpty(EXTRA_DATA);
     }
 
     @Override
@@ -68,5 +74,19 @@ public class TileEntityGarageKit extends BlockEntity implements IBlockEntityPers
             BlockState state = level.getBlockState(worldPosition);
             level.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_ALL);
         }
+    }
+
+    /**
+     * 方块移除时，在方块实体仍可读取额外数据的阶段掉落带数据的车库套件物品。
+     */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (this.level == null || this.level.isClientSide()) {
+            return;
+        }
+        ItemStack stack = new ItemStack(InitBlocks.GARAGE_KIT);
+        stack.set(InitDataComponent.MAID_INFO, CustomData.of(this.extraData));
+        Block.popResource(this.level, pos, stack);
     }
 }

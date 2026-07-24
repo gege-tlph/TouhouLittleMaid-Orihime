@@ -13,14 +13,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static com.github.tartaricacid.touhoulittlemaid.ai.service.SerializerRegister.*;
 
 @SuppressWarnings("all")
 public class AvailableSites {
     private static final String FOLDER_NAME = "sites";
+    private static final Logger LOGGER = LogManager.getLogger(AvailableSites.class);
 
-    // 服务端缓存的站点信息，包含秘钥等敏感信息
+
     public static final Map<String, LLMSite> LLM_SITES = Maps.newLinkedHashMap();
     public static final Map<String, TTSSite> TTS_SITES = Maps.newLinkedHashMap();
     public static final Map<String, STTSite> STT_SITES = Maps.newLinkedHashMap();
@@ -28,11 +31,74 @@ public class AvailableSites {
     // 部分默认站点需要进行修正，此处为修正列表
     public static final Map<String, Consumer<LLMSite>> FIXED_LLM_SITES = Maps.newHashMap();
 
-    public static void init() {
-        clearSites();
-        addDefaultSites();
-        readSites();
-        saveSites();
+    public static boolean init() {
+        return init(createFolder(), true);
+    }
+
+    static boolean init(Path root, boolean reloadSettings) {
+        Map<String, LLMSite> nextLlm = Maps.newLinkedHashMap();
+        Map<String, TTSSite> nextTts = Maps.newLinkedHashMap();
+        Map<String, STTSite> nextStt = Maps.newLinkedHashMap();
+        Map<String, Consumer<LLMSite>> nextFixes = Maps.newHashMap();
+        LLM_SERIALIZER.forEach((key, value) -> nextLlm.put(key, value.defaultSite()));
+        TTS_SERIALIZER.forEach((key, value) -> nextTts.put(key, value.defaultSite()));
+        STT_SERIALIZER.forEach((key, value) -> nextStt.put(key, value.defaultSite()));
+        DefaultLLMSite.addDefaultSites(nextLlm, nextFixes);
+
+        Path llmConfig = root.resolve("llm.json");
+        Path ttsConfig = root.resolve("tts.json");
+        Path sttConfig = root.resolve("stt.json");
+        try {
+            if (Files.exists(llmConfig)) {
+                Map<String, LLMSite> loaded = LLMSite.readSitesStrict(llmConfig);
+                loaded.forEach((siteId, site) -> {
+                    Consumer<LLMSite> fix = nextFixes.get(siteId);
+                    if (fix != null) {
+                        fix.accept(site);
+                    }
+                });
+                nextLlm.putAll(loaded);
+            } else if (!LLMSite.writeSites(llmConfig, nextLlm)) {
+                return false;
+            }
+            if (Files.exists(ttsConfig)) {
+                nextTts.putAll(TTSSite.readSitesStrict(ttsConfig));
+            } else if (!TTSSite.writeSites(ttsConfig, nextTts)) {
+                return false;
+            }
+            if (Files.exists(sttConfig)) {
+                nextStt.putAll(STTSite.readSitesStrict(sttConfig));
+            } else if (!STTSite.writeSites(sttConfig, nextStt)) {
+                return false;
+            }
+        } catch (Exception exception) {
+            LOGGER.error("Failed to reload AI sites; keeping the previous runtime snapshot", exception);
+            restore(root.resolve("llm.json"));
+            restore(root.resolve("tts.json"));
+            restore(root.resolve("stt.json"));
+            return false;
+        }
+
+        LLM_SITES.clear();
+        LLM_SITES.putAll(nextLlm);
+        TTS_SITES.clear();
+        TTS_SITES.putAll(nextTts);
+        STT_SITES.clear();
+        STT_SITES.putAll(nextStt);
+        FIXED_LLM_SITES.clear();
+        FIXED_LLM_SITES.putAll(nextFixes);
+        if (reloadSettings) {
+            SettingReader.reloadSettings();
+        }
+        return true;
+    }
+
+    private static void restore(Path file) {
+        com.github.tartaricacid.touhoulittlemaid.config.AtomicConfigFileWriter.restoreLastGood(file, candidate -> {
+            try (java.io.Reader reader = Files.newBufferedReader(candidate, java.nio.charset.StandardCharsets.UTF_8)) {
+                net.minecraft.util.GsonHelper.parse(reader);
+            }
+        });
     }
 
     private static void clearSites() {
@@ -88,46 +154,51 @@ public class AvailableSites {
         }
     }
 
-    public static void saveSites() {
+    public static boolean saveSites() {
         Path root = createFolder();
-        saveLLMSites(root);
-        saveTTSSites(root);
-        saveSTTSites(root);
+        boolean saved = saveLLMSites(root) & saveTTSSites(root) & saveSTTSites(root);
+        if (!saved) {
+            return false;
+        }
         SettingReader.reloadSettings();
+        return true;
     }
 
-    public static void saveSTTSitesOnly() {
+    public static boolean saveSTTSitesOnly() {
         Path root = createFolder();
-        saveSTTSites(root);
+        return saveSTTSites(root);
     }
 
-    private static void saveLLMSites(Path root) {
+    private static boolean saveLLMSites(Path root) {
         Path llmConfig = root.resolve("llm.json");
 
         try {
-            LLMSite.writeSites(llmConfig, LLM_SITES);
+            return LLMSite.writeSites(llmConfig, LLM_SITES);
         } catch (Exception e) {
             TouhouLittleMaid.LOGGER.error("Failed to save LLM sites", e);
+            return false;
         }
     }
 
-    private static void saveTTSSites(Path root) {
+    private static boolean saveTTSSites(Path root) {
         Path ttsConfig = root.resolve("tts.json");
 
         try {
-            TTSSite.writeSites(ttsConfig, TTS_SITES);
+            return TTSSite.writeSites(ttsConfig, TTS_SITES);
         } catch (Exception e) {
             TouhouLittleMaid.LOGGER.error("Failed to save TTS sites", e);
+            return false;
         }
     }
 
-    private static void saveSTTSites(Path root) {
+    private static boolean saveSTTSites(Path root) {
         Path sttConfig = root.resolve("stt.json");
 
         try {
-            STTSite.writeSites(sttConfig, STT_SITES);
+            return STTSite.writeSites(sttConfig, STT_SITES);
         } catch (Exception e) {
             TouhouLittleMaid.LOGGER.error("Failed to save STT sites", e);
+            return false;
         }
     }
 

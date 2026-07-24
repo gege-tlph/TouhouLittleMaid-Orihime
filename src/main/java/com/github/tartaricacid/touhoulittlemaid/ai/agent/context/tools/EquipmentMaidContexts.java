@@ -81,13 +81,16 @@ public final class EquipmentMaidContexts {
         @Override
         public String getValue(EntityMaid maid) {
             List<String> names = Lists.newArrayList();
-            maid.getArmorSlots().forEach(stack -> {
-                if (!stack.isEmpty()) {
-                    String itemName = stack.getDisplayName().getString();
-                    int count = stack.getCount();
-                    names.add(ITEM_AND_COUNT_FORMAT.formatted(itemName, count));
+            for (EquipmentSlot slot : EquipmentSlot.VALUES) {
+                if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
+                    ItemStack stack = maid.getItemBySlot(slot);
+                    if (!stack.isEmpty()) {
+                        String itemName = stack.getDisplayName().getString();
+                        int count = stack.getCount();
+                        names.add(ITEM_AND_COUNT_FORMAT.formatted(itemName, count));
+                    }
                 }
-            });
+            }
             if (names.isEmpty()) {
                 return EMPTY;
             }

@@ -1,7 +1,10 @@
 package com.github.tartaricacid.touhoulittlemaid.tileentity;
 
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import cn.sh1rocu.touhoulittlemaid.api.extension.IBlockEntityPersistentData;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -25,15 +28,16 @@ public abstract class TileEntityJoy extends BlockEntity implements IBlockEntityP
     }
 
     @Override
-    protected void saveAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
-        tlm$getPersistentData().putUUID(SIT_ID, this.sitId);
-        super.saveAdditional(pTag, pRegistries);
+    protected void saveAdditional(ValueOutput output){
+        tlm$getPersistentData().putIntArray(SIT_ID, UUIDUtil.uuidToIntArray(this.sitId));
+        super.saveAdditional(output);
     }
 
     @Override
-    public void loadAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
-        super.loadAdditional(pTag, pRegistries);
-        this.sitId = tlm$getPersistentData().getUUID(SIT_ID);
+    public void loadAdditional(ValueInput input){
+        super.loadAdditional(input);
+        this.sitId = tlm$getPersistentData().getIntArray(SIT_ID)
+                .map(UUIDUtil::uuidFromIntArray).orElse(Util.NIL_UUID);
     }
 
     @Override
@@ -65,5 +69,17 @@ public abstract class TileEntityJoy extends BlockEntity implements IBlockEntityP
 
     public void setSitId(UUID sitId) {
         this.sitId = sitId;
+    }
+
+
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (this.level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            net.minecraft.world.entity.Entity entity = serverLevel.getEntity(this.sitId);
+            if (entity instanceof com.github.tartaricacid.touhoulittlemaid.entity.item.EntitySit) {
+                entity.discard();
+            }
+        }
     }
 }

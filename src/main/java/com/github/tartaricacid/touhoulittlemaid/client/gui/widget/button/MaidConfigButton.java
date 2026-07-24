@@ -1,7 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
@@ -9,20 +8,22 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.InputWithModifiers;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 
 public class MaidConfigButton extends Button {
-    private static final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_gui_button.png");
+    private static final Identifier ICON = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_gui_button.png");
     private final OnPress leftPress;
     private final OnPress rightPress;
     private boolean leftClicked = false;
     private Component value;
 
     public MaidConfigButton(int x, int y, Component title, Component value, OnPress onLeftPressIn, OnPress onRightPressIn) {
-/*        super(Button.builder(title, b -> {
-        }).pos(x, y).size(164, 13));*/
+
         super(x, y, 164, 13, title, b -> {
         }, Button.DEFAULT_NARRATION);
         this.leftPress = onLeftPressIn;
@@ -35,23 +36,23 @@ public class MaidConfigButton extends Button {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
+
+    protected void renderContents(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
         Minecraft mc = Minecraft.getInstance();
-        RenderSystem.enableDepthTest();
         if (this.isHovered) {
-            graphics.blit(ICON, this.getX(), this.getY(), 63, 141, this.width, this.height, 256, 256);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, ICON, this.getX(), this.getY(), 63F, 141F, this.width, this.height, 256, 256);
         } else {
-            graphics.blit(ICON, this.getX(), this.getY(), 63, 128, this.width, this.height, 256, 256);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, ICON, this.getX(), this.getY(), 63F, 128F, this.width, this.height, 256, 256);
         }
-        graphics.drawString(mc.font, this.getMessage(), this.getX() + 5, this.getY() + 3, 0x444444, false);
-        drawCenteredStringWithoutShadow(graphics, mc.font, this.value, this.getX() + 142, this.getY() + 3, ChatFormatting.GREEN.getColor());
+        graphics.drawString(mc.font, this.getMessage(), this.getX() + 5, this.getY() + 3, 0xFF444444, false);
+        drawCenteredStringWithoutShadow(graphics, mc.font, this.value, this.getX() + 142, this.getY() + 3, 0xFF000000 | ChatFormatting.GREEN.getColor());
     }
 
     public void setValue(Component value) {
         this.value = value;
     }
 
-    @Override
+
     protected boolean clicked(double mouseX, double mouseY) {
         if (!this.active || !this.visible) {
             return false;
@@ -71,7 +72,19 @@ public class MaidConfigButton extends Button {
     }
 
     @Override
-    public void onPress() {
+
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (this.isValidClickButton(event.buttonInfo()) && this.clicked(event.x(), event.y())) {
+            this.playDownSound(Minecraft.getInstance().getSoundManager());
+            this.onClick(event, doubleClick);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+
+    public void onPress(InputWithModifiers input) {
         if (leftClicked) {
             leftPress.onPress(this);
         } else {

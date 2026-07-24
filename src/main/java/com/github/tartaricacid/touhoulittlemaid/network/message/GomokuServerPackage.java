@@ -2,11 +2,11 @@ package com.github.tartaricacid.touhoulittlemaid.network.message;
 
 import com.github.tartaricacid.touhoulittlemaid.api.game.gomoku.Point;
 import com.github.tartaricacid.touhoulittlemaid.api.game.gomoku.Statue;
+import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityGomoku;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.MaidGomokuAI;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntitySit;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitSounds;
-import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityGomoku;
 import io.netty.buffer.ByteBuf;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
@@ -17,12 +17,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record GomokuServerPackage(BlockPos pos, Point point) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<GomokuServerPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("gomoku_to_server"));
+    public static final CustomPacketPayload.Type<GomokuServerPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("gomoku_to_server"));
     public static final StreamCodec<ByteBuf, GomokuServerPackage> STREAM_CODEC = StreamCodec.composite(
             BlockPos.STREAM_CODEC,
             GomokuServerPackage::pos,
@@ -53,7 +52,7 @@ public record GomokuServerPackage(BlockPos pos, Point point) implements CustomPa
                         maid.getGameRecordManager().markStatue(true);
                     }
                 }
-                level.playSound(null, message.pos, InitSounds.GOMOKU, SoundSource.BLOCKS, 1.0f, 0.8F + level.random.nextFloat() * 0.4F);
+                level.playSound(null, message.pos, InitSounds.GOMOKU, SoundSource.BLOCKS, 1.0f, 0.8F + level.getRandom().nextFloat() * 0.4F);
                 if (statue == Statue.IN_PROGRESS) {
                     gomoku.setPlayerTurn(true);
                 }
@@ -63,7 +62,7 @@ public record GomokuServerPackage(BlockPos pos, Point point) implements CustomPa
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

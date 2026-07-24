@@ -3,25 +3,23 @@ package com.github.tartaricacid.touhoulittlemaid.util.functional;
 @FunctionalInterface
 public interface QuadPredicate<T, U, V, W> {
     /**
-     * Evaluates this predicate on the given arguments.
+     * 根据给定参数评估此谓词。
      *
-     * @param t the first input argument
-     * @param u the second input argument
-     * @param v the third input argument
-     * @param w the fourth input argument
-     * @return {@code true} if the input arguments match the predicate,
-     * otherwise {@code false}
+     * @param t 第一个输入参数
+     * @param u 第二个输入参数
+     * @param v 第三个输入参数
+     * @param w 第四个输入参数
+     * @return {@code true} 如果输入参数与谓词匹配，
+     * 否则 {@code false}
      */
     boolean test(T t, U u, V v, W w);
 
     /**
-     * Returns a composed {@code QuadPredicate} that represents a short-circuiting logical AND of this
-     * predicate and another. When evaluating the composed predicate, if this predicate is {@code false},
-     * then the {@code other} predicate is not evaluated.
+     * 返回一个组合的 {@code QuadPredicate}，表示此谓词和另一个谓词的短路逻辑 AND。当评估组合谓词时，如果该谓词是 {@code false}，则不评估 {@code other} 谓词。
      *
-     * @param other a predicate that will be logically-ANDed with this predicate
-     * @return a composed {@code QuadPredicate} that represents the short-circuiting logical AND of this
-     * predicate and the {@code other} predicate
+     * @param other 将与该谓词进行逻辑与运算的谓词
+     * @return 一个组合的 {@code QuadPredicate} 表示该短路逻辑 AND
+     * 谓词和 {@code other} 谓词
      */
     default QuadPredicate<T, U, V, W> and(QuadPredicate<? super T, ? super U, ? super V, ? super W> other) {
         return (t, u, v, w) -> test(t, u, v, w) && other.test(t, u, v, w);

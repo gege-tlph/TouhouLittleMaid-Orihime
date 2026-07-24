@@ -3,7 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.inventory.container.backpack;
 import com.github.tartaricacid.touhoulittlemaid.entity.backpack.data.FurnaceBackpackData;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.MaidMainContainer;
-import net.fabricmc.fabric.api.registry.FuelRegistry;
+
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.world.Container;
@@ -50,8 +50,8 @@ public class FurnaceBackpackContainer extends MaidMainContainer {
     }
 
     private boolean isFuel(ItemStack stack) {
-        Integer burnTime = FuelRegistry.INSTANCE.get(stack.getItem());
-        return burnTime != null && burnTime > 0;
+
+        return this.getMaid().level().fuelValues().isFuel(stack);
     }
 
     public int getBurnProgress() {

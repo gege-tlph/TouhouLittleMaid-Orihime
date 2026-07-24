@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.tileentity;
 
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import cn.sh1rocu.touhoulittlemaid.api.extension.IBlockEntityPersistentData;
 import cn.sh1rocu.touhoulittlemaid.util.itemhandler.ItemStackHandler;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBlocks;
@@ -9,7 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -19,11 +20,13 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 import javax.annotation.Nullable;
 
 public class TileEntityAltar extends BlockEntity implements IBlockEntityPersistentData {
-    public static final BlockEntityType<TileEntityAltar> TYPE = BlockEntityType.Builder.of(TileEntityAltar::new, InitBlocks.ALTAR).build(null);
+    public static final BlockEntityType<TileEntityAltar> TYPE = FabricBlockEntityTypeBuilder.create(TileEntityAltar::new, InitBlocks.ALTAR).build();
     private static final String STORAGE_ITEM = "StorageItem";
     private static final String IS_RENDER = "IsRender";
     private static final String CAN_PLACE_ITEM = "CanPlaceItem";
@@ -54,28 +57,51 @@ public class TileEntityAltar extends BlockEntity implements IBlockEntityPersiste
         refresh();
     }
 
+    /**
+     * 祭坛方块实体不实现 Container，原版移除流程不会自动掉落 ItemStackHandler 中的物品，
+     * 因此要在方块实体仍可访问时显式弹出已存放的物品。
+     */
     @Override
-    public void saveAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
-        tlm$getPersistentData().putBoolean(IS_RENDER, isRender);
-        tlm$getPersistentData().putBoolean(CAN_PLACE_ITEM, canPlaceItem);
-        tlm$getPersistentData().putInt(STORAGE_STATE_ID, Block.getId(storageState));
-        tlm$getPersistentData().put(STORAGE_ITEM, handler.serializeNBT(pRegistries));
-        tlm$getPersistentData().putString(DIRECTION, direction.getSerializedName());
-        tlm$getPersistentData().put(STORAGE_BLOCK_LIST, blockPosList.serialize());
-        tlm$getPersistentData().put(CAN_PLACE_ITEM_POS_LIST, canPlaceItemPosList.serialize());
-        super.saveAdditional(pTag, pRegistries);
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (this.level == null || this.level.isClientSide()) {
+            return;
+        }
+        ItemStack stack = this.handler.getStackInSlot(0);
+        if (!stack.isEmpty()) {
+            Block.popResource(this.level, pos.offset(0, 1, 0), stack);
+        }
     }
 
     @Override
-    public void loadAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
-        super.loadAdditional(pTag, pRegistries);
-        isRender = tlm$getPersistentData().getBoolean(IS_RENDER);
-        canPlaceItem = tlm$getPersistentData().getBoolean(CAN_PLACE_ITEM);
-        storageState = Block.stateById(tlm$getPersistentData().getInt(STORAGE_STATE_ID));
-        handler.deserializeNBT(pRegistries, tlm$getPersistentData().getCompound(STORAGE_ITEM));
-        direction = Direction.byName(tlm$getPersistentData().getString(DIRECTION));
-        blockPosList.deserialize(tlm$getPersistentData().getList(STORAGE_BLOCK_LIST, Tag.TAG_INT_ARRAY));
-        canPlaceItemPosList.deserialize(tlm$getPersistentData().getList(CAN_PLACE_ITEM_POS_LIST, Tag.TAG_INT_ARRAY));
+    protected void saveAdditional(ValueOutput output) {
+        // 必须在 super 之前填充：BlockEntityMixin 在 super.saveAdditional 的 RETURN 处写出 persistentData
+        tlm$getPersistentData().putBoolean(IS_RENDER, isRender);
+        tlm$getPersistentData().putBoolean(CAN_PLACE_ITEM, canPlaceItem);
+        tlm$getPersistentData().putInt(STORAGE_STATE_ID, Block.getId(storageState));
+        tlm$getPersistentData().put(STORAGE_ITEM, handler.serializeNBT(tlm$registries()));
+        tlm$getPersistentData().putString(DIRECTION, direction.getSerializedName());
+        tlm$getPersistentData().put(STORAGE_BLOCK_LIST, blockPosList.serialize());
+        tlm$getPersistentData().put(CAN_PLACE_ITEM_POS_LIST, canPlaceItemPosList.serialize());
+        super.saveAdditional(output);
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput input) {
+        // 必须在 super 之后读取：persistentData 由 BlockEntityMixin 在 super 的 RETURN 处填充
+        super.loadAdditional(input);
+        isRender = tlm$getPersistentData().getBooleanOr(IS_RENDER, false);
+        canPlaceItem = tlm$getPersistentData().getBooleanOr(CAN_PLACE_ITEM, false);
+        storageState = Block.stateById(tlm$getPersistentData().getIntOr(STORAGE_STATE_ID, 0));
+        handler.deserializeNBT(input.lookup(), tlm$getPersistentData().getCompoundOrEmpty(STORAGE_ITEM));
+        direction = Direction.byName(tlm$getPersistentData().getStringOr(DIRECTION, "north"));
+        blockPosList.deserialize(tlm$getPersistentData().getListOrEmpty(STORAGE_BLOCK_LIST));
+        canPlaceItemPosList.deserialize(tlm$getPersistentData().getListOrEmpty(CAN_PLACE_ITEM_POS_LIST));
+    }
+
+    @Nullable
+    private HolderLookup.Provider tlm$registries() {
+        return this.level != null ? this.level.registryAccess() : null;
     }
 
     public BlockPos getWorldPosition() {

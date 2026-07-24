@@ -6,6 +6,8 @@ import com.google.common.collect.Maps;
 import com.google.common.xml.XmlEscapers;
 import net.fabricmc.loader.api.FabricLoader;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,11 +16,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 public class SkillLoader {
-    private static final Path SKILLS_DIR = FabricLoader.getInstance().getConfigDir()
-            .resolve(TouhouLittleMaid.MOD_ID)
-            .resolve("skills");
-
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(SkillLoader.class);
     private static final int MAX_DEPTH = 3;
     private static final String SKILL_FILE_NAME = "skill.md";
     private static final String REFERENCES = "references";
@@ -30,18 +28,19 @@ public class SkillLoader {
     private static Map<String, SkillInstance> DATA_PACK_SKILLS = Maps.newLinkedHashMap();
 
     public static void init() {
-        createSkillsFolder();
-        reloadFromConfig();
+        Path skillsDir = getSkillsDir();
+        createSkillsFolder(skillsDir);
+        reloadFromConfig(skillsDir);
     }
 
-    private static void reloadFromConfig() {
+    static void reloadFromConfig(Path skillsDir) {
         Map<String, SkillInstance> loaded = Maps.newLinkedHashMap();
-        try (var stream = Files.walk(SKILLS_DIR, MAX_DEPTH)) {
+        try (var stream = Files.walk(skillsDir, MAX_DEPTH)) {
             stream.filter(Files::isRegularFile)
                     .filter(path -> path.getFileName().toString().equalsIgnoreCase(SKILL_FILE_NAME))
                     .forEach(path -> loadSkillFromConfig(path, loaded));
         } catch (IOException e) {
-            TouhouLittleMaid.LOGGER.warn("Failed to scan config skills directory {}", SKILLS_DIR, e);
+            LOGGER.warn("Failed to scan config skills directory {}", skillsDir, e);
         }
 
         CONFIG_SKILLS = ImmutableMap.copyOf(loaded);
@@ -56,10 +55,10 @@ public class SkillLoader {
             SkillInstance skill = parse(path);
             if (skill != null) {
                 loaded.put(skill.name(), skill);
-                TouhouLittleMaid.LOGGER.info("Loaded skill {} from file {}", skill.name(), path);
+                LOGGER.info("Loaded skill {} from file {}", skill.name(), path);
             }
         } catch (Exception e) {
-            TouhouLittleMaid.LOGGER.error("Failed to load skill from file {}", path, e);
+            LOGGER.error("Failed to load skill from file {}", path, e);
         }
     }
 
@@ -98,12 +97,12 @@ public class SkillLoader {
                         String content = Files.readString(refPath);
                         references.put(refPath.getFileName().toString(), content);
                     } catch (IOException e) {
-                        TouhouLittleMaid.LOGGER.warn("Failed to read reference file {} for skill {}, skipping this reference. Error: {}",
+                        LOGGER.warn("Failed to read reference file {} for skill {}, skipping this reference. Error: {}",
                                 refPath, header.getName(), e.getMessage());
                     }
                 });
             } catch (IOException e) {
-                TouhouLittleMaid.LOGGER.warn("Failed to scan references directory {} for skill {}, skipping all references. Error: {}",
+                LOGGER.warn("Failed to scan references directory {} for skill {}, skipping all references. Error: {}",
                         referencesPath, header.getName(), e.getMessage());
             }
 
@@ -114,16 +113,13 @@ public class SkillLoader {
                     body, ImmutableMap.copyOf(references)
             );
         } catch (Exception e) {
-            TouhouLittleMaid.LOGGER.error("Failed to read skill file {}", skillFilePath, e);
+            LOGGER.error("Failed to read skill file {}", skillFilePath, e);
             return null;
         }
     }
 
     public static SkillInstance getSkill(String name) {
-        if (DATA_PACK_SKILLS.containsKey(name)) {
-            return DATA_PACK_SKILLS.get(name);
-        }
-        return CONFIG_SKILLS.get(name);
+        return getAllSkills().get(name);
     }
 
     public static boolean isEmpty() {
@@ -164,14 +160,20 @@ public class SkillLoader {
         return sb.toString();
     }
 
-    private static void createSkillsFolder() {
+    private static Path getSkillsDir() {
+        return FabricLoader.getInstance().getConfigDir()
+                .resolve(TouhouLittleMaid.MOD_ID)
+                .resolve("skills");
+    }
+
+    private static void createSkillsFolder(Path skillsDir) {
         try {
-            if (Files.isDirectory(SKILLS_DIR)) {
+            if (Files.isDirectory(skillsDir)) {
                 return;
             }
-            Files.createDirectories(SKILLS_DIR);
+            Files.createDirectories(skillsDir);
         } catch (IOException e) {
-            TouhouLittleMaid.LOGGER.error("Failed to create skills directory {}", SKILLS_DIR, e);
+            LOGGER.error("Failed to create skills directory {}", skillsDir, e);
         }
     }
 }

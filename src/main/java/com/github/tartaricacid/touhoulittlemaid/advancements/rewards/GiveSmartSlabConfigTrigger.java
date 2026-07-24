@@ -1,20 +1,21 @@
 package com.github.tartaricacid.touhoulittlemaid.advancements.rewards;
 
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.advancements.Criterion;
-import net.minecraft.advancements.critereon.ContextAwarePredicate;
-import net.minecraft.advancements.critereon.EntityPredicate;
-import net.minecraft.advancements.critereon.SimpleCriterionTrigger;
+import net.minecraft.advancements.criterion.ContextAwarePredicate;
+import net.minecraft.advancements.criterion.EntityPredicate;
+import net.minecraft.advancements.criterion.SimpleCriterionTrigger;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Optional;
 
 public class GiveSmartSlabConfigTrigger extends SimpleCriterionTrigger<GiveSmartSlabConfigTrigger.Instance> {
     public void trigger(ServerPlayer serverPlayer) {
-        super.trigger(serverPlayer, instance -> MiscConfig.GIVE_SMART_SLAB.get());
+        super.trigger(serverPlayer, instance -> ServerRuleConfig.get(MiscConfig.GIVE_SMART_SLAB));
     }
 
     @Override

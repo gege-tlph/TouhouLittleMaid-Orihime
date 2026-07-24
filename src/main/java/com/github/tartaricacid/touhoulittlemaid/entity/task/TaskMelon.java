@@ -11,7 +11,7 @@ import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.item.ItemStack;
@@ -28,10 +28,10 @@ import java.util.function.Predicate;
 import static com.github.tartaricacid.touhoulittlemaid.datagen.EnchantmentKeys.getEnchantmentLevel;
 
 public class TaskMelon implements IFarmTask {
-    public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "melon");
+    public static final Identifier UID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "melon");
 
     @Override
-    public ResourceLocation getUid() {
+    public Identifier getUid() {
         return UID;
     }
 
@@ -70,6 +70,7 @@ public class TaskMelon implements IFarmTask {
     @Override
     public void harvest(EntityMaid maid, BlockPos cropPos, BlockState cropState) {
         ItemStack mainHandItem = maid.getMainHandItem();
+
         RegistryAccess access = maid.level.registryAccess();
         if (cropState.is(Blocks.MELON) && getEnchantmentLevel(access, Enchantments.SILK_TOUCH, mainHandItem) > 0) {
             if (maid.destroyBlock(cropPos, false)) {

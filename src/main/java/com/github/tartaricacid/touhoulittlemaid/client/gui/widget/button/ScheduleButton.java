@@ -7,13 +7,14 @@ import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.AbstractMaidContainer;
 import com.github.tartaricacid.touhoulittlemaid.network.message.MaidConfigPackage;
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.InputWithModifiers;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.schedule.Activity;
 
 import java.text.DecimalFormat;
@@ -21,14 +22,13 @@ import java.util.List;
 import java.util.Locale;
 
 public class ScheduleButton<T extends AbstractMaidContainer> extends Button {
-    private static final ResourceLocation BUTTON = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_gui_button.png");
+    private static final Identifier BUTTON = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_gui_button.png");
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("00");
     private final EntityMaid maid;
     private MaidSchedule mode;
 
     public ScheduleButton(int x, int y, AbstractMaidContainerGui<T> gui) {
-/*        super(Button.builder(Component.empty(), (b) -> {
-        }).pos(x, y).size(61, 13));*/
+
         super(x, y, 61, 13, Component.empty(), button -> {
         }, Button.DEFAULT_NARRATION);
         this.maid = gui.getMaid();
@@ -36,7 +36,8 @@ public class ScheduleButton<T extends AbstractMaidContainer> extends Button {
     }
 
     @Override
-    public void onPress() {
+
+    public void onPress(InputWithModifiers input) {
         int index = mode.ordinal() + 1;
         int length = MaidSchedule.values().length;
         this.mode = MaidSchedule.values()[index % length];
@@ -44,9 +45,9 @@ public class ScheduleButton<T extends AbstractMaidContainer> extends Button {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        RenderSystem.enableDepthTest();
-        graphics.blit(BUTTON, this.getX(), this.getY(), 82, 43 + 14 * mode.ordinal(), this.width, this.height, 256, 256);
+
+    public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BUTTON, this.getX(), this.getY(), 82F, 43 + 14 * mode.ordinal(), this.width, this.height, 256, 256);
     }
 
     public List<Component> getTooltips() {

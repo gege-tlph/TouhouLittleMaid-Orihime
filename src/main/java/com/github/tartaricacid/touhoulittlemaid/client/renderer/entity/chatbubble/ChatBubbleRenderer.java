@@ -1,12 +1,9 @@
 package com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble;
 
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.EntityMaidRenderer;
-import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleDataCollection;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData;
-import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class ChatBubbleRenderer {
     private final EntityMaidRenderer renderer;
@@ -15,16 +12,8 @@ public class ChatBubbleRenderer {
         this.renderer = renderer;
     }
 
-    @SuppressWarnings("all")
-    public void render(EntityGraphics graphics) {
-        EntityMaid maid = graphics.getMaid();
-        double distance = renderer.getDispatcher().distanceToSqr(maid);
-        // if (!ClientHooks.isNameplateInRenderDistance(maid, distance)) {
-        if (distance > 4096.0f) {
-            return;
-        }
-
-        ChatBubbleDataCollection chatBubble = maid.getChatBubbleManager().getChatBubbleDataCollection();
+    public void submit(EntityGraphics graphics) {
+        var chatBubble = graphics.getRenderState().chatBubble;
         if (chatBubble == null || chatBubble.isEmpty()) {
             return;
         }
@@ -38,9 +27,7 @@ public class ChatBubbleRenderer {
 
         // 其他的在两边
         ObjectIterator<IChatBubbleData> iterator = chatBubble.iterator();
-        for (
-                int i = 0;
-                i < sideNum; i++) {
+        for (int i = 0; i < sideNum; i++) {
             if (!iterator.hasNext()) {
                 break;
             }
@@ -70,13 +57,12 @@ public class ChatBubbleRenderer {
 
         int width = chatBubble.getWidth();
         int height = chatBubble.getHeight();
-        ResourceLocation texture = chatBubble.getBackgroundTexture();
+        Identifier texture = chatBubble.getBackgroundTexture();
         int bgWidth = width + 2 * offset;
         int bgHeight = height + 2 * offset;
 
         graphics.getPoseStack().pushPose();
         graphics.getPoseStack().translate(0, -y, 0);
-        RenderSystem.enableDepthTest();
 
         if (position == IChatBubbleRenderer.Position.LEFT) {
             graphics.blitNineSliced(texture, -marginX - bgWidth, -bgHeight, bgWidth, bgHeight, 8, 8, 48, 24, 0, 0);

@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.network.message;
 
 import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -42,12 +43,12 @@ public record YsmMaidModelPackage(int maidId, String modeId, String texture,
             ServerPlayer sender = context.player();
             Entity entity = sender.level.getEntity(message.maidId);
             if (entity instanceof EntityMaid maid && maid.isOwnedBy(sender)) {
-                if (sender.isCreative() || MaidConfig.MAID_CHANGE_MODEL.get()) {
+                if (sender.isCreative() || ServerRuleConfig.get(MaidConfig.MAID_CHANGE_MODEL)) {
                     maid.setIsYsmModel(true);
                     maid.setYsmModel(message.modeId, message.texture, message.name);
                     InitTrigger.MAID_EVENT.trigger(sender, TriggerType.CHANGE_MAID_MODEL);
                 } else {
-                    sender.sendSystemMessage(Component.translatable("message.touhou_little_maid.change_model.disabled"));
+                    sender.displayClientMessage(Component.translatable("message.touhou_little_maid.change_model.disabled"), false);
                 }
             }
         });

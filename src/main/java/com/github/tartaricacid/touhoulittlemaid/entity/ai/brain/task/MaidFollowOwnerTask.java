@@ -1,19 +1,27 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ExperimentalConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.behavior.Behavior;
-import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.behavior.EntityTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
 
 import javax.annotation.Nullable;
 
 public class MaidFollowOwnerTask extends Behavior<EntityMaid> {
+    private static final int SMOOTH_START_DISTANCE = 5;
+    private static final int SMOOTH_TELEPORT_DISTANCE = 16;
+    private static final float SMOOTH_SPEED_MODIFIER = 0.6F;
+    private static final long FOLLOW_WALK_TARGET_TTL = 1;
+
     private final float speedModifier;
     private final int stopDistance;
 
@@ -31,7 +39,7 @@ public class MaidFollowOwnerTask extends Behavior<EntityMaid> {
             if (maid.getSwimManager().isGoingToBreath()) {
                 return !owner.isUnderWater();
             }
-            return true;
+            return !hasCompetingGoal(maid, owner);
         }
         return false;
     }
@@ -53,14 +61,16 @@ public class MaidFollowOwnerTask extends Behavior<EntityMaid> {
         }
 
         // 否则正常传送
-        int startDistance = (int) maid.getRestrictRadius() - 2;
-        int minTeleportDistance = startDistance + 4;
+        boolean smoothFollow = ServerRuleConfig.get(ExperimentalConfig.SMOOTH_FOLLOW);
+        int startDistance = smoothFollow ? SMOOTH_START_DISTANCE : (int) maid.getHomeRadius() - 2;
+        int minTeleportDistance = smoothFollow ? SMOOTH_TELEPORT_DISTANCE : startDistance + 4;
+        float followSpeed = smoothFollow ? SMOOTH_SPEED_MODIFIER : speedModifier;
         if (ownerStateConditions(owner, maid) && maidStateConditions(maid) && !maid.closerThan(owner, startDistance)) {
             if (!maid.closerThan(owner, minTeleportDistance)) {
                 maid.teleportToOwner(owner);
                 maid.getNavigationManager().resetNavigation();
             } else if (!ownerIsWalkTarget(maid, owner)) {
-                BehaviorUtils.setWalkAndLookTargetMemories(maid, owner, speedModifier, stopDistance);
+                setExpiringFollowTarget(maid, owner, followSpeed, stopDistance);
             }
         }
     }
@@ -76,12 +86,41 @@ public class MaidFollowOwnerTask extends Behavior<EntityMaid> {
                 maid.level == owner.level;
     }
 
+    static boolean hasCompetingGoal(EntityMaid maid, Entity... allowedFollowTargets) {
+        if (maid.getCombatManager().isEmergencyActive()
+                || maid.getBrain().hasMemoryValue(InitEntities.TARGET_POS)
+                || maid.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET)
+                || maid.isUsingItem()) {
+            return true;
+        }
+        return maid.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
+                .map(target -> !tracksAny(target, allowedFollowTargets))
+                .orElse(false);
+    }
+
+    static void setExpiringFollowTarget(EntityMaid maid, Entity target, float speedModifier, int stopDistance) {
+        EntityTracker tracker = new EntityTracker(target, true);
+        maid.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, tracker);
+        maid.getBrain().setMemoryWithExpiry(MemoryModuleType.WALK_TARGET,
+                new WalkTarget(tracker, speedModifier, stopDistance), FOLLOW_WALK_TARGET_TTL);
+    }
+
     private boolean ownerIsWalkTarget(EntityMaid maid, LivingEntity owner) {
-        return maid.getBrain().getMemory(MemoryModuleType.WALK_TARGET).map(target -> {
-            if (target.getTarget() instanceof EntityTracker tracker) {
-                return tracker.getEntity().equals(owner);
-            }
+        return maid.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
+                .map(target -> tracksAny(target, owner))
+                .orElse(false);
+    }
+
+    private static boolean tracksAny(WalkTarget walkTarget, Entity... allowedTargets) {
+        if (!(walkTarget.getTarget() instanceof EntityTracker tracker)) {
             return false;
-        }).orElse(false);
+        }
+        Entity tracked = tracker.getEntity();
+        for (Entity allowed : allowedTargets) {
+            if (tracked.equals(allowed)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

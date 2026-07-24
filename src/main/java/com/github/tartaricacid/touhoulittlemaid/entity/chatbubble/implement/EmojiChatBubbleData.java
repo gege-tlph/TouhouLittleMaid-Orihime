@@ -1,21 +1,19 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.implement;
 
-import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble.IChatBubbleRenderer;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble.implement.EmojiChatBubbleRenderer;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class EmojiChatBubbleData implements IChatBubbleData {
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "emoji");
-    private final ResourceLocation bg;
-    @Environment(EnvType.CLIENT)
+    public static final Identifier ID = IdentifierUtil.modLoc("emoji");
+
+    private final Identifier bg;
     private IChatBubbleRenderer renderer;
 
-    public EmojiChatBubbleData(ResourceLocation bg) {
+    public EmojiChatBubbleData(Identifier bg) {
         this.bg = bg;
     }
 
@@ -29,12 +27,11 @@ public class EmojiChatBubbleData implements IChatBubbleData {
     }
 
     @Override
-    public ResourceLocation id() {
+    public Identifier id() {
         return ID;
     }
 
     @Override
-    @Environment(EnvType.CLIENT)
     public IChatBubbleRenderer getRenderer(IChatBubbleRenderer.Position position) {
         if (this.renderer == null) {
             this.renderer = new EmojiChatBubbleRenderer(this.bg);
@@ -45,14 +42,14 @@ public class EmojiChatBubbleData implements IChatBubbleData {
     public static class EmojiChatSerializer implements IChatBubbleData.ChatSerializer {
         @Override
         public IChatBubbleData readFromBuff(FriendlyByteBuf buf) {
-            ResourceLocation bg = buf.readResourceLocation();
+            Identifier bg = buf.readIdentifier();
             return new EmojiChatBubbleData(bg);
         }
 
         @Override
         public void writeToBuff(FriendlyByteBuf buf, IChatBubbleData data) {
             EmojiChatBubbleData emojiChat = (EmojiChatBubbleData) data;
-            buf.writeResourceLocation(emojiChat.bg);
+            buf.writeIdentifier(emojiChat.bg);
         }
     }
 }

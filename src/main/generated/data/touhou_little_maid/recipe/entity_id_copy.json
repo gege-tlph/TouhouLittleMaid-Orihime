@@ -2,12 +2,8 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "tag": "c:leathers"
-    },
-    {
-      "item": "minecraft:paper"
-    }
+    "#c:leathers",
+    "minecraft:paper"
   ],
   "result": {
     "count": 1,

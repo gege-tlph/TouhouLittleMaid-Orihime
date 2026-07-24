@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * From Moonlight: <a href="https://github.com/MehVahdJukaar/Moonlight/blob/1.21/common/src/main/java/net/mehvahdjukaar/moonlight/core/mixins/FixBlockPlaceContextMixin.java">...</a>
+ * 从 Moonlight：<a href="https://github.com/MehVahdJukaar/Moonlight/blob/1.21/common/src/main/java/net/mehvahdjukaar/moonlight/core/mixins/FixBlockPlaceContextMixin.java">...</a>
  */
 
 @Mixin(BlockPlaceContext.class)

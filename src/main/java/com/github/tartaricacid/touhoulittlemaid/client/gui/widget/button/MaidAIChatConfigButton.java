@@ -1,27 +1,28 @@
 package com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.InputWithModifiers;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 
 public class MaidAIChatConfigButton extends Button {
-    private static final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_ai_chat_config.png");
+    private static final Identifier ICON = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_ai_chat_config.png");
     private final MaidAIChatConfigButton.OnPress leftPress;
     private final MaidAIChatConfigButton.OnPress rightPress;
     private boolean leftClicked = false;
     private Component value;
 
     public MaidAIChatConfigButton(int x, int y, Component title, Component value, MaidAIChatConfigButton.OnPress onLeftPressIn, MaidAIChatConfigButton.OnPress onRightPressIn) {
-//        super(Button.builder(title, b -> {
-//        }).pos(x, y).size(164, 13));
+
         super(x, y, 164, 13, title, b -> {
         }, Button.DEFAULT_NARRATION);
         this.leftPress = onLeftPressIn;
@@ -34,13 +35,13 @@ public class MaidAIChatConfigButton extends Button {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
+
+    protected void renderContents(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
         Minecraft mc = Minecraft.getInstance();
-        RenderSystem.enableDepthTest();
         if (this.isHovered) {
-            graphics.blit(ICON, this.getX(), this.getY(), 6, 150, this.width, this.height, 256, 256);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, ICON, this.getX(), this.getY(), 6F, 150F, this.width, this.height, 256, 256);
         } else {
-            graphics.blit(ICON, this.getX(), this.getY(), 6, 137, this.width, this.height, 256, 256);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, ICON, this.getX(), this.getY(), 6F, 137F, this.width, this.height, 256, 256);
         }
         drawButtonText(graphics, mc.font);
     }
@@ -49,7 +50,7 @@ public class MaidAIChatConfigButton extends Button {
         this.value = value;
     }
 
-    @Override
+
     protected boolean clicked(double mouseX, double mouseY) {
         if (!this.active || !this.visible) {
             return false;
@@ -69,7 +70,19 @@ public class MaidAIChatConfigButton extends Button {
     }
 
     @Override
-    public void onPress() {
+
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (this.isValidClickButton(event.buttonInfo()) && this.clicked(event.x(), event.y())) {
+            this.playDownSound(Minecraft.getInstance().getSoundManager());
+            this.onClick(event, doubleClick);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+
+    public void onPress(InputWithModifiers input) {
         if (leftClicked) {
             leftPress.onPress(this);
         } else {
@@ -88,11 +101,11 @@ public class MaidAIChatConfigButton extends Button {
         float rightTextX = (this.getX() + 113 - font.width(rightText) * scale / 2f) / scale;
         float rightTextY = (this.getY() + 4) / scale;
 
-        graphics.pose().pushPose();
-        graphics.pose().scale(scale, scale, 1);
-        graphics.drawString(font, leftText, (int) leftTextX, (int) leftTextY, 0x444444, false);
-        graphics.drawString(font, rightText, (int) rightTextX, (int) rightTextY, 0x55ff55, false);
-        graphics.pose().popPose();
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(scale, scale);
+        graphics.drawString(font, leftText, (int) leftTextX, (int) leftTextY, 0xFF444444, false);
+        graphics.drawString(font, rightText, (int) rightTextX, (int) rightTextY, 0xFF55FF55, false);
+        graphics.pose().popMatrix();
     }
 
     @Environment(EnvType.CLIENT)

@@ -53,7 +53,7 @@ public class MaidSwimManager {
      * 依据游泳状态，切换成游泳的寻路
      */
     public void updateSwimming() {
-        if (!maid.level.isClientSide) {
+        if (!maid.level.isClientSide()) {
             this.updatePose();
         }
     }
@@ -62,7 +62,8 @@ public class MaidSwimManager {
      * 更新游泳姿势同时更新碰撞箱
      */
     private void updatePose() {
-        if (this.wantToSwim() && !maid.onGround() && !maid.isMaidInSittingPose() && !maid.isPassenger()) {
+        if (this.wantToSwim() && this.hasSwimmableDepth()
+                && !maid.onGround() && !maid.isMaidInSittingPose() && !maid.isPassenger()) {
             maid.setSwimming(true);
             maid.setPose(Pose.SWIMMING);
         } else {
@@ -72,6 +73,17 @@ public class MaidSwimManager {
                 maid.setPose(Pose.STANDING);
             }
         }
+    }
+
+    /**
+     * Compact swimming requires two consecutive water blocks around the maid.
+     * A single water layer is wadeable and must not shrink the collision box,
+     * even if water navigation temporarily requests swimming at the pool edge.
+     */
+    boolean hasSwimmableDepth() {
+        BlockPos pos = maid.blockPosition();
+        return (maid.level.isWaterAt(pos) && (maid.level.isWaterAt(pos.above()) || maid.level.isWaterAt(pos.below())))
+                || (maid.level.isWaterAt(pos.below()) && maid.level.isWaterAt(pos.below(2)));
     }
 
     public void setWantToSwim(boolean pSearchingForLand) {

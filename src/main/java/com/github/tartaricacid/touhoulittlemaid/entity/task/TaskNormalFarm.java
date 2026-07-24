@@ -3,12 +3,13 @@ package com.github.tartaricacid.touhoulittlemaid.entity.task;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IFarmTask;
 import com.github.tartaricacid.touhoulittlemaid.api.task.ISpecialCropHandler;
+
 import com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagItem;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.task.crop.SpecialCropManager;
 import com.github.tartaricacid.touhoulittlemaid.mixin.accessor.CropBlockAccessor;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CropBlock;
@@ -18,10 +19,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 
 public class TaskNormalFarm implements IFarmTask {
-    private static final ResourceLocation NAME = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "farm");
+    private static final Identifier NAME = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "farm");
 
     @Override
-    public ResourceLocation getUid() {
+    public Identifier getUid() {
         return NAME;
     }
 
@@ -38,9 +39,8 @@ public class TaskNormalFarm implements IFarmTask {
         if (handler != null) {
             return handler.isSeed(stack);
         }
-        // 然后是默认情况
-        // 自己新建一个 tag 用了存储可种的种子
-        return stack.is(TagItem.MAID_PLANTABLE_SEEDS) && stack.getItem() instanceof ItemNameBlockItem;
+
+        return stack.is(TagItem.MAID_PLANTABLE_SEEDS) && stack.getItem() instanceof BlockItem;
     }
 
     @Override
@@ -98,7 +98,7 @@ public class TaskNormalFarm implements IFarmTask {
         if (!aboveState.canBeReplaced() || aboveState.liquid()) {
             return false;
         }
-        if (seed.getItem() instanceof ItemNameBlockItem blockNamedItem) {
+        if (seed.getItem() instanceof BlockItem blockNamedItem) {
             BlockState plantBlockState = blockNamedItem.getBlock().defaultBlockState();
             return plantBlockState.canSurvive(maid.level, abovePos);
         }
@@ -114,7 +114,7 @@ public class TaskNormalFarm implements IFarmTask {
             return handler.plant(maid, basePos, baseState, seed);
         }
         // 然后是默认情况
-        if (item instanceof ItemNameBlockItem) {
+        if (item instanceof BlockItem) {
             maid.placeItemBlock(basePos.above(), seed);
         }
         return seed;

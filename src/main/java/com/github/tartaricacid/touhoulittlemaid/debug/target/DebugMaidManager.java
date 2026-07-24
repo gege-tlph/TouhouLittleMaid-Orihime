@@ -23,6 +23,7 @@ public class DebugMaidManager {
 
     public static void init() {
         DEBUG_TARGETS.addAll(DefaultTargets.getDefaultTargets());
+
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             DEBUG_TARGETS.addAll(littleMaid.getMaidDebugTargets());
         }
@@ -70,7 +71,8 @@ public class DebugMaidManager {
             return List.of();
         }
         return maidId.stream()
-                .map(uuid -> player.serverLevel().getEntity(uuid))
+
+                .map(uuid -> player.level().getEntity(uuid))
                 .filter(Objects::nonNull)
                 .filter(EntityMaid.class::isInstance)
                 .map(EntityMaid.class::cast).toList();
@@ -80,7 +82,7 @@ public class DebugMaidManager {
      * 设置正在调试的女仆
      *
      * @param player 玩家
-     * @param maid   女仆
+     * @param maid 女仆
      */
     public static void setDebuggingMaid(ServerPlayer player, EntityMaid maid) {
         removeDebuggingMaid(player, maid);
@@ -92,7 +94,7 @@ public class DebugMaidManager {
      * 移除正在调试的女仆
      *
      * @param player 玩家
-     * @param maid   女仆
+     * @param maid 女仆
      */
     public static void removeDebuggingMaid(ServerPlayer player, EntityMaid maid) {
         if (PLAYER_DEBUGGING_MAID.containsKey(player.getUUID())) {
@@ -107,11 +109,12 @@ public class DebugMaidManager {
      * 切换该女仆的调试状态
      *
      * @param player 玩家
-     * @param maid   女仆
+     * @param maid 女仆
      */
     public static void triggerDebuggingMaid(ServerPlayer player, EntityMaid maid) {
         if (PLAYER_DEBUGGING_MAID.containsKey(player.getUUID()) && PLAYER_DEBUGGING_MAID.get(player.getUUID()).contains(maid.getUUID())) {
             removeDebuggingMaid(player, maid);
+
             player.sendSystemMessage(Component.translatable("debug.touhou_little_maid.debug_stick.show_path_finder.disable"));
         } else {
             setDebuggingMaid(player, maid);

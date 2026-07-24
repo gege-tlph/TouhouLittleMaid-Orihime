@@ -22,6 +22,13 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public final class MaidBrain {
+    /**
+     * Brain starts stopped behaviors in ascending priority order before ticking any of them.
+     * Work and opportunity behaviors use priorities 5-20, so owner following must run later
+     * or its WALK_TARGET prevents those behaviors from starting at all.
+     */
+    private static final int FOLLOW_OWNER_FALLBACK_PRIORITY = 50;
+
     public static ImmutableList<MemoryModuleType<?>> getMemoryTypes() {
         List<MemoryModuleType<?>> defaultTypes = Lists.newArrayList(
                 MemoryModuleType.PATH,
@@ -35,7 +42,8 @@ public final class MaidBrain {
                 MemoryModuleType.ATTACK_TARGET,
                 MemoryModuleType.ATTACK_COOLING_DOWN,
                 InitEntities.TARGET_POS,
-                InitEntities.MAID_EDIBLE_BLOCK_ACTION
+                InitEntities.MAID_EDIBLE_BLOCK_ACTION,
+                InitEntities.EMERGENCY_COMBAT_ACTIVE
         );
         ExtraMaidBrainManager.EXTRA_MAID_BRAINS.forEach(extra -> defaultTypes.addAll(extra.getExtraMemoryTypes()));
         return ImmutableList.copyOf(defaultTypes);
@@ -56,6 +64,7 @@ public final class MaidBrain {
         registerSchedule(brain, maid);
         registerCoreGoals(brain);
         registerPanicGoals(brain);
+        registerEmergencyCombatGoals(brain);
 
         registerRideIdleGoals(brain);
         registerRideWorkGoals(brain, maid);
@@ -72,18 +81,7 @@ public final class MaidBrain {
     }
 
     private static void registerSchedule(Brain<EntityMaid> brain, EntityMaid maid) {
-        switch (maid.getSchedule()) {
-            case ALL:
-                brain.setSchedule(InitEntities.MAID_ALL_DAY_SCHEDULES);
-                break;
-            case NIGHT:
-                brain.setSchedule(InitEntities.MAID_NIGHT_SHIFT_SCHEDULES);
-                break;
-            case DAY:
-            default:
-                brain.setSchedule(InitEntities.MAID_DAY_SHIFT_SCHEDULES);
-                break;
-        }
+        brain.setSchedule(maid.getSchedule().getEnvironmentAttribute());
     }
 
     private static void registerCoreGoals(Brain<EntityMaid> brain) {
@@ -96,8 +94,8 @@ public final class MaidBrain {
         Pair<Integer, BehaviorControl<? super EntityMaid>> maidAwait = Pair.of(1, new MaidAwaitTask());
         Pair<Integer, BehaviorControl<? super EntityMaid>> interactWithDoor = Pair.of(2, MaidInteractWithDoor.create());
         Pair<Integer, BehaviorControl<? super EntityMaid>> walkToTarget = Pair.of(2, new MoveToTargetSink());
-        Pair<Integer, BehaviorControl<? super EntityMaid>> followOwner = Pair.of(3, new MaidFollowOwnerTask(0.5f, 2));
-        Pair<Integer, BehaviorControl<? super EntityMaid>> followOwnerVehicle = Pair.of(3, new MaidFollowOwnerVehicleTask(0.5f, 2));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> followOwner = Pair.of(FOLLOW_OWNER_FALLBACK_PRIORITY, new MaidFollowOwnerTask(0.5f, 2));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> followOwnerVehicle = Pair.of(FOLLOW_OWNER_FALLBACK_PRIORITY, new MaidFollowOwnerVehicleTask(0.5f, 2));
         Pair<Integer, BehaviorControl<? super EntityMaid>> healSelf = Pair.of(3, new MaidHealSelfTask());
         Pair<Integer, BehaviorControl<? super EntityMaid>> pickupItem = Pair.of(10, new MaidPickupEntitiesTask(EntityMaid::isPickup, 0.6f));
         Pair<Integer, BehaviorControl<? super EntityMaid>> clearSleep = Pair.of(99, new MaidClearSleepTask());
@@ -167,6 +165,18 @@ public final class MaidBrain {
         List<Pair<Integer, BehaviorControl<? super EntityMaid>>> behaviors = Lists.newArrayList(clearHurt, runAway);
         ExtraMaidBrainManager.EXTRA_MAID_BRAINS.forEach(extra -> behaviors.addAll(extra.getPanicBehaviors()));
         brain.addActivity(Activity.PANIC, ImmutableList.copyOf(behaviors));
+    }
+
+    private static void registerEmergencyCombatGoals(Brain<EntityMaid> brain) {
+        Pair<Integer, BehaviorControl<? super EntityMaid>> extinguish = Pair.of(0, new MaidExtinguishingTask(0.6f));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> useShield = Pair.of(4, new MaidUseShieldTask());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> walkToTarget = Pair.of(5, MaidEmergencyWalkToTarget.create(0.7f));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> meleeAttack = Pair.of(6, MaidMeleeAttack.create(20));
+        List<Pair<Integer, BehaviorControl<? super EntityMaid>>> behaviors = Lists.newArrayList(
+                extinguish, useShield, walkToTarget, meleeAttack);
+        brain.addActivityWithConditions(InitEntities.EMERGENCY_COMBAT, ImmutableList.copyOf(behaviors),
+                ImmutableSet.of(Pair.of(InitEntities.EMERGENCY_COMBAT_ACTIVE,
+                        net.minecraft.world.entity.ai.memory.MemoryStatus.VALUE_PRESENT)));
     }
 
     private static void registerRideIdleGoals(Brain<EntityMaid> brain) {

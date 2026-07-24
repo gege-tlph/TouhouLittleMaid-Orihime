@@ -8,7 +8,7 @@ import com.github.tartaricacid.touhoulittlemaid.advancements.rewards.GiveSmartSl
 import net.minecraft.advancements.CriterionTrigger;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class InitTrigger {
     public static void init() {
@@ -21,6 +21,6 @@ public final class InitTrigger {
     public static final MaidEventTrigger MAID_EVENT = register("maid_event", new MaidEventTrigger());
 
     private static <T extends CriterionTrigger<?>> T register(String id, T trigger) {
-        return Registry.register(BuiltInRegistries.TRIGGER_TYPES, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), trigger);
+        return Registry.register(BuiltInRegistries.TRIGGER_TYPES, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), trigger);
     }
 }

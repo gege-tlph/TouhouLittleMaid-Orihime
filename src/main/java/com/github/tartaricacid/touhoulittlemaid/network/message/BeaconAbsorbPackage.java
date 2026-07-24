@@ -9,12 +9,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record BeaconAbsorbPackage(float x, float y, float z) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<BeaconAbsorbPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("beacon_absorb"));
+    public static final CustomPacketPayload.Type<BeaconAbsorbPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("beacon_absorb"));
     public static final StreamCodec<ByteBuf, BeaconAbsorbPackage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.FLOAT,
             BeaconAbsorbPackage::x,
@@ -29,16 +28,17 @@ public record BeaconAbsorbPackage(float x, float y, float z) implements CustomPa
         context.client().execute(() -> spawnParticle(message));
     }
 
+
     @Environment(EnvType.CLIENT)
     private static void spawnParticle(BeaconAbsorbPackage message) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level != null) {
-            EntityPowerPoint.spawnExplosionParticle(mc.level, message.x, message.y, message.z, mc.level.random);
+            EntityPowerPoint.spawnExplosionParticle(mc.level, message.x(), message.y(), message.z(), mc.level.getRandom());
         }
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

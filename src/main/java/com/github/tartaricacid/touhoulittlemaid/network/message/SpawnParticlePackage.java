@@ -1,30 +1,23 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message;
 
-import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.network.client.SpawnParticlePackageProxy;
 import io.netty.buffer.ByteBuf;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.Util;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.util.ByIdMap;
-import net.minecraft.world.entity.Entity;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.IntFunction;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record SpawnParticlePackage(int entityId, Type particleType, int delayTicks) implements CustomPacketPayload {
     public SpawnParticlePackage(int entityId, Type particleType) {
         this(entityId, particleType, 0);
     }
 
-    public static final CustomPacketPayload.Type<SpawnParticlePackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("spawn_particle"));
+    public static final CustomPacketPayload.Type<SpawnParticlePackage> TYPE = new CustomPacketPayload.Type<>(modLoc("spawn_particle"));
     public static final StreamCodec<ByteBuf, SpawnParticlePackage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT,
             SpawnParticlePackage::entityId,
@@ -36,54 +29,11 @@ public record SpawnParticlePackage(int entityId, Type particleType, int delayTic
     );
 
     public static void handle(SpawnParticlePackage message, ClientPlayNetworking.Context context) {
-        if (message.delayTicks <= 0) {
-            context.client().execute(() -> handleSpawnParticle(message));
-        } else {
-            context.client().execute(() -> CompletableFuture.runAsync(() -> handleSpawnParticleDelay(message, message.delayTicks), Util.backgroundExecutor()));
-        }
-    }
-
-    @Environment(EnvType.CLIENT)
-    private static void handleSpawnParticleDelay(SpawnParticlePackage message, int delayTicks) {
-        try {
-            Thread.sleep(delayTicks * 50L);
-            Minecraft.getInstance().submitAsync(() -> handleSpawnParticle(message));
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Environment(EnvType.CLIENT)
-    private static void handleSpawnParticle(SpawnParticlePackage message) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            return;
-        }
-        Entity e = mc.level.getEntity(message.entityId);
-        if (e instanceof EntityMaid maid && e.isAlive()) {
-            switch (message.particleType) {
-                case EXPLOSION:
-                    maid.spawnExplosionParticle();
-                    return;
-                case BUBBLE:
-                    maid.spawnBubbleParticle();
-                    return;
-                case HEART:
-                    maid.spawnHeartParticle();
-                    return;
-                case RANK_UP:
-                    maid.spawnRankUpParticle();
-                    return;
-                case HEAL:
-                    maid.spawnRestoreHealthParticle(maid.getRandom().nextInt(3) + 7);
-                    return;
-                default:
-            }
-        }
+        context.client().execute(() -> SpawnParticlePackageProxy.handle(message));
     }
 
     @Override
-    public CustomPacketPayload.@NotNull Type<? extends CustomPacketPayload> type() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

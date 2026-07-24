@@ -1,31 +1,30 @@
 package com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.condition;
 
-import com.github.tartaricacid.touhoulittlemaid.api.entity.IMaid;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import net.minecraft.core.registries.BuiltInRegistries;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.isValidResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.isValid;
 
 public class ConditionArmor {
     private static final Pattern ID_PRE_REG = Pattern.compile("^(.+?)\\$(.*?)$");
     private static final Pattern TAG_PRE_REG = Pattern.compile("^(.+?)#(.*?)$");
     private static final String EMPTY = "";
 
-    private final Map<EquipmentSlot, List<ResourceLocation>> idTest = Maps.newHashMap();
-    private final Map<EquipmentSlot, List<TagKey<Item>>> tagTest = Maps.newHashMap();
+    private final Map<EquipmentSlot, Set<Identifier>> idTest = new Reference2ReferenceOpenHashMap<>();
+    private final Map<EquipmentSlot, Set<TagKey<Item>>> tagTest = new Reference2ReferenceOpenHashMap<>();
 
     public void addTest(String name) {
         Matcher matcherId = ID_PRE_REG.matcher(name);
@@ -35,15 +34,11 @@ public class ConditionArmor {
                 return;
             }
             String id = matcherId.group(2);
-            if (!isValidResourceLocation(id)) {
+            if (!isValid(id)) {
                 return;
             }
-            ResourceLocation res = ResourceLocation.parse(id);
-            if (idTest.containsKey(type)) {
-                idTest.get(type).add(res);
-            } else {
-                idTest.put(type, Lists.newArrayList(res));
-            }
+            Identifier res = Identifier.parse(id);
+            idTest.computeIfAbsent(type, t -> new ReferenceOpenHashSet<>()).add(res);
             return;
         }
 
@@ -54,23 +49,23 @@ public class ConditionArmor {
                 return;
             }
             String id = matcherTag.group(2);
-            if (!isValidResourceLocation(id)) {
+            if (!isValid(id)) {
                 return;
             }
             TagKey<Item> tagKey = TagKey.create(
                     Registries.ITEM,
-                    ResourceLocation.parse(id)
+                    Identifier.parse(id)
             );
-            if (tagTest.containsKey(type)) {
-                tagTest.get(type).add(tagKey);
-            } else {
-                tagTest.put(type, Lists.newArrayList(tagKey));
-            }
+            tagTest.computeIfAbsent(type, t -> new ReferenceOpenHashSet<>()).add(tagKey);
         }
     }
 
-    public String doTest(IMaid maid, EquipmentSlot slot) {
-        ItemStack item = maid.asEntity().getItemBySlot(slot);
+    public boolean hasTest(EquipmentSlot slot) {
+        return idTest.containsKey(slot) ||  tagTest.containsKey(slot);
+    }
+
+    public String doTest(EntityMaid maid, EquipmentSlot slot) {
+        ItemStack item = maid.getItemBySlot(slot);
         if (item.isEmpty()) {
             return EMPTY;
         }
@@ -81,35 +76,37 @@ public class ConditionArmor {
         return result;
     }
 
-    private String doIdTest(IMaid maid, EquipmentSlot slot) {
+    @SuppressWarnings("deprecation")
+    private String doIdTest(EntityMaid maid, EquipmentSlot slot) {
         if (idTest.isEmpty()) {
             return EMPTY;
         }
         if (!idTest.containsKey(slot) || idTest.get(slot).isEmpty()) {
             return EMPTY;
         }
-        List<ResourceLocation> idListTest = idTest.get(slot);
-        ItemStack item = maid.asEntity().getItemBySlot(slot);
-        ResourceLocation registryName = BuiltInRegistries.ITEM.getKey(item.getItem());
-        if (registryName.equals(BuiltInRegistries.ITEM.getDefaultKey())) {
-            return EMPTY;
-        }
+        Set<Identifier> idListTest = idTest.get(slot);
+        ItemStack item = maid.getItemBySlot(slot);
+        Identifier registryName = item.getItem().builtInRegistryHolder().key().identifier();
         if (idListTest.contains(registryName)) {
             return slot.getName() + "$" + registryName;
         }
         return EMPTY;
     }
 
-    private String doTagTest(IMaid maid, EquipmentSlot slot) {
+    private String doTagTest(EntityMaid maid, EquipmentSlot slot) {
         if (tagTest.isEmpty()) {
             return EMPTY;
         }
         if (!tagTest.containsKey(slot) || tagTest.get(slot).isEmpty()) {
             return EMPTY;
         }
-        List<TagKey<Item>> tagListTest = tagTest.get(slot);
-        ItemStack item = maid.asEntity().getItemBySlot(slot);
-        return tagListTest.stream().filter(item::is).findFirst().map(itemTagKey -> slot.getName() + "#" + itemTagKey.location()).orElse(EMPTY);
+        Set<TagKey<Item>> tagListTest = tagTest.get(slot);
+        ItemStack item = maid.getItemBySlot(slot);
+        return tagListTest.stream()
+                .filter(item::is)
+                .findFirst()
+                .map(itemTagKey -> slot.getName() + "#" + itemTagKey.location())
+                .orElse(EMPTY);
     }
 
 

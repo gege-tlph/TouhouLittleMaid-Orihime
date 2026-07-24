@@ -6,7 +6,7 @@ import com.github.tartaricacid.touhoulittlemaid.ai.manager.setting.CharacterSett
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.setting.SettingReader;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.setting.bean.MetaData;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.FlatColorButton;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.CustomPackLoader;
+import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelInfo;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.network.message.ai.SaveMaidAIDataPackage;
@@ -14,16 +14,16 @@ import com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.MultiLineEditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +37,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 import static com.github.tartaricacid.touhoulittlemaid.client.event.SpecialMaidRenderEvent.EASTER_EGG_MODEL;
 import static com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil.clearMaidDataResidue;
@@ -77,10 +76,11 @@ public class SettingEditScreen extends Screen {
         this.ownerName.setMaxLength(128);
         this.ownerName.setResponder(s -> manager.ownerName = s);
 
-        this.customSetting = this.addRenderableWidget(new MultiLineEditBox(font,
-                posX, 70, boxWidth, this.height - 100,
-                Component.translatable("gui.touhou_little_maid.button.maid_ai_chat_config.edit_custom_setting.edit"),
-                Component.literal("Custom Setting Box")));
+        this.customSetting = this.addRenderableWidget(MultiLineEditBox.builder()
+                .setX(posX)
+                .setY(70)
+                .setPlaceholder(Component.translatable("gui.touhou_little_maid.button.maid_ai_chat_config.edit_custom_setting.edit"))
+                .build(font, boxWidth, this.height - 100, Component.literal("Custom Setting Box")));
         this.customSetting.setValue(manager.customSetting);
         this.customSetting.setCharacterLimit(4096);
         this.customSetting.setValueListener(s -> manager.customSetting = s);
@@ -129,7 +129,7 @@ public class SettingEditScreen extends Screen {
             if (Screens.getClient(this).player != null) {
                 Component tip = Component.translatable("gui.touhou_little_maid.button.maid_ai_chat_config.edit_custom_setting.export.success", result)
                         .withStyle(ChatFormatting.GRAY);
-                Screens.getClient(this).player.sendSystemMessage(tip);
+                Screens.getClient(this).player.displayClientMessage(tip, false);
             }
         } catch (IOException e) {
             TouhouLittleMaid.LOGGER.error("Error saving setting", e);
@@ -148,26 +148,26 @@ public class SettingEditScreen extends Screen {
     }
 
     @Override
-    public void resize(Minecraft mc, int pWidth, int pHeight) {
+    public void resize(int pWidth, int pHeight) {
         String ownerNameValue = this.ownerName.getValue();
         String customSettingValue = this.customSetting.getValue();
-        super.resize(mc, pWidth, pHeight);
+        super.resize(pWidth, pHeight);
         this.ownerName.setValue(ownerNameValue);
         this.customSetting.setValue(customSettingValue);
     }
 
     @Override
-    public boolean mouseReleased(double x, double y, int button) {
-        return super.mouseReleased(x, y, button) || this.customSetting.mouseReleased(x, y, button);
+    public boolean mouseReleased(MouseButtonEvent event) {
+        return super.mouseReleased(event) || this.customSetting.mouseReleased(event);
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         super.render(graphics, mouseX, mouseY, partialTicks);
         graphics.drawString(font, Component.translatable("gui.touhou_little_maid.button.maid_ai_chat_config.owner_name"),
-                ownerName.getX() + 2, ownerName.getY() - 12, 0xFFFFFF);
+                ownerName.getX() + 2, ownerName.getY() - 12, 0xFFFFFFFF);
         graphics.drawString(font, Component.translatable("gui.touhou_little_maid.button.maid_ai_chat_config.custom_setting"),
-                customSetting.getX() + 2, customSetting.getY() - 12, 0xFFFFFF);
+                customSetting.getX() + 2, customSetting.getY() - 12, 0xFFFFFFFF);
         drawMaid(graphics, customSetting.getX() + customSetting.getWidth() + 73, customSetting.getY() + 96, maid);
 
         long time = System.currentTimeMillis() - this.tipTimestamp;
@@ -191,16 +191,7 @@ public class SettingEditScreen extends Screen {
         }
         MaidModelInfo modelInfo = info.get();
 
-        EntityMaid maid;
-        try {
-            maid = (EntityMaid) EntityCacheUtil.ENTITY_CACHE.get(EntityMaid.TYPE, () -> {
-                Entity e = EntityMaid.TYPE.create(world);
-                return Objects.requireNonNullElseGet(e, () -> new EntityMaid(world));
-            });
-        } catch (ExecutionException | ClassCastException e) {
-            e.fillInStackTrace();
-            return;
-        }
+        EntityMaid maid = EntityCacheUtil.getMaid(world, EntitySpawnReason.COMMAND);
 
         clearMaidDataResidue(maid, false);
         if (modelInfo.getEasterEgg() != null) {

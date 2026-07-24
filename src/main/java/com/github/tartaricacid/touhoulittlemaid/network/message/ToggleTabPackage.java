@@ -8,12 +8,11 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record ToggleTabPackage(int entityId, int tabId) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<ToggleTabPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("toggle_tab"));
+    public static final CustomPacketPayload.Type<ToggleTabPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("toggle_tab"));
     public static final StreamCodec<ByteBuf, ToggleTabPackage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT,
             ToggleTabPackage::entityId,
@@ -33,7 +32,7 @@ public record ToggleTabPackage(int entityId, int tabId) implements CustomPacketP
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

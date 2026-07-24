@@ -4,11 +4,14 @@ import cn.sh1rocu.touhoulittlemaid.api.event.*;
 import cn.sh1rocu.touhoulittlemaid.api.extension.IBedBlock;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.event.*;
+import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.RandomEmoji;
 import com.github.tartaricacid.touhoulittlemaid.config.GeneralConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ConfigFileMigration;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.debug.event.DebugStickClickEvent;
 import com.github.tartaricacid.touhoulittlemaid.debug.target.SendMaidDebugDataEvent;
-import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.RandomEmoji;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.combat.MaidCombatDamageListener;
 import com.github.tartaricacid.touhoulittlemaid.event.*;
 import com.github.tartaricacid.touhoulittlemaid.event.food.ConvertFoodEatenEvent;
 import com.github.tartaricacid.touhoulittlemaid.event.food.RemainFoodEatenEvent;
@@ -18,35 +21,39 @@ import com.github.tartaricacid.touhoulittlemaid.init.registry.CompatRegistry;
 import com.github.tartaricacid.touhoulittlemaid.init.registry.DatapackRegistry;
 import com.github.tartaricacid.touhoulittlemaid.init.registry.MobSpawnInfoRegistry;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemSubstituteJizo;
-import fuzs.forgeconfigapiport.fabric.api.neoforge.v4.NeoForgeConfigRegistry;
-import fuzs.forgeconfigapiport.fabric.api.neoforge.v4.NeoForgeModConfigEvents;
+import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.neoforged.fml.config.ModConfig;
 
 public class TouhouLittleMaidFabric implements ModInitializer {
-    public static final ResourceLocation HIGHEST = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "event_highest_priority");
-    public static final ResourceLocation HIGH = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "event_high_priority");
-    // NORMAL用Fabric的DEFAULT
-    // public static final ResourceLocation NORMAL = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "event_normal_priority");
-    public static final ResourceLocation LOW = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "event_low_priority");
-    public static final ResourceLocation LOWEST = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "event_lowest_priority");
+    // Fabric event phase constants (Identifier type in Fabric API 0.141+)
+    public static final net.minecraft.resources.Identifier HIGHEST = net.minecraft.resources.Identifier.fromNamespaceAndPath("touhou_little_maid", "highest");
+    public static final net.minecraft.resources.Identifier HIGH = net.minecraft.resources.Identifier.fromNamespaceAndPath("touhou_little_maid", "high");
+    public static final net.minecraft.resources.Identifier LOW = net.minecraft.resources.Identifier.fromNamespaceAndPath("touhou_little_maid", "low");
+    public static final net.minecraft.resources.Identifier LOWEST = net.minecraft.resources.Identifier.fromNamespaceAndPath("touhou_little_maid", "lowest");
 
     @Override
     public void onInitialize() {
-        // AI模块初始化较快，需要最优先加载config，否则ConfigProxySelector的config字段可能为null
+        // B6e (2026-07-16): 入口点已恢复，顺序严格对齐 HEAD。
+        //   AI 模块初始化较快，需最优先加载 config，否则 ConfigProxySelector 的 config 字段可能为 null（HEAD 原注）。
         registerConfiguration();
-        CommonRegistry.onSetupEvent();
+        // Register content and unpack the bundled default model pack before the
+        // server-side model index scans tlm_custom_pack.  Scanning first leaves
+        // the index empty for the entire first process after installing the mod,
+        // so maid names fall back to the raw entity translation key until restart.
         TouhouLittleMaid.commonSetup();
+        CommonRegistry.onSetupEvent();
         CompatRegistry.onEnqueue();
         DatapackRegistry.onAddReloadListenerEvent();
 
@@ -55,14 +62,33 @@ public class TouhouLittleMaidFabric implements ModInitializer {
     }
 
     private static void registerConfiguration() {
-        NeoForgeConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.COMMON, GeneralConfig.getConfigSpec());
-        NeoForgeConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.SERVER, ServerConfig.init());
+        ServerConfig.init();
+        ServerRuleConfig.initializeDefaults();
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+            var spec = GeneralConfig.getConfigSpec();
+            ConfigFileMigration.migrateGlobalFileIfNeeded(GeneralConfig.values(), spec);
+            // 必须先于 spec 加载：旧 global 文件缺 ReplaceMagmaCubeModel 时继承旧史莱姆值，
+            // 否则缺键会被默认 true 补掉。
+            ConfigFileMigration.inheritMagmaCubeFromSlime();
+            ConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.CLIENT,
+                    spec, ConfigFileMigration.GLOBAL_FILE_NAME);
+        }
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+            if (!ServerRuleConfig.loadForServer(server)) {
+                throw new IllegalStateException("Failed to load Touhou Little Maid world config");
+            }
+        });
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> ServerRuleConfig.unloadWorld());
     }
 
     private void subscribeEvents() {
+        ServerLivingEntityEvents.AFTER_DAMAGE.register(MaidCombatDamageListener::onAfterDamage);
         EntitySleepEvents.SET_BED_OCCUPATION_STATE.register((entity, sleepingPos, bedState, occupied) -> {
             if (bedState.getBlock() instanceof IBedBlock bedBlock && bedBlock.tlm$isBed(bedState, entity.level(), sleepingPos, entity)) {
-                entity.level().setBlock(sleepingPos, bedState.setValue(BedBlock.OCCUPIED, true), 3);
+                // The Fabric 1.21.1 baseline accidentally hard-coded true here. Its NeoForge
+                // counterpart writes false from stopSleeping; this event argument is that
+                // same start/stop state and must be preserved so the bed can be reused.
+                entity.level().setBlock(sleepingPos, bedState.setValue(BedBlock.OCCUPIED, occupied), 3);
                 return true;
             }
             return false;
@@ -85,13 +111,13 @@ public class TouhouLittleMaidFabric implements ModInitializer {
         PotentialSpawnsEvent.CALLBACK.register(MobSpawnInfoRegistry::addMobSpawnInfo);
         UseItemCallback.EVENT.register(CancelSaddleMaidEvent::onItemRightClick);
         UseEntityCallback.EVENT.register(CopyEntityIdEvent::copyEntityId);
+        // 保持基准行为：允许把坐垫安装到空船上。
         UseEntityCallback.EVENT.register(InstallChairEvent::onPlayerEntityInteract);
         PlayerLoggedInEvent.CALLBACK.register(EnterServerEvent::onAttachCapabilityEvent);
         ProjectileImpactEvent.CALLBACK.register(EntityHurtEvent::onArrowImpact);
         EntityJoinLevelEvent.CALLBACK.register(EntityJoinWorldEvent::onCreeperJoinWorld);
         EntityJoinLevelEvent.CALLBACK.register(EntityJoinWorldEvent::onAnimalJoinWorld);
         EntityJoinLevelEvent.CALLBACK.register(EntityJoinWorldEvent::onPlayerJoinWorld);
-        NeoForgeModConfigEvents.loading(TouhouLittleMaid.MOD_ID).register(MaidMealRegConfigEvent::onEvent);
         EntityTrackingEvents.START_TRACKING.register(MaidTrackEvent::onTrackingPlayer);
         MaidAfterEatEvent.CALLBACK.register(ConvertFoodEatenEvent::onAfterMaidEat);
         MaidAfterEatEvent.CALLBACK.register(RemainFoodEatenEvent::onAfterMaidEat);
@@ -103,6 +129,8 @@ public class TouhouLittleMaidFabric implements ModInitializer {
         InteractMaidEvent.CALLBACK.register(MaidAreaClickEvent::onInteract);
         MaidDeathEvent.CALLBACK.register(MaidDeathFavorability::onDeath);
         FarmlandTrampleEvent.CALLBACK.register(MaidFarmlandTrample::onFarmlandTrample);
+        // This also enforces the general rideable switch for boats, minecarts
+        // and other vehicles; the callback is not chair-only.
         EntityMountEvent.CALLBACK.register(MaidMountEvent::onMaidMount);
         LivingEntityUseItemFinishEvent.CALLBACK.register(PotionItemUse::onMaidPotionItemUse);
         InteractMaidEvent.CALLBACK.register(SaddleMaidEvent::onInteract);

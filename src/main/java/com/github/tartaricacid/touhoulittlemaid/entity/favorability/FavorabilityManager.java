@@ -5,22 +5,23 @@ import com.github.tartaricacid.touhoulittlemaid.api.event.MaidFavorabilityLevelC
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import com.github.tartaricacid.touhoulittlemaid.network.NetworkHandler;
+
 import com.github.tartaricacid.touhoulittlemaid.network.message.SpawnParticlePackage;
 import com.google.common.collect.Maps;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 
 import java.util.Map;
 
-/**
- * FIXME：这个好感度机制太落伍了，未来需要重新设计一个更合理的好感度系统
- */
+
 public class FavorabilityManager {
     public static final Map<String, Type> TYPES = Maps.newHashMap();
 
@@ -319,19 +320,19 @@ public class FavorabilityManager {
         this.add(LEVEL_3_POINT);
     }
 
-    public void addAdditionalSaveData(CompoundTag compound) {
+
+    public void addAdditionalSaveData(ValueOutput output) {
         CompoundTag data = new CompoundTag();
         this.counter.forEach((name, time) -> data.putInt(name, time.getTickCount()));
-        compound.put(TAG_NAME, data);
+        output.store(TAG_NAME, CustomData.COMPOUND_TAG_CODEC, data);
     }
 
-    public void readAdditionalSaveData(CompoundTag compound) {
-        if (compound.contains(TAG_NAME, Tag.TAG_COMPOUND)) {
-            CompoundTag data = compound.getCompound(TAG_NAME);
-            for (String name : data.getAllKeys()) {
-                this.counter.put(name, new Time(data.getInt(name)));
+    public void readAdditionalSaveData(ValueInput input) {
+        input.read(TAG_NAME, CustomData.COMPOUND_TAG_CODEC).ifPresent(data -> {
+            for (String name : data.keySet()) {
+                this.counter.put(name, new Time(data.getInt(name).orElse(0)));
             }
-        }
+        });
     }
 
     public static class Time {

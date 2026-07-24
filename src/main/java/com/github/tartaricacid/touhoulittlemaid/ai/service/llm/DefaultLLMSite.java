@@ -116,21 +116,25 @@ public final class DefaultLLMSite {
     }
 
     public static void addDefaultSites() {
-        AvailableSites.LLM_SITES.put(DEEPSEEK.id(), DEEPSEEK);
-        AvailableSites.LLM_SITES.put(PLAYER2.id(), PLAYER2);
-        AvailableSites.LLM_SITES.put(ALIYUN.id(), ALIYUN);
-        AvailableSites.LLM_SITES.put(SILICONFLOW.id(), SILICONFLOW);
-        AvailableSites.LLM_SITES.put(DOUBAO.id(), DOUBAO);
-        AvailableSites.LLM_SITES.put(ZHIPU.id(), ZHIPU);
-        AvailableSites.LLM_SITES.put(MINIMAX.id(), MINIMAX);
-        AvailableSites.LLM_SITES.put(KIMI.id(), KIMI);
-        AvailableSites.LLM_SITES.put(GEMINI.id(), GEMINI);
-        AvailableSites.LLM_SITES.put(GROK.id(), GROK);
-        AvailableSites.LLM_SITES.put(OPEN_ROUTER.id(), OPEN_ROUTER);
+        addDefaultSites(AvailableSites.LLM_SITES, AvailableSites.FIXED_LLM_SITES);
+    }
 
-        AvailableSites.FIXED_LLM_SITES.put(DEEPSEEK.id(), FIXED_DEEPSEEK);
-        AvailableSites.FIXED_LLM_SITES.put(DOUBAO.id(), FIXED_THINKING);
-        AvailableSites.FIXED_LLM_SITES.put(ZHIPU.id(), FIXED_THINKING);
-        AvailableSites.FIXED_LLM_SITES.put(KIMI.id(), FIXED_THINKING);
+    public static void addDefaultSites(Map<String, LLMSite> sites, Map<String, Consumer<LLMSite>> fixes) {
+        sites.put(DEEPSEEK.id(), DEEPSEEK);
+        sites.put(PLAYER2.id(), PLAYER2);
+        sites.put(ALIYUN.id(), ALIYUN);
+        sites.put(SILICONFLOW.id(), SILICONFLOW);
+        sites.put(DOUBAO.id(), DOUBAO);
+        sites.put(ZHIPU.id(), ZHIPU);
+        sites.put(MINIMAX.id(), MINIMAX);
+        sites.put(KIMI.id(), KIMI);
+        sites.put(GEMINI.id(), GEMINI);
+        sites.put(GROK.id(), GROK);
+        sites.put(OPEN_ROUTER.id(), OPEN_ROUTER);
+
+        fixes.put(DEEPSEEK.id(), FIXED_DEEPSEEK);
+        fixes.put(DOUBAO.id(), FIXED_THINKING);
+        fixes.put(ZHIPU.id(), FIXED_THINKING);
+        fixes.put(KIMI.id(), FIXED_THINKING);
     }
 }

@@ -1,17 +1,17 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.passive;
 
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.util.TeleportHelper;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 import javax.annotation.Nullable;
 
@@ -21,29 +21,29 @@ public final class SchedulePos {
     private BlockPos workPos;
     private BlockPos idlePos;
     private BlockPos sleepPos;
-    private ResourceLocation dimension;
+    private Identifier dimension;
     private boolean configured = false;
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SchedulePos> SCHEDULE_POS_STREAM_CODEC = StreamCodec.composite(
             BlockPos.STREAM_CODEC, SchedulePos::getWorkPos,
             BlockPos.STREAM_CODEC, SchedulePos::getIdlePos,
             BlockPos.STREAM_CODEC, SchedulePos::getSleepPos,
-            ResourceLocation.STREAM_CODEC, SchedulePos::getDimension,
+            Identifier.STREAM_CODEC, SchedulePos::getDimension,
             SchedulePos::new
     );
 
-    public SchedulePos(BlockPos workPos, BlockPos idlePos, BlockPos sleepPos, ResourceLocation dimension) {
+    public SchedulePos(BlockPos workPos, BlockPos idlePos, BlockPos sleepPos, Identifier dimension) {
         this.workPos = workPos;
         this.idlePos = idlePos;
         this.sleepPos = sleepPos;
         this.dimension = dimension;
     }
 
-    public SchedulePos(BlockPos workPos, BlockPos idlePos, ResourceLocation dimension) {
+    public SchedulePos(BlockPos workPos, BlockPos idlePos, Identifier dimension) {
         this(workPos, idlePos, idlePos, dimension);
     }
 
-    public SchedulePos(BlockPos workPos, ResourceLocation dimension) {
+    public SchedulePos(BlockPos workPos, Identifier dimension) {
         this(workPos, workPos, dimension);
     }
 
@@ -59,66 +59,65 @@ public final class SchedulePos {
         this.sleepPos = sleepPos;
     }
 
-    public void setDimension(ResourceLocation dimension) {
+    public void setDimension(Identifier dimension) {
         this.dimension = dimension;
     }
 
     public void tick(EntityMaid maid) {
         if (maid.tickCount % 40 == 0) {
-            this.restrictTo(maid);
-            if (maid.isWithinRestriction()) {
+            this.setHomeTo(maid);
+            if (maid.isWithinHome()) {
                 return;
             }
             if (!maid.canBrainMoving()) {
                 return;
             }
-            double distanceSqr = maid.getRestrictCenter().distSqr(maid.blockPosition());
-            int minTeleportDistance = (int) maid.getRestrictRadius() + 4;
+            double distanceSqr = maid.getHomePosition().distSqr(maid.blockPosition());
+            int minTeleportDistance = maid.getHomeRadius() + 4;
             if (distanceSqr > (minTeleportDistance * minTeleportDistance) && !this.sameWithRestrictCenter(maid)) {
                 teleport(maid);
             } else {
-                BehaviorUtils.setWalkAndLookTargetMemories(maid, maid.getRestrictCenter(), 0.7f, 3);
+                BehaviorUtils.setWalkAndLookTargetMemories(maid, maid.getHomePosition(), 0.7f, 3);
             }
         }
     }
 
-    public void save(CompoundTag compound) {
-        CompoundTag data = new CompoundTag();
-        data.put("Work", NbtUtils.writeBlockPos(this.workPos));
-        data.put("Idle", NbtUtils.writeBlockPos(this.idlePos));
-        data.put("Sleep", NbtUtils.writeBlockPos(this.sleepPos));
+    public void save(ValueOutput output) {
+
+        ValueOutput data = output.child("MaidSchedulePos");
+        data.putIntArray("Work", new int[]{this.workPos.getX(), this.workPos.getY(), this.workPos.getZ()});
+        data.putIntArray("Idle", new int[]{this.idlePos.getX(), this.idlePos.getY(), this.idlePos.getZ()});
+        data.putIntArray("Sleep", new int[]{this.sleepPos.getX(), this.sleepPos.getY(), this.sleepPos.getZ()});
         data.putString("Dimension", this.dimension.toString());
         data.putBoolean("Configured", this.configured);
-        compound.put("MaidSchedulePos", data);
     }
 
-    public void load(CompoundTag compound, EntityMaid maid) {
-        if (compound.contains("MaidSchedulePos", Tag.TAG_COMPOUND)) {
-            CompoundTag data = compound.getCompound("MaidSchedulePos");
-            this.workPos = NbtUtils.readBlockPos(data, "Work").orElse(null);
-            this.idlePos = NbtUtils.readBlockPos(data, "Idle").orElse(null);
-            this.sleepPos = NbtUtils.readBlockPos(data, "Sleep").orElse(null);
-            this.dimension = ResourceLocation.parse(data.getString("Dimension"));
-            this.configured = data.getBoolean("Configured");
-            this.restrictTo(maid);
-        }
+    public void load(ValueInput input, EntityMaid maid) {
+        input.child("MaidSchedulePos").ifPresent(data -> {
+            data.getIntArray("Work").ifPresent(arr -> { if (arr.length == 3) this.workPos = new BlockPos(arr[0], arr[1], arr[2]); });
+            data.getIntArray("Idle").ifPresent(arr -> { if (arr.length == 3) this.idlePos = new BlockPos(arr[0], arr[1], arr[2]); });
+            data.getIntArray("Sleep").ifPresent(arr -> { if (arr.length == 3) this.sleepPos = new BlockPos(arr[0], arr[1], arr[2]); });
+            this.dimension = Identifier.parse(data.getStringOr("Dimension", ""));
+            this.configured = data.getBooleanOr("Configured", false);
+        });
+        this.setHomeTo(maid);
     }
 
-    public void restrictTo(EntityMaid maid) {
+    public void setHomeTo(EntityMaid maid) {
         if (!maid.isHomeModeEnable()) {
             return;
         }
         Activity activity = maid.getScheduleDetail();
         if (activity == Activity.WORK) {
-            maid.restrictTo(this.workPos, MaidConfig.MAID_WORK_RANGE.get());
+            maid.setHomeTo(this.workPos, ServerRuleConfig.get(MaidConfig.MAID_WORK_RANGE));
             return;
         }
         if (activity == Activity.IDLE) {
-            maid.restrictTo(this.idlePos, MaidConfig.MAID_IDLE_RANGE.get());
+            maid.setHomeTo(this.idlePos, ServerRuleConfig.get(MaidConfig.MAID_IDLE_RANGE));
             return;
         }
         if (activity == Activity.REST) {
-            maid.restrictTo(this.sleepPos, MaidConfig.MAID_SLEEP_RANGE.get());
+            maid.setHomeTo(this.sleepPos, ServerRuleConfig.get(MaidConfig.MAID_SLEEP_RANGE));
         }
     }
 
@@ -142,7 +141,7 @@ public final class SchedulePos {
         return configured;
     }
 
-    public ResourceLocation getDimension() {
+    public Identifier getDimension() {
         return dimension;
     }
 
@@ -150,8 +149,9 @@ public final class SchedulePos {
         this.idlePos = this.workPos;
         this.sleepPos = this.workPos;
         this.configured = false;
-        this.dimension = maid.level.dimension().location();
-        this.restrictTo(maid);
+
+        this.dimension = maid.level.dimension().identifier();
+        this.setHomeTo(maid);
     }
 
     public void setHomeModeEnable(EntityMaid maid, BlockPos pos) {
@@ -159,9 +159,10 @@ public final class SchedulePos {
             this.workPos = pos;
             this.idlePos = pos;
             this.sleepPos = pos;
-            this.dimension = maid.level.dimension().location();
+
+            this.dimension = maid.level.dimension().identifier();
         }
-        this.restrictTo(maid);
+        this.setHomeTo(maid);
     }
 
     @Nullable
@@ -184,7 +185,7 @@ public final class SchedulePos {
     }
 
     private boolean sameWithRestrictCenter(EntityMaid maid) {
-        BlockPos restrictCenter = maid.getRestrictCenter();
+        BlockPos restrictCenter = maid.getHomePosition();
         return maid.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
                 .filter(walkTarget -> walkTarget.getTarget().currentBlockPosition().equals(restrictCenter))
                 .isPresent();

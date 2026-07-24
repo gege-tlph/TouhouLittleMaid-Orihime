@@ -5,6 +5,7 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Explosion;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -22,6 +23,8 @@ public interface IBlock {
 
     default void tlm$onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
-        ((Block) this).wasExploded(level, pos, explosion);
+        if (level instanceof ServerLevel serverLevel) {
+            ((Block) this).wasExploded(serverLevel, pos, explosion);
+        }
     }
 }

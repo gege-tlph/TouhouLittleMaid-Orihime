@@ -1,11 +1,9 @@
 package com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.other;
 
-import cn.sh1rocu.touhoulittlemaid.mixin.accessor.ScreenAccessor;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.AbstractMaidContainerGui;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
@@ -35,15 +33,12 @@ public class CheckSchedulePosGui extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(graphics, mouseX, mouseY, partialTicks);
         List<FormattedCharSequence> split = font.split(tips, 300);
         int startY = middleY - 10 - split.size() * (font.lineHeight + 3);
         for (FormattedCharSequence text : split) {
-            graphics.drawCenteredString(font, text, middleX, startY, 0xFFFFFF);
+            graphics.drawCenteredString(font, text, middleX, startY, 0xFFFFFFFF);
             startY += font.lineHeight + 3;
         }
-        for (Renderable renderable : ((ScreenAccessor) this).tlm$getRenderables()) {
-            renderable.render(graphics, mouseX, mouseY, partialTicks);
-        }
+        super.render(graphics, mouseX, mouseY, partialTicks);
     }
 }

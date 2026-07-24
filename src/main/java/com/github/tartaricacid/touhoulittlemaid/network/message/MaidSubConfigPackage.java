@@ -10,10 +10,11 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
+
 
 public record MaidSubConfigPackage(int id, MaidConfigManager.SyncNetwork syncNetwork) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<MaidSubConfigPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("maid_sub_config"));
+    public static final CustomPacketPayload.Type<MaidSubConfigPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("maid_sub_config"));
     public static final StreamCodec<ByteBuf, MaidSubConfigPackage> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public void encode(ByteBuf buffer, MaidSubConfigPackage message) {
@@ -38,9 +39,7 @@ public record MaidSubConfigPackage(int id, MaidConfigManager.SyncNetwork syncNet
 
     public static void handle(MaidSubConfigPackage message, ServerPlayNetworking.Context context) {
         context.server().execute(() -> {
-            if (!(context.player() instanceof ServerPlayer sender)) {
-                return;
-            }
+            ServerPlayer sender = context.player();
             Entity entity = sender.level.getEntity(message.id);
             if (entity instanceof EntityMaid maid && maid.isOwnedBy(sender)) {
                 MaidConfigManager.SyncNetwork.handle(message.syncNetwork, maid);

@@ -10,15 +10,15 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
-import org.apache.commons.compress.utils.Lists;
-
+import java.util.ArrayList;
 import java.util.List;
 
 public class WirelessIOConfigSlotGui extends Screen {
-    private static final ResourceLocation SLOT = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/wireless_io_slot_config.png");
+    private static final Identifier SLOT = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/wireless_io_slot_config.png");
     private static final int SLOT_NUM = 38;
     private List<Boolean> configData;
     protected int imageWidth = 155;
@@ -28,10 +28,8 @@ public class WirelessIOConfigSlotGui extends Screen {
 
     protected WirelessIOConfigSlotGui(ItemStack wirelessIO) {
         super(Component.literal("Wireless IO Config Slot GUI"));
-        configData = ItemWirelessIO.getSlotConfig(wirelessIO);
-        if (configData == null) {
-            configData = Lists.newArrayList();
-        }
+        List<Boolean> savedConfig = ItemWirelessIO.getSlotConfig(wirelessIO);
+        configData = savedConfig == null ? new ArrayList<>() : new ArrayList<>(savedConfig);
         int configDataSize = configData.size();
         if (configDataSize < SLOT_NUM) {
             for (int i = configDataSize; i < SLOT_NUM; i++) {
@@ -104,7 +102,6 @@ public class WirelessIOConfigSlotGui extends Screen {
     }
 
     private void renderBg(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
-        guiGraphics.blit(SLOT, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, SLOT, leftPos, topPos, 0F, 0F, imageWidth, imageHeight, 256, 256);
     }
 }

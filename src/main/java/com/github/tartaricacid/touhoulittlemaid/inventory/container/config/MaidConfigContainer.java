@@ -45,10 +45,7 @@ public class MaidConfigContainer extends AbstractMaidContainer {
                 return false;
             }
 
-/*            @Override
-            public boolean shouldTriggerClientSideContainerClosingOnOpen() {
-                return false;
-            }*/
+
         };
     }
 

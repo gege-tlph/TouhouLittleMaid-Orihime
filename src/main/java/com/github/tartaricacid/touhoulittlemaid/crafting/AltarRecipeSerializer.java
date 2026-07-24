@@ -7,7 +7,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -25,32 +25,35 @@ public class AltarRecipeSerializer implements RecipeSerializer<AltarRecipe> {
                     Ingredient.CODEC.listOf().fieldOf("ingredients").flatXmap(AltarRecipeSerializer::checkIngredients, DataResult::success).forGetter(AltarRecipe::getIngredients),
                     Codec.FLOAT.fieldOf("power").forGetter(AltarRecipe::getPower),
                     ItemStack.STRICT_CODEC.fieldOf("result").forGetter(AltarRecipe::getResult),
-                    ResourceLocation.CODEC.fieldOf("entity").forGetter(AltarRecipe::getEntityType),
+                    Identifier.CODEC.fieldOf("entity").forGetter(AltarRecipe::getEntityType),
                     Codec.STRING.optionalFieldOf("lang", StringUtils.EMPTY).forGetter(AltarRecipe::getLangKey)
             ).apply(instance, AltarRecipe::new)
     );
 
     @NotNull
     private static DataResult<NonNullList<Ingredient>> checkIngredients(List<Ingredient> ingredientList) {
-        Ingredient[] aingredient = ingredientList.toArray(Ingredient[]::new);
-        if (aingredient.length == 0) {
+        if (ingredientList.isEmpty()) {
             return DataResult.error(() -> "No ingredients for shapeless recipe");
-        } else {
-            if (aingredient.length > 6) {
-                return DataResult.error(() -> "Too many ingredients for shapeless recipe. The maximum is: 6");
-            }
-            return DataResult.success(NonNullList.of(Ingredient.EMPTY, aingredient));
         }
+        if (ingredientList.size() > 6) {
+            return DataResult.error(() -> "Too many ingredients for shapeless recipe. The maximum is: 6");
+        }
+        NonNullList<Ingredient> nonNullList = NonNullList.createWithCapacity(ingredientList.size());
+        nonNullList.addAll(ingredientList);
+        return DataResult.success(nonNullList);
     }
 
     private AltarRecipe fromNetwork(RegistryFriendlyByteBuf byteBuf) {
         String group = byteBuf.readUtf();
         CraftingBookCategory category = byteBuf.readEnum(CraftingBookCategory.class);
-        NonNullList<Ingredient> ingredients = NonNullList.withSize(byteBuf.readVarInt(), Ingredient.EMPTY);
-        ingredients.replaceAll((ingredient) -> Ingredient.CONTENTS_STREAM_CODEC.decode(byteBuf));
+        int size = byteBuf.readVarInt();
+        NonNullList<Ingredient> ingredients = NonNullList.createWithCapacity(size);
+        for (int i = 0; i < size; i++) {
+            ingredients.add(Ingredient.CONTENTS_STREAM_CODEC.decode(byteBuf));
+        }
         float power = byteBuf.readFloat();
         ItemStack result = ItemStack.STREAM_CODEC.decode(byteBuf);
-        ResourceLocation entityType = byteBuf.readResourceLocation();
+        Identifier entityType = Identifier.STREAM_CODEC.decode(byteBuf);
         String langKey = byteBuf.readUtf();
         return new AltarRecipe(group, category, ingredients, power, result, entityType, langKey);
     }
@@ -64,7 +67,7 @@ public class AltarRecipeSerializer implements RecipeSerializer<AltarRecipe> {
         }
         friendlyByteBuf.writeFloat(altarRecipe.getPower());
         ItemStack.STREAM_CODEC.encode(friendlyByteBuf, altarRecipe.getResult());
-        friendlyByteBuf.writeResourceLocation(altarRecipe.getEntityType());
+        Identifier.STREAM_CODEC.encode(friendlyByteBuf, altarRecipe.getEntityType());
         friendlyByteBuf.writeUtf(altarRecipe.getLangKey());
     }
 

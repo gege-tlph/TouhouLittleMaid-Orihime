@@ -17,8 +17,9 @@ import java.util.List;
 public final class TouhouLittleMaid {
     public static final String MOD_ID = "touhou_little_maid";
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
-    public static List<ILittleMaid> EXTENSIONS = Lists.newArrayList();
     public static boolean DEBUG = FabricLoader.getInstance().isDevelopmentEnvironment();
+    public static List<ILittleMaid> EXTENSIONS = Lists.newArrayList();
+
 
     public static void commonSetup() {
         initRegister();

@@ -1,53 +1,56 @@
 package com.github.tartaricacid.touhoulittlemaid.client.model;
 
-import com.github.tartaricacid.simplebedrockmodel.client.bedrock.pojo.BedrockModelPOJO;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
-import com.github.tartaricacid.touhoulittlemaid.client.animation.script.ModelRendererWrapper;
-import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.BedrockModel;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.CustomPackLoader;
+import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.EntityMaidModel;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelInfo;
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.world.entity.Mob;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 
-public class EasterEggModel extends BedrockModel<Mob> {
-    private static final ResourceLocation MODEL = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "models/bedrock/entity/easter_egg_model.json");
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/bedrock/entity/easter_egg_model.png");
-    private static EasterEggModel INSTANCE;
-    private static MaidModelInfo INFO;
+public class EasterEggModel extends EntityMaidModel {
+    private static final Identifier MODEL_PATH = IdentifierUtil.modLoc("models/bedrock/entity/easter_egg_model.json");
+    private static final Identifier TEXTURE_PATH = IdentifierUtil.modLoc("textures/bedrock/entity/easter_egg_model.png");
+
+    private static @Nullable EasterEggModel MODEL;
+    private static @Nullable MaidModelInfo INFO;
+
+    public EasterEggModel(InputStream stream) {
+        super(stream);
+    }
 
     public EasterEggModel() {
+    }
+
+    public static EasterEggModel model() {
+        if (MODEL != null) {
+            return MODEL;
+        }
         ResourceManager manager = Minecraft.getInstance().getResourceManager();
-        try (InputStream stream = manager.open(MODEL)) {
-            loadLegacyModel(CustomPackLoader.GSON.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), BedrockModelPOJO.class));
-        } catch (IOException exception) {
-            TouhouLittleMaid.LOGGER.error("Failed to load easter egg model", exception);
+        try (InputStream stream = manager.open(MODEL_PATH)) {
+            MODEL = new EasterEggModel(stream);
+        } catch (IOException e) {
+            TouhouLittleMaid.LOGGER.error("Failed to load easter egg model", e);
+            // 不太可能触发
+            MODEL = new EasterEggModel();
         }
-        this.modelMap.forEach((key, model) -> modelMapWrapper.put(key, new ModelRendererWrapper(model)));
+        return MODEL;
     }
 
-    public static EasterEggModel getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new EasterEggModel();
+    public static MaidModelInfo info() {
+        if (INFO != null) {
+            return INFO;
         }
-        return INSTANCE;
-    }
-
-    public static MaidModelInfo getInfo() {
-        if (INFO == null) {
-            INFO = new MaidModelInfo() {
-                @Override
-                public ResourceLocation getTexture() {
-                    return TEXTURE;
-                }
-            };
-        }
+        INFO = new MaidModelInfo() {
+            @Override
+            public Identifier getTexture() {
+                return TEXTURE_PATH;
+            }
+        };
         return INFO;
     }
 }

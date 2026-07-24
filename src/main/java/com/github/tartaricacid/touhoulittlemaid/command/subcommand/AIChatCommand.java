@@ -12,6 +12,9 @@ import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.MinecraftServer;
+import com.github.tartaricacid.touhoulittlemaid.network.message.ai.SyncAISitesPacket;
+import com.github.tartaricacid.touhoulittlemaid.network.message.config.SyncServerRulesPacket;
 
 import java.util.Comparator;
 import java.util.List;
@@ -45,11 +48,23 @@ public class AIChatCommand {
     }
 
     private static int reload(CommandContext<CommandSourceStack> context) {
-        AvailableSites.init();
-        SkillLoader.init();
+        if (!reload(context.getSource().getServer())) {
+            context.getSource().sendFailure(Component.literal("Failed to reload AI site configuration"));
+            return 0;
+        }
 
         context.getSource().sendSuccess(() -> Component.translatable("message.touhou_little_maid.ai_chat.reload_success"), true);
         return Command.SINGLE_SUCCESS;
+    }
+
+    public static boolean reload(MinecraftServer server) {
+        if (!AvailableSites.init()) {
+            return false;
+        }
+        SkillLoader.init();
+        SyncAISitesPacket.syncToSiteEditors(server);
+        SyncServerRulesPacket.syncToAll(server);
+        return true;
     }
 
     private static int showSkills(CommandContext<CommandSourceStack> context) {

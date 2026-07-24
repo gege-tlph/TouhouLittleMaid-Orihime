@@ -10,12 +10,11 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Items;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record SendNameTagPackage(int id, String name, boolean alwaysShow) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<SendNameTagPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("send_name_tag"));
+    public static final CustomPacketPayload.Type<SendNameTagPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("send_name_tag"));
     public static final StreamCodec<ByteBuf, SendNameTagPackage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT,
             SendNameTagPackage::id,
@@ -49,7 +48,7 @@ public record SendNameTagPackage(int id, String name, boolean alwaysShow) implem
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

@@ -6,24 +6,23 @@ import io.netty.buffer.ByteBuf;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.util.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record GomokuClientPackage(BlockPos pos, List<byte[]> chessData, Point point,
                                   int count) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<GomokuClientPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("gomoku_to_client"));
+    public static final CustomPacketPayload.Type<GomokuClientPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("gomoku_to_client"));
     public static final StreamCodec<ByteBuf, List<byte[]>> BYTE_BUF_LIST_STREAM_CODEC = ByteBufCodecs.collection(
             ArrayList::new,
             ByteBufCodecs.BYTE_ARRAY,
@@ -46,23 +45,29 @@ public record GomokuClientPackage(BlockPos pos, List<byte[]> chessData, Point po
     }
 
     public static void handle(GomokuClientPackage message, ClientPlayNetworking.Context context) {
-        context.client().execute(() -> CompletableFuture.runAsync(() -> onHandle(message), Util.backgroundExecutor()));
+        context.client().execute(() -> clientHandle(message));
+    }
+
+
+    @Environment(EnvType.CLIENT)
+    private static void clientHandle(GomokuClientPackage message) {
+        CompletableFuture.runAsync(() -> onHandle(message), Util.backgroundExecutor());
     }
 
     @Environment(EnvType.CLIENT)
     private static void onHandle(GomokuClientPackage message) {
-        Point aiPoint = MaidGomokuAI.getService(message.count).getPoint(message.chessData.toArray(new byte[15][]), message.point);
+        Point aiPoint = MaidGomokuAI.getService(message.count()).getPoint(message.chessData().toArray(new byte[15][]), message.point());
         int time = (int) (Math.random() * 1250) + 250;
         try {
             Thread.sleep(time);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        Minecraft.getInstance().submitAsync(() -> ClientPlayNetworking.send(new GomokuServerPackage(message.pos, aiPoint)));
+        Minecraft.getInstance().submitAsync(() -> ClientPlayNetworking.send(new GomokuServerPackage(message.pos(), aiPoint)));
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

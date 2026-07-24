@@ -5,13 +5,13 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
 @SuppressWarnings("UnstableApiUsage")
 public class PowerAttachment {
     public static final float MAX_POWER = 5.0f;
-    public static final AttachmentType<PowerAttachment> TYPE = AttachmentRegistry.create(ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "power"),
+    public static final AttachmentType<PowerAttachment> TYPE = AttachmentRegistry.create(Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "power"),
             builder -> builder
                     .initializer(() -> new PowerAttachment(0))
                     .copyOnDeath()

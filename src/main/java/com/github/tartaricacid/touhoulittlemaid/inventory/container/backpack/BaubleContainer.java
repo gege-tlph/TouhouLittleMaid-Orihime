@@ -13,7 +13,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -122,17 +121,7 @@ public class BaubleContainer extends MaidMainContainer {
                 slotChange.onShiftTakeoff(player, stack1);
             }
 
-            // 用来修正护甲值不变化的问题
-            if (PLAYER_INVENTORY_SIZE <= index && index < PLAYER_INVENTORY_SIZE + 4) {
-                EquipmentSlot equipmentSlot = SLOT_IDS[index - PLAYER_INVENTORY_SIZE];
-                maid.setLastArmorItem(equipmentSlot, stack1);
-            }
-            // 还有主副手
-            if (PLAYER_INVENTORY_SIZE + 4 <= index && index < PLAYER_INVENTORY_SIZE + 6) {
-                int slotIndex = index - PLAYER_INVENTORY_SIZE - 4;
-                EquipmentSlot equipmentSlot = slotIndex == 0 ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
-                maid.setLastHandItem(equipmentSlot, stack1);
-            }
+            // 槽位变更已经同步到实体装备，不能再次写回，否则会重复物品。
         }
         return stack1;
     }
@@ -147,7 +136,7 @@ public class BaubleContainer extends MaidMainContainer {
 
         @Override
         public void onShiftTakeoff(@Nullable Player player, ItemStack stack) {
-            if (!maid.level.isClientSide && !stack.isEmpty()) {
+            if (!maid.level.isClientSide() && !stack.isEmpty()) {
                 IMaidBauble bauble = BaubleManager.getBauble(stack);
                 if (bauble != null) {
                     bauble.onTakeOff(maid, stack);
@@ -165,7 +154,7 @@ public class BaubleContainer extends MaidMainContainer {
         @Override
         public void setByPlayer(ItemStack stack) {
             super.setByPlayer(stack);
-            if (!maid.level.isClientSide && !stack.isEmpty()) {
+            if (!maid.level.isClientSide() && !stack.isEmpty()) {
                 IMaidBauble bauble = BaubleManager.getBauble(stack);
                 if (bauble != null) {
                     bauble.onPutOn(maid, stack);

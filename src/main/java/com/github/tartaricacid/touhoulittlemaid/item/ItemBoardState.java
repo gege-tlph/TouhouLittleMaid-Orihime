@@ -1,6 +1,8 @@
 package com.github.tartaricacid.touhoulittlemaid.item;
 
 
+import java.util.function.Consumer;
+import net.minecraft.world.item.component.TooltipDisplay;
 import com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
 import com.github.tartaricacid.touhoulittlemaid.inventory.tooltip.BoardStateTooltip;
@@ -11,8 +13,11 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.Item;
@@ -29,8 +34,8 @@ public class ItemBoardState extends Item {
     public static final String DESC_TAG = "BoardStateDesc";
     public static final String AUTHOR_TAG = "BoardStateAuthor";
 
-    public ItemBoardState() {
-        super((new Properties()));
+    public ItemBoardState(Identifier id) {
+        super((new Properties()).setId(ResourceKey.create(Registries.ITEM, id)));
     }
 
     public static void setState(ItemStack stack, String data, String desc, String author) {
@@ -50,7 +55,8 @@ public class ItemBoardState extends Item {
     @Override
     @Environment(EnvType.CLIENT)
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
-        if (!Screen.hasShiftDown()) {
+
+        if (!tlm$hasShiftDown()) {
             return Optional.empty();
         }
 
@@ -74,29 +80,38 @@ public class ItemBoardState extends Item {
         return Optional.empty();
     }
 
-    @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag tooltipFlag) {
+
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltip, TooltipFlag tooltipFlag){
         String[] state = getState(stack);
 
         if (state == null) {
-            tooltip.add(Component.translatable("tooltips.touhou_little_maid.board_state.empty").withStyle(ChatFormatting.GRAY));
+            tooltip.accept(Component.translatable("tooltips.touhou_little_maid.board_state.empty").withStyle(ChatFormatting.GRAY));
             return;
         }
 
         String descKey = state[1];
         if (StringUtils.isNotBlank(descKey)) {
-            tooltip.add(Component.translatable(descKey).withStyle(ChatFormatting.GRAY));
+            tooltip.accept(Component.translatable(descKey).withStyle(ChatFormatting.GRAY));
         }
 
         String author = state[2];
         if (StringUtils.isNotBlank(author)) {
-            tooltip.add(Component.translatable("tooltips.touhou_little_maid.board_state.author", author).withStyle(ChatFormatting.GRAY));
+            tooltip.accept(Component.translatable("tooltips.touhou_little_maid.board_state.author", author).withStyle(ChatFormatting.GRAY));
         }
 
-        if (!Screen.hasShiftDown()) {
-            tooltip.add(Component.translatable("board_state.touhou_little_maid.show_picture")
+
+        if (!tlm$hasShiftDown()) {
+            tooltip.accept(Component.translatable("board_state.touhou_little_maid.show_picture")
                     .withStyle(ChatFormatting.DARK_GRAY).withStyle(ChatFormatting.ITALIC));
         }
+    }
+
+
+    @Environment(EnvType.CLIENT)
+    private static boolean tlm$hasShiftDown() {
+        var window = net.minecraft.client.Minecraft.getInstance().getWindow();
+        return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, com.mojang.blaze3d.platform.InputConstants.KEY_LSHIFT)
+                || com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, com.mojang.blaze3d.platform.InputConstants.KEY_RSHIFT);
     }
 
     public record BoardStateInfo(String data, String description, String author) {

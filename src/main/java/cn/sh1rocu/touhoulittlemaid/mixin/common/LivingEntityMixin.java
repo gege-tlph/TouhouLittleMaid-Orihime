@@ -5,8 +5,10 @@ import cn.sh1rocu.touhoulittlemaid.util.forge.EventHooks;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -19,6 +21,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.UUID;
+
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin extends Entity {
     @Shadow
@@ -28,11 +32,15 @@ public abstract class LivingEntityMixin extends Entity {
     public abstract int getUseItemRemainingTicks();
 
     @Shadow
-    protected int lastHurtByPlayerTime;
+    public abstract void setLastHurtByPlayer(UUID player, int timeToRemember);
+
 
     @Shadow
     @Nullable
-    protected Player lastHurtByPlayer;
+    protected EntityReference<Player> lastHurtByPlayer;
+
+    @Shadow
+    protected int lastHurtByPlayerMemoryTime;
 
     public LivingEntityMixin(EntityType<?> entityType, Level level) {
         super(entityType, level);
@@ -43,27 +51,23 @@ public abstract class LivingEntityMixin extends Entity {
         return EventHooks.onItemUseFinish((LivingEntity) (Object) this, this.getUseItem().copy(), this.getUseItemRemainingTicks(), original.call(instance, level, livingEntity));
     }
 
-    // 女仆攻击完成后，给受伤实体设置lastHurtByPlayerTime，便于经验掉落等计算
-    @Inject(
-            method = "hurt",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/world/damagesource/DamageSource;getEntity()Lnet/minecraft/world/entity/Entity;")
-    )
-    private void tlm$hurt(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+
+    @Inject(method = "resolvePlayerResponsibleForDamage", at = @At("HEAD"))
+    private void tlm$hurt(DamageSource source, CallbackInfoReturnable<Player> cir) {
         Entity attacker = source.getEntity();
         if (attacker instanceof EntityMaid maid && maid.isTame()) {
-            this.lastHurtByPlayerTime = 100;
-            if (maid.getOwner() instanceof Player player) {
-                this.lastHurtByPlayer = player;
+            if (maid.getOwnerReference() != null) {
+                this.setLastHurtByPlayer(maid.getOwnerReference().getUUID(), 100);
             } else {
                 this.lastHurtByPlayer = null;
+                this.lastHurtByPlayerMemoryTime = 0;
             }
         }
     }
 
-    @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
-    public void tlm$attackEvent(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+
+    @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
+    public void tlm$attackEvent(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         LivingEntity self = (LivingEntity) (Object) this;
         if (!(self instanceof Player)) {
             LivingAttackEvent event = new LivingAttackEvent(self, source, amount);

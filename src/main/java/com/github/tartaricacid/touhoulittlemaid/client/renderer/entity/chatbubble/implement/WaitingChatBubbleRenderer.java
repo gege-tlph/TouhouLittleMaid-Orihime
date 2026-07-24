@@ -4,26 +4,26 @@ import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.EntityMai
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble.EntityGraphics;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble.IChatBubbleRenderer;
 import com.mojang.math.Axis;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
+
+import javax.annotation.Nullable;
 
 public class WaitingChatBubbleRenderer implements IChatBubbleRenderer {
     private static final float SECONDARY_TEXT_SCALE = 0.5f;
-    private static final int SECONDARY_TEXT_COLOR = 0x666666;
 
     private final Font font;
     private final int width;
     private final int height;
-    private final ResourceLocation bg;
+    private final Identifier bg;
     private final Component text;
     private final @Nullable Component secondaryText;
-    private final ResourceLocation icon;
+    private final Identifier icon;
 
-    public WaitingChatBubbleRenderer(ResourceLocation bg, Component text, @Nullable Component secondaryText, ResourceLocation icon) {
+    public WaitingChatBubbleRenderer(Identifier bg, Component text, @Nullable Component secondaryText, Identifier icon) {
         this.font = Minecraft.getInstance().font;
         this.bg = bg;
         this.text = text;
@@ -61,20 +61,20 @@ public class WaitingChatBubbleRenderer implements IChatBubbleRenderer {
         graphics.getPoseStack().popPose();
 
         if (this.secondaryText == null) {
-            graphics.drawString(font, this.text, 18, (this.height - font.lineHeight) / 2 + 1, 0x000000, false);
+            graphics.drawString(this.text, 18, (this.height - font.lineHeight) / 2 + 1, 0xFF000000, false);
         } else {
-            graphics.drawString(font, this.text, 18, 2, 0x000000, false);
+            graphics.drawString(this.text, 18, 2, 0xFF000000, false);
 
             graphics.getPoseStack().pushPose();
             graphics.getPoseStack().translate(18, font.lineHeight + 1, 0);
             graphics.getPoseStack().scale(SECONDARY_TEXT_SCALE, SECONDARY_TEXT_SCALE, 1);
-            graphics.drawString(font, this.secondaryText, 0, 5, SECONDARY_TEXT_COLOR, false);
+            graphics.drawString(this.secondaryText, 0, 5, 0xFF666666, false);
             graphics.getPoseStack().popPose();
         }
     }
 
     @Override
-    public ResourceLocation getBackgroundTexture() {
+    public Identifier getBackgroundTexture() {
         return this.bg;
     }
 }

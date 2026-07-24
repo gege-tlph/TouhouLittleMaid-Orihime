@@ -10,16 +10,15 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record SaveSwitcherDataPackage(BlockPos pos,
                                       List<TileEntityModelSwitcher.ModeInfo> modeInfos) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<SaveSwitcherDataPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("save_switcher_data"));
+    public static final CustomPacketPayload.Type<SaveSwitcherDataPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("save_switcher_data"));
 
     public static final StreamCodec<ByteBuf, List<TileEntityModelSwitcher.ModeInfo>> COLLECTION_STREAM_CODEC =
             ByteBufCodecs.collection(
@@ -49,7 +48,7 @@ public record SaveSwitcherDataPackage(BlockPos pos,
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

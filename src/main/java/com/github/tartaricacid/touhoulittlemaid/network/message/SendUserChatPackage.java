@@ -9,13 +9,12 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record SendUserChatPackage(int maidId, String message,
                                   ChatClientInfo clientInfo) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<SendUserChatPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("send_user_chat"));
+    public static final CustomPacketPayload.Type<SendUserChatPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("send_user_chat"));
     public static final StreamCodec<ByteBuf, SendUserChatPackage> STREAM_CODEC = new StreamCodec<ByteBuf, SendUserChatPackage>() {
         @Override
         public SendUserChatPackage decode(ByteBuf byteBuf) {
@@ -36,7 +35,7 @@ public record SendUserChatPackage(int maidId, String message,
     };
 
     @Override
-    public @NotNull CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

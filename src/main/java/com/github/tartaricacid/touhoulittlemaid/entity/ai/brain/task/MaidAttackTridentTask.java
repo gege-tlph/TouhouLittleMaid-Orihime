@@ -1,11 +1,12 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -32,7 +33,8 @@ public class MaidAttackTridentTask extends Behavior<EntityMaid> {
     protected boolean checkExtraStartConditions(ServerLevel worldIn, EntityMaid owner) {
         return this.hasTrident(owner) &&
                 owner.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET)
-                        .filter(Entity::isAlive)
+                        .filter(target -> MaidTargetingPolicy.canContinueTargeting(
+                                owner, target, MaidTargetingContext.PLANNED_ATTACK))
                         .isPresent();
     }
 
@@ -40,7 +42,7 @@ public class MaidAttackTridentTask extends Behavior<EntityMaid> {
     protected void tick(ServerLevel worldIn, EntityMaid owner, long gameTime) {
         owner.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).ifPresent(target -> {
             double distance = owner.distanceTo(target);
-            float maxAttackDistance = owner.getRestrictRadius();
+            float maxAttackDistance = owner.getHomeRadius();
 
             // 如果在最大攻击距离之内，而且看见的时长足够长
             if (distance < owner.searchRadius()) {
@@ -63,6 +65,7 @@ public class MaidAttackTridentTask extends Behavior<EntityMaid> {
 
             // 如果攻击时间大于 -1
             if (this.strafingTime > -1) {
+
                 RegistryAccess access = owner.level.registryAccess();
                 boolean hasChanneling = getEnchantmentLevel(access, Enchantments.CHANNELING, owner.getMainHandItem()) > 0;
                 boolean canUseChanneling = owner.level.isThundering() && !owner.isUnderWater() && hasChanneling;

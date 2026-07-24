@@ -11,7 +11,10 @@ import com.google.common.collect.Lists;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
@@ -30,8 +33,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class ItemChisel extends Item {
-    public ItemChisel() {
-        super((new Properties()).stacksTo(1).durability(64));
+    public ItemChisel(Identifier id) {
+        super((new Properties()).setId(ResourceKey.create(Registries.ITEM, id)).stacksTo(1).durability(64));
     }
 
     @Override
@@ -42,14 +45,14 @@ public class ItemChisel extends Item {
 
         if (context.getHand() == InteractionHand.MAIN_HAND && player != null) {
             if (worldIn.getBlockState(pos).getBlock() != Blocks.CLAY) {
-                if (!worldIn.isClientSide) {
-                    player.sendSystemMessage(Component.translatable("message.touhou_little_maid.chisel.hit_block_error"));
+                if (!worldIn.isClientSide()) {
+                    player.displayClientMessage(Component.translatable("message.touhou_little_maid.chisel.hit_block_error"), false);
                 }
                 return InteractionResult.PASS;
             }
             if (player.getOffhandItem().getItem() != InitItems.PHOTO) {
-                if (!worldIn.isClientSide) {
-                    player.sendSystemMessage(Component.translatable("message.touhou_little_maid.chisel.offhand_not_photo"));
+                if (!worldIn.isClientSide()) {
+                    player.displayClientMessage(Component.translatable("message.touhou_little_maid.chisel.offhand_not_photo"), false);
                 }
                 return InteractionResult.PASS;
             }

@@ -8,14 +8,15 @@ import com.github.tartaricacid.touhoulittlemaid.block.multiblock.MultiBlockManag
 import com.github.tartaricacid.touhoulittlemaid.client.animation.HardcodedAnimationManger;
 import com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.magic.MagicCastingAnimationManager;
 import com.github.tartaricacid.touhoulittlemaid.client.overlay.MaidTipsOverlay;
-import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.EntityMaidRenderer;
-import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.GeckoEntityMaidRenderer;
+
 import com.github.tartaricacid.touhoulittlemaid.debug.target.DebugTarget;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.ExtraMaidBrainManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.edible.MaidEdibleBlockManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.backpack.BackpackManager;
+
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleRegister;
 import com.github.tartaricacid.touhoulittlemaid.entity.data.TaskDataRegister;
+
 import com.github.tartaricacid.touhoulittlemaid.entity.item.control.BroomControlManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.task.TaskManager;
@@ -116,9 +117,7 @@ public interface ILittleMaid {
     }
 
     /**
-     * 注册女仆 AI 可用的 Tool。
-     * <p>
-     * Tool 会全部塞入对话的工具部分，用于执行具体且原子的游戏内操作。
+     * 注册女仆 AI 可用的 Tool。 <p> Tool 会全部塞入对话的工具部分，用于执行具体且原子的游戏内操作。
      *
      * @param register 注册器
      */
@@ -127,18 +126,12 @@ public interface ILittleMaid {
     }
 
     /**
-     * 注册女仆 AI 可用的额外上下文项。
-     * <p>
-     * 这些上下文项会被 maid_context skill 按分类按需读取，再通过 tool 返回给大模型。
-     * 如有需要，建议扩展模组按语义将上下文注册到合适的分类中，而不是一次性暴露所有上下文。
-     * <p>
-     * 推荐先注册分类，再将上下文项挂到该分类下，例如：
+     * 注册女仆 AI 可用的额外上下文项。 <p> 这些上下文项会被 maid_context skill 按分类按需读取，再通过 tool 返回给大模型。 如有需要，建议扩展模组按语义将上下文注册到合适的分类中，而不是一次性暴露所有上下文。 <p> 推荐先注册分类，再将上下文项挂到该分类下，例如：
      * <pre>{@code
      * register.registerCategory("equipment", "Held items and backpack inventory");
      * register.registerContext("equipment", new MyEquipmentContext());
      * }</pre>
-     * 注册上下文项时必须指定一个已经存在的分类，否则会抛出异常。
-     * 没有上下文项的分类不会出现在 maid_context skill 提供给模型的可选分类列表中。
+     * 注册上下文项时必须指定一个已经存在的分类，否则会抛出异常。 没有上下文项的分类不会出现在 maid_context skill 提供给模型的可选分类列表中。
      *
      * @param register 注册器
      */
@@ -168,10 +161,7 @@ public interface ILittleMaid {
     }
 
     /**
-     * 注册女仆可食用方块
-     * <p>
-     * 女仆会在工作日程时寻找并食用周围实现了此接口的方块食物。
-     * 此外，女仆还可以将背包中的食物物品放置为方块食物后再进行食用。
+     * 注册女仆可食用方块 <p> 女仆会在工作日程时寻找并食用周围实现了此接口的方块食物。 此外，女仆还可以将背包中的食物物品放置为方块食物后再进行食用。
      *
      * @param manager 注册器
      */
@@ -179,9 +169,7 @@ public interface ILittleMaid {
     }
 
     /**
-     * 添加女仆相关提示
-     * <p>
-     * 有些物品在指向女仆时，能够在屏幕上显示相关提示文本
+     * 添加女仆相关提示 <p> 有些物品在指向女仆时，能够在屏幕上显示相关提示文本
      */
     @Environment(EnvType.CLIENT)
     default void addMaidTips(MaidTipsOverlay maidTipsOverlay) {
@@ -190,16 +178,7 @@ public interface ILittleMaid {
     /**
      * 添加默认模型风格的实体 layer 渲染
      */
-    @Environment(EnvType.CLIENT)
-    default void addAdditionMaidLayer(EntityMaidRenderer renderer, EntityRendererProvider.Context context) {
-    }
 
-    /**
-     * 添加 Gecko 风格的实体 layer 渲染
-     */
-    @Environment(EnvType.CLIENT)
-    default void addAdditionGeckoMaidLayer(GeckoEntityMaidRenderer<? extends Mob> renderer, EntityRendererProvider.Context context) {
-    }
 
     /**
      * 添加硬编码的动画

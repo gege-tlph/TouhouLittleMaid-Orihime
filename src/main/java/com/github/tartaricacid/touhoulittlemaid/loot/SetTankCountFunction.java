@@ -13,7 +13,9 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -30,14 +32,14 @@ import static com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent.TA
 public class SetTankCountFunction extends LootItemConditionalFunction {
     public static MapCodec<SetTankCountFunction> CODEC = RecordCodecBuilder.mapCodec(instance -> commonFields(instance)
             .and(instance.group(
-                    ResourceLocation.CODEC.fieldOf("fluid_id").forGetter(f -> f.fluidId),
+                    Identifier.CODEC.fieldOf("fluid_id").forGetter(f -> f.fluidId),
                     Codec.LONG.fieldOf("count").forGetter(f -> f.count)
             )).apply(instance, SetTankCountFunction::new));
 
-    private final ResourceLocation fluidId;
+    private final Identifier fluidId;
     private final long count;
 
-    public SetTankCountFunction(List<LootItemCondition> predicates, ResourceLocation fluidId, long count) {
+    public SetTankCountFunction(List<LootItemCondition> predicates, Identifier fluidId, long count) {
         super(predicates);
         this.fluidId = fluidId;
         this.count = count;
@@ -56,11 +58,15 @@ public class SetTankCountFunction extends LootItemConditionalFunction {
         }
         SingleFluidStorage tank = SingleFluidStorage.withFixedCapacity(TankBackpackData.CAPACITY, () -> {
         });
-        FluidVariant fluidStack = FluidVariant.of(BuiltInRegistries.FLUID.get(this.fluidId), DataComponentPatch.EMPTY);
+
+        FluidVariant fluidStack = FluidVariant.of(BuiltInRegistries.FLUID.getValue(this.fluidId), DataComponentPatch.EMPTY);
         try (Transaction transaction = Transaction.openOuter()) {
             tank.insert(fluidStack, count, transaction);
             transaction.commit();
-            tank.writeNbt(tags, context.getLevel().registryAccess());
+
+            TagValueOutput tankOut = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, context.getLevel().registryAccess());
+            tank.writeData(tankOut);
+            tags.merge(tankOut.buildResult());
             stack.set(InitDataComponent.TANK_BACKPACK_TAG, tags);
             return stack;
         }
@@ -82,7 +88,7 @@ public class SetTankCountFunction extends LootItemConditionalFunction {
 
         @Override
         public @NotNull LootItemFunction build() {
-            ResourceLocation key = BuiltInRegistries.FLUID.getKey(fluid);
+            Identifier key = BuiltInRegistries.FLUID.getKey(fluid);
             return new SetTankCountFunction(this.getConditions(), key, bucketCount * FluidConstants.BUCKET);
         }
     }

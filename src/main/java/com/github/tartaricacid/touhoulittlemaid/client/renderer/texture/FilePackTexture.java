@@ -2,9 +2,8 @@ package com.github.tartaricacid.touhoulittlemaid.client.renderer.texture;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.platform.TextureUtil;
-import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.texture.TextureContents;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 import java.io.File;
@@ -14,12 +13,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class FilePackTexture extends SizeTexture {
-    private final ResourceLocation texturePath;
+    private final Identifier texturePath;
     private final Path rootPath;
     private int width = 16;
     private int height = 16;
 
-    public FilePackTexture(Path rootPath, ResourceLocation texturePath) {
+    public FilePackTexture(Path rootPath, Identifier texturePath) {
+        super(texturePath);
         this.rootPath = rootPath;
         this.texturePath = texturePath;
     }
@@ -30,28 +30,21 @@ public class FilePackTexture extends SizeTexture {
         return textureFile.isFile();
     }
 
-    @Override
-    public void load(ResourceManager manager) {
-        if (!RenderSystem.isOnRenderThreadOrInit()) {
-            RenderSystem.recordRenderCall(this::doLoad);
-        } else {
-            this.doLoad();
-        }
-    }
 
-    private void doLoad() {
+    @Override
+    public TextureContents loadContents(ResourceManager manager) throws IOException {
         File textureFile = rootPath.resolve("assets").resolve(texturePath.getNamespace()).resolve(texturePath.getPath()).toFile();
         if (textureFile.isFile()) {
             try (InputStream stream = Files.newInputStream(textureFile.toPath())) {
                 NativeImage imageIn = NativeImage.read(stream);
                 width = imageIn.getWidth();
                 height = imageIn.getHeight();
-                TextureUtil.prepareImage(this.getId(), 0, width, height);
-                imageIn.upload(0, 0, 0, 0, 0, width, height, false, false, false, true);
+                return new TextureContents(imageIn, null);
             } catch (IOException e) {
                 TouhouLittleMaid.LOGGER.error("Failed to load file texture {}", texturePath, e);
             }
         }
+        return TextureContents.createMissing();
     }
 
     @Override

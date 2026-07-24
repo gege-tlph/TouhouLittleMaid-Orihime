@@ -1,16 +1,17 @@
 package com.github.tartaricacid.touhoulittlemaid.client.tooltip;
 
+import net.minecraft.client.renderer.RenderPipelines;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.game.gomoku.GomokuCodec;
 import com.github.tartaricacid.touhoulittlemaid.api.game.gomoku.Point;
 import com.github.tartaricacid.touhoulittlemaid.inventory.tooltip.BoardStateTooltip;
 import com.github.tartaricacid.touhoulittlemaid.util.CChessUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.WChessUtil;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.BiFunction;
@@ -18,9 +19,9 @@ import java.util.function.BiFunction;
 import static com.github.tartaricacid.touhoulittlemaid.inventory.tooltip.BoardStateTooltip.*;
 
 public class ClientBoardStateTooltip implements ClientTooltipComponent {
-    private static final ResourceLocation GOMOKU_BG = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/gomoku.png");
-    private static final ResourceLocation XIANGQI_BG = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/xiangqi.png");
-    private static final ResourceLocation CHESS_BG = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/chess.png");
+    private static final Identifier GOMOKU_BG = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/gomoku.png");
+    private static final Identifier XIANGQI_BG = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/xiangqi.png");
+    private static final Identifier CHESS_BG = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/chess.png");
 
     private static final BiFunction<String, String, Object> CACHE = Util.memoize(ClientBoardStateTooltip::getBoardGameData);
 
@@ -55,7 +56,7 @@ public class ClientBoardStateTooltip implements ClientTooltipComponent {
     }
 
     @Override
-    public int getHeight() {
+    public int getHeight(Font font) {
         if (boardGameData == null) {
             return 0;
         }
@@ -81,7 +82,7 @@ public class ClientBoardStateTooltip implements ClientTooltipComponent {
     }
 
     @Override
-    public void renderImage(Font font, int pX, int pY, GuiGraphics graphics) {
+    public void renderImage(Font font, int pX, int pY, int width, int height, GuiGraphics graphics) {
         if (boardGameData == null) {
             return;
         }
@@ -102,10 +103,10 @@ public class ClientBoardStateTooltip implements ClientTooltipComponent {
     }
 
     private void renderGomoku(int pX, int pY, GuiGraphics graphics, byte[][] data) {
-        graphics.pose().pushPose();
-        graphics.pose().scale(0.5f, 0.5f, 1);
-        graphics.pose().translate(pX, pY, 0);
-        graphics.blit(GOMOKU_BG, pX, pY, 0, 0, 151, 151);
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(0.5f, 0.5f);
+        graphics.pose().translate(pX, pY);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, GOMOKU_BG, pX, pY, (float) 0, (float) 0, 151, 151, 256, 256);
 
         for (int y = 0; y <= 14; y++) {
             for (int x = 0; x <= 14; x++) {
@@ -123,15 +124,15 @@ public class ClientBoardStateTooltip implements ClientTooltipComponent {
                 int offsetX = pX + 1 + x * 10;
                 int offsetY = pY + 1 + y * 10;
 
-                graphics.blit(GOMOKU_BG, offsetX, offsetY, 0, v, 9, 9);
+                graphics.blit(RenderPipelines.GUI_TEXTURED, GOMOKU_BG, offsetX, offsetY, (float) 0, (float) v, 9, 9, 256, 256);
             }
         }
 
-        graphics.pose().popPose();
+        graphics.pose().popMatrix();
     }
 
     private void renderXiangqi(int pX, int pY, GuiGraphics graphics, byte[] data) {
-        graphics.blit(XIANGQI_BG, pX, pY, 0, 0, 128, 126);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, XIANGQI_BG, pX, pY, (float) 0, (float) 0, 128, 126, 256, 256);
 
         for (int y = 3; y <= 12; y++) {
             for (int x = 3; x <= 11; x++) {
@@ -152,16 +153,16 @@ public class ClientBoardStateTooltip implements ClientTooltipComponent {
                 int offsetX = pX - 1 + (x - 3) * 13;
                 int offsetY = pY - 1 + (y - 3) * 13;
 
-                graphics.blit(XIANGQI_BG, offsetX, offsetY, u, v, 11, 11);
+                graphics.blit(RenderPipelines.GUI_TEXTURED, XIANGQI_BG, offsetX, offsetY, (float) u, (float) v, 11, 11, 256, 256);
             }
         }
     }
 
     private void renderChess(int pX, int pY, GuiGraphics graphics, byte[] data) {
-        graphics.pose().pushPose();
-        graphics.pose().scale(0.5f, 0.5f, 1);
-        graphics.pose().translate(pX, pY, 0);
-        graphics.blit(CHESS_BG, pX, pY, 0, 0, 204, 204);
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(0.5f, 0.5f);
+        graphics.pose().translate(pX, pY);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, CHESS_BG, pX, pY, (float) 0, (float) 0, 204, 204, 256, 256);
 
         for (int y = 0; y <= 7; y++) {
             for (int x = 4; x <= 11; x++) {
@@ -182,10 +183,10 @@ public class ClientBoardStateTooltip implements ClientTooltipComponent {
                 int offsetX = pX + 6 + (x - 4) * 24;
                 int offsetY = pY + 6 + y * 24;
 
-                graphics.blit(CHESS_BG, offsetX, offsetY, u, v, 24, 24);
+                graphics.blit(RenderPipelines.GUI_TEXTURED, CHESS_BG, offsetX, offsetY, (float) u, (float) v, 24, 24, 256, 256);
             }
         }
 
-        graphics.pose().popPose();
+        graphics.pose().popMatrix();
     }
 }

@@ -1,13 +1,13 @@
 package com.github.tartaricacid.touhoulittlemaid.geckolib3.geo;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 
-public interface IGeoEntityRenderer<T extends Entity> {
-    IGeoEntity getGeoEntity(T entity);
+public interface IGeoEntityRenderer<S extends EntityRenderState> {
+    IGeoEntity getGeoEntity(S state);
 
     void addGeoLayerRenderer(GeoLayerRenderer<?, ?> layerRenderer);
 
-    void geoRender(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight);
+    void geoRender(S state, float entityYaw, float partialTick, PoseStack poseStack, SubmitNodeCollector bufferSource, int packedLight);
 }

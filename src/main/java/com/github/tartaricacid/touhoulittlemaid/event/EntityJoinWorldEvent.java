@@ -2,6 +2,8 @@ package com.github.tartaricacid.touhoulittlemaid.event;
 
 import cn.sh1rocu.touhoulittlemaid.api.event.EntityJoinLevelEvent;
 import cn.sh1rocu.touhoulittlemaid.mixin.accessor.MobAccessor;
+import cn.sh1rocu.touhoulittlemaid.mixin.accessor.TemptGoalAccessor;
+import net.minecraft.world.entity.PathfinderMob;
 import com.github.tartaricacid.touhoulittlemaid.data.MaidNumAttachment;
 import com.github.tartaricacid.touhoulittlemaid.data.PowerAttachment;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.goal.MaidTemptGoal;
@@ -34,7 +36,9 @@ public class EntityJoinWorldEvent {
             var goals = List.copyOf(goalSelector.getAvailableGoals());
             goals.stream().filter(goal -> goal.getGoal() instanceof TemptGoal).findFirst().ifPresent(g -> {
                 if (g.getGoal() instanceof TemptGoal temptGoal) {
-                    MaidTemptGoal maidTemptGoal = new MaidTemptGoal(temptGoal.mob, temptGoal.speedModifier, temptGoal.items, temptGoal.canScare);
+
+                    TemptGoalAccessor acc = (TemptGoalAccessor) temptGoal;
+                    MaidTemptGoal maidTemptGoal = new MaidTemptGoal((PathfinderMob) acc.tlm$mob(), acc.tlm$speedModifier(), acc.tlm$items(), acc.tlm$canScare());
                     goalSelector.addGoal(g.getPriority(), maidTemptGoal);
                 }
             });

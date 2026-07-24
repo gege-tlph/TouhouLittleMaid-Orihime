@@ -1,5 +1,11 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.item;
 
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
 import com.github.tartaricacid.touhoulittlemaid.api.entity.IBroomControl;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.control.BroomControlManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -9,9 +15,12 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -19,6 +28,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -37,17 +47,20 @@ import java.util.UUID;
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent.OWNER_UUID_TAG_NAME;
 
 public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity, HasCustomInventoryScreen {
+
     public static final EntityType<EntityBroom> TYPE = EntityType.Builder.<EntityBroom>of(EntityBroom::new, MobCategory.MISC)
             .sized(1.375F, 0.5625F)
             .clientTrackingRange(10)
             .ridingOffset(0)
-            .build("broom");
+            .build(ResourceKey.create(Registries.ENTITY_TYPE,
+                    Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "broom")));
 
-    private static final EntityDataAccessor<Optional<UUID>> OWNER_ID = SynchedEntityData.defineId(EntityBroom.class, EntityDataSerializers.OPTIONAL_UUID);
+
+    private static final EntityDataAccessor<Optional<EntityReference<LivingEntity>>> OWNER_ID =
+            SynchedEntityData.defineId(EntityBroom.class, EntityDataSerializers.OPTIONAL_LIVING_ENTITY_REFERENCE);
 
     private final List<IBroomControl> broomControls;
     public boolean inPhysicalCheck = false;
-    private AABB physicalBoundingBox = new AABB(Vec3.ZERO, Vec3.ZERO);
 
     public EntityBroom(EntityType<EntityBroom> entityType, Level worldIn) {
         super(entityType, worldIn);
@@ -65,31 +78,20 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
         builder.define(OWNER_ID, Optional.empty());
     }
 
+
     @Override
-    public void readAdditionalSaveData(CompoundTag compound) {
-        super.readAdditionalSaveData(compound);
-        if (compound.contains(OWNER_UUID_TAG_NAME)) {
-            setOwnerUUID(NbtUtils.loadUUID(Objects.requireNonNull(compound.get(OWNER_UUID_TAG_NAME))));
-        }
+    protected void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        input.read(OWNER_UUID_TAG_NAME, UUIDUtil.CODEC).ifPresent(this::setOwnerUUID);
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag compound) {
-        super.addAdditionalSaveData(compound);
-        this.entityData.get(OWNER_ID).ifPresent(uuid -> compound.putUUID(OWNER_UUID_TAG_NAME, uuid));
-    }
-
-    @Override
-    protected AABB makeBoundingBox() {
-        AABB aabb = super.makeBoundingBox();
-        if (this.getPassengers().size() > 1) {
-            // 如果有乘客，扫帚的碰撞盒就变大一点
-            this.physicalBoundingBox = new AABB(aabb.minX, aabb.minY, aabb.minZ,
-                    aabb.maxX, aabb.maxY + 1, aabb.maxZ);
-        } else {
-            this.physicalBoundingBox = aabb;
+    protected void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        UUID uuid = getOwnerUUID();
+        if (uuid != null) {
+            output.store(OWNER_UUID_TAG_NAME, UUIDUtil.CODEC, uuid);
         }
-        return aabb;
     }
 
     @Override
@@ -129,7 +131,7 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
         if (!this.getPassengers().isEmpty() && !(this.getControllingPassenger() instanceof Player)) {
             return;
         }
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             List<EntityMaid> list = level.getEntitiesOfClass(EntityMaid.class, getBoundingBox().expandTowards(0.5, 0.1, 0.5), this::canMaidRide);
             list.stream().findFirst().ifPresent(entity -> entity.startRiding(this));
         }
@@ -137,7 +139,7 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
 
     private boolean canMaidRide(EntityMaid maid) {
         if (maid.canBrainMoving() && !maid.isVehicle() && EntitySelector.pushableBy(this).test(maid)) {
-            UUID maidOwnerUUID = maid.getOwnerUUID();
+            UUID maidOwnerUUID = maid.getOwner() != null ? maid.getOwner().getUUID() : null;
             UUID broomOwnerUUID = this.getOwnerUUID();
             if (maidOwnerUUID == null || broomOwnerUUID == null) {
                 return false;
@@ -196,12 +198,12 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
     public InteractionResult interact(Player player, InteractionHand hand) {
         if (!player.isDiscrete() && !this.isPassenger() && !(this.getControllingPassenger() instanceof Player)) {
             if (this.getPassengers().size() > 1) {
-                return InteractionResult.sidedSuccess(this.level.isClientSide);
+                return InteractionResult.SUCCESS;
             }
-            if (!level.isClientSide) {
+            if (!level.isClientSide()) {
                 player.startRiding(this);
             }
-            return InteractionResult.sidedSuccess(this.level.isClientSide);
+            return InteractionResult.SUCCESS;
         }
         return super.interact(player, hand);
     }
@@ -243,13 +245,12 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
     }
 
     @Override
-    public boolean canBeCollidedWith() {
+    public boolean canBeCollidedWith(@Nullable Entity entity) {
         return this.isAlive();
     }
 
     /**
-     * 当玩家骑在扫帚上时，让扫帚本体不可被选中
-     * 防止其碰撞箱影响正常交互
+     * 当玩家骑在扫帚上时，让扫帚本体不可被选中 防止其碰撞箱影响正常交互
      */
     @Override
     public boolean isPickable() {
@@ -283,7 +284,7 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
     }
 
     @Override
-    public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {
+    public boolean causeFallDamage(double pFallDistance, float pMultiplier, DamageSource pSource) {
         return false;
     }
 
@@ -292,17 +293,29 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
         this.resetFallDistance();
     }
 
-    @Override
     @Nullable
     public UUID getOwnerUUID() {
-        return this.entityData.get(OWNER_ID).orElse(null);
+        return this.entityData.get(OWNER_ID).map(EntityReference::getUUID).orElse(null);
     }
 
     public void setOwnerUUID(@Nullable UUID uuid) {
-        this.entityData.set(OWNER_ID, Optional.ofNullable(uuid));
+        this.entityData.set(OWNER_ID, uuid == null ? Optional.empty() : Optional.of(EntityReference.of(uuid)));
     }
 
-    public AABB getPhysicalBoundingBox() {
-        return physicalBoundingBox;
+
+    @Override
+    public EntityReference<LivingEntity> getOwnerReference() {
+        return this.entityData.get(OWNER_ID).orElse(null);
+    }
+
+    /**
+     * 从实体当前包围盒派生扫帚的物理碰撞范围，确保乘客变化后尺寸仍保持同步。
+     */
+    public AABB getPhysicalBoundingBox(AABB baseBoundingBox) {
+        if (this.getPassengers().size() > 1) {
+            return new AABB(baseBoundingBox.minX, baseBoundingBox.minY, baseBoundingBox.minZ,
+                    baseBoundingBox.maxX, baseBoundingBox.maxY + 1, baseBoundingBox.maxZ);
+        }
+        return baseBoundingBox;
     }
 }

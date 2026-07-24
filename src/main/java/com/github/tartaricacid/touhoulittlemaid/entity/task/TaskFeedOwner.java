@@ -9,28 +9,32 @@ import com.github.tartaricacid.touhoulittlemaid.util.SoundUtil;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.component.Consumable;
+import net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect;
+import net.minecraft.world.item.consume_effects.ConsumeEffect;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.ItemUseAnimation;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
 public class TaskFeedOwner implements IFeedTask {
-    public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "feed");
+    public static final Identifier UID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "feed");
 
     @Override
-    public ResourceLocation getUid() {
+    public Identifier getUid() {
         return UID;
     }
 
@@ -43,20 +47,26 @@ public class TaskFeedOwner implements IFeedTask {
     public boolean isFood(ItemStack stack, Player owner) {
         if (stack.getItem() == Items.MILK_BUCKET) {
             for (MobEffectInstance effect : owner.getActiveEffects()) {
-                if (isHarmfulEffect(effect) && effect.getDuration() > 60 /*&& effect.getCures().contains(EffectCures.MILK)*/) {
+                if (isHarmfulEffect(effect) && effect.getDuration() > 60) {
                     return true;
                 }
             }
             return false;
         }
-        //if (stack.getItem().getFoodProperties(stack, owner) != null) {
+
         if (stack.get(DataComponents.FOOD) != null) {
-            //FoodProperties food = stack.getItem().getFoodProperties(stack, owner);
-            FoodProperties food = stack.get(DataComponents.FOOD);
-            if (food != null) {
-                return food.effects().isEmpty() ||
-                        food.effects().stream().noneMatch(effect -> isHarmfulEffect(effect.effect()));
+
+            Consumable consumable = stack.get(DataComponents.CONSUMABLE);
+            if (consumable == null) {
+                return true;
             }
+            List<MobEffectInstance> effects = new java.util.ArrayList<>();
+            for (ConsumeEffect consumeEffect : consumable.onConsumeEffects()) {
+                if (consumeEffect instanceof ApplyStatusEffectsConsumeEffect apply) {
+                    effects.addAll(apply.effects());
+                }
+            }
+            return effects.isEmpty() || effects.stream().noneMatch(this::isHarmfulEffect);
         }
         return false;
     }
@@ -67,8 +77,7 @@ public class TaskFeedOwner implements IFeedTask {
             return Priority.HIGH;
         }
 
-        // 蜂蜜瓶可以清除中毒效果，所以当玩家拥有中毒效果时，应当优先使用
-        //if (stack.is(Items.HONEY_BOTTLE) && owner.getActiveEffects().stream().anyMatch(effect -> effect.getCures().contains(EffectCures.HONEY))) {
+
         if (stack.is(Items.HONEY_BOTTLE) && owner.hasEffect(MobEffects.POISON)) {
             return Priority.HIGH;
         }
@@ -81,13 +90,13 @@ public class TaskFeedOwner implements IFeedTask {
             }
         }
 
-        //if (stack.getItem().getFoodProperties(stack, owner) != null) {
+
         if (stack.get(DataComponents.FOOD) != null) {
             FoodData foodData = owner.getFoodData();
             if (!foodData.needsFood()) {
                 return Priority.LOWEST;
             }
-            //FoodProperties food = stack.getItem().getFoodProperties(stack, owner);
+
             FoodProperties food = stack.get(DataComponents.FOOD);
             int heal = 0;
             if (food != null) {
@@ -106,8 +115,11 @@ public class TaskFeedOwner implements IFeedTask {
 
     @Override
     public ItemStack feed(ItemStack stack, Player owner) {
-        if (stack.getUseAnimation() == UseAnim.DRINK) {
-            owner.level.playSound(null, owner, stack.getDrinkingSound(), SoundSource.NEUTRAL,
+        if (stack.getUseAnimation() == ItemUseAnimation.DRINK) {
+
+            Consumable consumable = stack.get(DataComponents.CONSUMABLE);
+            SoundEvent drinkSound = consumable != null ? consumable.sound().value() : SoundEvents.GENERIC_DRINK.value();
+            owner.level.playSound(null, owner, drinkSound, SoundSource.NEUTRAL,
                     0.5f, owner.level.getRandom().nextFloat() * 0.1f + 0.9f);
         }
         return stack.getItem().finishUsingItem(stack, owner.level, owner);

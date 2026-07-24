@@ -23,7 +23,18 @@ build
 # other
 eclipse
 run
+run*/
 src/test
 
 /src/generated/.cache/
 /src/main/generated/.cache/
+
+# loom decompile/remap artifacts leaked to repo root
+/mappings/
+/net/
+/remappedSrc/
+/remapped.accesswidener
+/remapped.accesswidener.txt
+
+# build.gradle experiment/backup copies (build.gradle itself is tracked)
+/build.gradle.*

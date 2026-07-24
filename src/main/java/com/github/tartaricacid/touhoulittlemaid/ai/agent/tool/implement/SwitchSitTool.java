@@ -15,9 +15,11 @@ public class SwitchSitTool implements ITool<SwitchSitTool.Result> {
     public static final String TOOL_ID = "switch_sit";
 
     private static final String TOOL_DESC = """
-            Use this when the user wants the maid to sit or stand.
+            Use this for an explicit player command that changes the maid's persistent sit/stand state.
             Set sit=true to sit. Set sit=false to stand.
             Do not use this to control follow mode.
+            Do not use this to represent a temporary emergency or combat state.
+            A valid explicit command stops any current temporary threat response.
             """.trim();
 
     private static final String SIT_PARAM_ID = "sit";
@@ -50,22 +52,28 @@ public class SwitchSitTool implements ITool<SwitchSitTool.Result> {
     @Override
     public LLMCallback onCall(String toolId, Result result, LLMCallback callback) {
         EntityMaid maid = callback.getMaid();
+        boolean emergencyStopped = maid.isEmergencyCombatActive();
+        maid.getCombatManager().onPlayerCommand();
         boolean toSit = result.sit;
         boolean isSitting = maid.isMaidInSittingPose();
 
         if (toSit) {
             if (isSitting) {
-                return callback.addToolResult("Already sitting", toolId);
+                return callback.addToolResult(withThreatResult("Already sitting", emergencyStopped), toolId);
             }
-            maid.setInSittingPose(true);
-            return callback.addToolResult("Success sitting", toolId);
+            maid.setInSittingPoseWithoutPlayerCommand(true);
+            return callback.addToolResult(withThreatResult("Success sitting", emergencyStopped), toolId);
         }
 
         if (!isSitting) {
-            return callback.addToolResult("Already standing", toolId);
+            return callback.addToolResult(withThreatResult("Already standing", emergencyStopped), toolId);
         }
-        maid.setInSittingPose(false);
-        return callback.addToolResult("Success standing", toolId);
+        maid.setInSittingPoseWithoutPlayerCommand(false);
+        return callback.addToolResult(withThreatResult("Success standing", emergencyStopped), toolId);
+    }
+
+    private static String withThreatResult(String result, boolean stopped) {
+        return stopped ? result + ". Temporary threat response stopped." : result;
     }
 
     @Override

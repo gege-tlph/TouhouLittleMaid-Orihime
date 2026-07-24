@@ -19,7 +19,6 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,10 +35,13 @@ public class MaidFarmPlantTask extends Behavior<EntityMaid> {
     protected boolean checkExtraStartConditions(ServerLevel worldIn, EntityMaid owner) {
         Brain<EntityMaid> brain = owner.getBrain();
         return brain.getMemory(InitEntities.TARGET_POS).map(targetPos -> {
-            Vec3 targetV3d = targetPos.currentPosition();
-            if (owner.distanceToSqr(targetV3d) > Math.pow(task.getCloseEnoughDist(), 2)) {
+            BlockPos interactionBasePos = targetPos.currentBlockPosition();
+            if (!MaidFarmMoveTask.isWithinInteractionRange(owner.blockPosition(), interactionBasePos,
+                    task.getCloseEnoughDist())) {
                 Optional<WalkTarget> walkTarget = brain.getMemory(MemoryModuleType.WALK_TARGET);
-                if (walkTarget.isEmpty() || !walkTarget.get().getTarget().currentPosition().equals(targetV3d)) {
+                if (walkTarget.isEmpty() || !MaidFarmMoveTask.isWithinInteractionRange(
+                        walkTarget.get().getTarget().currentBlockPosition(), interactionBasePos,
+                        task.getCloseEnoughDist())) {
                     brain.eraseMemory(InitEntities.TARGET_POS);
                 }
                 return false;

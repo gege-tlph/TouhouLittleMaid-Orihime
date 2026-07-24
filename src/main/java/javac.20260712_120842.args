@@ -1,0 +1,3 @@
+-cp
+..\\..\\..\\build\\loom-cache\\remapped_mods\\net_fabricmc_yarn_1_21_11_1_21_11_build_6\\fabric-api-0.141.4+1.21.11-remapped.jar;.
+com/github/tartaricacid/touhoulittlemaid/ai/manager/entity/MaidAIChatManager.java

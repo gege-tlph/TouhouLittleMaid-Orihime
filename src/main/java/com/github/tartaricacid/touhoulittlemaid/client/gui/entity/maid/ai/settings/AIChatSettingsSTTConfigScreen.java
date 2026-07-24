@@ -6,6 +6,7 @@ import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.FlatCol
 import com.github.tartaricacid.touhoulittlemaid.client.sound.record.MicrophoneManager;
 import com.github.tartaricacid.touhoulittlemaid.config.GeneralConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
+import com.github.tartaricacid.touhoulittlemaid.network.client.config.ServerRulesClientCache;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -55,11 +56,23 @@ public class AIChatSettingsSTTConfigScreen extends AIChatSettingsHubScreen {
             this.init();
         }));
 
-        MutableComponent siteName = Component.translatable("ai.touhou_little_maid.chat.site.%s.name".formatted(this.state.sttType.getName()));
+        MutableComponent siteName = ServerRulesClientCache.isUsingServerStt()
+                ? Component.translatable("ai.touhou_little_maid.chat.site.server.name")
+                : Component.translatable("ai.touhou_little_maid.chat.site.%s.name"
+                .formatted(this.state.sttType.getName()));
         this.typeBtn = this.addRenderableWidget(new FlatColorButton(x + 104, this.getContentY() + 12, width - 104, 20, siteName, b -> {
-            STTApiType[] values = STTApiType.values();
-            int ordinal = this.state.sttType.ordinal();
-            this.state.sttType = values[(ordinal + 1) % values.length];
+            if (ServerRulesClientCache.isUsingServerStt()) {
+                ServerRulesClientCache.setUsingServerStt(false);
+                this.state.sttType = STTApiType.PLAYER2;
+            } else {
+                STTApiType[] values = STTApiType.values();
+                int ordinal = this.state.sttType.ordinal();
+                if (ordinal == values.length - 1 && ServerRulesClientCache.isServerSttOffered()) {
+                    ServerRulesClientCache.setUsingServerStt(true);
+                } else {
+                    this.state.sttType = values[(ordinal + 1) % values.length];
+                }
+            }
             this.init();
         }));
 

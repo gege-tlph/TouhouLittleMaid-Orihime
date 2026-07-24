@@ -13,25 +13,23 @@ public class DataGenerator implements DataGeneratorEntrypoint {
     public void onInitializeDataGenerator(FabricDataGenerator fabricDataGenerator) {
         FabricDataGenerator.Pack pack = fabricDataGenerator.createPack();
 
-        // Model
+        // 型号
         pack.addProvider(ItemModelGenerator::new);
 
-        // Advancements
+        // 进步
         pack.addProvider(AdvancementDataGen::new);
 
-        // Loot Tables
+        // 战利品表
         pack.addProvider(LootTableGenerator.ChestLootTables::new);
         pack.addProvider(LootTableGenerator.AdvancementLootTables::new);
         pack.addProvider(LootTableGenerator.EntityLootTables::new);
         pack.addProvider(LootTableGenerator.BlockLootTables::new);
 
-        // Global Loot Modifier Fabric使用Event修改
-        // pack.addProvider(packOutput -> new GlobalLootModifier(packOutput, registries, TouhouLittleMaid.MOD_ID));
 
-        // Recipe
+        // 食谱
         pack.addProvider(RecipeGenerator::new);
 
-        // Tags
+        // 标签
         pack.addProvider(TagDamage::new);
         pack.addProvider(TagEntity::new);
         pack.addProvider(TagBlock::new);
@@ -40,7 +38,7 @@ public class DataGenerator implements DataGeneratorEntrypoint {
         pack.addProvider(TagRecipeSerializer::new);
         pack.addProvider(TagPaintingVariant::new);
 
-        // Registry Based Stuff
+        // 基于注册表的东西
         pack.addProvider(RegistryDataGenerator::new);
     }
 

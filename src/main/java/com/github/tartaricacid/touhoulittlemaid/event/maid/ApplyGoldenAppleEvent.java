@@ -18,12 +18,13 @@ public final class ApplyGoldenAppleEvent {
         ItemStack stack = event.getStack();
         EntityMaid maid = event.getMaid();
         Level world = event.getWorld();
-        //FoodProperties food = stack.getItem().getFoodProperties(stack, maid);
+
         FoodProperties food = stack.get(DataComponents.FOOD);
         Player player = event.getPlayer();
 
         if (player.isDiscrete() && (food == Foods.GOLDEN_APPLE || food == Foods.ENCHANTED_GOLDEN_APPLE)) {
-            maid.eat(world, stack);
+
+            maid.tlmEat(world, stack, food);
             if (food == Foods.ENCHANTED_GOLDEN_APPLE && player instanceof ServerPlayer serverPlayer) {
                 InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.EAT_ENCHANTED_GOLDEN_APPLE);
             }

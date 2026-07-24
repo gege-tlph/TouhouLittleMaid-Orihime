@@ -1,28 +1,20 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message;
 
-import com.github.tartaricacid.touhoulittlemaid.client.sound.data.MaidSoundInstance;
-import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.network.client.PlayMaidSoundPackageProxy;
 import io.netty.buffer.ByteBuf;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.Minecraft;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.world.entity.Entity;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.resources.Identifier;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
-public record PlayMaidSoundPackage(ResourceLocation soundEvent, String id,
+public record PlayMaidSoundPackage(Identifier soundEvent, String id,
                                    int entityId) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<PlayMaidSoundPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("play_maid_sound"));
+    public static final CustomPacketPayload.Type<PlayMaidSoundPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("play_maid_sound"));
     public static final StreamCodec<ByteBuf, PlayMaidSoundPackage> STREAM_CODEC = StreamCodec.composite(
-            ResourceLocation.STREAM_CODEC,
+            Identifier.STREAM_CODEC,
             PlayMaidSoundPackage::soundEvent,
             ByteBufCodecs.STRING_UTF8,
             PlayMaidSoundPackage::id,
@@ -32,28 +24,11 @@ public record PlayMaidSoundPackage(ResourceLocation soundEvent, String id,
     );
 
     public static void handle(PlayMaidSoundPackage message, ClientPlayNetworking.Context context) {
-        context.client().execute(() -> playSound(message));
-    }
-
-    @Environment(EnvType.CLIENT)
-    private static void playSound(PlayMaidSoundPackage message) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            return;
-        }
-        Entity entity = mc.level.getEntity(message.entityId);
-        if (!(entity instanceof EntityMaid maid)) {
-            return;
-        }
-        SoundEvent event = BuiltInRegistries.SOUND_EVENT.get(message.soundEvent);
-        if (event == null) {
-            return;
-        }
-        mc.getSoundManager().play(new MaidSoundInstance(event, message.id, maid));
+        context.client().execute(() -> PlayMaidSoundPackageProxy.handle(message));
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

@@ -2,7 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.block;
 
 import cn.sh1rocu.touhoulittlemaid.api.extension.IBlock;
 import cn.sh1rocu.touhoulittlemaid.util.particle.ParticleUtil;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.CustomPackLoader;
+import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBlocks;
 import com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent;
@@ -16,14 +16,18 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.client.particle.TerrainParticle;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
@@ -64,7 +68,10 @@ public class BlockGarageKit extends Block implements EntityBlock, IBlock {
     @Environment(EnvType.CLIENT)
     @Override
     public boolean tlm$addDestroyEffects(BlockState state, Level world, BlockPos pos, ParticleEngine manager) {
-        Minecraft.getInstance().particleEngine.destroy(pos, Blocks.CLAY.defaultBlockState());
+
+        if (world instanceof ClientLevel clientLevel) {
+            clientLevel.addDestroyBlockEffect(pos, Blocks.CLAY.defaultBlockState());
+        }
         return true;
     }
 
@@ -101,12 +108,13 @@ public class BlockGarageKit extends Block implements EntityBlock, IBlock {
         }
     }
 
-    public BlockGarageKit() {
-        super(BlockBehaviour.Properties.of().sound(SoundType.MUD).strength(1, 2).noOcclusion());
+    public BlockGarageKit(Identifier id) {
+        super(BlockBehaviour.Properties.of().setId(ResourceKey.create(Registries.BLOCK, id)).sound(SoundType.MUD).strength(1, 2).noOcclusion());
     }
 
     @Environment(EnvType.CLIENT)
     public static void fillItemCategory(CreativeModeTab.Output items) {
+
         for (String modelId : CustomPackLoader.MAID_MODELS.getModelIdSet()) {
             ItemStack stack = new ItemStack(InitBlocks.GARAGE_KIT);
             CustomData customData = stack.get(InitDataComponent.MAID_INFO);
@@ -131,13 +139,6 @@ public class BlockGarageKit extends Block implements EntityBlock, IBlock {
         return new TileEntityGarageKit(pos, state);
     }
 
-    @Override
-    public void onRemove(BlockState state, Level worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !isMoving) {
-            popResource(worldIn, pos, getGarageKitFromWorld(worldIn, pos));
-        }
-        super.onRemove(state, worldIn, pos, newState, isMoving);
-    }
 
     @Override
     public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
@@ -151,40 +152,42 @@ public class BlockGarageKit extends Block implements EntityBlock, IBlock {
     }
 
     @Override
-    //public ItemStack getCloneItemStack(@NotNull BlockState state, @NotNull HitResult target, @NotNull LevelReader world, @NotNull BlockPos pos, @NotNull Player player) {
-    public ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state) {
+    public ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state, boolean includeData) {
         return getGarageKitFromWorld(world, pos);
     }
 
     @Override
-    public ItemInteractionResult useItemOn(ItemStack itemStack, BlockState state, Level worldIn, BlockPos pos, Player playerIn, InteractionHand hand, BlockHitResult hit) {
+    public InteractionResult useItemOn(ItemStack itemStack, BlockState state, Level worldIn, BlockPos pos, Player playerIn, InteractionHand hand, BlockHitResult hit) {
         ItemStack stack = playerIn.getItemInHand(hand);
         if (!(worldIn instanceof ServerLevel) || !(stack.getItem() instanceof SpawnEggItem)) {
-            return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.PASS;
         }
         BlockEntity tile = worldIn.getBlockEntity(pos);
         if (!(tile instanceof TileEntityGarageKit garageKit)) {
-            return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.PASS;
         }
         EntityType<?> type = ((SpawnEggItem) stack.getItem()).getType(stack);
-        ResourceLocation key = BuiltInRegistries.ENTITY_TYPE.getKey(type);
+        Identifier key = BuiltInRegistries.ENTITY_TYPE.getKey(type);
         if (key.equals(BuiltInRegistries.ENTITY_TYPE.getDefaultKey())) {
-            return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.PASS;
         }
 
         String id = key.toString();
         CompoundTag data = new CompoundTag();
         data.putString("id", id);
 
-        Entity entity = type.create(worldIn);
+
+        Entity entity = type.create(worldIn, EntitySpawnReason.SPAWN_ITEM_USE);
         if (entity instanceof Mob mobEntity) {
-            mobEntity.finalizeSpawn((ServerLevel) worldIn, worldIn.getCurrentDifficultyAt(pos), MobSpawnType.SPAWN_EGG, null);
-            CustomData.of(data).loadInto(mobEntity);
-            mobEntity.addAdditionalSaveData(data);
+            mobEntity.finalizeSpawn((ServerLevel) worldIn, ((ServerLevel) worldIn).getCurrentDifficultyAt(pos), EntitySpawnReason.SPAWN_ITEM_USE, null);
+
+            TagValueOutput valueOutput = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, ((ServerLevel) worldIn).registryAccess());
+            mobEntity.saveWithoutId(valueOutput);
+            data.merge(valueOutput.buildResult());
         }
 
         garageKit.setData(garageKit.getFacing(), data);
-        return ItemInteractionResult.SUCCESS;
+        return InteractionResult.SUCCESS_SERVER;
     }
 
     private ItemStack getGarageKitFromWorld(BlockGetter world, BlockPos pos) {
@@ -203,19 +206,18 @@ public class BlockGarageKit extends Block implements EntityBlock, IBlock {
 
     @Nullable
     public EntityType<?> getType(@Nullable CompoundTag nbt) {
-        if (nbt != null && nbt.contains("EntityTag", Tag.TAG_COMPOUND)) {
-            CompoundTag compound = nbt.getCompound("EntityTag");
-            if (compound.contains("id", Tag.TAG_STRING)) {
-                return EntityType.byString(compound.getString("id")).orElse(null);
+        if (nbt != null) {
+            Optional<CompoundTag> entityTag = nbt.getCompound("EntityTag");
+            if (entityTag.isPresent()) {
+                Optional<String> id = entityTag.get().getString("id");
+                if (id.isPresent()) {
+                    return EntityType.byString(id.get()).orElse(null);
+                }
             }
         }
         return null;
     }
 
-    @Override
-    public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
-    }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {

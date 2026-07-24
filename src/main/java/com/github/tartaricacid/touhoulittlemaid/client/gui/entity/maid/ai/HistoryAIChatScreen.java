@@ -22,7 +22,7 @@ import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -42,7 +42,7 @@ public class HistoryAIChatScreen extends Screen {
     private static final int TOOL_TEXT_WIDTH = 180;
 
     private static final int SUMMARY_WIDTH = 120;
-    private static final float SUMMARY_TEXT_SCALE = 0.5f;
+    private static final float SUMMARY_TEXT_SCALE = 0.70f;
     private static final int SUMMARY_TOP = 24;
     private static final int RIGHT_COLUMN_BOTTOM_MARGIN = 24;
     private static final int BUTTON_HEIGHT = 20;
@@ -52,7 +52,7 @@ public class HistoryAIChatScreen extends Screen {
 
     private final EntityMaid maid;
     private final @Nullable Screen parent;
-    private final ResourceLocation playerSkin;
+    private final Identifier playerSkin;
     private final List<LLMMessage> history = Lists.newArrayList();
     private final List<Renderable> historyWidgets = Lists.newArrayList();
 
@@ -175,23 +175,23 @@ public class HistoryAIChatScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         super.render(graphics, mouseX, mouseY, partialTicks);
 
-        graphics.drawCenteredString(font, HISTORY_TITLE, posX + 210, 8, 0xFFFFFF);
+        graphics.drawCenteredString(font, HISTORY_TITLE, posX + 210, 8, 0xFFFFFFFF);
         this.renderSummaryPanel(graphics);
 
         if (this.historyWidgets.isEmpty()) {
             List<FormattedCharSequence> split = font.split(HISTORY_EMPTY, 150);
             for (int i = 0; i < split.size(); i++) {
                 int height = i * font.lineHeight;
-                graphics.drawCenteredString(font, split.get(i), posX, this.historyTop + 15 + height, 0xff5555);
+                graphics.drawCenteredString(font, split.get(i), posX, this.historyTop + 15 + height, 0xFFFF5555);
             }
         } else {
             graphics.enableScissor(posX - 128, this.historyTop, posX + 128, this.historyBottom);
-            graphics.pose().pushPose();
-            graphics.pose().translate(0, scroll, 0);
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(0, (float) scroll);
             for (Renderable renderable : this.historyWidgets) {
                 renderable.render(graphics, mouseX, mouseY, partialTicks);
             }
-            graphics.pose().popPose();
+            graphics.pose().popMatrix();
             graphics.disableScissor();
         }
     }
@@ -253,8 +253,7 @@ public class HistoryAIChatScreen extends Screen {
                 }
             }
 
-            // 自身发送给 LLM 的历史记录，不显示在聊天记录中
-            // if (message.role() == Role.TOOL) {}
+
         });
     }
 
@@ -284,8 +283,9 @@ public class HistoryAIChatScreen extends Screen {
 
     private int getHistoryLineHeight(Component message, boolean isTool) {
         if (isTool) {
-            int lineCount = font.split(message, TOOL_TEXT_WIDTH).size();
-            return lineCount * font.lineHeight / 5;
+            int logicalWidth = HistoryChatWidget.getToolTextWidth(TOOL_TEXT_WIDTH);
+            int lineCount = font.split(message, logicalWidth).size();
+            return Math.max(1, (int) Math.ceil(lineCount * font.lineHeight * HistoryChatWidget.TOOL_TEXT_SCALE));
         } else {
             int lineCount = font.split(message, CHAT_TEXT_WIDTH).size();
             return 10 + lineCount * font.lineHeight;
@@ -300,7 +300,7 @@ public class HistoryAIChatScreen extends Screen {
         graphics.fill(left, this.summaryTop, right, this.summaryTop + 1, 0x66FFFFFF);
         graphics.fill(left, this.summaryBottom - 1, right, this.summaryBottom, 0x66FFFFFF);
 
-        graphics.drawCenteredString(font, SUMMARY_TITLE, left + SUMMARY_WIDTH / 2, this.summaryTop + 6, 0xFFFFFF);
+        graphics.drawCenteredString(font, SUMMARY_TITLE, left + SUMMARY_WIDTH / 2, this.summaryTop + 6, 0xFFFFFFFF);
 
         // 依据窗口大小，调整 summary 的显示内容
         if (this.linesCache == null) {
@@ -309,17 +309,17 @@ public class HistoryAIChatScreen extends Screen {
         }
 
         // 渲染缩放字符大小的 summary
-        graphics.pose().pushPose();
-        graphics.pose().scale(SUMMARY_TEXT_SCALE, SUMMARY_TEXT_SCALE, 1);
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(SUMMARY_TEXT_SCALE, SUMMARY_TEXT_SCALE);
 
-        int color = StringUtils.isBlank(this.summaryText) ? 0x999999 : 0xDDDDDD;
+        int color = StringUtils.isBlank(this.summaryText) ? 0xFF999999 : 0xFFDDDDDD;
         float x = (left + 6) / SUMMARY_TEXT_SCALE;
         float y = (this.summaryTop + 22) / SUMMARY_TEXT_SCALE;
         for (int i = 0; i < this.linesCache.size(); i++) {
             graphics.drawString(font, this.linesCache.get(i), (int) x, (int) (y + i * font.lineHeight), color, false);
         }
 
-        graphics.pose().popPose();
+        graphics.pose().popMatrix();
     }
 
     private int getSummaryPanelHeight() {
@@ -388,12 +388,12 @@ public class HistoryAIChatScreen extends Screen {
         return lines;
     }
 
-    private ResourceLocation getPlayerSkin() {
+    private Identifier getPlayerSkin() {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null) {
             return DefaultPlayerSkin.getDefaultTexture();
         }
-        return mc.getSkinManager().getInsecureSkin(player.getGameProfile()).texture();
+        return player.getSkin().body().texturePath();
     }
 }

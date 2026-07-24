@@ -1,5 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.item;
 
+import java.util.function.Consumer;
+import net.minecraft.world.item.component.TooltipDisplay;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidAndItemTransformEvent;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent;
@@ -11,16 +13,21 @@ import com.github.tartaricacid.touhoulittlemaid.network.message.SpawnParticlePac
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -29,15 +36,18 @@ import java.util.Objects;
 public class ItemFilm extends AbstractStoreMaidItem {
     private static final String ID_TAG = "id";
 
-    public ItemFilm() {
-        super((new Item.Properties()).stacksTo(1));
+    public ItemFilm(Identifier id) {
+        super((new Item.Properties()).setId(ResourceKey.create(Registries.ITEM, id)).stacksTo(1));
     }
 
     public static ItemStack maidToFilm(EntityMaid maid) {
         ItemStack film = InitItems.FILM.getDefaultInstance();
-        CompoundTag maidTag = new CompoundTag();
         maid.setHomeModeEnable(false);
-        maid.saveWithoutId(maidTag);
+
+        TagValueOutput valueOutput = TagValueOutput.createWithContext(
+                ProblemReporter.DISCARDING, maid.registryAccess());
+        maid.saveWithoutId(valueOutput);
+        CompoundTag maidTag = valueOutput.buildResult();
         removeMaidSomeData(maidTag);
         maidTag.putString(ID_TAG, Objects.requireNonNull(BuiltInRegistries.ENTITY_TYPE.getKey(InitEntities.MAID)).toString());
 
@@ -54,8 +64,9 @@ public class ItemFilm extends AbstractStoreMaidItem {
             return;
         }
         CompoundTag data = compoundData.copyTag();
-        ResourceLocation entityId = ResourceLocation.tryParse(data.getString(ID_TAG));
-        ResourceLocation maidId = BuiltInRegistries.ENTITY_TYPE.getKey(InitEntities.MAID);
+
+        Identifier entityId = Identifier.tryParse(data.getStringOr(ID_TAG, ""));
+        Identifier maidId = BuiltInRegistries.ENTITY_TYPE.getKey(InitEntities.MAID);
 
         if (entityId != null && entityId.equals(maidId)) {
             EntityMaid maid = new EntityMaid(worldIn);
@@ -63,10 +74,12 @@ public class ItemFilm extends AbstractStoreMaidItem {
             var event = new MaidAndItemTransformEvent.ToMaid(maid, film, data);
             MaidAndItemTransformEvent.TO_MAID.invoker().onToMaid(event);
 
-            maid.readAdditionalSaveData(data);
+
+            maid.readAdditionalSaveData(TagValueInput.create(
+                    ProblemReporter.DISCARDING, worldIn.registryAccess(), data));
             maid.setPos(pos.getX(), pos.getY(), pos.getZ());
             // 实体生成必须在服务端应用
-            if (!worldIn.isClientSide) {
+            if (!worldIn.isClientSide()) {
                 worldIn.addFreshEntity(maid);
                 NetworkHandler.sendToNearby(maid, new SpawnParticlePackage(maid.getId(), SpawnParticlePackage.Type.EXPLOSION));
                 worldIn.playSound(null, pos, InitSounds.ALTAR_CRAFT, SoundSource.VOICE, 1.0f, 1.0f);
@@ -75,8 +88,8 @@ public class ItemFilm extends AbstractStoreMaidItem {
             return;
         }
 
-        if (!worldIn.isClientSide) {
-            player.sendSystemMessage(Component.translatable("tooltips.touhou_little_maid.film.no_data.desc"));
+        if (!worldIn.isClientSide()) {
+            player.displayClientMessage(Component.translatable("tooltips.touhou_little_maid.film.no_data.desc"), false);
         }
     }
 
@@ -109,9 +122,9 @@ public class ItemFilm extends AbstractStoreMaidItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Item.TooltipContext worldIn, List<Component> tooltip, TooltipFlag flagIn) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext worldIn, TooltipDisplay tooltipDisplay, Consumer<Component> tooltip, TooltipFlag flagIn){
         if (stack.get(InitDataComponent.MAID_INFO) == null) {
-            tooltip.add(Component.translatable("tooltips.touhou_little_maid.film.no_data.desc").withStyle(ChatFormatting.DARK_RED));
+            tooltip.accept(Component.translatable("tooltips.touhou_little_maid.film.no_data.desc").withStyle(ChatFormatting.DARK_RED));
         }
     }
 }

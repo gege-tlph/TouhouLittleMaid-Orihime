@@ -1,5 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.item;
 
+import java.util.function.Consumer;
+import net.minecraft.world.item.component.TooltipDisplay;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
@@ -7,7 +9,10 @@ import com.github.tartaricacid.touhoulittlemaid.util.PlaceHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -20,8 +25,8 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public class ItemPhoto extends AbstractStoreMaidItem {
-    public ItemPhoto() {
-        super((new Properties()).stacksTo(1));
+    public ItemPhoto(Identifier id) {
+        super((new Properties()).setId(ResourceKey.create(Registries.ITEM, id)).stacksTo(1));
     }
 
     @Override
@@ -34,7 +39,8 @@ public class ItemPhoto extends AbstractStoreMaidItem {
             return super.useOn(context);
         }
         if (clickedFace == Direction.UP && !PlaceHelper.notSuitableForPlaceMaid(worldIn, clickedPos)) {
-            EntityMaid maid = InitEntities.MAID.create(worldIn);
+
+            EntityMaid maid = InitEntities.MAID.create(worldIn, net.minecraft.world.entity.EntitySpawnReason.SPAWN_ITEM_USE);
             if (maid == null) {
                 return super.useOn(context);
             }
@@ -42,8 +48,8 @@ public class ItemPhoto extends AbstractStoreMaidItem {
                 context.getItemInHand().shrink(1);
             });
         } else {
-            if (context.getItemInHand().get(InitDataComponent.MAID_INFO) != null && worldIn.isClientSide) {
-                player.sendSystemMessage(Component.translatable("message.touhou_little_maid.photo.not_suitable_for_place_maid"));
+            if (context.getItemInHand().get(InitDataComponent.MAID_INFO) != null && worldIn.isClientSide()) {
+                player.displayClientMessage(Component.translatable("message.touhou_little_maid.photo.not_suitable_for_place_maid"), false);
             }
         }
         return super.useOn(context);
@@ -55,9 +61,9 @@ public class ItemPhoto extends AbstractStoreMaidItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Item.TooltipContext worldIn, List<Component> tooltip, TooltipFlag flagIn) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext worldIn, TooltipDisplay tooltipDisplay, Consumer<Component> tooltip, TooltipFlag flagIn){
         if (stack.get(InitDataComponent.MAID_INFO) == null) {
-            tooltip.add(Component.translatable("tooltips.touhou_little_maid.photo.no_data.desc").withStyle(ChatFormatting.DARK_RED));
+            tooltip.accept(Component.translatable("tooltips.touhou_little_maid.photo.no_data.desc").withStyle(ChatFormatting.DARK_RED));
         }
     }
 }

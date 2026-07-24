@@ -7,10 +7,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
-// From Kilt
+// 来自 Kilt
 public class SoundConsumerStorage {
-    // The sound engine is lambda hell, and so we have to use this storage to be able to ensure that the channel access execute inject in
-    // ChannelAccessHandleMixin will actually be run in the correct places. We also can't wrap the consumer, because otherwise,
-    // some other mod that tries to do the same thing will cause either us or them to fail.
+    // 声音引擎是 lambda hell，因此我们必须使用此存储来确保 ChannelAccessHandleMixin 中的通道访问执行注入实际上会在正确的位置运行。我们也不能包装消费者，因为否则，尝试做同样事情的其他一些模组将导致我们或他们失败。
     public static final Set<Consumer<Channel>> soundConsumerChannels = Collections.synchronizedSet(new HashSet<>());
 }

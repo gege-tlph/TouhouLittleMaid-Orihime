@@ -30,17 +30,48 @@ right-clicking a maid with an empty hand can switch her to a sitting or standby-
 be used for several direct interactions, such as applying potions or golden apples. Right-clicking a maid with a glass
 bottle can convert stored experience into Bottles o' Enchanting. Maids can render skulls, be named directly with blank
 name tags, attract animals when holding temptation items, be carried with saddles, and are avoided by creepers.
+Owner following is a fallback behavior. Existing work movement, block interactions, attack targets, or item use take
+priority, so following does not erase those goals; it resumes after the active goal ends.
+In a single shallow water layer, a maid keeps her standing dimensions and wades. She switches to the compact swimming
+pose only when the water has sufficient consecutive depth, navigation actually requests swimming, and she is not on
+the ground, sitting, or riding.
 
 Home mode, tasks, and schedules:
 Home mode records a position and keeps the maid working or moving inside a nearby configured range instead of freely
 following the player. The Kappa Compass can define work, idle, and sleep areas, and those positions can be written to
 the maid. The maid GUI allows switching tasks and schedules. Schedules decide whether the maid works, rests, or sleeps
 at different times.
+For farming, the crop remains the interaction target while the maid chooses a reachable, occupiable neighboring stand
+node that is inside Home and within interaction distance. If an edge crop has no such legal neighbor, she skips that
+target for the current attempt instead of standing in the crop or crossing the Home boundary.
 
 Work modes and practical task types:
 Maid task switching in the GUI can enable many practical roles. The Patchouli manual explicitly points at farming,
 fishing, feeding players, breeding animals, shearing, milk collection, extinguishing, combat roles, and other work
 modes. Exact behavior depends on equipment, current mode, and environment.
+Existing combat tasks and temporary threat responses use one server-side target policy for search, continued tracking,
+melee, ranged attacks, and sweep damage. Owned entities cannot become targets, and an attack-list override cannot bypass
+that protection. Neutral mobs must be genuinely angry at the maid or owner, while conditionally hostile mobs such as
+piglins, spiders, goats, and llamas are judged by their actual current target.
+Temporary threat response has three server rules: Off, Self Defense, and Protect Owner. Protect Owner is the current
+default. It reacts to successful damage against the maid, and while her living owner is loaded in the same dimension
+within the local 16-block protection area, it can also react to successful owner damage or confirmed owner attacks.
+If that owner is unavailable or outside the local area, protection temporarily behaves as self-defense without changing
+the selected rule. The rule can be changed in the maid configuration screen; it is saved with the maid and remains
+selected after a client reconnect or dedicated-server restart.
+One successful direct owner hit is enough for a genuinely hostile target. A normally peaceful, unowned target requires
+two separate successful direct attacks by the owner against the same entity within 100 game ticks. Neutral mobs still
+wait for real anger. A projectile fired directly by the owner counts; indirect fire, poison, falling, thorns, or an
+attack made by the owner's pet does not. Old hit evidence is cleared by an explicit player control and is not replayed
+when the owner comes back into range.
+Once established, the response temporarily takes execution priority over work, leisure, or rest without changing the
+maid's permanent work task. Breathing, escaping hazards, extinguishing fire, and necessary healing still take priority.
+The target is sticky for about 40 game ticks and is abandoned after about 60 game ticks of recorded unreachability.
+An explicit follow, sit, schedule, or work-task command stops the response, and the maid resumes the activity calculated
+from her current schedule rather than restoring an old path. Temporary-response melee can use the tool, ordinary item,
+projectile weapon, or empty hand currently held in the maid's main hand. Damage, attack speed, enchantments, and
+durability follow the vanilla held-item rules, and no weapon is swapped in from inventory automatically. Permanent
+melee work and ranged work such as bows or crossbows retain their own weapon and ammunition requirements.
 
 Backpacks and storage:
 Backpacks are equipped by right-clicking the maid while holding a backpack. They expand inventory and come in multiple
@@ -80,3 +111,6 @@ power points, maid counts, and model-pack reloads.
 If the player asks about how to start, how to get or tame a maid, what Power points are, how the altar works, how maid
 tasks or backpacks work, what support items do, or what a specific utility object from the manual is for, answer from
 this knowledge body.
+This Skill is only for gameplay knowledge. Nearby entities, equipment, position, and current maid state must come from
+the latest game context query; supported follow, sit, schedule, or work-task changes should use the matching direct
+state tool.

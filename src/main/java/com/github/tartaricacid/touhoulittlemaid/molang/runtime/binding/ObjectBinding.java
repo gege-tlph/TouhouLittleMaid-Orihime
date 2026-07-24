@@ -25,17 +25,13 @@
 package com.github.tartaricacid.touhoulittlemaid.molang.runtime.binding;
 
 /**
- * Represents an object-like binding,
- * these objects can have properties
- * (or fields) that can be read and
- * sometimes written
+ * 表示类似对象的绑定，这些对象可以具有可读取且有时可写入的属性（或字段）
  */
 public interface ObjectBinding {
     ObjectBinding EMPTY = name -> null;
 
     /**
-     * Gets the property value in this
-     * object with the given {@code name}
+     * 使用给定的 {@code name} 获取此对象中的属性值
      */
     Object getProperty(String name);
 }

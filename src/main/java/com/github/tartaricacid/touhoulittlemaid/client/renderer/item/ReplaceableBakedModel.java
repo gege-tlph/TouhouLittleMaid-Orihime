@@ -1,87 +1,58 @@
 package com.github.tartaricacid.touhoulittlemaid.client.renderer.item;
 
-import net.fabricmc.fabric.api.renderer.v1.model.ForwardingBakedModel;
-import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.ItemOverrides;
-import net.minecraft.client.renderer.block.model.ItemTransforms;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.util.RandomSource;
+import net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperBakedItemModel;
+import net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperUnbakedItemModel;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.item.ItemModel;
+import net.minecraft.client.renderer.item.ItemModelResolver;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.client.resources.model.ResolvableModel;
+import net.minecraft.world.entity.ItemOwner;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.BlockAndTintGetter;
-import net.minecraft.world.level.block.state.BlockState;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
-import java.util.List;
 import java.util.function.Supplier;
 
-public class ReplaceableBakedModel extends ForwardingBakedModel {
-    private final BakedModel replacedBakedModel;
-    private final Supplier<Boolean> isReplace;
+/**
+ * 在渲染时选择替换项目模型，以便配置切换保持活动状态。
+ */
+public final class ReplaceableBakedModel extends WrapperBakedItemModel {
+    private final ItemModel replacement;
+    private final Supplier<Boolean> replace;
 
-    public ReplaceableBakedModel(BakedModel rawBakedModel, BakedModel replacedBakedModel, Supplier<Boolean> isReplace) {
-        this.wrapped = rawBakedModel;
-        this.replacedBakedModel = replacedBakedModel;
-        this.isReplace = isReplace;
+    private ReplaceableBakedModel(ItemModel original, ItemModel replacement, Supplier<Boolean> replace) {
+        super(original);
+        this.replacement = replacement;
+        this.replace = replace;
     }
 
     @Override
-    public List<BakedQuad> getQuads(@Nullable BlockState pState, @Nullable Direction pDirection, RandomSource random) {
-        if (isReplace.get()) {
-            return this.replacedBakedModel.getQuads(pState, pDirection, random);
-        } else {
-            return this.wrapped.getQuads(pState, pDirection, random);
-        }
+    public void update(ItemStackRenderState state, ItemStack stack, ItemModelResolver resolver,
+                       ItemDisplayContext displayContext, @Nullable ClientLevel level,
+                       @Nullable ItemOwner owner, int seed) {
+        (replace.get() ? replacement : wrapped).update(state, stack, resolver, displayContext, level, owner, seed);
     }
 
-    @Override
-    public boolean isCustomRenderer() {
-        return false;
-    }
+    public static final class Unbaked extends WrapperUnbakedItemModel {
+        private final ItemModel.Unbaked replacement;
+        private final Supplier<Boolean> replace;
 
-    @Override
-    public ItemOverrides getOverrides() {
-        if (isReplace.get()) {
-            return this.replacedBakedModel.getOverrides();
-        } else {
-            return this.wrapped.getOverrides();
+        public Unbaked(ItemModel.Unbaked original, ItemModel.Unbaked replacement, Supplier<Boolean> replace) {
+            super(original);
+            this.replacement = replacement;
+            this.replace = replace;
         }
-    }
 
-    @Override
-    public ItemTransforms getTransforms() {
-        if (isReplace.get()) {
-            return this.replacedBakedModel.getTransforms();
-        } else {
-            return this.wrapped.getTransforms();
+        @Override
+        public void resolveDependencies(ResolvableModel.Resolver resolver) {
+            super.resolveDependencies(resolver);
+            replacement.resolveDependencies(resolver);
         }
-    }
 
-    @Override
-    public void emitBlockQuads(BlockAndTintGetter blockView, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, RenderContext context) {
-        if (isReplace.get()) {
-            this.replacedBakedModel.emitBlockQuads(blockView, state, pos, randomSupplier, context);
-        } else {
-            this.wrapped.emitBlockQuads(blockView, state, pos, randomSupplier, context);
+        @Override
+        public ItemModel bake(ItemModel.BakingContext context) {
+            return new ReplaceableBakedModel(wrapped.bake(context), replacement.bake(context), replace);
         }
     }
-
-    @Override
-    public void emitItemQuads(ItemStack stack, Supplier<RandomSource> randomSupplier, RenderContext context) {
-        if (isReplace.get()) {
-            this.replacedBakedModel.emitItemQuads(stack, randomSupplier, context);
-        } else {
-            this.wrapped.emitItemQuads(stack, randomSupplier, context);
-        }
-    }
-/*    @Override
-    public BakedModel applyTransform(ItemDisplayContext type, PoseStack mat, boolean applyLeftHandTransform) {
-        if (isReplace.get()) {
-            return this.replacedBakedModel.applyTransform(type, mat, applyLeftHandTransform);
-        } else {
-            return this.rawBakedModel.applyTransform(type, mat, applyLeftHandTransform);
-        }
-    }*/
 }

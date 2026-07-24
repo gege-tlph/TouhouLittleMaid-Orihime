@@ -1,16 +1,20 @@
 package cn.sh1rocu.touhoulittlemaid.mixin.client;
 
 import cn.sh1rocu.touhoulittlemaid.api.event.EntityJoinLevelEvent;
+import cn.sh1rocu.touhoulittlemaid.api.extension.IBlock;
 import cn.sh1rocu.touhoulittlemaid.api.extension.IEntity;
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.storage.WritableLevelData;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,8 +27,8 @@ import java.util.function.Supplier;
 @Environment(EnvType.CLIENT)
 @Mixin(ClientLevel.class)
 public abstract class ClientLevelMixin extends Level {
-    protected ClientLevelMixin(WritableLevelData levelData, ResourceKey<Level> dimension, RegistryAccess registryAccess, Holder<DimensionType> dimensionTypeRegistration, Supplier<ProfilerFiller> profiler, boolean isClientSide, boolean isDebug, long biomeZoomSeed, int maxChainedNeighborUpdates) {
-        super(levelData, dimension, registryAccess, dimensionTypeRegistration, profiler, isClientSide, isDebug, biomeZoomSeed, maxChainedNeighborUpdates);
+    protected ClientLevelMixin(WritableLevelData levelData, ResourceKey<Level> dimension, RegistryAccess registryAccess, Holder<DimensionType> dimensionTypeRegistration, boolean isClientSide, boolean isDebug, long biomeZoomSeed, int maxChainedNeighborUpdates) {
+        super(levelData, dimension, registryAccess, dimensionTypeRegistration, isClientSide, isDebug, biomeZoomSeed, maxChainedNeighborUpdates);
     }
 
     @Inject(method = "addEntity", at = @At("HEAD"), cancellable = true)
@@ -39,6 +43,22 @@ public abstract class ClientLevelMixin extends Level {
     public void tlm$addedToWorld(Entity entity, CallbackInfo ci) {
         if (entity instanceof IEntity iEntity)
             iEntity.onAddedToLevel();
+    }
+
+    @ModifyExpressionValue(
+            method = "addDestroyBlockEffect",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/level/block/state/BlockState;shouldSpawnTerrainParticles()Z"
+            )
+    )
+    private boolean tlm$addDestroyEffects(boolean original, BlockPos blockPos, BlockState blockState) {
+        if (blockState.getBlock() instanceof IBlock block) {
+            if (block.tlm$addDestroyEffects(blockState, this, blockPos, Minecraft.getInstance().particleEngine)) {
+                return false;
+            }
+        }
+        return original;
     }
 
     @Mixin(targets = "net/minecraft/client/multiplayer/ClientLevel$EntityCallbacks")

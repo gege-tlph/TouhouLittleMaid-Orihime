@@ -2,37 +2,37 @@ package com.github.tartaricacid.touhoulittlemaid.api.animation;
 
 public interface IChairData extends IEntityData {
     /**
-     * Whether the player is riding on the chair
+     * 玩家是否坐在椅子上
      *
-     * @return boolean
+     * @return 布尔值
      */
     boolean isRidingPlayer();
 
     /**
-     * Whether there is a riding entity on the chair
+     * 椅子上是否有骑行实体
      *
-     * @return boolean
+     * @return 布尔值
      */
     boolean hasPassenger();
 
     /**
-     * Get passenger's yaw
+     * 获取乘客的偏航角
      *
-     * @return float
+     * @return 浮动
      */
     float getPassengerYaw();
 
     /**
-     * Get passenger's pitch
+     * 获取乘客的推介
      *
-     * @return float
+     * @return 浮动
      */
     float getPassengerPitch();
 
     /**
-     * Get self's yaw
+     * 获取自身偏航角
      *
-     * @return float
+     * @return 浮动
      */
     float getYaw();
 }

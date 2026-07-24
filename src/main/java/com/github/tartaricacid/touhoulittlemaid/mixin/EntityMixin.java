@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityBroom;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.world.entity.Entity;
@@ -11,7 +12,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Entity.class)
 public class EntityMixin {
@@ -58,15 +58,11 @@ public class EntityMixin {
         }
     }
 
-    @Inject(
-            method = "getBoundingBox",
-            at = @At("RETURN"),
-            cancellable = true
-    )
-    @SuppressWarnings("all")
-    private void onGetBoundingBox(CallbackInfoReturnable<AABB> cir) {
+    @ModifyReturnValue(method = "getBoundingBox", at = @At("RETURN"))
+    private AABB onGetBoundingBox(AABB original) {
         if ((Object) this instanceof EntityBroom broom && broom.inPhysicalCheck) {
-            cir.setReturnValue(broom.getPhysicalBoundingBox());
+            return broom.getPhysicalBoundingBox(original);
         }
+        return original;
     }
 }

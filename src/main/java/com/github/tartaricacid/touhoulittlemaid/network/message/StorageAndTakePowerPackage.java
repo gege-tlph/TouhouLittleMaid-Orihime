@@ -13,13 +13,12 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record StorageAndTakePowerPackage(BlockPos pos, float powerNum,
                                          boolean isStorage) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<StorageAndTakePowerPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("save_and_take_power"));
+    public static final CustomPacketPayload.Type<StorageAndTakePowerPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("save_and_take_power"));
     public static final StreamCodec<ByteBuf, StorageAndTakePowerPackage> STREAM_CODEC = StreamCodec.composite(
             BlockPos.STREAM_CODEC,
             StorageAndTakePowerPackage::pos,
@@ -80,7 +79,7 @@ public record StorageAndTakePowerPackage(BlockPos pos, float powerNum,
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

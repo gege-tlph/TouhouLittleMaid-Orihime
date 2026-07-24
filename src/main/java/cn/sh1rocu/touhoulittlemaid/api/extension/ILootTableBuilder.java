@@ -1,7 +1,7 @@
 package cn.sh1rocu.touhoulittlemaid.api.extension;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public interface ILootTableBuilder {
-    void tlm$setId(ResourceLocation id);
+    void tlm$setId(Identifier id);
 }

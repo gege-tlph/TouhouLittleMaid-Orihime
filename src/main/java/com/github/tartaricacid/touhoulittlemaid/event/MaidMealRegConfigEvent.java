@@ -1,30 +1,16 @@
 package com.github.tartaricacid.touhoulittlemaid.event;
 
-import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
-import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.google.common.collect.Lists;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.neoforged.fml.config.ModConfig;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.regex.Pattern;
 
 public class MaidMealRegConfigEvent {
-    private static final String CONFIG_NAME = TouhouLittleMaid.MOD_ID + "-common.toml";
-
     public static List<String> HEAL_MEAL_REGEX = Lists.newArrayList();
     public static List<String> HOME_MEAL_REGEX = Lists.newArrayList();
     public static List<String> WORK_MEAL_REGEX = Lists.newArrayList();
-
-    public static void onEvent(ModConfig config) {
-        String fileName = config.getFileName();
-        if (CONFIG_NAME.equals(fileName)) {
-            handleConfig(MaidConfig.MAID_HEAL_MEALS_BLOCK_LIST_REGEX.get(), HEAL_MEAL_REGEX);
-            handleConfig(MaidConfig.MAID_HOME_MEALS_BLOCK_LIST_REGEX.get(), HOME_MEAL_REGEX);
-            handleConfig(MaidConfig.MAID_WORK_MEALS_BLOCK_LIST_REGEX.get(), WORK_MEAL_REGEX);
-        }
-    }
 
     public static void handleConfig(List<String> config, List<String> output) {
         output.clear();

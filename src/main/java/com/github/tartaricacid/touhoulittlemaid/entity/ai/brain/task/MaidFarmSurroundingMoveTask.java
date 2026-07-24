@@ -23,15 +23,6 @@ public class MaidFarmSurroundingMoveTask extends MaidFarmMoveTask {
 
     @Override
     protected boolean checkPathReach(EntityMaid maid, MaidPathFindingBFS pathFinding, BlockPos pos) {
-        for (int x = checkRange.minX(); x <= checkRange.maxX(); x++) {
-            for (int y = checkRange.minY(); y <= checkRange.maxY(); y++) {
-                for (int z = checkRange.minZ(); z <= checkRange.maxZ(); z++) {
-                    if (pathFinding.canPathReach(pos.offset(x, y, z))) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return findReachableWalkTarget(maid, pathFinding, pos, checkRange);
     }
 }

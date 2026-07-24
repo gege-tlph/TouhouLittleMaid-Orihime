@@ -19,7 +19,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.VisibleForDebug;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
@@ -74,10 +74,10 @@ public final class MaidDebugCommand {
         ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
         if (value) {
             TouhouLittleMaid.DEBUG = true;
-            serverPlayer.sendSystemMessage(Component.translatable("debug.touhou_little_maid.enable.true"));
+            serverPlayer.displayClientMessage(Component.translatable("debug.touhou_little_maid.enable.true"), false);
         } else {
             TouhouLittleMaid.DEBUG = false;
-            serverPlayer.sendSystemMessage(Component.translatable("debug.touhou_little_maid.enable.false"));
+            serverPlayer.displayClientMessage(Component.translatable("debug.touhou_little_maid.enable.false"), false);
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -95,14 +95,14 @@ public final class MaidDebugCommand {
                 BlockPos blockPos = serverPlayer.blockPosition();
                 int x = blockPos.getX() + i % 10 + 1;
                 int z = blockPos.getZ() + i / 10 + 1;
-                ServerLevel level = serverPlayer.serverLevel();
+                ServerLevel level = ((ServerLevel) serverPlayer.level());
                 EntityMaid entityMaid = new EntityMaid(level);
                 entityMaid.setPos(x, blockPos.getY(), z);
                 entityMaid.tame(serverPlayer);
                 if (StringUtils.isNotBlank(modelId)) {
                     entityMaid.setModelId(modelId);
                 } else {
-                    entityMaid.finalizeSpawn(level, level.getCurrentDifficultyAt(serverPlayer.blockPosition()), MobSpawnType.SPAWN_EGG, null);
+                    entityMaid.finalizeSpawn(level, level.getCurrentDifficultyAt(serverPlayer.blockPosition()), EntitySpawnReason.SPAWN_ITEM_USE, null);
                 }
                 entityMaid.setInSittingPose(true);
                 level.addFreshEntity(entityMaid);

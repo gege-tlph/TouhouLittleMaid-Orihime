@@ -3,7 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.client.download;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.client.download.pojo.DownloadInfo;
 import com.github.tartaricacid.touhoulittlemaid.client.download.pojo.DownloadStatus;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.CustomPackLoader;
+import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.entity.info.ServerCustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.util.HttpUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.ZipFileCheck;
@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author TartaricAcid
  * @date 2020/1/12 15:32
- **/
+ */
 @Environment(EnvType.CLIENT)
 public class InfoGetManager {
     /**
@@ -85,11 +85,11 @@ public class InfoGetManager {
 
         map.put("X-Minecraft-Username", user.getName());
         map.put("X-Minecraft-UUID", UndashedUuid.toString(user.getProfileId()));
-        map.put("X-Minecraft-Version", currentVersion.getName());
-        map.put("X-Minecraft-Version-ID", currentVersion.getId());
+        map.put("X-Minecraft-Version", currentVersion.name());
+        map.put("X-Minecraft-Version-ID", currentVersion.id());
         map.put("X-Fabric-Version", FabricLoader.getInstance().getModContainer("fabric").get().getMetadata().getVersion().getFriendlyString());
         map.put("X-TLM-Version", FabricLoader.getInstance().getModContainer(TouhouLittleMaid.MOD_ID).get().getMetadata().getVersion().getFriendlyString());
-        map.put("User-Agent", "Minecraft Java/" + currentVersion.getName());
+        map.put("User-Agent", "Minecraft Java/" + currentVersion.name());
 
         return map;
     }
@@ -226,11 +226,13 @@ public class InfoGetManager {
                 downloadPack(info, fileInCache, url, proxy, fileInTlmModel);
             } else {
                 // 存在？那就直接复制加载即可
-                reloadPack(info, fileInCache, fileInTlmModel);
-                sendDownloadMessage(Component.translatable("gui.touhou_little_maid.resources_download.state.downloaded", info.getFileName(), 0.943));
+                if (reloadPack(info, fileInCache, fileInTlmModel)) {
+                    sendDownloadMessage(Component.translatable("gui.touhou_little_maid.resources_download.state.downloaded", info.getFileName(), 0.943));
+                }
             }
         } catch (IOException e) {
-            e.fillInStackTrace();
+            info.setStatus(DownloadStatus.NOT_DOWNLOAD);
+            TouhouLittleMaid.LOGGER.error("Failed to load downloaded pack {}", info.getFileName(), e);
         }
     }
 
@@ -244,23 +246,25 @@ public class InfoGetManager {
         CompletableFuture downloader = HttpUtil.downloadTo(fileInCache, url, getDownloadHeaders(), PACK_MAX_FILE_SIZE, info, proxy);
         downloader.thenRun(() -> {
             // 如果正常下载完成，停止计时，发送提示，并进行加载
-            stopWatch.stop();
-            sendDownloadMessage(Component.translatable("gui.touhou_little_maid.resources_download.state.downloaded", info.getFileName(), stopWatch.getTime(TimeUnit.MILLISECONDS) / 1000.0));
             try {
-                reloadPack(info, fileInCache, fileInTlmModel);
+                boolean loaded = reloadPack(info, fileInCache, fileInTlmModel);
+                stopWatch.stop();
+                if (loaded) {
+                    sendDownloadMessage(Component.translatable("gui.touhou_little_maid.resources_download.state.downloaded", info.getFileName(), stopWatch.getTime(TimeUnit.MILLISECONDS) / 1000.0));
+                }
             } catch (IOException e) {
-                e.fillInStackTrace();
+                throw new java.util.concurrent.CompletionException(e);
             }
         }).exceptionally(error -> {
             // 异常？那么清理相关内容，并打印提示
             stopWatch.stop();
             info.setStatus(DownloadStatus.NOT_DOWNLOAD);
-            TouhouLittleMaid.LOGGER.warn("Failed to download pack file, possibly due to network issues");
+            TouhouLittleMaid.LOGGER.warn("Failed to download or load pack file {}", info.getFileName(), error);
             return null;
         });
     }
 
-    private static void reloadPack(DownloadInfo info, File fileInCache, File fileInTlmModel) throws IOException {
+    private static boolean reloadPack(DownloadInfo info, File fileInCache, File fileInTlmModel) throws IOException {
         // 检查下载文件是否为完整 ZIP 文件
         if (ZipFileCheck.isZipFile(fileInCache)) {
             // 复制到指定模型文件夹，并进行加载
@@ -268,17 +272,19 @@ public class InfoGetManager {
             CustomPackLoader.readModelFromZipFile(fileInTlmModel);
             ServerCustomPackLoader.reloadPacks();
             info.setStatus(DownloadStatus.DOWNLOADED);
+            return true;
         } else {
             // 否则提示
             info.setStatus(DownloadStatus.NOT_DOWNLOAD);
             TouhouLittleMaid.LOGGER.error("{} file is corrupt and cannot be loaded.", info.getFileName());
+            return false;
         }
     }
 
     public static void sendDownloadMessage(MutableComponent component) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player != null) {
-            player.sendSystemMessage(component);
+            player.displayClientMessage(component, false);
         }
     }
 

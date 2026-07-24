@@ -6,10 +6,9 @@ import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelIn
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityChair;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -22,7 +21,7 @@ public class MaidModelDetailsGui extends AbstractModelDetailsGui<EntityMaid, Mai
     private volatile boolean isEnableWalk = false;
 
     public MaidModelDetailsGui(EntityMaid sourceEntity, MaidModelInfo modelInfo) {
-        super(sourceEntity, InitEntities.MAID.create(sourceEntity.level()), modelInfo);
+        super(sourceEntity, InitEntities.MAID.create(sourceEntity.level(), EntitySpawnReason.COMMAND), modelInfo);
         this.guiEntity.setModelId(modelInfo.getModelId().toString());
         this.guiEntity.setOnGround(true);
         this.guiEntity.yHeadRot = 0;
@@ -32,7 +31,7 @@ public class MaidModelDetailsGui extends AbstractModelDetailsGui<EntityMaid, Mai
 
     private void initChair() {
         if (Minecraft.getInstance().level != null) {
-            this.chair = InitEntities.CHAIR.create(Minecraft.getInstance().level);
+            this.chair = InitEntities.CHAIR.create(Minecraft.getInstance().level, EntitySpawnReason.COMMAND);
             if (this.chair != null) {
                 this.chair.setModelId("touhou_little_maid:low_stool");
             }
@@ -80,24 +79,26 @@ public class MaidModelDetailsGui extends AbstractModelDetailsGui<EntityMaid, Mai
 
     @Override
     public void tick() {
-        // Tick count increment for some animations
+        // 某些动画的刻度计数增量
         guiEntity.tickCount++;
-        // For entity walk
-        // Update walk speed
+        // 对于实体行走更新行走速度
         float speed = isEnableWalk ? 0.5f : 0;
-        guiEntity.walkAnimation.update(speed, 0.4f);
+
+        guiEntity.walkAnimation.update(speed, 0.4f, 1.0F);
     }
 
     @Override
-    protected void renderExtraEntity(EntityRenderDispatcher manager, PoseStack matrix, MultiBufferSource.BufferSource bufferIn) {
+    protected void renderExtraEntity(GuiGraphics graphics, float partialTicks) {
         if (guiEntity.isPassenger() && chair != null) {
-            manager.render(chair, 0, -0.95, 0, 0, 1, matrix, bufferIn, 0xf000f0);
+
+            submitExtraEntity(graphics, chair, 0, -0.95F, 0, 1);
         }
     }
 
     private void applyRideButtonLogic(boolean isStateTriggered) {
         if (isStateTriggered && chair != null) {
-            guiEntity.startRiding(chair, true);
+
+            guiEntity.startRiding(chair, true, true);
         } else {
             guiEntity.removeVehicle();
         }

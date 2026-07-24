@@ -19,6 +19,7 @@ import net.minecraft.util.FormattedCharSequence;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import static com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.Translations.SAVE_NAME;
 import static com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.Translations.sttEditorTitle;
@@ -29,7 +30,8 @@ public class STTSiteEditorScreen extends Screen {
     private static final int BASE_HEIGHT = 230;
     private static final int FIELD_ROW_HEIGHT = 35;
 
-    private final AIChatSettingsSTTSiteScreen parent;
+    private final Screen parent;
+    private final Consumer<STTSite> saveConsumer;
     private final STTSiteFormLayout layout;
     private final String siteDisplayName;
 
@@ -45,8 +47,13 @@ public class STTSiteEditorScreen extends Screen {
     private Component statusMessage = Component.empty();
 
     public STTSiteEditorScreen(AIChatSettingsSTTSiteScreen parent, STTSite sourceSite) {
+        this(parent, sourceSite, parent::saveLocalSTTSite);
+    }
+
+    public STTSiteEditorScreen(Screen parent, STTSite sourceSite, Consumer<STTSite> saveConsumer) {
         super(Component.literal("STT Site Editor"));
         this.parent = parent;
+        this.saveConsumer = saveConsumer;
         this.layout = sourceSite.formLayout();
 
         String nameKey = sourceSite.getNameKey();
@@ -106,7 +113,7 @@ public class STTSiteEditorScreen extends Screen {
         box.active = field.editable;
         box.setValue(field.value);
         if (field.secret) {
-            box.setFormatter((text, pos) -> FormattedCharSequence.forward("·".repeat(text.length()), Style.EMPTY));
+            box.addFormatter((text, pos) -> FormattedCharSequence.forward("·".repeat(text.length()), Style.EMPTY));
         }
         this.addWidget(box);
         field.box = box;
@@ -114,7 +121,6 @@ public class STTSiteEditorScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
         graphics.fillGradient(0, 0, this.width, this.height, 0xc0101010, 0xc0101010);
 
         // 居中标题
@@ -170,7 +176,7 @@ public class STTSiteEditorScreen extends Screen {
         if (site == null) {
             return;
         }
-        this.parent.saveLocalSTTSite(site);
+        this.saveConsumer.accept(site);
         this.onClose();
     }
 

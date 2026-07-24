@@ -2,16 +2,17 @@ package com.github.tartaricacid.touhoulittlemaid.data;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
 @SuppressWarnings("UnstableApiUsage")
 public class ChatTokensAttachment {
-    public static final AttachmentType<ChatTokensAttachment> TYPE = AttachmentRegistry.create(ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "chat_tokens"),
+    public static final AttachmentType<ChatTokensAttachment> TYPE = AttachmentRegistry.create(Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "chat_tokens"),
             builder -> builder
                     .initializer(() -> new ChatTokensAttachment(0))
                     .copyOnDeath()
@@ -48,7 +49,7 @@ public class ChatTokensAttachment {
     }
 
     public int getMaxNum() {
-        return AIConfig.MAX_TOKENS_PER_PLAYER.get();
+        return ServerRuleConfig.get(AIConfig.MAX_TOKENS_PER_PLAYER);
     }
 
     public int get() {

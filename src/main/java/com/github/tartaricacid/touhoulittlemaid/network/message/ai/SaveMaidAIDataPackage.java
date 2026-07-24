@@ -9,13 +9,12 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record SaveMaidAIDataPackage(int entityId, MaidAIChatSerializable data) implements CustomPacketPayload {
-    public static final Type<SaveMaidAIDataPackage> TYPE = new Type<>(getResourceLocation("save_maid_ai_data"));
+    public static final CustomPacketPayload.Type<SaveMaidAIDataPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("save_maid_ai_data"));
     public static final StreamCodec<ByteBuf, SaveMaidAIDataPackage> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public SaveMaidAIDataPackage decode(ByteBuf byteBuf) {
@@ -35,7 +34,7 @@ public record SaveMaidAIDataPackage(int entityId, MaidAIChatSerializable data) i
     };
 
     @Override
-    public @NotNull CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

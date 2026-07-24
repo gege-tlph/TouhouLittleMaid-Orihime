@@ -8,7 +8,11 @@ import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nullable;
+import net.minecraft.server.level.ServerLevel;
+
+import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.function.Predicate;
 
 public class MaidTemptGoal extends Goal {
@@ -41,12 +45,21 @@ public class MaidTemptGoal extends Goal {
             --this.calmDown;
             return false;
         } else {
-            this.maid = this.mob.level().getNearestEntity(EntityMaid.class, this.targetingConditions, this.mob, this.mob.getX(), this.mob.getY(), this.mob.getZ(), this.mob.getBoundingBox().inflate(10));
+
+            if (this.mob.level() instanceof ServerLevel serverLevel) {
+                List<EntityMaid> nearby = serverLevel.getEntitiesOfClass(EntityMaid.class,
+                        this.mob.getBoundingBox().inflate(10),
+                        e -> this.targetingConditions.test(serverLevel, this.mob, e));
+                this.maid = nearby.stream().min(Comparator.comparingDouble(this.mob::distanceToSqr)).orElse(null);
+            } else {
+                this.maid = null;
+            }
             return this.maid != null;
         }
     }
 
-    private boolean shouldFollow(LivingEntity livingEntity) {
+
+    private boolean shouldFollow(LivingEntity livingEntity, ServerLevel level) {
         return this.items.test(livingEntity.getMainHandItem()) || this.items.test(livingEntity.getOffhandItem());
     }
 

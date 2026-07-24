@@ -6,6 +6,6 @@ import net.fabricmc.api.Environment;
 @Environment(EnvType.CLIENT)
 public class AquacultureClientRegister {
     public static void onEntityRenderers() {
-        //EntityRendererRegistry.register(AquacultureFishingHook.TYPE, AquacultureFishingHookRenderer::new);
+
     }
 }

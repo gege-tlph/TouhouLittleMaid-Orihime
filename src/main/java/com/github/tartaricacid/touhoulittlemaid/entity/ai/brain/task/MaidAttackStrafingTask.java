@@ -1,10 +1,11 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -30,7 +31,8 @@ public class MaidAttackStrafingTask extends Behavior<EntityMaid> {
     protected boolean checkExtraStartConditions(ServerLevel worldIn, EntityMaid owner) {
         return owner.getMainHandItem().getItem() instanceof ProjectileWeaponItem &&
                 owner.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET)
-                        .filter(Entity::isAlive)
+                        .filter(target -> MaidTargetingPolicy.canContinueTargeting(
+                                owner, target, MaidTargetingContext.PLANNED_ATTACK))
                         .isPresent();
     }
 
@@ -72,7 +74,7 @@ public class MaidAttackStrafingTask extends Behavior<EntityMaid> {
                 }
 
                 // 应用走位，但需要考虑玩家位置
-                if (!owner.hasRestriction() && owner.getOwner() instanceof Player player && owner.distanceTo(player) >= owner.getRestrictRadius()) {
+                if (!owner.hasHome() && owner.getOwner() instanceof Player player && owner.distanceTo(player) >= owner.getHomeRadius()) {
                     owner.stopInPlace();
                 } else {
                     owner.getMoveControl().strafe(this.strafingBackwards ? -0.5F : 0.5F, this.strafingClockwise ? 0.5F : -0.5F);

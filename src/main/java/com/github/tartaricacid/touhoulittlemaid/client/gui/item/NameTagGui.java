@@ -1,23 +1,22 @@
 package com.github.tartaricacid.touhoulittlemaid.client.gui.item;
 
-import cn.sh1rocu.touhoulittlemaid.mixin.accessor.ScreenAccessor;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.network.message.SendNameTagPackage;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.apache.commons.lang3.StringUtils;
 
 public class NameTagGui extends Screen {
-    final ResourceLocation CONFIRM_SPRITE = ResourceLocation.withDefaultNamespace("container/beacon/confirm");
-    final ResourceLocation CANCEL_SPRITE = ResourceLocation.withDefaultNamespace("container/beacon/cancel");
+    final Identifier CONFIRM_SPRITE = Identifier.withDefaultNamespace("container/beacon/confirm");
+    final Identifier CANCEL_SPRITE = Identifier.withDefaultNamespace("container/beacon/cancel");
     private final EntityMaid maid;
     private EditBox textField;
     private Button alwaysShowButton;
@@ -47,9 +46,9 @@ public class NameTagGui extends Screen {
     }
 
     @Override
-    public void resize(Minecraft minecraft, int width, int height) {
+    public void resize(int width, int height) {
         String value = this.textField.getValue();
-        super.resize(minecraft, width, height);
+        super.resize(width, height);
         this.textField.setValue(value);
     }
 
@@ -57,28 +56,25 @@ public class NameTagGui extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         int middleX = this.width / 2;
         int middleY = this.height / 2;
-        renderBackground(graphics, mouseX, mouseY, partialTicks);
         textField.render(graphics, mouseX, mouseY, partialTicks);
-        for (Renderable renderable : ((ScreenAccessor) this).tlm$getRenderables()) {
-            renderable.render(graphics, mouseX, mouseY, partialTicks);
-        }
+        super.render(graphics, mouseX, mouseY, partialTicks);
         if (!alwaysShow) {
-            graphics.blitSprite(CANCEL_SPRITE, middleX + 82, middleY - 26, 18, 18);
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, CANCEL_SPRITE, middleX + 82, middleY - 26, 18, 18);
         } else {
-            graphics.blitSprite(CONFIRM_SPRITE, middleX + 82, middleY - 26, 18, 18);
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, CONFIRM_SPRITE, middleX + 82, middleY - 26, 18, 18);
         }
         if (alwaysShowButton.isHovered()) {
-            graphics.renderTooltip(font, Component.translatable("gui.touhou_little_maid.tag.always_show"), mouseX, mouseY);
+            graphics.setTooltipForNextFrame(font, Component.translatable("gui.touhou_little_maid.tag.always_show"), mouseX, mouseY);
         }
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (this.textField.mouseClicked(mouseX, mouseY, button)) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (this.textField.mouseClicked(event, doubleClick)) {
             this.setFocused(this.textField);
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override

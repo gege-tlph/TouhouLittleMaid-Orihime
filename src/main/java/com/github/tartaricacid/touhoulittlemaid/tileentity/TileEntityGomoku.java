@@ -1,5 +1,8 @@
 package com.github.tartaricacid.touhoulittlemaid.tileentity;
 
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import cn.sh1rocu.touhoulittlemaid.api.extension.IBlockEntityPersistentData;
 import com.github.tartaricacid.touhoulittlemaid.api.block.IBoardGameEntityBlock;
 import com.github.tartaricacid.touhoulittlemaid.api.game.gomoku.GomokuCodec;
@@ -11,7 +14,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.ByteArrayTag;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -19,7 +21,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.List;
 
 public class TileEntityGomoku extends TileEntityJoy implements IBoardGameEntityBlock, IBlockEntityPersistentData {
-    public static final BlockEntityType<TileEntityGomoku> TYPE = BlockEntityType.Builder.of(TileEntityGomoku::new, InitBlocks.GOMOKU).build(null);
+    public static final BlockEntityType<TileEntityGomoku> TYPE = FabricBlockEntityTypeBuilder.create(TileEntityGomoku::new, InitBlocks.GOMOKU).build();
     private static final String CHESS_DATA = "ChessData";
     private static final String STATUE = "Statue";
     private static final String PLAYER_TURN = "PlayerTurn";
@@ -37,7 +39,7 @@ public class TileEntityGomoku extends TileEntityJoy implements IBoardGameEntityB
     }
 
     @Override
-    protected void saveAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
+    protected void saveAdditional(ValueOutput output){
         ListTag listTag = new ListTag();
         for (byte[] chessRow : chessData) {
             listTag.add(new ByteArrayTag(chessRow));
@@ -47,21 +49,21 @@ public class TileEntityGomoku extends TileEntityJoy implements IBoardGameEntityB
         tlm$getPersistentData().putBoolean(PLAYER_TURN, this.playerTurn);
         tlm$getPersistentData().putInt(CHESS_COUNTER, this.chessCounter);
         tlm$getPersistentData().put(LATEST_CHESS_POINT, Point.toTag(this.latestChessPoint));
-        super.saveAdditional(pTag, pRegistries);
+        super.saveAdditional(output);
     }
 
     @Override
-    public void loadAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
-        super.loadAdditional(pTag, pRegistries);
-        ListTag listTag = tlm$getPersistentData().getList(CHESS_DATA, Tag.TAG_BYTE_ARRAY);
+    public void loadAdditional(ValueInput input){
+        super.loadAdditional(input);
+        ListTag listTag = tlm$getPersistentData().getListOrEmpty(CHESS_DATA);
         for (int i = 0; i < listTag.size(); i++) {
             ByteArrayTag byteArray = (ByteArrayTag) listTag.get(i);
             this.chessData[i] = byteArray.getAsByteArray();
         }
-        this.statue = tlm$getPersistentData().getInt(STATUE);
-        this.playerTurn = tlm$getPersistentData().getBoolean(PLAYER_TURN);
-        this.chessCounter = tlm$getPersistentData().getInt(CHESS_COUNTER);
-        this.latestChessPoint = Point.fromTag(tlm$getPersistentData().getCompound(LATEST_CHESS_POINT));
+        this.statue = tlm$getPersistentData().getIntOr(STATUE, 0);
+        this.playerTurn = tlm$getPersistentData().getBooleanOr(PLAYER_TURN, false);
+        this.chessCounter = tlm$getPersistentData().getIntOr(CHESS_COUNTER, 0);
+        this.latestChessPoint = Point.fromTag(tlm$getPersistentData().getCompound(LATEST_CHESS_POINT).orElse(new CompoundTag()));
     }
 
     public void reset() {

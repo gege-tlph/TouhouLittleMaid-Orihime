@@ -10,12 +10,11 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record SetMaidSoundIdPackage(int entityId, String soundId) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<SetMaidSoundIdPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("set_maid_sound_id"));
+    public static final CustomPacketPayload.Type<SetMaidSoundIdPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("set_maid_sound_id"));
     public static final StreamCodec<ByteBuf, SetMaidSoundIdPackage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT,
             SetMaidSoundIdPackage::entityId,
@@ -36,7 +35,7 @@ public record SetMaidSoundIdPackage(int entityId, String soundId) implements Cus
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

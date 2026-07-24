@@ -1,7 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.molang.runtime;
 
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.molang.util.PooledStringHashMap;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.molang.util.StringPool;
+import com.github.tartaricacid.touhoulittlemaid.molang.runtime.PooledStringHashMap;
+import com.github.tartaricacid.touhoulittlemaid.molang.runtime.StringPool;
 import it.unimi.dsi.fastutil.ints.Int2ReferenceMap;
 
 public class HashMapStruct implements Struct {

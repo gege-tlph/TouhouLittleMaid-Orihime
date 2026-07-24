@@ -1,7 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.client.tooltip;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.CustomPackLoader;
+import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelInfo;
 import com.github.tartaricacid.touhoulittlemaid.compat.ysm.YsmCompat;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -9,17 +9,23 @@ import com.github.tartaricacid.touhoulittlemaid.inventory.tooltip.ItemMaidToolti
 import com.github.tartaricacid.touhoulittlemaid.inventory.tooltip.YsmMaidInfo;
 import com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.ParseI18n;
+import com.google.gson.JsonParser;
+import com.mojang.serialization.JsonOps;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.StringUtils;
 import org.joml.Quaternionf;
@@ -29,10 +35,11 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
-import static com.github.tartaricacid.touhoulittlemaid.client.event.SpecialMaidRenderEvent.EASTER_EGG_MODEL;
 import static com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil.clearMaidDataResidue;
 
 public class ClientMaidTooltip implements ClientTooltipComponent {
+
+    private static final String EASTER_EGG_MODEL = "touhou_little_maid:easter_egg_model";
     private final @Nullable MaidModelInfo info;
     private final YsmMaidInfo ysmMaidInfo;
     private final MutableComponent name;
@@ -40,7 +47,7 @@ public class ClientMaidTooltip implements ClientTooltipComponent {
 
     public ClientMaidTooltip(ItemMaidTooltip tooltip) {
         this.info = CustomPackLoader.MAID_MODELS.getInfo(tooltip.modelId()).orElse(null);
-        this.ysmMaidInfo = tooltip.ysmMaidInfo();
+        this.ysmMaidInfo = Objects.requireNonNullElse(tooltip.ysmMaidInfo(), YsmMaidInfo.EMPTY);
         this.name = getName(this.info, this.ysmMaidInfo);
         this.customName = tooltip.customName();
     }
@@ -52,7 +59,7 @@ public class ClientMaidTooltip implements ClientTooltipComponent {
             if (level == null) {
                 return Component.empty();
             }
-            MutableComponent name = Component.Serializer.fromJson(ysmMaidInfo.name(), level.registryAccess());
+            MutableComponent name = parseComponentJson(ysmMaidInfo.name(), level.registryAccess());
             if (name == null || name.equals(Component.empty())) {
                 return Component.literal(ysmMaidInfo.modelId());
             }
@@ -66,8 +73,21 @@ public class ClientMaidTooltip implements ClientTooltipComponent {
         return Component.translatable(ParseI18n.getI18nKey(info.getName()));
     }
 
+
+    @Nullable
+    private static MutableComponent parseComponentJson(String json, RegistryAccess access) {
+        if (StringUtils.isBlank(json)) {
+            return null;
+        }
+        return ComponentSerialization.CODEC
+                .parse(access.createSerializationContext(JsonOps.INSTANCE), JsonParser.parseString(json))
+                .result()
+                .map(c -> c instanceof MutableComponent mc ? mc : c.copy())
+                .orElse(null);
+    }
+
     @Override
-    public int getHeight() {
+    public int getHeight(Font font) {
         return 70;
     }
 
@@ -77,7 +97,7 @@ public class ClientMaidTooltip implements ClientTooltipComponent {
     }
 
     @Override
-    public void renderImage(Font font, int pX, int pY, GuiGraphics guiGraphics) {
+    public void renderImage(Font font, int pX, int pY, int width, int height, GuiGraphics guiGraphics) {
         if (info == null) {
             return;
         }
@@ -90,25 +110,22 @@ public class ClientMaidTooltip implements ClientTooltipComponent {
 
         MutableComponent customNameComponent = null;
         if (StringUtils.isNotBlank(customName)) {
-            customNameComponent = Component.Serializer.fromJson(customName, access);
+            customNameComponent = parseComponentJson(customName, access);
             if (customNameComponent != null) {
-                guiGraphics.drawString(font, customNameComponent.withStyle(ChatFormatting.GRAY), pX, pY + 2, 0xFFFFFF);
+                guiGraphics.drawString(font, customNameComponent.withStyle(ChatFormatting.GRAY), pX, pY + 2, 0xFFFFFFFF);
             }
         } else {
-            guiGraphics.drawString(font, name.withStyle(ChatFormatting.GRAY), pX, pY + 2, 0xFFFFFF);
+            guiGraphics.drawString(font, name.withStyle(ChatFormatting.GRAY), pX, pY + 2, 0xFFFFFFFF);
         }
 
-        int width = this.getWidth(font);
-        int posX = pX + width / 2;
+
+        int selfWidth = this.getWidth(font);
         int posY = pY + 64;
-        double rot = ((System.currentTimeMillis() / 25.0) % 360);
-        Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
-        Quaternionf rotation = (new Quaternionf()).rotateY((float) Math.toRadians(rot));
-        pose.mul(rotation);
         EntityMaid maid;
         try {
             maid = (EntityMaid) EntityCacheUtil.ENTITY_CACHE.get(EntityMaid.TYPE, () -> {
-                Entity e = EntityMaid.TYPE.create(world);
+
+                Entity e = EntityMaid.TYPE.create(world, EntitySpawnReason.LOAD);
                 return Objects.requireNonNullElseGet(e, () -> new EntityMaid(world));
             });
         } catch (ExecutionException | ClassCastException e) {
@@ -133,8 +150,25 @@ public class ClientMaidTooltip implements ClientTooltipComponent {
             maid.setIsYsmModel(false);
         }
 
-        guiGraphics.enableScissor(pX, posY - 50, pX + width, posY);
-        InventoryScreen.renderEntityInInventory(guiGraphics, posX, posY, (int) (25 * info.getRenderItemScale()), new Vector3f(), pose, null, maid);
+        int x1 = pX, y1 = posY - 50, x2 = pX + selfWidth, y2 = posY;
+        int scale = (int) (25 * info.getRenderItemScale());
+        float rotation = (float) Math.toRadians((System.currentTimeMillis() / 25.0) % 360);
+        Quaternionf pose = new Quaternionf().rotateZ((float) Math.PI).rotateY(rotation);
+        Vector3f translation = new Vector3f(0, (y2 - y1) / (2.0F * scale), 0);
+        float partialTick = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        EntityRenderState renderState = extractRenderState(maid, partialTick);
+        guiGraphics.enableScissor(x1, y1, x2, y2);
+        guiGraphics.submitEntityRenderState(renderState, scale, translation, pose, null, x1, y1, x2, y2);
         guiGraphics.disableScissor();
+    }
+
+    private static EntityRenderState extractRenderState(EntityMaid maid, float partialTick) {
+        EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+        EntityRenderer<? super EntityMaid, ?> renderer = dispatcher.getRenderer(maid);
+        EntityRenderState state = renderer.createRenderState(maid, partialTick);
+        state.lightCoords = 0xf000f0;
+        state.shadowPieces.clear();
+        state.outlineColor = 0;
+        return state;
     }
 }

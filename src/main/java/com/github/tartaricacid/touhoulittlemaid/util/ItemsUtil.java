@@ -12,7 +12,7 @@ import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -35,7 +35,9 @@ public final class ItemsUtil {
             ItemStack stackInSlot = itemHandler.getStackInSlot(i);
             ItemStack extractItem = itemHandler.extractItem(i, stackInSlot.getCount(), false);
             if (!extractItem.isEmpty()) {
-                entity.spawnAtLocation(extractItem);
+                if (entity.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                    entity.spawnAtLocation(serverLevel, extractItem);
+                }
             }
         }
     }
@@ -79,7 +81,7 @@ public final class ItemsUtil {
         }
 
         // 如果没找到，并且 handler 是 MaidInvWrapper，就触发事件请求物品后再找一次
-        if (!(handler instanceof MaidInvWrapper maidInv) || maidInv.getMaid().level.isClientSide) {
+        if (!(handler instanceof MaidInvWrapper maidInv) || maidInv.getMaid().level.isClientSide()) {
             return -1;
         }
 
@@ -183,7 +185,7 @@ public final class ItemsUtil {
      * 获取物品Id
      */
     public static String getItemId(Item item) {
-        ResourceLocation key = BuiltInRegistries.ITEM.getKey(item);
+        Identifier key = BuiltInRegistries.ITEM.getKey(item);
         Preconditions.checkNotNull(key);
         if (key.equals(BuiltInRegistries.ITEM.getDefaultKey())) {
             throw new NullPointerException("item can't be default key");
@@ -196,8 +198,8 @@ public final class ItemsUtil {
      * 获取物品
      */
     public static ItemStack getItemStack(String itemId) {
-        ResourceLocation resourceLocation = ResourceLocation.parse(itemId);
-        Item value = BuiltInRegistries.ITEM.get(resourceLocation);
+        Identifier resourceLocation = Identifier.parse(itemId);
+        Item value = BuiltInRegistries.ITEM.getOptional(resourceLocation).orElse(null);
         return new ItemStack(value);
     }
 

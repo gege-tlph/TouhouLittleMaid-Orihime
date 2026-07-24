@@ -6,9 +6,11 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.function.schema.param
 import com.github.tartaricacid.touhoulittlemaid.ai.service.function.schema.parameter.ObjectParameter;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.function.schema.parameter.Parameter;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.function.schema.parameter.StringParameter;
+import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
 import com.github.tartaricacid.touhoulittlemaid.api.task.FunctionCallSwitchResult;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IAttackTask;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IMaidTask;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.task.TaskManager;
 import com.mojang.serialization.Codec;
@@ -16,13 +18,14 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.schedule.Activity;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 
@@ -30,10 +33,12 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
     public static final String TOOL_ID = "switch_work_task";
 
     private static final String TOOL_DESC = """
-            Use this when the user wants to change the current work task.
+            Use this when the user wants to change the maid's permanent player-selected work task.
+            Do not use this tool to simulate one-off emergency combat, self-defense, or retaliation.
+            A valid explicit command stops any current temporary threat response.
             
-            For attack tasks, should first obtain the context of nearby entities, then provide the target entity id as parameter to switch immediately after switching task.
-            Non attack tasks not need to provide entity id.
+            For attack tasks, first query the latest nearby-entity context. Call this tool only when exactly one target is identified, and provide that entity id. Existing server attack rules are final; a rejected target leaves the work task unchanged.
+            Non-attack tasks do not need an entity id.
             
             Reply with the entity name ONLY, omit internal data (e.g., ID, distance).
             """.trim();
@@ -41,7 +46,7 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
     private static final String TASK_ID_PARAMETER_ID = "task_id";
     private static final String ENTITY_ID_PARAMETER_ID = "entity_id";
 
-    private static final String ENTITY_ID_PARAMETER_DESC = "Entity id of the attack target";
+    private static final String ENTITY_ID_PARAMETER_DESC = "Entity id of the unique attack target from the latest nearby-entity context";
 
     private static final String SUCCESS = "Switched to task %s";
     private static final String NO_CHANGE = "Already on task %s";
@@ -49,13 +54,13 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
     private static final String PARTIAL = "Switched to task %s, but some requirements are missing";
     private static final String SCHEDULED = "Switched to task %s, but current scheduled is %s, not in work time";
 
-    private static final String TARGET_NOT_PROVIDED = "The task switch succeeded, but no target entity id provided";
-    private static final String TARGET_NOT_FOUND = "The task switch succeeded, but no living entity with id %d was found";
-    private static final String TARGET_NOT_ALLOWED = "The task switch succeeded, but cannot attack %s because it is excluded by attack rules.";
+    private static final String TARGET_NOT_PROVIDED = "Work task was not changed: no attack target entity id was provided";
+    private static final String TARGET_NOT_FOUND = "Work task was not changed: no live living entity with id %d was found";
+    private static final String TARGET_NOT_ALLOWED = "Work task was not changed: cannot attack %s because it is excluded by server attack rules";
     private static final String TARGET_SUCCESS = "The task switch succeeded, and the attack target is successfully set to %s";
 
     private static final Codec<Result> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf(TASK_ID_PARAMETER_ID).forGetter(Result::id),
+            Identifier.CODEC.fieldOf(TASK_ID_PARAMETER_ID).forGetter(Result::id),
             Codec.INT.optionalFieldOf(ENTITY_ID_PARAMETER_ID, -1).forGetter(Result::entityId)
     ).apply(instance, Result::new));
 
@@ -78,7 +83,7 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
 
         List<IMaidTask> tasks = TaskManager.getTaskIndex();
         tasks.stream().map(IMaidTask::getUid)
-                .map(ResourceLocation::toString)
+                .map(Identifier::toString)
                 .forEach(taskId::addEnumValues);
 
         root.addProperties(TASK_ID_PARAMETER_ID, taskId);
@@ -93,14 +98,14 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
 
     @Override
     public LLMCallback onCall(String toolId, Result result, LLMCallback callback) {
-        ResourceLocation taskId = result.id;
+        Identifier taskId = result.id;
         List<IMaidTask> tasks = TaskManager.getTaskIndex();
         Optional<IMaidTask> optional = TaskManager.findTask(taskId);
 
         if (optional.isEmpty()) {
             List<String> values = tasks.stream()
                     .map(IMaidTask::getUid)
-                    .map(ResourceLocation::toString)
+                    .map(Identifier::toString)
                     .toList();
             String text = "Unknown task_id '%s'".formatted(taskId);
             return callback.addToolResult(ITool.invalidParam(TASK_ID_PARAMETER_ID, values, text), toolId);
@@ -112,30 +117,43 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
         FunctionCallSwitchResult switchResult;
         int entityId = result.entityId();
 
+        LivingEntity attackTarget = null;
+        if (task instanceof IAttackTask attackTask) {
+            AttackTargetValidation validation = this.validateAttackTarget(maid, attackTask, entityId);
+            if (!validation.valid()) {
+                return callback.addToolResult(validation.message(), toolId);
+            }
+            attackTarget = Objects.requireNonNull(validation.target());
+        }
+
+        boolean emergencyStopped = maid.isEmergencyCombatActive();
+        maid.getCombatManager().onPlayerCommand();
+
         if (task != currentTask) {
-            maid.setTask(task);
+            maid.setTaskWithoutPlayerCommand(task);
         }
         switchResult = task.onFunctionCallSwitch(maid);
 
-        // 日程表检查
+        // The permanent task can change outside work time, but execution waits for the schedule.
         Activity activity = maid.getScheduleDetail();
         if (activity != Activity.WORK) {
             String msg = SCHEDULED.formatted(taskId, maid.getSchedule().name());
-            return callback.addToolResult(msg, toolId);
+            return callback.addToolResult(withThreatResult(msg, emergencyStopped), toolId);
         }
 
-        if (task instanceof IAttackTask attackTask) {
-            String msg = this.attackResult(maid, attackTask, entityId);
-            return callback.addToolResult(msg, toolId);
-        } else {
-            String msg = this.switchResult(taskId, task == currentTask, switchResult);
-            return callback.addToolResult(msg, toolId);
+        if (attackTarget != null) {
+            maid.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, attackTarget);
+            return callback.addToolResult(withThreatResult(
+                    TARGET_SUCCESS.formatted(attackTarget.getName().getString()), emergencyStopped), toolId);
         }
+
+        String msg = this.switchResult(taskId, task == currentTask, switchResult);
+        return callback.addToolResult(withThreatResult(msg, emergencyStopped), toolId);
     }
 
     @Override
     public Component invocationSummaryComponent(Result result) {
-        ResourceLocation id = result.id();
+        Identifier id = result.id();
         return TaskManager.findTask(id).map(task -> {
             MutableComponent name = task.getName();
             return Component.translatable("ai.touhou_little_maid.chat.tool_call.switch_work_task", name)
@@ -143,7 +161,7 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
         }).orElse(Component.empty());
     }
 
-    private String switchResult(ResourceLocation taskId, boolean sameTask, FunctionCallSwitchResult switchResult) {
+    private String switchResult(Identifier taskId, boolean sameTask, FunctionCallSwitchResult switchResult) {
         if (sameTask) {
             return switch (switchResult) {
                 case NO_CHANGE -> NO_CHANGE.formatted(taskId);
@@ -159,27 +177,26 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
         };
     }
 
-    private String attackResult(EntityMaid maid, IAttackTask attackTask, int entityId) {
+    private static String withThreatResult(String result, boolean stopped) {
+        return stopped ? result + " Temporary threat response stopped." : result;
+    }
+
+    private AttackTargetValidation validateAttackTarget(EntityMaid maid, IAttackTask attackTask, int entityId) {
         if (entityId == -1) {
-            return TARGET_NOT_PROVIDED;
+            return AttackTargetValidation.invalid(TARGET_NOT_PROVIDED);
         }
 
         Entity entity = maid.level.getEntity(entityId);
         if (!(entity instanceof LivingEntity target) || !target.isAlive()) {
-            return TARGET_NOT_FOUND.formatted(entityId);
+            return AttackTargetValidation.invalid(TARGET_NOT_FOUND.formatted(entityId));
         }
 
         String targetName = target.getName().getString();
-        LivingEntity previousTarget = maid.getLastHurtByMob();
-        maid.setLastHurtByMob(target);
-
-        if (!attackTask.canAttack(maid, target)) {
-            maid.setLastHurtByMob(previousTarget);
-            return TARGET_NOT_ALLOWED.formatted(targetName);
+        if (!MaidTargetingPolicy.canAttackForTask(
+                maid, target, MaidTargetingContext.PLANNED_ATTACK, attackTask)) {
+            return AttackTargetValidation.invalid(TARGET_NOT_ALLOWED.formatted(targetName));
         }
-
-        maid.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
-        return TARGET_SUCCESS.formatted(targetName);
+        return AttackTargetValidation.valid(target);
     }
 
     private String getTaskIdParameterDesc() {
@@ -192,6 +209,16 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
         return joiner.toString();
     }
 
-    public record Result(ResourceLocation id, int entityId) {
+    public record Result(Identifier id, int entityId) {
+    }
+
+    private record AttackTargetValidation(boolean valid, LivingEntity target, String message) {
+        private static AttackTargetValidation valid(LivingEntity target) {
+            return new AttackTargetValidation(true, target, "");
+        }
+
+        private static AttackTargetValidation invalid(String message) {
+            return new AttackTargetValidation(false, null, message);
+        }
     }
 }

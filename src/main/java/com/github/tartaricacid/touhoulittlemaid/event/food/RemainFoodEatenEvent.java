@@ -3,17 +3,17 @@ package com.github.tartaricacid.touhoulittlemaid.event.food;
 import cn.sh1rocu.touhoulittlemaid.util.itemhandler.CombinedInvWrapper;
 import cn.sh1rocu.touhoulittlemaid.util.itemhandler.ItemHandlerHelper;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidAfterEatEvent;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.util.ItemsUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
-
-import static com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST;
 
 public class RemainFoodEatenEvent {
     public static void onAfterMaidEat(MaidAfterEatEvent event) {
@@ -23,7 +23,7 @@ public class RemainFoodEatenEvent {
 
             if (craftingRemainingItem.isEmpty()) {
                 String itemId = ItemsUtil.getItemId(foodAfterEat.getItem());
-                for (List<String> strings : MAID_EATEN_RETURN_CONTAINER_LIST.get()) {
+                for (List<String> strings : ServerRuleConfig.get(MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST)) {
                     if (strings.get(0).equals(itemId)) {
                         craftingRemainingItem = getItemStack(strings.get(1));
                         break;
@@ -45,8 +45,10 @@ public class RemainFoodEatenEvent {
     }
 
     private static ItemStack getItemStack(String itemId) {
-        ResourceLocation resourceLocation = ResourceLocation.parse(itemId);
-        Item value = BuiltInRegistries.ITEM.get(resourceLocation);
-        return new ItemStack(value);
+        Identifier resourceLocation = Identifier.parse(itemId);
+
+        return BuiltInRegistries.ITEM.get(resourceLocation)
+                .map(ref -> new ItemStack(ref.value()))
+                .orElse(ItemStack.EMPTY);
     }
 }

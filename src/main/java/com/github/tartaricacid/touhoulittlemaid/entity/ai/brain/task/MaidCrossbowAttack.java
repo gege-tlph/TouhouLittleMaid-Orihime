@@ -1,5 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitAttribute;
 import net.minecraft.server.level.ServerLevel;
@@ -23,7 +25,9 @@ public class MaidCrossbowAttack extends CrossbowAttack<EntityMaid, EntityMaid> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, EntityMaid maid) {
         return maid.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET)
-                .map(target -> maid.isHolding(this::isCrossbow) && maid.canSee(target))
+                .map(target -> MaidTargetingPolicy.canContinueTargeting(
+                                maid, target, MaidTargetingContext.PLANNED_ATTACK)
+                        && maid.isHolding(this::isCrossbow) && maid.canSee(target))
                 .orElse(false);
     }
 

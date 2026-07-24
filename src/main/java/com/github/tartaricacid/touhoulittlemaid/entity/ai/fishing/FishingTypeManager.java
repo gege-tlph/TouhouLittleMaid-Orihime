@@ -1,7 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.fishing;
 
 import com.github.tartaricacid.touhoulittlemaid.api.entity.fishing.IFishingType;
-import com.github.tartaricacid.touhoulittlemaid.compat.aquaculture.AquacultureCompat;
+
 import com.google.common.collect.Lists;
 import net.minecraft.world.item.ItemStack;
 
@@ -17,7 +17,7 @@ public final class FishingTypeManager {
 
     public static void init() {
         FishingTypeManager manager = new FishingTypeManager();
-        AquacultureCompat.registerFishingType(manager);
+
     }
 
     public static IFishingType getFishingType(ItemStack itemStack) {

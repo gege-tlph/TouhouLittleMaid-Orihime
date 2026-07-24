@@ -1,5 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
@@ -27,13 +29,19 @@ public class MaidMeleeAttack {
                           nearestVisibleLivingEntities
         ) -> (level, maid, gameTime) -> {
             LivingEntity target = context.get(attackTarget);
-            if (!isHoldingUsableProjectileWeapon(maid)
+            MaidTargetingContext targetingContext = maid.getCombatManager().getTargetingContext();
+            boolean emergency = maid.getCombatManager().isEmergencyActive();
+            boolean emergencyReady = !emergency || maid.getCombatManager().canRunCombatActions();
+            boolean heldItemAllowsMelee = emergency || !isHoldingUsableProjectileWeapon(maid);
+            if (emergencyReady
+                && MaidTargetingPolicy.canContinueTargeting(maid, target, targetingContext)
+                && heldItemAllowsMelee
                 && maid.isWithinMeleeAttackRange(target)
                 && context.get(nearestVisibleLivingEntities).contains(target)
             ) {
                 lookTarget.set(new EntityTracker(target, true));
                 maid.swing(InteractionHand.MAIN_HAND);
-                maid.doHurtTarget(target);
+                maid.doHurtTarget(level, target);
                 double attackSpeed = maid.getAttributeValue(Attributes.ATTACK_SPEED);
                 if (attackSpeed > 0) {
                     attackCoolingDown.setWithExpiry(true, (long) (cooldownBetweenAttacks / attackSpeed));
@@ -50,7 +58,8 @@ public class MaidMeleeAttack {
     private static boolean isHoldingUsableProjectileWeapon(EntityMaid maid) {
         return maid.isHolding((itemStack) -> {
             Item item = itemStack.getItem();
-            return item instanceof ProjectileWeaponItem projectile && maid.canFireProjectileWeapon(projectile);
+
+            return item instanceof ProjectileWeaponItem && maid.canUseNonMeleeWeapon(itemStack);
         });
     }
 }

@@ -2,16 +2,17 @@ package com.github.tartaricacid.touhoulittlemaid.data;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
 @SuppressWarnings("UnstableApiUsage")
 public class MaidNumAttachment {
-    public static final AttachmentType<MaidNumAttachment> TYPE = AttachmentRegistry.create(ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "maid_num"),
+    public static final AttachmentType<MaidNumAttachment> TYPE = AttachmentRegistry.create(Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "maid_num"),
             builder -> builder
                     .initializer(() -> new MaidNumAttachment(0))
                     .copyOnDeath()
@@ -52,7 +53,7 @@ public class MaidNumAttachment {
     }
 
     public int getMaxNum() {
-        return MaidConfig.OWNER_MAX_MAID_NUM.get();
+        return ServerRuleConfig.get(MaidConfig.OWNER_MAX_MAID_NUM);
     }
 
     public int get() {

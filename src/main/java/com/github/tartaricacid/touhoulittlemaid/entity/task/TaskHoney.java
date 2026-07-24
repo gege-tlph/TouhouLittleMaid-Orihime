@@ -12,7 +12,7 @@ import com.github.tartaricacid.touhoulittlemaid.util.TaskEquipUtil;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.item.ItemStack;
@@ -24,10 +24,10 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public class TaskHoney implements IMaidTask {
-    public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "honey");
+    public static final Identifier UID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "honey");
 
     @Override
-    public ResourceLocation getUid() {
+    public Identifier getUid() {
         return UID;
     }
 
@@ -58,7 +58,7 @@ public class TaskHoney implements IMaidTask {
     }
 
     private boolean hasShears(EntityMaid maid) {
-        return maid.getMainHandItem().getItem() /*.canPerformAction(ItemAbilities.SHEARS_HARVEST)*/ instanceof ShearsItem
+        return maid.getMainHandItem().getItem() instanceof ShearsItem
                 || maid.getMainHandItem().is(ConventionalItemTags.SHEAR_TOOLS);
     }
 
@@ -68,7 +68,7 @@ public class TaskHoney implements IMaidTask {
         if (hasShears(maid)) {
             return FunctionCallSwitchResult.NO_CHANGE;
         }
-        if (TaskEquipUtil.tryEquipFromBackpack(maid, item -> item.is(ConventionalItemTags.SHEAR_TOOLS) || item.getItem() instanceof ShearsItem /*item.canPerformAction(ItemAbilities.SHEARS_HARVEST)*/)) {
+        if (TaskEquipUtil.tryEquipFromBackpack(maid, item -> item.is(ConventionalItemTags.SHEAR_TOOLS) || item.getItem() instanceof ShearsItem)) {
             return FunctionCallSwitchResult.OK;
         }
         // 若无剪刀，但有玻璃瓶则允许仅用瓶子进行部分功能（部分成功）

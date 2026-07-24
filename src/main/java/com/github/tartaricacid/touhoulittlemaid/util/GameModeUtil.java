@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.util;
 
+import net.minecraft.server.permissions.Permissions;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
@@ -9,7 +10,7 @@ import javax.annotation.Nullable;
 /**
  * 用于判断当前玩家所处游戏是单人、服务器还是局域网联机等功能
  * <p>
- * 以下方法均应在服务端调用（player.getServer() != null）。
+ * 以下方法均应在服务端调用（player.level().getServer() != null）。
  * <ul>
  *   <li>单人游戏：IntegratedServer 且未开放局域网</li>
  *   <li>局域网联机（主机）：IntegratedServer 且已开放局域网，且该玩家是房主</li>
@@ -33,9 +34,13 @@ public class GameModeUtil {
             // 如果是单人模式
             return true;
         } else if (GameModeUtil.isLanHost(player)) {
-            // 如果是局域网联机，且玩家是房主
+            // 局域网房主始终可以编辑
             return true;
-        } else if (GameModeUtil.isDedicatedServer(player) && player.hasPermissions(2)) {
+        } else if (GameModeUtil.isLanGame(player)
+                && player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+            // 局域网客人获得 OP2 后也可以编辑房主的服务端配置
+            return true;
+        } else if (GameModeUtil.isDedicatedServer(player) && player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             // 如果是服务器玩家，且拥有 OP2 权限
             return true;
         }
@@ -46,7 +51,7 @@ public class GameModeUtil {
      * 是否为单人游戏（未开放局域网的 IntegratedServer）
      */
     public static boolean isSinglePlayer(Player player) {
-        MinecraftServer server = player.getServer();
+        MinecraftServer server = player.level().getServer();
         if (server == null) {
             return false;
         }
@@ -57,7 +62,7 @@ public class GameModeUtil {
      * 是否为局域网联机（IntegratedServer 且已开放局域网）
      */
     public static boolean isLanGame(Player player) {
-        MinecraftServer server = player.getServer();
+        MinecraftServer server = player.level().getServer();
         if (server == null) {
             return false;
         }
@@ -68,7 +73,7 @@ public class GameModeUtil {
      * 是否为局域网联机的主机玩家（房主）
      */
     public static boolean isLanHost(Player player) {
-        MinecraftServer server = player.getServer();
+        MinecraftServer server = player.level().getServer();
         if (server == null) {
             return false;
         }
@@ -82,7 +87,7 @@ public class GameModeUtil {
      * 是否为局域网联机的客机玩家（非房主）
      */
     public static boolean isLanClient(Player player) {
-        MinecraftServer server = player.getServer();
+        MinecraftServer server = player.level().getServer();
         if (server == null) {
             return false;
         }
@@ -96,7 +101,7 @@ public class GameModeUtil {
      * 是否为专用服务器（DedicatedServer）
      */
     public static boolean isDedicatedServer(Player player) {
-        MinecraftServer server = player.getServer();
+        MinecraftServer server = player.level().getServer();
         if (server == null) {
             return false;
         }
@@ -111,6 +116,6 @@ public class GameModeUtil {
         if (hostProfile == null) {
             return false;
         }
-        return hostProfile.getId() != null && hostProfile.getId().equals(player.getUUID());
+        return hostProfile.id() != null && hostProfile.id().equals(player.getUUID());
     }
 }

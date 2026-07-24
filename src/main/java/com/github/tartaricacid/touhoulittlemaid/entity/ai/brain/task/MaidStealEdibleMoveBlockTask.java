@@ -41,6 +41,7 @@ public class MaidStealEdibleMoveBlockTask extends MaidMoveToBlockTask {
     private final MemoryModuleType<MaidEdibleBlockAction> action;
 
     private @Nullable ItemStack placedStack;
+    private @Nullable BlockPos reachableWalkTarget;
 
     public MaidStealEdibleMoveBlockTask(float movementSpeed) {
         super(movementSpeed, 2);
@@ -85,6 +86,12 @@ public class MaidStealEdibleMoveBlockTask extends MaidMoveToBlockTask {
             maid.getBrain().setMemory(this.action, MaidEdibleBlockAction.TRY_STEAL);
         }
 
+        // 摆盘和偷吃是两套玩家可感知的行为。关闭偷吃时仍允许上面的
+        // 背包食物扫描与摆盘，只跳过对世界中现成食物的搜索。
+        if (!maid.getConfigManager().isTableFoodAllowed()) {
+            return;
+        }
+
         // 尝试搜索目标位置
         this.searchForDestination(worldIn, maid);
     }
@@ -112,22 +119,34 @@ public class MaidStealEdibleMoveBlockTask extends MaidMoveToBlockTask {
 
     @Override
     protected boolean checkPathReach(EntityMaid maid, MaidPathFindingBFS pathFinding, BlockPos pos) {
+        this.reachableWalkTarget = null;
+        double nearestDistance = Double.MAX_VALUE;
         for (int x = CHECK_RANGE.minX(); x <= CHECK_RANGE.maxX(); x++) {
             for (int y = CHECK_RANGE.minY(); y <= CHECK_RANGE.maxY(); y++) {
                 for (int z = CHECK_RANGE.minZ(); z <= CHECK_RANGE.maxZ(); z++) {
-                    if (pathFinding.canPathReach(pos.offset(x, y, z))) {
-                        return true;
+                    BlockPos candidate = pos.offset(x, y, z);
+                    if (pathFinding.canPathReach(candidate)) {
+                        double distance = candidate.distSqr(maid.blockPosition());
+                        if (distance < nearestDistance) {
+                            nearestDistance = distance;
+                            this.reachableWalkTarget = candidate;
+                        }
                     }
                 }
             }
         }
-        return false;
+        return this.reachableWalkTarget != null;
     }
 
     @Override
     protected int getHorizontalSearchRange(EntityMaid maid) {
         int defaultRange = super.getHorizontalSearchRange(maid);
         return Math.min(defaultRange, HORIZONTAL_SEARCH_RANGE);
+    }
+
+    @Override
+    protected BlockPos getWalkTargetPos(EntityMaid maid, BlockPos targetPos) {
+        return this.reachableWalkTarget == null ? targetPos : this.reachableWalkTarget;
     }
 
     @Override

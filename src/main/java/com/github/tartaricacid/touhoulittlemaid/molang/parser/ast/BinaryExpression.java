@@ -29,11 +29,9 @@ import org.jetbrains.annotations.NotNull;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Expression implementation for binary expressions
- * (expressions composed by <b>two</b> other expressions)
+ * 二进制表达式的表达式实现（由<b>两个</b>其他表达式组成的表达式）
  *
- * <p>Example binary expressions: {@code 1 + 1}, {@code 5 * 9},
- * {@code a == b}, {@code a < b}, {@code true ?? false}</p>
+ * <p>二进制表达式示例：{@code 1 + 1}、{@code 5 * 9}、{@code a == b}、{@code a < b}、 {@code true ?? false}</p>
  *
  * @since 3.0.0
  */
@@ -54,9 +52,9 @@ public final class BinaryExpression implements Expression {
     }
 
     /**
-     * Gets the binary expression type/operation.
+     * 获取二进制表达式类型/操作。
      *
-     * @return The expression operation.
+     * @return 表达式运算。
      * @since 3.0.0
      */
     public @NotNull Op op() {
@@ -64,10 +62,9 @@ public final class BinaryExpression implements Expression {
     }
 
     /**
-     * Gets the left-hand expression for this
-     * binary expression.
+     * 获取此二进制表达式的左侧表达式。
      *
-     * @return The left-hand expression
+     * @return 左边的表达式
      * @since 3.0.0
      */
     public @NotNull Expression left() {
@@ -75,10 +72,9 @@ public final class BinaryExpression implements Expression {
     }
 
     /**
-     * Gets the right-hand expression for this
-     * binary expression.
+     * 获取此二进制表达式的右侧表达式。
      *
-     * @return The right-hand expression
+     * @return 右手表达式
      * @since 3.0.0
      */
     public @NotNull Expression right() {

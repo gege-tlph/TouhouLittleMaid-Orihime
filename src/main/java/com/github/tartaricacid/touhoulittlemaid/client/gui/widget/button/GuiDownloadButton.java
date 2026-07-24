@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button;
 
 import com.github.tartaricacid.touhoulittlemaid.client.download.pojo.DownloadInfo;
 import com.github.tartaricacid.touhoulittlemaid.client.download.pojo.DownloadStatus;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -15,6 +16,12 @@ public class GuiDownloadButton extends Button {
         if (!DownloadStatus.canDownload(info.getStatus())) {
             this.active = false;
         }
+    }
+
+    @Override
+    protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.renderDefaultSprite(graphics);
+        this.renderDefaultLabel(graphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.NONE));
     }
 
     @Override

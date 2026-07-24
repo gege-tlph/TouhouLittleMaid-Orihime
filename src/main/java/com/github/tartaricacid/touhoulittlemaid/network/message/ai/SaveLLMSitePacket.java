@@ -1,6 +1,11 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message.ai;
 
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.AvailableSites;
+import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.SiteConfigStorage;
+import com.github.tartaricacid.touhoulittlemaid.command.subcommand.AIChatCommand;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import java.util.Map;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializableSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializerRegister;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.ServiceType;
@@ -16,11 +21,11 @@ import net.minecraft.server.level.ServerPlayer;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record SaveLLMSitePacket(Action action, @Nullable String siteId, boolean enabled,
                                 @Nullable LLMSite site) implements CustomPacketPayload {
-    public static final Type<SaveLLMSitePacket> TYPE = new Type<>(getResourceLocation("save_llm_site"));
+    public static final CustomPacketPayload.Type<SaveLLMSitePacket> TYPE = new CustomPacketPayload.Type<>(modLoc("save_llm_site"));
     public static final StreamCodec<ByteBuf, SaveLLMSitePacket> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public SaveLLMSitePacket decode(ByteBuf byteBuf) {
@@ -90,48 +95,62 @@ public record SaveLLMSitePacket(Action action, @Nullable String siteId, boolean 
             return;
         }
 
+        final Map<String, LLMSite> sites;
+        try {
+            sites = SiteConfigStorage.readLLM();
+        } catch (IllegalStateException exception) {
+            return;
+        }
         boolean changed = switch (message.action) {
-            case CREATE -> createSite(message.site);
-            case UPDATE -> updateSite(message.site);
-            case DELETE -> deleteSite(message.siteId);
-            case TOGGLE -> toggleSite(message.siteId, message.enabled);
+            case CREATE -> createSite(sites, message.site);
+            case UPDATE -> updateSite(sites, message.site);
+            case DELETE -> deleteSite(sites, message.siteId);
+            case TOGGLE -> toggleSite(sites, message.siteId, message.enabled);
         };
         if (!changed) {
             return;
         }
 
-        AvailableSites.saveSites();
-        ServerPlayNetworking.send(player, new SyncAISitesPacket(AvailableSites.LLM_SITES, AvailableSites.TTS_SITES, false));
+        if (!SiteConfigStorage.writeLLM(sites)) {
+            return;
+        }
+        if (player.level().getServer().isDedicatedServer()) {
+            SyncAISitesPacket.syncToSiteEditors(player.level().getServer());
+            player.displayClientMessage(Component.translatable("config.touhou_little_maid.ai_sites.save.reload_required")
+                    .withStyle(ChatFormatting.YELLOW), false);
+        } else {
+            AIChatCommand.reload(player.level().getServer());
+        }
     }
 
-    private static boolean createSite(@Nullable LLMSite site) {
-        if (site == null || StringUtils.isBlank(site.id()) || AvailableSites.LLM_SITES.containsKey(site.id())) {
+    private static boolean createSite(Map<String, LLMSite> sites, @Nullable LLMSite site) {
+        if (site == null || StringUtils.isBlank(site.id()) || sites.containsKey(site.id())) {
             return false;
         }
-        AvailableSites.LLM_SITES.put(site.id(), site);
+        sites.put(site.id(), site);
         return true;
     }
 
-    private static boolean updateSite(@Nullable LLMSite site) {
+    private static boolean updateSite(Map<String, LLMSite> sites, @Nullable LLMSite site) {
         if (site == null || StringUtils.isBlank(site.id())) {
             return false;
         }
-        AvailableSites.LLM_SITES.put(site.id(), site);
+        sites.put(site.id(), site);
         return true;
     }
 
-    private static boolean deleteSite(@Nullable String siteId) {
+    private static boolean deleteSite(Map<String, LLMSite> sites, @Nullable String siteId) {
         if (StringUtils.isBlank(siteId)) {
             return false;
         }
-        return AvailableSites.LLM_SITES.remove(siteId) != null;
+        return sites.remove(siteId) != null;
     }
 
-    private static boolean toggleSite(@Nullable String siteId, boolean enabled) {
+    private static boolean toggleSite(Map<String, LLMSite> sites, @Nullable String siteId, boolean enabled) {
         if (StringUtils.isBlank(siteId)) {
             return false;
         }
-        LLMSite site = AvailableSites.LLM_SITES.get(siteId);
+        LLMSite site = sites.get(siteId);
         if (site == null) {
             return false;
         }
@@ -140,7 +159,7 @@ public record SaveLLMSitePacket(Action action, @Nullable String siteId, boolean 
     }
 
     @SuppressWarnings("unchecked")
-    private static SerializableSite<LLMSite> getSerializer(String apiType) {
+    private static @Nullable SerializableSite<LLMSite> getSerializer(String apiType) {
         SerializableSite<? extends Site> serializer = SerializerRegister.getSerializer(ServiceType.LLM, apiType);
         if (serializer == null) {
             return null;

@@ -61,7 +61,7 @@ public class BackupCommand {
         // 如果没找到
         if (maidIndexMap.isEmpty()) {
             MutableComponent error = Component.translatable("message.touhou_little_maid.maid_backup.player.no_data", player.getScoreboardName());
-            player.sendSystemMessage(error.withStyle(ChatFormatting.RED));
+            player.displayClientMessage(error.withStyle(ChatFormatting.RED), false);
             return Command.SINGLE_SUCCESS;
         }
 
@@ -78,7 +78,7 @@ public class BackupCommand {
                 ));
 
         MutableComponent separator = Component.translatable("message.touhou_little_maid.maid_backup.player.separator", player.getScoreboardName());
-        player.sendSystemMessage(separator.withStyle(ChatFormatting.DARK_GREEN));
+        player.displayClientMessage(separator.withStyle(ChatFormatting.DARK_GREEN), false);
 
         // 把女仆的信息按行打印出来，显示名称、坐标和维度
         int index = 1;
@@ -98,13 +98,15 @@ public class BackupCommand {
             MutableComponent pos = Component.translatable("tooltips.touhou_little_maid.fox_scroll.position", data.pos().toShortString());
             String command = "/tlm backup get @s %s".formatted(id);
 
-            HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, CommonComponents.joinLines(dimension, pos));
-            ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.RUN_COMMAND, command);
+
+            HoverEvent hoverEvent = new HoverEvent.ShowText(CommonComponents.joinLines(dimension, pos));
+
+            ClickEvent clickEvent = new ClickEvent.RunCommand(command);
 
             msg.withStyle(style -> style.withHoverEvent(hoverEvent))
                     .withStyle(style -> style.withClickEvent(clickEvent));
 
-            player.sendSystemMessage(msg);
+            player.displayClientMessage(msg, false);
             index++;
         }
 
@@ -119,22 +121,23 @@ public class BackupCommand {
         var indexData = maidIndexMap.get(uuid);
         if (indexData == null) {
             MutableComponent error = Component.translatable("message.touhou_little_maid.maid_backup.maid.not_found", uuid);
-            player.sendSystemMessage(error.withStyle(ChatFormatting.RED));
+            player.displayClientMessage(error.withStyle(ChatFormatting.RED), false);
             return Command.SINGLE_SUCCESS;
         }
 
         MutableComponent separator = Component.translatable("message.touhou_little_maid.maid_backup.maid.separator", indexData.name());
-        player.sendSystemMessage(separator.withStyle(ChatFormatting.DARK_GREEN));
+        player.displayClientMessage(separator.withStyle(ChatFormatting.DARK_GREEN), false);
 
         var backupFiles = MaidBackupsManager.getMaidBackupFiles(player, uuid);
         for (String backupFile : backupFiles) {
             MutableComponent msg = Component.literal(backupFile).withStyle(ChatFormatting.DARK_PURPLE);
 
             String command = "/tlm backup get @s %s \"%s\"".formatted(uuid, backupFile);
-            ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.RUN_COMMAND, command);
+
+            ClickEvent clickEvent = new ClickEvent.RunCommand(command);
             msg.withStyle(style -> style.withClickEvent(clickEvent));
 
-            player.sendSystemMessage(msg);
+            player.displayClientMessage(msg, false);
         }
 
         return Command.SINGLE_SUCCESS;
@@ -148,7 +151,7 @@ public class BackupCommand {
         CompoundTag backupData = MaidBackupsManager.getMaidBackFile(player, uuid, fileName);
         if (backupData.isEmpty()) {
             MutableComponent error = Component.translatable("message.touhou_little_maid.maid_backup.file.not_found", fileName);
-            player.sendSystemMessage(error.withStyle(ChatFormatting.RED));
+            player.displayClientMessage(error.withStyle(ChatFormatting.RED), false);
             return Command.SINGLE_SUCCESS;
         }
 
@@ -156,7 +159,7 @@ public class BackupCommand {
         ItemCamera.spawnMaidPhoto(player.level, backupData, player);
         // 发送成功信息
         MutableComponent success = Component.translatable("message.touhou_little_maid.maid_backup.file.success", fileName);
-        player.sendSystemMessage(success.withStyle(ChatFormatting.GREEN));
+        player.displayClientMessage(success.withStyle(ChatFormatting.GREEN), false);
         return Command.SINGLE_SUCCESS;
     }
 }

@@ -5,12 +5,12 @@ import com.github.tartaricacid.touhoulittlemaid.client.sound.OggReader;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitSounds;
 import net.fabricmc.fabric.api.client.sound.v1.FabricSoundInstance;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.resources.sounds.EntityBoundSoundInstance;
 import net.minecraft.client.sounds.AudioStream;
 import net.minecraft.client.sounds.JOrbisAudioStream;
 import net.minecraft.client.sounds.SoundBufferLibrary;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -26,7 +26,7 @@ public class MaidAISoundInstance extends EntityBoundSoundInstance implements Fab
     }
 
     @Override
-    public CompletableFuture<AudioStream> getAudioStream(SoundBufferLibrary library, ResourceLocation sound, boolean looping) {
+    public CompletableFuture<AudioStream> getAudioStream(SoundBufferLibrary library, Identifier sound, boolean looping) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 try {

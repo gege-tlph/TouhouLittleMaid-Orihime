@@ -55,9 +55,11 @@ public abstract class MaidMoveToBlockTask extends MaidCheckRateTask {
                 for (int x = 0; x <= i; x = x > 0 ? -x : 1 - x) {
                     for (int z = x < i && x > -i ? i : 0; z <= i; z = z > 0 ? -z : 1 - z) {
                         mutableBlockPos.setWithOffset(centrePos, x, y - 1, z);
-                        if (maid.isWithinRestriction(mutableBlockPos) && shouldMoveTo(worldIn, maid, mutableBlockPos) && checkPathReach(maid, pathFinding, mutableBlockPos)
+                        if (maid.isWithinHome(mutableBlockPos) && shouldMoveTo(worldIn, maid, mutableBlockPos) && checkPathReach(maid, pathFinding, mutableBlockPos)
                                 && checkOwnerPos(maid, mutableBlockPos)) {
-                            BehaviorUtils.setWalkAndLookTargetMemories(maid, mutableBlockPos, this.movementSpeed, 0);
+                            BlockPos walkTargetPos = this.getWalkTargetPos(maid, mutableBlockPos);
+                            BehaviorUtils.setWalkAndLookTargetMemories(maid, walkTargetPos, this.movementSpeed,
+                                    this.getTargetCloseEnoughDistance());
                             maid.getBrain().setMemory(InitEntities.TARGET_POS, new BlockPosTracker(mutableBlockPos));
                             this.currentWorkPos = mutableBlockPos;
                             this.setNextCheckTickCount(5);
@@ -77,7 +79,27 @@ public abstract class MaidMoveToBlockTask extends MaidCheckRateTask {
      */
     @ApiStatus.AvailableSince("1.4.7")
     protected int getHorizontalSearchRange(EntityMaid maid) {
-        return (int) maid.getRestrictRadius();
+        return (int) maid.getHomeRadius();
+    }
+
+    /**
+     * The scan may accept a reachable position beside the interaction block.
+     * Keep the navigation tolerance aligned with the behavior which consumes
+     * {@link InitEntities#TARGET_POS}; otherwise the maid tries to stand inside
+     * crops or on top of serving tables even though an adjacent node was proven
+     * reachable.
+     */
+    protected int getTargetCloseEnoughDistance() {
+        return 0;
+    }
+
+    /**
+     * Some interaction blocks cannot be occupied directly. Subclasses which
+     * validate a reachable neighboring node may use that node for navigation
+     * while retaining the original block in {@link InitEntities#TARGET_POS}.
+     */
+    protected BlockPos getWalkTargetPos(EntityMaid maid, BlockPos targetPos) {
+        return targetPos;
     }
 
     protected void clearCurrentArrivalMap(MaidPathFindingBFS pathFinding) {
@@ -93,12 +115,12 @@ public abstract class MaidMoveToBlockTask extends MaidCheckRateTask {
 
     // 获取工作的搜寻中心点
     private BlockPos getWorkSearchPos(EntityMaid maid) {
-        if (maid.hasRestriction()) {
+        if (maid.hasHome()) {
             // 当且仅当开启home模式，并且工作点在工作范围内才返回最近工作点
-            if (this.currentWorkPos != null && maid.isWithinRestriction(currentWorkPos)) {
+            if (this.currentWorkPos != null && maid.isWithinHome(currentWorkPos)) {
                 return this.currentWorkPos;
             } else {
-                return maid.getRestrictCenter();
+                return maid.getHomePosition();
             }
         } else {
             return maid.blockPosition();

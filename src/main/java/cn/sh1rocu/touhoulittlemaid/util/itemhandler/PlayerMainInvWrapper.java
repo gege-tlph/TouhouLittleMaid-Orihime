@@ -8,7 +8,7 @@ public class PlayerMainInvWrapper extends RangedWrapper {
     private final Inventory inventoryPlayer;
 
     public PlayerMainInvWrapper(Inventory inv) {
-        super(new InvWrapper(inv), 0, inv.items.size());
+        super(new InvWrapper(inv), 0, inv.getNonEquipmentItems().size());
         inventoryPlayer = inv;
     }
 
@@ -16,10 +16,10 @@ public class PlayerMainInvWrapper extends RangedWrapper {
     public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
         ItemStack rest = super.insertItem(slot, stack, simulate);
         if (rest.getCount() != stack.getCount()) {
-            // the stack in the slot changed, animate it
+        // 槽位中的物品堆发生变化时，触发对应的物品栏动画。
             ItemStack inSlot = getStackInSlot(slot);
             if (!inSlot.isEmpty()) {
-                if (getInventoryPlayer().player.level().isClientSide) {
+                if (getInventoryPlayer().player.level().isClientSide()) {
                     inSlot.setPopTime(5);
                 } else if (getInventoryPlayer().player instanceof ServerPlayer) {
                     getInventoryPlayer().player.containerMenu.broadcastChanges();

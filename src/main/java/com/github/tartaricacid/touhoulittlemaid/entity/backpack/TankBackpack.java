@@ -4,7 +4,9 @@ import cn.sh1rocu.touhoulittlemaid.util.itemhandler.InvWrapper;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.IBackpackData;
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.IMaidBackpack;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.BedrockModelLoader;
+import com.github.tartaricacid.touhoulittlemaid.api.backpack.MaidBackpackRenderData;
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.backpack.TankBackpackRenderData;
+
 import com.github.tartaricacid.touhoulittlemaid.entity.backpack.data.TankBackpackData;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityTombstone;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -22,7 +24,7 @@ import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
@@ -32,13 +34,12 @@ import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nullable;
 
-import static com.github.tartaricacid.touhoulittlemaid.client.resource.BedrockModelLoader.TANK_BACKPACK;
 
 public class TankBackpack extends IMaidBackpack {
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "tank");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "tank");
 
     @Override
-    public ResourceLocation getId() {
+    public Identifier getId() {
         return ID;
     }
 
@@ -120,10 +121,7 @@ public class TankBackpack extends IMaidBackpack {
                 return false;
             }
 
-/*            @Override
-            public boolean shouldTriggerClientSideContainerClosingOnOpen() {
-                return false;
-            }*/
+
         }
 
                 ;
@@ -134,18 +132,25 @@ public class TankBackpack extends IMaidBackpack {
         return BackpackLevel.TANK_CAPACITY;
     }
 
-    @Nullable
     @Override
-    @Environment(EnvType.CLIENT)
-    public EntityModel<EntityMaid> getBackpackModel(EntityModelSet modelSet) {
-        return BedrockModelLoader.getModel(TANK_BACKPACK);
+    public MaidBackpackRenderData getRenderData() {
+
+        return new TankBackpackRenderData();
     }
 
     @Nullable
     @Override
     @Environment(EnvType.CLIENT)
-    public ResourceLocation getBackpackTexture() {
-        return ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/bedrock/entity/backpack/tank_backpack.png");
+    public EntityModel<?> getBackpackModel(EntityModelSet modelSet) {
+
+        return null;
+    }
+
+    @Nullable
+    @Override
+    @Environment(EnvType.CLIENT)
+    public Identifier getBackpackTexture() {
+        return Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/bedrock/entity/backpack/tank_backpack.png");
     }
 
     @Override

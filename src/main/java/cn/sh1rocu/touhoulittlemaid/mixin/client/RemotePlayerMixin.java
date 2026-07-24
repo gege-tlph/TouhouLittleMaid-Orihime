@@ -11,9 +11,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(RemotePlayer.class)
 public abstract class RemotePlayerMixin {
-    @Inject(method = "hurt", at = @At("HEAD"))
-    public void tlm$attackEvent(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
-        LivingAttackEvent event = new LivingAttackEvent((LivingEntity) (Object) this, source, amount);
+    @Inject(method = "hurtClient", at = @At("HEAD"))
+    public void tlm$attackEvent(DamageSource source, CallbackInfoReturnable<Boolean> cir) {
+        LivingAttackEvent event = new LivingAttackEvent((LivingEntity) (Object) this, source, 0);
         LivingAttackEvent.CALLBACK.invoker().onLivingAttack(event);
     }
 }

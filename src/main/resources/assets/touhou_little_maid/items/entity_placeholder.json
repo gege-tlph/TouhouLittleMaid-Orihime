@@ -1,0 +1,10 @@
+{
+  "oversized_in_gui": true,
+  "model": {
+    "type": "minecraft:special",
+    "base": "touhou_little_maid:item/entity_placeholder",
+    "model": {
+      "type": "touhou_little_maid:entity_placeholder_item"
+    }
+  }
+}

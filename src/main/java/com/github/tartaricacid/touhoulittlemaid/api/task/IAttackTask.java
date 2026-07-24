@@ -1,26 +1,19 @@
 package com.github.tartaricacid.touhoulittlemaid.api.task;
 
-import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
-import com.github.tartaricacid.touhoulittlemaid.entity.data.inner.AttackListData;
-import com.github.tartaricacid.touhoulittlemaid.entity.item.AbstractEntityFromItem;
-import com.github.tartaricacid.touhoulittlemaid.entity.misc.DefaultMonsterType;
-import com.github.tartaricacid.touhoulittlemaid.entity.misc.MonsterType;
+import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-import com.github.tartaricacid.touhoulittlemaid.init.InitTaskData;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.AbstractMaidContainer;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.task.AttackTaskConfigContainer;
 import com.github.tartaricacid.touhoulittlemaid.util.TaskEquipUtil;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -38,7 +31,7 @@ public interface IAttackTask extends IMaidTask {
      */
     static Optional<? extends LivingEntity> findFirstValidAttackTarget(EntityMaid maid) {
         return maid.getBrain().getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES).flatMap(
-                mobs -> mobs.findClosest((e) -> maid.canAttack(e) && maid.isWithinRestriction(e.blockPosition())));
+                mobs -> mobs.findClosest((e) -> maid.canAttack(e) && maid.isWithinHome(e.blockPosition())));
     }
 
     /**
@@ -49,37 +42,8 @@ public interface IAttackTask extends IMaidTask {
      * @return 能否攻击？
      */
     default boolean canAttack(EntityMaid maid, LivingEntity target) {
-        // 获取实体 ID
-        ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
-
-        // 排除一些盔甲架，还有本模组的实体，以及玩家
-        if (target instanceof ArmorStand || target instanceof AbstractEntityFromItem || target instanceof Player) {
-            return false;
-        }
-        // 有主的宠物也不攻击
-        if (target instanceof TamableAnimal tamableAnimal && tamableAnimal.getOwnerUUID() != null) {
-            return false;
-        }
-        // 特殊命名的怪物，因为有的玩家会使用怪物做刷怪塔，会被女仆误杀
-        if (target.getCustomName() != null && target.getCustomName().getString().startsWith(MAID_NO_ATTACK_TAG)) {
-            return false;
-        }
-
-        // 判断配置文件的
-        if (MaidConfig.MAID_ATTACK_IGNORE.get().contains(id.toString())) {
-            return false;
-        }
-
-        MonsterType monsterType;
-        AttackListData attackListData = maid.getData(InitTaskData.ATTACK_LIST);
-        if (attackListData != null && attackListData.attackGroups().containsKey(id)) {
-            // 获取女仆 Task Data 里设置的
-            monsterType = attackListData.attackGroups().get(id);
-        } else {
-            // 那如果没有呢？走默认配置
-            monsterType = DefaultMonsterType.getMonsterType(target);
-        }
-        return DefaultMonsterType.canAttack(maid, target, monsterType);
+        return MaidTargetingPolicy.canAttackByDefaultRules(
+                maid, target, MaidTargetingContext.PLANNED_ATTACK);
     }
 
     /**

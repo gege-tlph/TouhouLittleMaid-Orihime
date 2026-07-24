@@ -5,21 +5,20 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.Entity;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record SendEffectPackage(int id, Collection<MobEffectInstance> effects) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<SendEffectPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("send_effect"));
+    public static final CustomPacketPayload.Type<SendEffectPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("send_effect"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, Collection<MobEffectInstance>> COLLECTION_STREAM_CODEC =
             ByteBufCodecs.collection(
@@ -36,23 +35,24 @@ public record SendEffectPackage(int id, Collection<MobEffectInstance> effects) i
     );
 
     public static void handle(SendEffectPackage message, ClientPlayNetworking.Context context) {
-        context.client().execute(() -> handle(message));
+        context.client().execute(() -> applyEffects(message));
     }
 
+
     @Environment(EnvType.CLIENT)
-    private static void handle(SendEffectPackage message) {
+    private static void applyEffects(SendEffectPackage message) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) {
             return;
         }
-        Entity entity = mc.level.getEntity(message.id);
+        Entity entity = mc.level.getEntity(message.id());
         if (entity instanceof EntityMaid maid && maid.isAlive()) {
-            maid.setEffects(message.effects.stream().map(EffectData::new).toList());
+            maid.setEffects(message.effects().stream().map(EffectData::new).toList());
         }
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

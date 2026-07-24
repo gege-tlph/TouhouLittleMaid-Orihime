@@ -4,16 +4,21 @@ import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementRequirements;
 import net.minecraft.advancements.AdvancementRewards;
 import net.minecraft.advancements.Criterion;
-import net.minecraft.advancements.critereon.RecipeUnlockedTrigger;
+import net.minecraft.advancements.criterion.RecipeUnlockedTrigger;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeOutput;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
 import net.minecraft.world.level.ItemLike;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +46,10 @@ public class ItemStackShapelessRecipeBuilder implements RecipeBuilder {
     }
 
     public ItemStackShapelessRecipeBuilder requires(TagKey<Item> tag) {
-        return this.requires(Ingredient.of(tag));
+
+        Registry<Item> registry = BuiltInRegistries.ITEM;
+        this.requires(Ingredient.of(registry.getOrThrow(tag)));
+        return this;
     }
 
     public ItemStackShapelessRecipeBuilder requires(ItemLike item) {
@@ -84,7 +92,7 @@ public class ItemStackShapelessRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(RecipeOutput recipeOutput, @NotNull ResourceLocation id) {
+    public void save(RecipeOutput recipeOutput, @NotNull ResourceKey<Recipe<?>> id) {
         this.ensureValid(id);
         Advancement.Builder builder = recipeOutput.advancement()
                 .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(id))
@@ -97,10 +105,21 @@ public class ItemStackShapelessRecipeBuilder implements RecipeBuilder {
                 this.resultStack,
                 this.ingredients
         );
-        recipeOutput.accept(id, shapelessrecipe, builder.build(id.withPrefix("recipes/" + this.category.getFolderName() + "/")));
+        recipeOutput.accept(id, shapelessrecipe, builder.build(Identifier.fromNamespaceAndPath(id.registry().getNamespace(), id.registry().getPath()).withPrefix("recipes/" + this.category.getFolderName() + "/")));
     }
 
-    private void ensureValid(ResourceLocation id) {
+
+    public void save(RecipeOutput recipeOutput, @NotNull Identifier id) {
+        this.save(recipeOutput, ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, id));
+    }
+
+    private void ensureValid(Identifier id) {
+        if (this.criteria.isEmpty()) {
+            throw new IllegalStateException("No way of obtaining recipe " + id);
+        }
+    }
+
+    private void ensureValid(ResourceKey<?> id) {
         if (this.criteria.isEmpty()) {
             throw new IllegalStateException("No way of obtaining recipe " + id);
         }

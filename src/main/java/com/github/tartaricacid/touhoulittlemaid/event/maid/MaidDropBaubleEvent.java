@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.event.maid;
 
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidFavorabilityLevelChangeEvent;
+import net.minecraft.server.level.ServerLevel;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.inventory.handler.BaubleItemHandler;
 import net.minecraft.world.item.ItemStack;
@@ -20,9 +21,12 @@ public class MaidDropBaubleEvent {
         // 0 和 1 级：10 个格子
         int startIndex = newLevel <= 1 ? 10 : 20;
         BaubleItemHandler maidBauble = maid.getMaidBauble();
-        for (int i = startIndex; i < maidBauble.getSlots(); i++) {
-            ItemStack drop = maidBauble.extractItem(i, 1, false);
-            maid.spawnAtLocation(drop);
+
+        if (maid.level instanceof ServerLevel serverLevel) {
+            for (int i = startIndex; i < maidBauble.getSlots(); i++) {
+                ItemStack drop = maidBauble.extractItem(i, 1, false);
+                maid.spawnAtLocation(serverLevel, drop);
+            }
         }
     }
 }

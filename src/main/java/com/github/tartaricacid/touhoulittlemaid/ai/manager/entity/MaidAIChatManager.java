@@ -13,6 +13,7 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSConfig;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSSystemServices;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.data.ChatTokensAttachment;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -23,7 +24,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -37,6 +38,7 @@ import org.apache.logging.log4j.core.lookup.StrSubstitutor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -52,21 +54,21 @@ public final class MaidAIChatManager extends MaidAIChatData {
     }
 
     public void chat(String message, ChatClientInfo clientInfo, ServerPlayer sender) {
-        if (!AIConfig.LLM_ENABLED.get()) {
-            sender.sendSystemMessage(Component.translatable("ai.touhou_little_maid.chat.disable")
-                    .withStyle(ChatFormatting.RED));
+        if (!ServerRuleConfig.get(AIConfig.LLM_ENABLED)) {
+            sender.displayClientMessage(Component.translatable("ai.touhou_little_maid.chat.disable")
+                    .withStyle(ChatFormatting.RED), false);
             return;
         }
         ChatTokensAttachment chatTokens = sender.getAttachedOrCreate(InitDataAttachment.CHAT_TOKENS);
-        if (chatTokens.get() >= AIConfig.MAX_TOKENS_PER_PLAYER.get()) {
-            sender.sendSystemMessage(Component.translatable("message.touhou_little_maid.ai_chat.max_tokens_limit")
-                    .withStyle(ChatFormatting.RED));
+        if (chatTokens.get() >= ServerRuleConfig.get(AIConfig.MAX_TOKENS_PER_PLAYER)) {
+            sender.displayClientMessage(Component.translatable("message.touhou_little_maid.ai_chat.max_tokens_limit")
+                    .withStyle(ChatFormatting.RED), false);
             return;
         }
         @Nullable LLMSite site = this.getLLMSite();
         if (site == null || !site.enabled()) {
-            sender.sendSystemMessage(Component.translatable("ai.touhou_little_maid.chat.llm.empty")
-                    .withStyle(ChatFormatting.RED));
+            sender.displayClientMessage(Component.translatable("ai.touhou_little_maid.chat.llm.empty")
+                    .withStyle(ChatFormatting.RED), false);
             return;
         }
 
@@ -87,12 +89,12 @@ public final class MaidAIChatManager extends MaidAIChatData {
         MutableComponent tip = Component.translatable("ai.touhou_little_maid.chat.llm.deepseek_secret_key_missing")
                 .withStyle(ChatFormatting.RED);
         MutableComponent url = Component.literal(DEEPSEEK_PLATFORM_URL);
-        ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, DEEPSEEK_PLATFORM_URL);
-        HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("chat.link.open"));
+        ClickEvent clickEvent = new ClickEvent.OpenUrl(URI.create(DEEPSEEK_PLATFORM_URL));
+        HoverEvent hoverEvent = new HoverEvent.ShowText(Component.translatable("chat.link.open"));
         url.withStyle(style -> style.withHoverEvent(hoverEvent).withClickEvent(clickEvent)
                 .withUnderlined(true).withColor(ChatFormatting.BLUE));
-        player.sendSystemMessage(tip);
-        player.sendSystemMessage(Component.translatable("ai.touhou_little_maid.chat.download_url").append(url));
+        player.displayClientMessage(tip, false);
+        player.displayClientMessage(Component.translatable("ai.touhou_little_maid.chat.download_url").append(url), false);
     }
 
     private boolean isDeepSeekSecretKeyMissing(LLMSite site) {
@@ -129,8 +131,9 @@ public final class MaidAIChatManager extends MaidAIChatData {
 
     private void onSettingIsEmpty(ChatClientInfo clientInfo, LLMClient chatClient) {
         ChatBubbleManager bubbleManager = this.maid.getChatBubbleManager();
-        if (AIConfig.AUTO_GEN_SETTING_ENABLED.get()) {
-            List<LLMMessage> messages = this.autoGenSetting(maid, clientInfo);
+        if (ServerRuleConfig.get(AIConfig.AUTO_GEN_SETTING_ENABLED)) {
+            // 未配置角色设定时，由服务端生成初始设定并通过聊天气泡反馈。
+            List<LLMMessage> messages = this.autoGenSetting(this.maid, clientInfo);
             AutoGenSettingCallback callback = new AutoGenSettingCallback(this, messages);
             chatClient.chat(callback);
         } else {
@@ -206,7 +209,8 @@ public final class MaidAIChatManager extends MaidAIChatData {
         return Lists.newArrayList(LLMMessage.userChat(maid, setting));
     }
 
-    private void onPlaySoundLocal(String name, String chatText, String ttsText, TTSConfig config, TTSSystemServices services, long waitingChatBubbleId) {
+    private void onPlaySoundLocal(String name, String chatText, String ttsText, TTSConfig config,
+                                  TTSSystemServices services, long waitingChatBubbleId) {
         if (!(maid.level instanceof ServerLevel serverLevel)) {
             return;
         }

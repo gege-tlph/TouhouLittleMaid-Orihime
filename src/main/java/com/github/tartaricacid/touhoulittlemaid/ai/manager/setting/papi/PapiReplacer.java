@@ -3,7 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.ai.manager.setting.papi;
 import com.github.tartaricacid.touhoulittlemaid.ai.agent.skill.SkillLoader;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.Maps;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.core.lookup.StrSubstitutor;
 
@@ -35,7 +35,7 @@ public class PapiReplacer {
             map.put("available_skills", SkillLoader.getSkillSummary());
         });
 
-        String base = new StrSubstitutor(valueMap).replace(FULL_SETTING);
+        String base = renderFullSetting(valueMap);
         if (language.equals(maid.getAiChatManager().getTTSLanguage())) {
             base += new StrSubstitutor(valueMap).replace(OUTPUT_FORMAT_REQUIREMENTS_SAME_LANGUAGES);
         } else {
@@ -43,6 +43,10 @@ public class PapiReplacer {
         }
 
         return base;
+    }
+
+    static String renderFullSetting(Map<String, String> valueMap) {
+        return new StrSubstitutor(valueMap).replace(FULL_SETTING);
     }
 
     public static String getChatLanguage(String languageTag) {

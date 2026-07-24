@@ -1,14 +1,14 @@
 package com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.CommonComponents;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class TouhouStateSwitchButton extends AbstractWidget {
-    protected ResourceLocation resourceLocation;
+    protected Identifier resourceLocation;
     protected boolean isStateTriggered;
     protected int xTexStart;
     protected int yTexStart;
@@ -20,7 +20,7 @@ public class TouhouStateSwitchButton extends AbstractWidget {
         this.isStateTriggered = pInitialState;
     }
 
-    public void initTextureValues(int pXTexStart, int pYTexStart, int pXDiffTex, int pYDiffTex, ResourceLocation pResourceLocation) {
+    public void initTextureValues(int pXTexStart, int pYTexStart, int pXDiffTex, int pYDiffTex, Identifier pResourceLocation) {
         this.xTexStart = pXTexStart;
         this.yTexStart = pYTexStart;
         this.xDiffTex = pXDiffTex;
@@ -41,7 +41,6 @@ public class TouhouStateSwitchButton extends AbstractWidget {
     }
 
     public void renderWidget(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        RenderSystem.disableDepthTest();
         int i = this.xTexStart;
         int j = this.yTexStart;
         if (this.isStateTriggered) {
@@ -52,7 +51,6 @@ public class TouhouStateSwitchButton extends AbstractWidget {
             j += this.yDiffTex;
         }
 
-        pGuiGraphics.blit(this.resourceLocation, this.getX(), this.getY(), i, j, this.width, this.height);
-        RenderSystem.enableDepthTest();
+        pGuiGraphics.blit(RenderPipelines.GUI_TEXTURED, this.resourceLocation, this.getX(), this.getY(), i, j, this.width, this.height, 256, 256);
     }
 }

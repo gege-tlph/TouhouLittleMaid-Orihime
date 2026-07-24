@@ -1,5 +1,8 @@
 package com.github.tartaricacid.touhoulittlemaid.tileentity;
 
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import cn.sh1rocu.touhoulittlemaid.api.extension.IBlockEntityPersistentData;
 import com.github.tartaricacid.touhoulittlemaid.api.block.IBoardGameEntityBlock;
 import com.github.tartaricacid.touhoulittlemaid.api.game.chess.Position;
@@ -12,7 +15,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class TileEntityWChess extends TileEntityJoy implements IBoardGameEntityBlock, IBlockEntityPersistentData {
-    public static final BlockEntityType<TileEntityWChess> TYPE = BlockEntityType.Builder.of(TileEntityWChess::new, InitBlocks.WCHESS).build(null);
+    public static final BlockEntityType<TileEntityWChess> TYPE = FabricBlockEntityTypeBuilder.create(TileEntityWChess::new, InitBlocks.WCHESS).build();
 
     private static final String CHESS_DATA = "ChessData";
     private static final String CHESS_COUNTER = "ChessCounter";
@@ -46,7 +49,7 @@ public class TileEntityWChess extends TileEntityJoy implements IBoardGameEntityB
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+    protected void saveAdditional(ValueOutput output){
         CompoundTag data = tlm$getPersistentData();
         data.putString(CHESS_DATA, chessData.toFen());
         data.putInt(CHESS_COUNTER, chessCounter);
@@ -54,19 +57,19 @@ public class TileEntityWChess extends TileEntityJoy implements IBoardGameEntityB
         data.putBoolean(CHECKMATE, checkmate);
         data.putBoolean(REPEAT, repeat);
         data.putBoolean(MOVE_NUMBER_LIMIT, moveNumberLimit);
-        super.saveAdditional(tag, provider);
+        super.saveAdditional(output);
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.loadAdditional(tag, provider);
+    public void loadAdditional(ValueInput input){
+        super.loadAdditional(input);
         CompoundTag data = tlm$getPersistentData();
-        chessCounter = data.getInt(CHESS_COUNTER);
-        selectChessPoint = data.getInt(SELECT_CHESS_POINT);
-        chessData.fromFen(data.getString(CHESS_DATA));
-        checkmate = data.getBoolean(CHECKMATE);
-        repeat = data.getBoolean(REPEAT);
-        moveNumberLimit = data.getBoolean(MOVE_NUMBER_LIMIT);
+        chessCounter = data.getIntOr(CHESS_COUNTER, 0);
+        selectChessPoint = data.getIntOr(SELECT_CHESS_POINT, 0);
+        chessData.fromFen(data.getStringOr(CHESS_DATA, ""));
+        checkmate = data.getBooleanOr(CHECKMATE, false);
+        repeat = data.getBooleanOr(REPEAT, false);
+        moveNumberLimit = data.getBooleanOr(MOVE_NUMBER_LIMIT, false);
     }
 
     public void reset() {

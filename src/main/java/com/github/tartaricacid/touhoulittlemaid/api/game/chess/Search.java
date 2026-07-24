@@ -117,8 +117,7 @@ public class Search {
         int next() {
             if (phase == PHASE_HASH) {
                 phase = PHASE_KILLER_1;
-                // WARNING: pos.legalMove(mvHash) is not always true!!!
-                // (En-Passant Square and Castling Bits are not considered in Zobrist)
+                // WARNING：pos.legalMove(mvHash)并不总是正确的！ （Zobrist 中不考虑 En-Passant Square 和 Castling Bits）
                 if (mvHash > 0 && pos.legalMove(mvHash)) {
                     return mvHash;
                 }

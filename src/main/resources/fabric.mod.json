@@ -2,14 +2,22 @@
   "schemaVersion": 1,
   "id": "touhou_little_maid",
   "version": "${version}",
-  "name": "Touhou Little Maid: Orihime",
-  "description": "Touhou Little Maid Unofficial Fabric port",
+  "name": "Touhou Little Maid: Tsumugi",
+  "description": "Touhou Little Maid: Orihime 的社区分支，由 gege-tlph 独立维护，移植至 Minecraft 1.21.11。原版模组由 TartaricAcid 制作。",
   "authors": [
+    "gege-tlph"
+  ],
+  "contributors": [
+    "TartaricAcid",
     "Sh1roCu"
   ],
-  "contact": {},
+  "contact": {
+    "homepage": "https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi",
+    "sources": "https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi",
+    "issues": "https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/issues"
+  },
   "license": "MIT / CC BY-NC-SA 4.0",
-  "icon": "logo.png",
+  "icon": "icon.png",
   "environment": "*",
   "entrypoints": {
     "fabric-datagen": [
@@ -21,11 +29,11 @@
     "main": [
       "cn.sh1rocu.touhoulittlemaid.TouhouLittleMaidFabric"
     ],
+    "little_maid_extension": [
+      "com.github.tartaricacid.touhoulittlemaid.compat.kaleidoscopetavern.TavernCompat"
+    ],
     "modmenu": [
       "cn.sh1rocu.touhoulittlemaid.compat.modmenu.ModMenuApiImpl"
-    ],
-    "emi": [
-      "com.github.tartaricacid.touhoulittlemaid.compat.emi.MaidEmiPlugin"
     ],
     "jade": [
       "com.github.tartaricacid.touhoulittlemaid.compat.jade.JadePlugin"
@@ -35,6 +43,18 @@
     ],
     "rei_client": [
       "com.github.tartaricacid.touhoulittlemaid.compat.rei.MaidREIClientPlugin"
+    ],
+    "fabric-gametest": [
+      "cn.sh1rocu.touhoulittlemaid.gametest.ScheduleGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.ai.agent.context.prompts.MaidContextsGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.ai.agent.tool.implement.MaidControlToolsGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.compat.OptionalCompatInitializationGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidFollowOwnerGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidFarmNavigationGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidEmergencyCombatGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.entity.ai.combat.MaidCombatIntentGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicyGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.entity.passive.MaidSwimmingGameTest"
     ]
   },
   "mixins": [
@@ -45,7 +65,7 @@
   "depends": {
     "fabric": "*",
     "minecraft": [
-      "1.21.1"
+      "1.21.11"
     ],
     "forgeconfigapiport": "*"
   }

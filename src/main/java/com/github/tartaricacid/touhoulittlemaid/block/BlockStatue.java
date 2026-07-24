@@ -13,6 +13,9 @@ import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.client.particle.TerrainParticle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
@@ -51,7 +54,10 @@ public class BlockStatue extends Block implements EntityBlock, IBlock {
     @Environment(EnvType.CLIENT)
     @Override
     public boolean tlm$addDestroyEffects(BlockState state, Level world, BlockPos pos, ParticleEngine manager) {
-        Minecraft.getInstance().particleEngine.destroy(pos, Blocks.CLAY.defaultBlockState());
+
+        if (world instanceof ClientLevel clientLevel) {
+            clientLevel.addDestroyBlockEffect(pos, Blocks.CLAY.defaultBlockState());
+        }
         return true;
     }
 
@@ -88,14 +94,14 @@ public class BlockStatue extends Block implements EntityBlock, IBlock {
         }
     }
 
-    public BlockStatue() {
-        super(BlockBehaviour.Properties.of().sound(SoundType.MUD).strength(1, 2).noOcclusion());
+    public BlockStatue(Identifier id) {
+        super(BlockBehaviour.Properties.of().setId(ResourceKey.create(Registries.BLOCK, id)).sound(SoundType.MUD).strength(1, 2).noOcclusion());
         this.registerDefaultState(this.stateDefinition.any().setValue(IS_TINY, false));
     }
 
     @Override
     public BlockState playerWillDestroy(Level worldIn, BlockPos pos, BlockState state, Player player) {
-        if (!worldIn.isClientSide) {
+        if (!worldIn.isClientSide()) {
             this.getStatue(worldIn, pos).ifPresent(statue -> {
                 this.restoreClayBlock(worldIn, pos, statue);
                 if (!player.isCreative()) {
@@ -108,7 +114,7 @@ public class BlockStatue extends Block implements EntityBlock, IBlock {
 
     @Override
     public void tlm$onBlockExploded(BlockState state, Level world, BlockPos pos, Explosion explosion) {
-        if (!world.isClientSide) {
+        if (!world.isClientSide()) {
             this.getStatue(world, pos).ifPresent(statue -> this.restoreClayBlock(world, pos, statue));
         }
         IBlock.super.tlm$onBlockExploded(state, world, pos, explosion);
@@ -125,10 +131,6 @@ public class BlockStatue extends Block implements EntityBlock, IBlock {
         return new TileEntityStatue(pos, state);
     }
 
-    @Override
-    public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
-    }
 
     @Override
     public boolean isPathfindable(BlockState state, PathComputationType type) {

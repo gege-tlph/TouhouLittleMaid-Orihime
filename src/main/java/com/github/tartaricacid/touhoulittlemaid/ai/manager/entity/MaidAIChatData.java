@@ -12,11 +12,15 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.response.T
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.system.TTSSystemSite;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.util.CappedQueue;
 import com.google.common.collect.Lists;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,20 +52,23 @@ public abstract class MaidAIChatData extends MaidAIChatSerializable {
         if (tag.contains(MAID_HISTORY_CHAT_TAG)) {
             try {
                 this.history.getDeque().clear();
-                LLMMessage.CODEC.listOf().parse(NbtOps.INSTANCE, tag.get(MAID_HISTORY_CHAT_TAG))
-                        .resultOrPartial(TouhouLittleMaid.LOGGER::error)
-                        .ifPresent(list -> {
-                            ListIterator<LLMMessage> iterator = list.listIterator(list.size());
-                            while (iterator.hasPrevious()) {
-                                history.add(iterator.previous());
-                            }
-                        });
+                Tag historyTag = tag.get(MAID_HISTORY_CHAT_TAG);
+                if (historyTag != null) {
+                    LLMMessage.CODEC.listOf().parse(NbtOps.INSTANCE, historyTag)
+                            .resultOrPartial(TouhouLittleMaid.LOGGER::error)
+                            .ifPresent(list -> {
+                                ListIterator<LLMMessage> iterator = list.listIterator(list.size());
+                                while (iterator.hasPrevious()) {
+                                    history.add(iterator.previous());
+                                }
+                            });
+                }
             } catch (Exception e) {
                 TouhouLittleMaid.LOGGER.error("Failed to parse MaidHistoryChat", e);
             }
         }
-        this.compressedSummary = tag.getString(MAID_HISTORY_SUMMARY_TAG);
-        this.lastChatTokenUsage = tag.getInt(MAID_LAST_CHAT_TOKEN_USAGE_TAG);
+        this.compressedSummary = tag.getString(MAID_HISTORY_SUMMARY_TAG).orElse("");
+        this.lastChatTokenUsage = tag.getInt(MAID_LAST_CHAT_TOKEN_USAGE_TAG).orElse(0);
         return super.readFromTag(tag);
     }
 
@@ -84,6 +91,41 @@ public abstract class MaidAIChatData extends MaidAIChatSerializable {
             tag.putInt(MAID_LAST_CHAT_TOKEN_USAGE_TAG, this.lastChatTokenUsage);
         }
         return super.writeToTag(tag);
+    }
+
+
+    @Override
+    public void addAdditionalSaveData(ValueOutput output) {
+        if (this.history.size() > 0) {
+            output.store(MAID_HISTORY_CHAT_TAG, LLMMessage.CODEC.listOf(), Lists.newArrayList(this.history.getDeque()));
+        }
+        if (StringUtils.isNotBlank(this.compressedSummary)) {
+            output.putString(MAID_HISTORY_SUMMARY_TAG, this.compressedSummary);
+        }
+        if (this.lastChatTokenUsage > 0) {
+            output.putInt(MAID_LAST_CHAT_TOKEN_USAGE_TAG, this.lastChatTokenUsage);
+        }
+        super.addAdditionalSaveData(output);
+    }
+
+    @Override
+    public void readAdditionalSaveData(ValueInput input) {
+        input.list(MAID_HISTORY_CHAT_TAG, LLMMessage.CODEC).ifPresent(typedList -> {
+            try {
+                this.history.getDeque().clear();
+                List<LLMMessage> list = new ArrayList<>();
+                typedList.forEach(list::add);
+                ListIterator<LLMMessage> iterator = list.listIterator(list.size());
+                while (iterator.hasPrevious()) {
+                    history.add(iterator.previous());
+                }
+            } catch (Exception e) {
+                TouhouLittleMaid.LOGGER.error("Failed to parse MaidHistoryChat", e);
+            }
+        });
+        this.compressedSummary = input.getStringOr(MAID_HISTORY_SUMMARY_TAG, "");
+        this.lastChatTokenUsage = input.getIntOr(MAID_LAST_CHAT_TOKEN_USAGE_TAG, 0);
+        super.readAdditionalSaveData(input);
     }
 
     @Nullable
@@ -153,7 +195,7 @@ public abstract class MaidAIChatData extends MaidAIChatSerializable {
         if (StringUtils.isNotBlank(ttsLanguage)) {
             return ttsLanguage;
         }
-        return AIConfig.TTS_LANGUAGE.get();
+        return ServerRuleConfig.get(AIConfig.TTS_LANGUAGE);
     }
 
     public String getChatLanguage() {

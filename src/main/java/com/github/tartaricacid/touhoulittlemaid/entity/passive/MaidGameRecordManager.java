@@ -1,52 +1,41 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.passive;
 
-import com.github.tartaricacid.touhoulittlemaid.entity.item.EntitySit;
 import com.github.tartaricacid.touhoulittlemaid.init.InitSounds;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
-import static com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid.GAME_SKILL;
 import static com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid.GAME_STATUE;
 
 public class MaidGameRecordManager {
+
     private static final String GAME_SKILL_TAG = "MaidGameSkillData";
     private static final String GOMOKU = "Gomoku";
     private static final byte NONE = 0, WIN = 1, LOSE = 2;
 
     private final EntityMaid maid;
+    private int gomokuWinCount = 0;
 
     public MaidGameRecordManager(EntityMaid maid) {
         this.maid = maid;
     }
 
     void defineSynchedData(SynchedEntityData.Builder builder) {
-        builder.define(GAME_SKILL, new CompoundTag());
         builder.define(GAME_STATUE, (byte) 0);
     }
 
-    void addAdditionalSaveData(CompoundTag compound) {
-        compound.put(GAME_SKILL_TAG, getGameSkill());
+    void addAdditionalSaveData(ValueOutput output) {
+        output.child(GAME_SKILL_TAG).putInt(GOMOKU, gomokuWinCount);
     }
 
-    void readAdditionalSaveData(CompoundTag compound) {
-        if (compound.contains(GAME_SKILL_TAG, Tag.TAG_COMPOUND)) {
-            setGameSkill(compound.getCompound(GAME_SKILL_TAG));
-        }
+    void readAdditionalSaveData(ValueInput input) {
+        input.child(GAME_SKILL_TAG).ifPresent(gameSkill -> gomokuWinCount = gameSkill.getIntOr(GOMOKU, 0));
     }
 
     void tick() {
-        if (!(this.maid.getVehicle() instanceof EntitySit) && getGameStatue() != NONE) {
+        if (getGameStatue() != NONE) {
             resetStatue();
         }
-    }
-
-    private CompoundTag getGameSkill() {
-        return maid.getEntityData().get(GAME_SKILL);
-    }
-
-    private void setGameSkill(CompoundTag gameSkill) {
-        maid.getEntityData().set(GAME_SKILL, gameSkill, true);
     }
 
     private byte getGameStatue() {
@@ -58,21 +47,11 @@ public class MaidGameRecordManager {
     }
 
     public int getGomokuWinCount() {
-        CompoundTag gameSkill = this.getGameSkill();
-        if (gameSkill.contains(GOMOKU, Tag.TAG_INT)) {
-            return gameSkill.getInt(GOMOKU);
-        }
-        return 0;
+        return gomokuWinCount;
     }
 
     public void increaseGomokuWinCount() {
-        CompoundTag gameSkill = this.getGameSkill();
-        if (gameSkill.contains(GOMOKU, Tag.TAG_INT)) {
-            gameSkill.putInt(GOMOKU, gameSkill.getInt(GOMOKU) + 1);
-        } else {
-            gameSkill.putInt(GOMOKU, 1);
-        }
-        this.setGameSkill(gameSkill);
+        gomokuWinCount++;
     }
 
     public boolean isWin() {

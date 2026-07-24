@@ -3,12 +3,15 @@ package com.github.tartaricacid.touhoulittlemaid.network;
 import cn.sh1rocu.touhoulittlemaid.util.forge.network.AdvancedAddEntityPayload;
 import com.github.tartaricacid.touhoulittlemaid.network.message.*;
 import com.github.tartaricacid.touhoulittlemaid.network.message.ai.*;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+import com.github.tartaricacid.touhoulittlemaid.network.message.config.RequestServerSTTSitePacket;
+import com.github.tartaricacid.touhoulittlemaid.network.message.config.SaveServerRulesPacket;
+import com.github.tartaricacid.touhoulittlemaid.network.message.config.SyncServerRulesPacket;
+import com.github.tartaricacid.touhoulittlemaid.network.message.config.SyncServerSTTSitePacket;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -22,6 +25,11 @@ public class NetworkHandler {
     public static void registerPackets() {
         registerC2SPackets();
         registerS2CPackets();
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            ServerPlayNetworking.send(handler.player,
+                    SyncAltarRecipesPackage.from(server.getRecipeManager()));
+            SyncServerRulesPacket.sendInitialTo(handler.player);
+        });
     }
 
     private static <T extends CustomPacketPayload> void registerC2SPacket(CustomPacketPayload.Type<T> type, StreamCodec<? super RegistryFriendlyByteBuf, T> streamCodec, ServerPlayNetworking.PlayPayloadHandler<T> handler) {
@@ -33,38 +41,39 @@ public class NetworkHandler {
         PayloadTypeRegistry.playS2C().register(type, streamCodec);
     }
 
-    @Environment(EnvType.CLIENT)
-    public static <T extends CustomPacketPayload> void registerClientReceivers() {
+    public static void registerClientReceivers() {
         ClientPlayNetworking.registerGlobalReceiver(OpenChairGuiPackage.TYPE, OpenChairGuiPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(ItemBreakPackage.TYPE, ItemBreakPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(SpawnParticlePackage.TYPE, SpawnParticlePackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncDataPackage.TYPE, SyncDataPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(OpenBeaconGuiPackage.TYPE, OpenBeaconGuiPackage::handle);
-        ClientPlayNetworking.registerGlobalReceiver(BeaconAbsorbPackage.TYPE, BeaconAbsorbPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(OpenSwitcherGuiPackage.TYPE, OpenSwitcherGuiPackage::handle);
-        ClientPlayNetworking.registerGlobalReceiver(SendEffectPackage.TYPE, SendEffectPackage::handle);
-        ClientPlayNetworking.registerGlobalReceiver(PlayMaidSoundPackage.TYPE, PlayMaidSoundPackage::handle);
-        ClientPlayNetworking.registerGlobalReceiver(GomokuClientPackage.TYPE, GomokuClientPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(FoxScrollPackage.TYPE, FoxScrollPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(CheckSchedulePosPacket.TYPE, CheckSchedulePosPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncMaidAreaPackage.TYPE, SyncMaidAreaPackage::handle);
+        ClientPlayNetworking.registerGlobalReceiver(OpenPlayerInventoryPackage.TYPE, OpenPlayerInventoryPackage::handle);
+        ClientPlayNetworking.registerGlobalReceiver(BeaconAbsorbPackage.TYPE, BeaconAbsorbPackage::handle);
+        ClientPlayNetworking.registerGlobalReceiver(SendEffectPackage.TYPE, SendEffectPackage::handle);
+        ClientPlayNetworking.registerGlobalReceiver(PlayMaidSoundPackage.TYPE, PlayMaidSoundPackage::handle);
+        ClientPlayNetworking.registerGlobalReceiver(GomokuClientPackage.TYPE, GomokuClientPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(CChessToClientPackage.TYPE, CChessToClientPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(WChessToClientPackage.TYPE, WChessToClientPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(TTSAudioToClientPackage.TYPE, TTSAudioToClientPackage::handle);
-        // 仅安装 YSM 后才会发送此包
-        ClientPlayNetworking.registerGlobalReceiver(SyncYsmMaidDataPackage.TYPE, SyncYsmMaidDataPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(TTSSystemAudioToClientPackage.TYPE, TTSSystemAudioToClientPackage::handle);
 
         ClientPlayNetworking.registerGlobalReceiver(AdvancedAddEntityPayload.TYPE, AdvancedAddEntityPayload::handle);
-        ClientPlayNetworking.registerGlobalReceiver(SyncFluidAmountPackage.TYPE, SyncFluidAmountPackage::handle);
-        ClientPlayNetworking.registerGlobalReceiver(OpenPlayerInventoryPackage.TYPE, OpenPlayerInventoryPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(MaidAnimationPackage.TYPE, MaidAnimationPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(PlayMaidSoundAtPosPackage.TYPE, PlayMaidSoundAtPosPackage::handle);
-        ClientPlayNetworking.registerGlobalReceiver(CuriosS2CUpdatePacket.TYPE, CuriosS2CUpdatePacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncBaublePackage.TYPE, SyncBaublePackage::handle);
+        ClientPlayNetworking.registerGlobalReceiver(SyncFluidAmountPackage.TYPE, SyncFluidAmountPackage::handle);
+        ClientPlayNetworking.registerGlobalReceiver(TeleportItemParticlePackage.TYPE, TeleportItemParticlePackage::handle);
+        ClientPlayNetworking.registerGlobalReceiver(SyncMaidTaskDataPackage.TYPE, SyncMaidTaskDataPackage::handle);
+        ClientPlayNetworking.registerGlobalReceiver(SyncAltarRecipesPackage.TYPE, SyncAltarRecipesPackage::handle);
 
         ClientPlayNetworking.registerGlobalReceiver(SyncAISitesPacket.TYPE, SyncAISitesPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncMaidAIDataPacket.TYPE, SyncMaidAIDataPacket::handle);
+        ClientPlayNetworking.registerGlobalReceiver(SyncServerRulesPacket.TYPE, SyncServerRulesPacket::handle);
+        ClientPlayNetworking.registerGlobalReceiver(SyncServerSTTSitePacket.TYPE, SyncServerSTTSitePacket::handle);
     }
 
     public static void registerS2CPackets() {
@@ -84,29 +93,36 @@ public class NetworkHandler {
         registerS2CPacket(CChessToClientPackage.TYPE, CChessToClientPackage.STREAM_CODEC);
         registerS2CPacket(WChessToClientPackage.TYPE, WChessToClientPackage.STREAM_CODEC);
         registerS2CPacket(TTSAudioToClientPackage.TYPE, TTSAudioToClientPackage.STREAM_CODEC);
-        // 仅安装 YSM 后才会发送此包
-        registerS2CPacket(SyncYsmMaidDataPackage.TYPE, SyncYsmMaidDataPackage.STREAM_CODEC);
         registerS2CPacket(TTSSystemAudioToClientPackage.TYPE, TTSSystemAudioToClientPackage.STREAM_CODEC);
 
         registerS2CPacket(AdvancedAddEntityPayload.TYPE, AdvancedAddEntityPayload.STREAM_CODEC);
-        registerS2CPacket(SyncFluidAmountPackage.TYPE, SyncFluidAmountPackage.STREAM_CODEC);
         registerS2CPacket(OpenPlayerInventoryPackage.TYPE, OpenPlayerInventoryPackage.STREAM_CODEC);
         registerS2CPacket(MaidAnimationPackage.TYPE, MaidAnimationPackage.STREAM_CODEC);
         registerS2CPacket(PlayMaidSoundAtPosPackage.TYPE, PlayMaidSoundAtPosPackage.STREAM_CODEC);
-        registerS2CPacket(CuriosS2CUpdatePacket.TYPE, CuriosS2CUpdatePacket.STREAM_CODEC);
         registerS2CPacket(SyncBaublePackage.TYPE, SyncBaublePackage.STREAM_CODEC);
+
+        registerS2CPacket(SyncFluidAmountPackage.TYPE, SyncFluidAmountPackage.STREAM_CODEC);
+        registerS2CPacket(TeleportItemParticlePackage.TYPE, TeleportItemParticlePackage.STREAM_CODEC);
+        registerS2CPacket(SyncMaidTaskDataPackage.TYPE, SyncMaidTaskDataPackage.STREAM_CODEC);
+        registerS2CPacket(SyncAltarRecipesPackage.TYPE, SyncAltarRecipesPackage.STREAM_CODEC);
 
         registerS2CPacket(SyncAISitesPacket.TYPE, SyncAISitesPacket.STREAM_CODEC);
         registerS2CPacket(SyncMaidAIDataPacket.TYPE, SyncMaidAIDataPacket.STREAM_CODEC);
+        registerS2CPacket(SyncServerRulesPacket.TYPE, SyncServerRulesPacket.STREAM_CODEC);
+        registerS2CPacket(SyncServerSTTSitePacket.TYPE, SyncServerSTTSitePacket.STREAM_CODEC);
+
+
     }
 
     public static void registerC2SPackets() {
         registerC2SPacket(MaidModelPackage.TYPE, MaidModelPackage.STREAM_CODEC, MaidModelPackage::handle);
+
         registerC2SPacket(ChairModelPackage.TYPE, ChairModelPackage.STREAM_CODEC, ChairModelPackage::handle);
         registerC2SPacket(MaidConfigPackage.TYPE, MaidConfigPackage.STREAM_CODEC, MaidConfigPackage::handle);
         registerC2SPacket(MaidTaskPackage.TYPE, MaidTaskPackage.STREAM_CODEC, MaidTaskPackage::handle);
         registerC2SPacket(SendNameTagPackage.TYPE, SendNameTagPackage.STREAM_CODEC, SendNameTagPackage::handle);
         registerC2SPacket(WirelessIOGuiPackage.TYPE, WirelessIOGuiPackage.STREAM_CODEC, WirelessIOGuiPackage::handle);
+        registerC2SPacket(WirelessIOFilterSlotPackage.TYPE, WirelessIOFilterSlotPackage.STREAM_CODEC, WirelessIOFilterSlotPackage::handle);
         registerC2SPacket(WirelessIOSlotConfigPackage.TYPE, WirelessIOSlotConfigPackage.STREAM_CODEC, WirelessIOSlotConfigPackage::handle);
         registerC2SPacket(SetBeaconPotionPackage.TYPE, SetBeaconPotionPackage.STREAM_CODEC, SetBeaconPotionPackage::handle);
         registerC2SPacket(StorageAndTakePowerPackage.TYPE, StorageAndTakePowerPackage.STREAM_CODEC, StorageAndTakePowerPackage::handle);
@@ -124,8 +140,6 @@ public class NetworkHandler {
         registerC2SPacket(CChessToServerPackage.TYPE, CChessToServerPackage.STREAM_CODEC, CChessToServerPackage::handle);
         registerC2SPacket(WChessToServerPackage.TYPE, WChessToServerPackage.STREAM_CODEC, WChessToServerPackage::handle);
         registerC2SPacket(SendUserChatPackage.TYPE, SendUserChatPackage.STREAM_CODEC, SendUserChatPackage::handle);
-        // 仅安装 YSM 后才会发送此包
-        registerC2SPacket(YsmMaidModelPackage.TYPE, YsmMaidModelPackage.STREAM_CODEC, YsmMaidModelPackage::handle);
         registerC2SPacket(SaveMaidAIDataPackage.TYPE, SaveMaidAIDataPackage.STREAM_CODEC, SaveMaidAIDataPackage::handle);
         registerC2SPacket(ClearMaidAIDataPacket.TYPE, ClearMaidAIDataPacket.STREAM_CODEC, ClearMaidAIDataPacket::handle);
         registerC2SPacket(OpenMaidGuiPackage.TYPE, OpenMaidGuiPackage.STREAM_CODEC, OpenMaidGuiPackage::handle);
@@ -135,6 +149,14 @@ public class NetworkHandler {
         registerC2SPacket(OpenMaidAIChatPacket.TYPE, OpenMaidAIChatPacket.STREAM_CODEC, OpenMaidAIChatPacket::handle);
         registerC2SPacket(SaveLLMSitePacket.TYPE, SaveLLMSitePacket.STREAM_CODEC, SaveLLMSitePacket::handle);
         registerC2SPacket(SaveTTSSitePacket.TYPE, SaveTTSSitePacket.STREAM_CODEC, SaveTTSSitePacket::handle);
+        registerC2SPacket(SaveSTTSitePacket.TYPE, SaveSTTSitePacket.STREAM_CODEC, SaveSTTSitePacket::handle);
+        registerC2SPacket(SaveServerRulesPacket.TYPE, SaveServerRulesPacket.STREAM_CODEC, SaveServerRulesPacket::handle);
+        registerC2SPacket(RequestServerSTTSitePacket.TYPE, RequestServerSTTSitePacket.STREAM_CODEC,
+                RequestServerSTTSitePacket::handle);
+    }
+
+    public static void sendToClientPlayer(CustomPacketPayload payload, ServerPlayer player) {
+        ServerPlayNetworking.send(player, payload);
     }
 
     public static void sendToNearby(Entity entity, CustomPacketPayload toSend) {
@@ -145,18 +167,19 @@ public class NetworkHandler {
         }
     }
 
-    public static void sendToNearby(Entity entity, CustomPacketPayload toSend, int distance) {
-        if (entity.level instanceof ServerLevel serverLevel) {
-            BlockPos pos = entity.blockPosition();
-            for (ServerPlayer target : PlayerLookup.around(serverLevel, new Vec3i(pos.getX(), pos.getY(), pos.getZ()), distance)) {
+
+    public static void sendToPlayersTrackingEntity(Entity entity, CustomPacketPayload toSend) {
+        if (entity.level instanceof ServerLevel) {
+            for (ServerPlayer target : PlayerLookup.tracking(entity)) {
                 ServerPlayNetworking.send(target, toSend);
             }
         }
     }
 
-    public static void sendToPlayersTrackingEntity(Entity entity, CustomPacketPayload toSend) {
-        if (entity.level instanceof ServerLevel) {
-            for (ServerPlayer target : PlayerLookup.tracking(entity)) {
+    public static void sendToNearby(Entity entity, CustomPacketPayload toSend, int distance) {
+        if (entity.level instanceof ServerLevel serverLevel) {
+            BlockPos pos = entity.blockPosition();
+            for (ServerPlayer target : PlayerLookup.around(serverLevel, new Vec3i(pos.getX(), pos.getY(), pos.getZ()), distance)) {
                 ServerPlayNetworking.send(target, toSend);
             }
         }

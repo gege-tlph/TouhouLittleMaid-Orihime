@@ -1,27 +1,21 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message;
 
-import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-import com.github.tartaricacid.touhoulittlemaid.inventory.handler.BaubleItemHandler;
+import com.github.tartaricacid.touhoulittlemaid.network.client.SyncBaublePackageProxy;
 import com.github.tartaricacid.touhoulittlemaid.util.ByteBufUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectRBTreeMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record SyncBaublePackage(boolean isFull, int entityId,
                                 Int2ObjectSortedMap<ItemStack> baubles) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<SyncBaublePackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("sync_bauble"));
+    public static final CustomPacketPayload.Type<SyncBaublePackage> TYPE = new CustomPacketPayload.Type<>(modLoc("sync_bauble"));
     public static final StreamCodec<RegistryFriendlyByteBuf, SyncBaublePackage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL,
             SyncBaublePackage::isFull,
@@ -49,28 +43,11 @@ public record SyncBaublePackage(boolean isFull, int entityId,
     }
 
     @Override
-    public @NotNull CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 
     public static void handle(SyncBaublePackage message, ClientPlayNetworking.Context context) {
-        context.client().execute(() -> handleClient(message));
-    }
-
-    @Environment(EnvType.CLIENT)
-    private static void handleClient(SyncBaublePackage message) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            return;
-        }
-        Entity entity = mc.level.getEntity(message.entityId);
-        if (entity instanceof EntityMaid maid) {
-            BaubleItemHandler maidBauble = maid.getMaidBauble();
-            // 全量同步前需要清空
-            if (message.isFull) {
-                maidBauble.clearAll();
-            }
-            message.baubles.forEach(maidBauble::setStackInSlot);
-        }
+        context.client().execute(() -> SyncBaublePackageProxy.handle(message));
     }
 }

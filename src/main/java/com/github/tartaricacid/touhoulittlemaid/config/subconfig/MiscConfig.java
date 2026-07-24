@@ -1,7 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.config.subconfig;
 
 import com.google.common.collect.Lists;
-import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.List;
@@ -26,10 +25,14 @@ public final class MiscConfig {
     public static ModConfigSpec.BooleanValue INVULNERABLE_PARTICLE_EFFECT;
 
     public static void init(ModConfigSpec.Builder builder) {
+        initServer(builder);
+        initClient(builder);
+    }
+
+    public static void initServer(ModConfigSpec.Builder builder) {
         builder.translation(TRANSLATE_KEY).push("misc");
 
-        builder.comment("Maid fairy's power point")
-                .translation(translateKey("maid_fairy_power_point"));
+        builder.comment("Maid fairy's power point").translation(translateKey("maid_fairy_power_point"));
         MAID_FAIRY_POWER_POINT = builder.defineInRange("MaidFairyPowerPoint", 0.16, 0, 5);
 
         builder.comment("Maid fairy's spawn probability (zombie is 100, enderman is 10)")
@@ -39,47 +42,50 @@ public final class MiscConfig {
         builder.comment("The following dimension do not spawn maid fairy")
                 .translation(translateKey("maid_fairy_blacklist_dimension"));
         MAID_FAIRY_BLACKLIST_DIMENSION = builder.defineList("MaidFairyBlacklistDimension",
-                Lists.newArrayList(Level.NETHER.location().toString(), Level.END.location().toString(),
-                        "twilightforest:twilight_forest"), MiscConfig::checkId);
+                Lists.newArrayList("minecraft:the_nether", "minecraft:the_end", "twilightforest:twilight_forest"),
+                MiscConfig::checkId);
 
-        builder.comment("Loss power point after player death")
-                .translation(translateKey("player_death_loss_power_point"));
+        builder.comment("Loss power point after player death").translation(translateKey("player_death_loss_power_point"));
         PLAYER_DEATH_LOSS_POWER_POINT = builder.defineInRange("PlayerDeathLossPowerPoint", 1.0, 0, 5);
 
-        builder.comment("Give a soul spell item for player first join")
-                .translation(translateKey("give_smart_slab"));
-        GIVE_SMART_SLAB = builder.define("GiveSoulSpell", true);
+        // 默认值按用户 2026-07-24 定案改为 false：origin/1.21.1 默认首次加入即赠使魔符/幻想乡手册（true），
+        // 本项目有意默认不赠送，需要时由服务器权威规则（配置界面/世界 serverconfig TOML）主动开启。
+        builder.comment("Give a soul spell item for player first join").translation(translateKey("give_smart_slab"));
+        GIVE_SMART_SLAB = builder.define("GiveSoulSpell", false);
 
         builder.comment("Give the Memorizable Gensokyo book item for player first join")
                 .translation(translateKey("give_patchouli_book"));
-        GIVE_PATCHOULI_BOOK = builder.define("GivePatchouliBook", true);
+        GIVE_PATCHOULI_BOOK = builder.define("GivePatchouliBook", false);
 
         builder.comment("Shrine Lamp Effect Cost (Power Point/Per Hour)")
                 .translation(translateKey("shrine_lamp_effect_cost"));
         SHRINE_LAMP_EFFECT_COST = builder.defineInRange("ShrineLampEffectCost", 0.9, 0, Double.MAX_VALUE);
 
-        builder.comment("Shrine Lamp Max Storage Power Point")
-                .translation(translateKey("shrine_lamp_max_storage"));
+        builder.comment("Shrine Lamp Max Storage Power Point").translation(translateKey("shrine_lamp_max_storage"));
         SHRINE_LAMP_MAX_STORAGE = builder.defineInRange("ShrineLampMaxStorage", 100, 0, Double.MAX_VALUE);
 
         builder.comment("Shrine Lamp Max Range Of Absorb Power Point")
                 .translation(translateKey("shrine_lamp_max_range"));
         SHRINE_LAMP_MAX_RANGE = builder.defineInRange("ShrineLampMaxRange", 6, 0, Integer.MAX_VALUE);
 
-        builder.comment("Whether to turn off the Optifine warning")
-                .translation(translateKey("close_optifine_warning"));
-        CLOSE_OPTIFINE_WARNING = builder.define("CloseOptifineWarning", false);
-
         builder.comment("The range of the scarecrow to prevent the fairy maid from spawning")
                 .translation(translateKey("scarecrow_range"));
         SCARECROW_RANGE = builder.defineInRange("ScarecrowRange", 16 * 3, 0, Integer.MAX_VALUE);
+
+        builder.pop();
+    }
+
+    public static void initClient(ModConfigSpec.Builder builder) {
+        builder.translation(TRANSLATE_KEY).push("misc");
+
+        builder.comment("Whether to turn off the Optifine warning").translation(translateKey("close_optifine_warning"));
+        CLOSE_OPTIFINE_WARNING = builder.define("CloseOptifineWarning", false);
 
         builder.comment("Whether to use the new version of the Fairy Maid model")
                 .translation(translateKey("use_new_maid_fairy_model"));
         USE_NEW_MAID_FAIRY_MODEL = builder.define("UseNewMaidFairyModel", true);
 
-        builder.comment("Whether to enable model icon caching")
-                .translation(translateKey("model_icon_cache"));
+        builder.comment("Whether to enable model icon caching").translation(translateKey("model_icon_cache"));
         MODEL_ICON_CACHE = builder.define("EnableModelIconCache", false);
 
         builder.comment("Does an invulnerable maid have a particle effect?")
@@ -93,10 +99,7 @@ public final class MiscConfig {
         return TRANSLATE_KEY + "." + key;
     }
 
-    private static boolean checkId(Object o) {
-        if (o instanceof String name) {
-            return isValidResourceLocation(name);
-        }
-        return false;
+    private static boolean checkId(Object value) {
+        return value instanceof String name && isValidResourceLocation(name);
     }
 }

@@ -12,6 +12,7 @@ import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.ExtraMaidBrainMa
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.edible.MaidEdibleBlockManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.fishing.FishingTypeManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.backpack.BackpackManager;
+
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleRegister;
 import com.github.tartaricacid.touhoulittlemaid.entity.data.TaskDataRegister;
 import com.github.tartaricacid.touhoulittlemaid.entity.info.ServerCustomPackLoader;
@@ -42,10 +43,11 @@ public final class CommonRegistry {
         TaskDataRegister.init();
         FishingTypeManager.init();
         SerializerRegister.init();
-        // FunctionCallRegister.init();
+
         SkillLoader.init();
         GameContextRegister.init();
         ToolRegister.init();
+
         ChatBubbleRegister.init();
         DebugMaidManager.init();
         BroomControlManager.init();

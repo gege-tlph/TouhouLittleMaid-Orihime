@@ -15,16 +15,16 @@ public class ConvertFoodEatenEvent {
     public static void onAfterMaidEat(MaidAfterEatEvent event) {
         ItemStack foodAfterEat = event.getFoodAfterEat();
         EntityMaid maid = event.getMaid();
-        //FoodProperties foodProperties = foodAfterEat.getFoodProperties(maid);
-        FoodProperties foodProperties = foodAfterEat.get(DataComponents.FOOD);
-        if (!foodAfterEat.isEmpty() && foodProperties != null) {
-            Optional<ItemStack> convertedStack = foodProperties.usingConvertsTo();
-            if (convertedStack.isPresent() && !convertedStack.get().isEmpty()) {
+
+        net.minecraft.world.item.component.UseRemainder useRemainder = foodAfterEat.get(DataComponents.USE_REMAINDER);
+        if (!foodAfterEat.isEmpty() && useRemainder != null && !useRemainder.convertInto().isEmpty()) {
+            ItemStack convertedStack = useRemainder.convertInto();
+            {
                 CombinedInvWrapper availableInv = maid.getAvailableInv(false);
-                ItemStack result = ItemHandlerHelper.insertItemStacked(availableInv, convertedStack.get(), false);
+                ItemStack result = ItemHandlerHelper.insertItemStacked(availableInv, convertedStack.copy(), false);
                 // 如果女仆背包满了，掉落在地上
                 if (!result.isEmpty()) {
-                    ItemEntity itemEntity = new ItemEntity(maid.level, maid.getX(), maid.getY(), maid.getZ(), convertedStack.get());
+                    ItemEntity itemEntity = new ItemEntity(maid.level, maid.getX(), maid.getY(), maid.getZ(), convertedStack.copy());
                     maid.level.addFreshEntity(itemEntity);
                 }
             }

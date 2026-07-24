@@ -1,5 +1,11 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.item;
 
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IMaidTask;
 import com.github.tartaricacid.touhoulittlemaid.entity.favorability.FavorabilityManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -25,7 +31,8 @@ public class EntitySit extends Entity {
             .sized(0.5f, 0.1f)
             .clientTrackingRange(10)
             .ridingOffset(-0.25F)
-            .build("sit");
+            .build(ResourceKey.create(Registries.ENTITY_TYPE,
+                    Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "sit")));
     private static final EntityDataAccessor<String> SIT_TYPE = SynchedEntityData.defineId(EntitySit.class, EntityDataSerializers.STRING);
     private int passengerTick = 0;
     private BlockPos associatedBlockPos = BlockPos.ZERO;
@@ -47,27 +54,25 @@ public class EntitySit extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
-        if (tag.contains("SitJoyType", Tag.TAG_STRING)) {
-            this.setJoyType(tag.getString("SitJoyType"));
-        }
-        if (tag.contains("AssociatedBlockPos", Tag.TAG_INT_ARRAY)) {
-            Optional<BlockPos> blockPosOptional = NbtUtils.readBlockPos(tag, "AssociatedBlockPos");
-            blockPosOptional.ifPresent(blockPos -> this.associatedBlockPos = blockPos);
-        }
+    protected void readAdditionalSaveData(ValueInput input) {
+        input.getString("SitJoyType").ifPresent(this::setJoyType);
+        input.getIntArray("AssociatedBlockPos")
+                .filter(pos -> pos.length == 3)
+                .ifPresent(pos -> this.associatedBlockPos = new BlockPos(pos[0], pos[1], pos[2]));
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(ValueOutput output) {
         if (StringUtils.isNotBlank(this.getJoyType())) {
-            tag.putString("SitJoyType", this.getJoyType());
+            output.putString("SitJoyType", this.getJoyType());
         }
-        tag.put("AssociatedBlockPos", NbtUtils.writeBlockPos(this.associatedBlockPos));
+        output.putIntArray("AssociatedBlockPos", new int[]{
+                this.associatedBlockPos.getX(), this.associatedBlockPos.getY(), this.associatedBlockPos.getZ()});
     }
 
     @Override
     public void tick() {
-        if (!this.level.isClientSide) {
+        if (!this.level.isClientSide()) {
             this.checkBelowWorld();
             this.checkPassengers();
             if (this.getFirstPassenger() instanceof EntityMaid maid) {
@@ -90,7 +95,7 @@ public class EntitySit extends Entity {
             if (this.isIdleSchedule(maid)) {
                 return;
             }
-            // 如果是工作状态，看看这个工作是否允许你坐在上面
+            // 工作日程中，仅允许支持当前娱乐类型的任务继续乘坐。
             if (this.isWorkSchedule(maid) && task.canSitInJoy(maid, joyType)) {
                 return;
             }
@@ -133,7 +138,7 @@ public class EntitySit extends Entity {
     }
 
     @Override
-    public boolean hurt(DamageSource pSource, float pAmount) {
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
         return false;
     }
 

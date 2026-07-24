@@ -11,7 +11,7 @@ import com.github.tartaricacid.touhoulittlemaid.util.TaskEquipUtil;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.item.ItemStack;
@@ -22,10 +22,10 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public class TaskShears implements IMaidTask {
-    public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "shears");
+    public static final Identifier UID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "shears");
 
     @Override
-    public ResourceLocation getUid() {
+    public Identifier getUid() {
         return UID;
     }
 
@@ -46,10 +46,10 @@ public class TaskShears implements IMaidTask {
 
     @Override
     public FunctionCallSwitchResult onFunctionCallSwitch(EntityMaid maid) {
-        if (maid.getMainHandItem()/*.canPerformAction(ItemAbilities.SHEARS_HARVEST)*/.is(ConventionalItemTags.SHEAR_TOOLS) || maid.getMainHandItem().getItem() instanceof ShearsItem) {
+        if (maid.getMainHandItem().is(ConventionalItemTags.SHEAR_TOOLS) || maid.getMainHandItem().getItem() instanceof ShearsItem) {
             return FunctionCallSwitchResult.NO_CHANGE;
         }
-        if (TaskEquipUtil.tryEquipFromBackpack(maid, item -> item.is(ConventionalItemTags.SHEAR_TOOLS) || item.getItem() instanceof ShearsItem/*item.canPerformAction(ItemAbilities.SHEARS_HARVEST)*/)) {
+        if (TaskEquipUtil.tryEquipFromBackpack(maid, item -> item.is(ConventionalItemTags.SHEAR_TOOLS) || item.getItem() instanceof ShearsItem)) {
             return FunctionCallSwitchResult.OK;
         }
         return FunctionCallSwitchResult.MISSING_REQUIRED_ITEM;

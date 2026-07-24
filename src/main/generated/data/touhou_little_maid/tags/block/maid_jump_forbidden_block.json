@@ -2,6 +2,34 @@
   "values": [
     "#minecraft:doors",
     "#minecraft:fences",
-    "#minecraft:climbable"
+    "#minecraft:climbable",
+    {
+      "id": "#kaleidoscope_cookery:table",
+      "required": false
+    },
+    {
+      "id": "#kaleidoscope_cookery:sittable",
+      "required": false
+    },
+    {
+      "id": "#kaleidoscope_tavern:sittable",
+      "required": false
+    },
+    {
+      "id": "kaleidoscope_tavern:table",
+      "required": false
+    },
+    {
+      "id": "kaleidoscope_tavern:bar_counter",
+      "required": false
+    },
+    {
+      "id": "kaleidoscope_tavern:bar_cabinet",
+      "required": false
+    },
+    {
+      "id": "kaleidoscope_tavern:glass_bar_cabinet",
+      "required": false
+    }
   ]
 }

@@ -21,6 +21,7 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.response.C
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.response.Message;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.response.Usage;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitDataAttachment;
 import com.google.common.net.HttpHeaders;
@@ -132,7 +133,6 @@ public class LLMOpenAIClient implements LLMClient {
 
     /**
      * 用于添加额外的参数，主要用于一些非标准 OpenAI API 模型的额外参数添加
-     *
      */
     protected ChatCompletion extraArgs(ChatCompletion chatCompletion) {
         // 部分国内模型站点会添加此字段
@@ -167,7 +167,7 @@ public class LLMOpenAIClient implements LLMClient {
                     int tokenCount = tokensData.get();
 
                     // 如果此时 token 超过配置，那么就触发回调失败
-                    int tokenLimit = AIConfig.MAX_TOKENS_PER_PLAYER.get();
+                    int tokenLimit = ServerRuleConfig.get(AIConfig.MAX_TOKENS_PER_PLAYER);
                     if (tokenCount > tokenLimit) {
                         String message = "Token Limit Exceeded: %d tokens used, limit is %d".formatted(tokenCount, tokenLimit);
                         callback.onFailure(request, new Throwable(message), ErrorCode.CHAT_TOKEN_LIMIT_EXCEEDED);

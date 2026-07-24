@@ -6,7 +6,7 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.LLMSite;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.Lists;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,16 +34,9 @@ public class HistorySummaryManager {
     }
 
     /**
-     * 异步摘要请求完成后的回调入口，负责校验、存储摘要并清理已压缩的旧消息。
-     * <p>
-     * 整体流程：
-     * <ol>
-     *   <li>校验摘要内容是否有效（非空白）</li>
-     *   <li>校验历史尾部是否仍与发起请求时的快照一致（防止异步期间历史被修改）</li>
-     *   <li>存储摘要，并从历史中删除已被压缩的旧消息</li>
-     * </ol>
+     * 异步摘要请求完成后的回调入口，负责校验、存储摘要并清理已压缩的旧消息。 <p> 整体流程： <ol> <li>校验摘要内容是否有效（非空白）</li> <li>校验历史尾部是否仍与发起请求时的快照一致（防止异步期间历史被修改）</li> <li>存储摘要，并从历史中删除已被压缩的旧消息</li> </ol>
      *
-     * @param summary  LLM 返回的摘要文本
+     * @param summary LLM 返回的摘要文本
      * @param snapshot 发起请求时通过 {@link #snapshotOldestMessages} 取得的快照
      */
     public boolean completeHistorySummary(String summary, List<LLMMessage> snapshot) {
@@ -88,15 +81,7 @@ public class HistorySummaryManager {
     }
 
     /**
-     * 在玩家发起新聊天前，按上一次聊天请求返回的 token 用量判断是否需要压缩历史。
-     * <p>
-     * 仅在以下条件全部满足时才会实际发起请求：
-     * <ul>
-     *   <li>当前没有正在进行的摘要任务</li>
-     *   <li>可压缩的消息数 ≥ {@link HistorySummaryPrompts#MIN_MESSAGES_TO_COMPRESS}</li>
-     *   <li>上一次普通聊天请求返回的 token 用量达到配置上限</li>
-     *   <li>LLM 站点和模型配置有效</li>
-     * </ul>
+     * 在玩家发起新聊天前，按上一次聊天请求返回的 token 用量判断是否需要压缩历史。 <p> 仅在以下条件全部满足时才会实际发起请求： <ul> <li>当前没有正在进行的摘要任务</li> <li>可压缩的消息数 ≥ {@link HistorySummaryPrompts#MIN_MESSAGES_TO_COMPRESS}</li> <li>上一次普通聊天请求返回的 token 用量达到配置上限</li> <li>LLM 站点和模型配置有效</li> </ul>
      */
     public boolean tryCompressBeforeChat(Runnable afterSummary) {
         if (chatManager.getLastChatTokenUsage() < AIConfig.getMaidHistoryCompressTokenLimit()) {
@@ -150,10 +135,7 @@ public class HistorySummaryManager {
     }
 
     /**
-     * 构建发送给 LLM 的历史摘要请求。
-     * <p>
-     * 将现有的压缩摘要和需要压缩的历史消息快照组合成一个请求文本，
-     * 格式如下：
+     * 构建发送给 LLM 的历史摘要请求。 <p> 将现有的压缩摘要和需要压缩的历史消息快照组合成一个请求文本， 格式如下：
      * <pre>
      * Existing summary:
      * [之前的摘要内容，如果没有则为 "[NONE]"]
@@ -192,9 +174,7 @@ public class HistorySummaryManager {
     }
 
     /**
-     * 当前可以被压缩进摘要的消息数量，即总历史记录减去需要保留的最近消息。
-     * <p>
-     * 例如总共 12 条记录、保留 8 条时，返回 4（最旧的 4 条可以压缩）。
+     * 当前可以被压缩进摘要的消息数量，即总历史记录减去需要保留的最近消息。 <p> 例如总共 12 条记录、保留 8 条时，返回 4（最旧的 4 条可以压缩）。
      *
      * @return 可压缩的消息条数，最小为 0
      */
@@ -220,10 +200,7 @@ public class HistorySummaryManager {
     }
 
     /**
-     * 检查当前历史记录的尾部（最旧一端）是否仍与给定的快照一致。
-     * <p>
-     * 因为摘要请求是异步的，返回结果前历史记录可能已经发生变化，
-     * 用此方法验证快照是否仍然有效，避免用过期快照删除了错误的记录。
+     * 检查当前历史记录的尾部（最旧一端）是否仍与给定的快照一致。 <p> 因为摘要请求是异步的，返回结果前历史记录可能已经发生变化， 用此方法验证快照是否仍然有效，避免用过期快照删除了错误的记录。
      *
      * @param snapshot 之前通过 {@link #snapshotOldestMessages} 取得的快照
      * @return 尾部仍然匹配返回 {@code true}，否则返回 {@code false}

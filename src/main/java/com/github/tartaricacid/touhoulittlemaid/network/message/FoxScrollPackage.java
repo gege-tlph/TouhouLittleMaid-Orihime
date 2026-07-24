@@ -1,10 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message;
 
-import com.github.tartaricacid.touhoulittlemaid.client.gui.item.FoxScrollScreen;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+import com.github.tartaricacid.touhoulittlemaid.network.client.FoxScrollPackageProxy;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -12,17 +9,16 @@ import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.github.tartaricacid.touhoulittlemaid.util.ResourceLocationUtil.getResourceLocation;
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 public record FoxScrollPackage(Map<String, List<FoxScrollData>> data) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<FoxScrollPackage> TYPE = new CustomPacketPayload.Type<>(getResourceLocation("fox_scroll"));
+    public static final CustomPacketPayload.Type<FoxScrollPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("fox_scroll"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, List<FoxScrollData>> LIST_STREAM_CODEC = ByteBufCodecs.collection(
             ArrayList::new,
@@ -44,16 +40,11 @@ public record FoxScrollPackage(Map<String, List<FoxScrollData>> data) implements
     );
 
     public static void handle(FoxScrollPackage message, ClientPlayNetworking.Context context) {
-        context.client().execute(() -> onHandle(message));
-    }
-
-    @Environment(EnvType.CLIENT)
-    private static void onHandle(FoxScrollPackage message) {
-        Minecraft.getInstance().setScreen(new FoxScrollScreen(message.data));
+        context.client().execute(() -> FoxScrollPackageProxy.handle(message));
     }
 
     @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

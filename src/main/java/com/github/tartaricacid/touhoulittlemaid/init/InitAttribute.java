@@ -4,7 +4,7 @@ import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 
@@ -17,12 +17,6 @@ public interface InitAttribute {
      * 女仆使用弩射击的速度倍率，数值越大，弩箭射击间隔越短
      */
     Holder<Attribute> MAID_CROSSBOW_ATTACK_SPEED = newAttribute("maid_crossbow_attack_speed", 1, 0, Integer.MAX_VALUE);
-    /**
-     * 女仆使用枪械（TaCZ/卓越前线）射击的速度倍率，数值越大，射击间隔越短
-     * <p>
-     * 可能无法超越枪本身的最大射速
-     */
-    Holder<Attribute> MAID_GUN_ATTACK_SPEED = newAttribute("maid_gun_attack_speed", 1, 0, Integer.MAX_VALUE);
     /**
      * 女仆单次射击（弓、弩）后的冷却时间，数值越大，射击后的冷却时间越长
      */
@@ -46,7 +40,7 @@ public interface InitAttribute {
 
     private static Holder<Attribute> newAttribute(String id, double defaultValue, double min, double max) {
         final String key = "attribute." + TouhouLittleMaid.MOD_ID + "." + id;
-        return Registry.registerForHolder(BuiltInRegistries.ATTRIBUTE, ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), new RangedAttribute(key, defaultValue, min, max).setSyncable(true));
+        return Registry.registerForHolder(BuiltInRegistries.ATTRIBUTE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), new RangedAttribute(key, defaultValue, min, max).setSyncable(true));
     }
 
     static void init() {

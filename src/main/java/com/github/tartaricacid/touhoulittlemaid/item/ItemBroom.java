@@ -1,16 +1,21 @@
 package com.github.tartaricacid.touhoulittlemaid.item;
 
+import java.util.function.Consumer;
+import net.minecraft.world.item.component.TooltipDisplay;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityBroom;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -23,8 +28,8 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 
 public class ItemBroom extends Item {
-    public ItemBroom() {
-        super((new Properties()).stacksTo(1));
+    public ItemBroom(Identifier id) {
+        super((new Properties()).setId(ResourceKey.create(Registries.ITEM, id)).stacksTo(1));
     }
 
     @Override
@@ -40,7 +45,7 @@ public class ItemBroom extends Item {
                         if (stack.get(DataComponents.CUSTOM_NAME) != null) {
                             e.setCustomName(stack.get(DataComponents.CUSTOM_NAME));
                         }
-                    }, context.getClickedPos(), MobSpawnType.SPAWN_EGG, true, true);
+                    }, context.getClickedPos(), EntitySpawnReason.SPAWN_ITEM_USE, true, true);
                     if (broom == null) {
                         return InteractionResult.FAIL;
                     }
@@ -51,14 +56,14 @@ public class ItemBroom extends Item {
                     world.playSound(null, broom.getX(), broom.getY(), broom.getZ(), SoundEvents.WOOL_PLACE, SoundSource.BLOCKS, 0.75F, 0.8F);
                 }
                 stack.shrink(1);
-                return InteractionResult.sidedSuccess(world.isClientSide);
+                return InteractionResult.SUCCESS;
             }
         }
         return InteractionResult.FAIL;
     }
 
     @Override
-    public void appendHoverText(ItemStack itemStack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag tooltipFlag) {
-        tooltip.add(Component.translatable("tooltips.touhou_little_maid.broom.desc").withStyle(ChatFormatting.GRAY));
+    public void appendHoverText(ItemStack itemStack, Item.TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltip, TooltipFlag tooltipFlag){
+        tooltip.accept(Component.translatable("tooltips.touhou_little_maid.broom.desc").withStyle(ChatFormatting.GRAY));
     }
 }

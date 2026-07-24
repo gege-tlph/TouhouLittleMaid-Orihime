@@ -1,8 +1,9 @@
 package com.github.tartaricacid.touhoulittlemaid.client.download;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
-import com.github.tartaricacid.touhoulittlemaid.client.resource.CustomPackLoader;
+import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.util.HttpUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.ZipFileCheck;
 import net.fabricmc.api.EnvType;
@@ -34,7 +35,7 @@ public class ClientPackDownloadManager {
     private static int CACHE_CONFIG_HASH = 0;
 
     public static void downloadClientPack() {
-        List<String> downloadList = ServerConfig.CLIENT_PACK_DOWNLOAD_URLS.get();
+        List<String> downloadList = ServerRuleConfig.get(ServerConfig.CLIENT_PACK_DOWNLOAD_URLS);
         // 先计算哈希值
         int hashCurrent = hashDownloadList(downloadList);
         // 对比前后哈希值，判断是否需要更新

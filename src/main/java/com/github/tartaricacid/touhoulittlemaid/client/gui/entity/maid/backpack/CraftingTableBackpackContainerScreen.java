@@ -3,14 +3,12 @@ package com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.backpack
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.AbstractMaidContainerGui;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.BaubleButton;
-import com.github.tartaricacid.touhoulittlemaid.compat.accessories.AccessoriesCompat;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.backpack.CraftingTableBackpackContainer;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import org.anti_ad.mc.ipn.api.IPNButton;
 import org.anti_ad.mc.ipn.api.IPNGuiHint;
@@ -23,7 +21,7 @@ import org.anti_ad.mc.ipn.api.IPNPlayerSideOnly;
 @IPNGuiHint(button = IPNButton.SHOW_EDITOR, horizontalOffset = -5)
 @IPNGuiHint(button = IPNButton.SETTINGS, horizontalOffset = -5)
 public class CraftingTableBackpackContainerScreen extends AbstractMaidContainerGui<CraftingTableBackpackContainer> implements IBackpackContainerScreen {
-    private static final ResourceLocation BACKPACK = ResourceLocation.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_crafting_table.png");
+    private static final Identifier BACKPACK = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_crafting_table.png");
     private final EntityMaid maid;
 
     public CraftingTableBackpackContainerScreen(CraftingTableBackpackContainer container, Inventory inv, Component titleIn) {
@@ -38,17 +36,11 @@ public class CraftingTableBackpackContainerScreen extends AbstractMaidContainerG
         BaubleButton button = this.getBaubleButton(maid, leftPos, topPos);
         this.addRenderableWidget(button);
 
-        // 添加 trinkets 兼容按钮
-        if (AccessoriesCompat.isLoadedOrEnable()) {
-            this.addRenderableWidget(this.getCuriosButton(maid, leftPos, topPos));
-        }
     }
 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTicks, int x, int y) {
         super.renderBg(graphics, partialTicks, x, y);
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderTexture(0, BACKPACK);
-        graphics.blit(BACKPACK, leftPos + 85, topPos + 36, 0, 0, 165, 128);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BACKPACK, leftPos + 85, topPos + 36, (float) 0, (float) 0, 165, 128, 256, 256);
     }
 }
