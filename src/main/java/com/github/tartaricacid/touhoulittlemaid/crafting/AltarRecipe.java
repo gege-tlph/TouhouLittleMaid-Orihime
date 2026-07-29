@@ -28,7 +28,8 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-
+// 1.21.11: CraftingRecipe.getType() 是 default 返回不变型 RecipeType<CraftingRecipe> → extends ShapelessRecipe 无法返回
+// RecipeType<AltarRecipe>；改为直接 implements Recipe<CraftingInput>（同 26.1）。matches/placementInfo 复刻 vanilla ShapelessRecipe。
 public class AltarRecipe implements Recipe<CraftingInput> {
     private final String group;
     private final CraftingBookCategory category;
@@ -64,7 +65,8 @@ public class AltarRecipe implements Recipe<CraftingInput> {
     }
 
     public void spawnOutputEntity(ServerLevel world, BlockPos pos, @Nullable List<ItemStack> list) {
-        // 实体类型来自默认注册表；无法解析的 ID 会得到注册表后备值，不会返回 null。
+        // ENTITY_TYPE is a defaulted registry. Preserve 1.21.1's fallback for
+        // syntactically valid but unknown ids instead of manufacturing null.
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(entityType);
 
         if (type == EntityType.ITEM) {
@@ -95,7 +97,8 @@ public class AltarRecipe implements Recipe<CraftingInput> {
         CustomData compoundData = itemFilm.get(InitDataComponent.MAID_INFO);
         if (compoundData != null) {
             CompoundTag maidCompound = compoundData.copyTag();
-
+            // 1.21.11: readAdditionalSaveData(CompoundTag) -> (ValueInput)。
+            // 保持 HEAD 的 readAdditionalSaveData（26.1 在此改用 load，属其行为变更，不采纳）。
             maid.readAdditionalSaveData(TagValueInput.create(
                     ProblemReporter.DISCARDING, world.registryAccess(), maidCompound));
         } else {
@@ -112,7 +115,7 @@ public class AltarRecipe implements Recipe<CraftingInput> {
         EntityMaid maid = new EntityMaid(world);
         maid.setPos(pos.getX(), pos.getY(), pos.getZ());
         maid.finalizeSpawn(world, world.getCurrentDifficultyAt(pos), EntitySpawnReason.SPAWN_ITEM_USE, null);
-
+        // 1.21.11: startRiding(Entity, boolean) 移除 -> (Entity, boolean, boolean)（同 26.1）
         maid.startRiding(box, true, true);
 
         world.tryAddFreshEntityWithPassengers(box);

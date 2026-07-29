@@ -5,6 +5,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
+// 1.21.11: WitherSkull 移到 projectile.hurtingprojectile 子包（javap 确认）
 import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;

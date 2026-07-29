@@ -80,7 +80,8 @@ public class MaidPlugin implements IModPlugin {
 
     @Override
     public void registerItemSubtypes(ISubtypeRegistration registration) {
-
+        // JEI 27：改用官方组件区分通道（旧 interpreter 注册在 27 上不生效，门实例日志实证「2 duplicate items」）。
+        // 坐垫/手办为超出 origin 的显示层补注册：无它们 JEI 列表把全部变体折叠为 1（用户以 JEI 为主要浏览入口）。
         registration.registerFromDataComponentTypes(InitItems.ENTITY_PLACEHOLDER, InitDataComponent.RECIPES_ID_TAG);
         registration.registerFromDataComponentTypes(InitItems.CHAIR, InitDataComponent.MODEL_ID_TAG);
         registration.registerFromDataComponentTypes(InitItems.GARAGE_KIT, InitDataComponent.MAID_INFO);
@@ -95,7 +96,7 @@ public class MaidPlugin implements IModPlugin {
 
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
-
+        // 过期 TODO 已清：背包容器屏 B2-2 已恢复编译
         registration.addRecipeClickArea(CraftingTableBackpackContainerScreen.class, 213, 121, 13, 12, RecipeTypes.CRAFTING);
         registration.addRecipeClickArea(FurnaceBackpackContainerScreen.class, 183, 118, 28, 24, RecipeTypes.SMELTING, RecipeTypes.SMELTING_FUEL);
         registerTaskListArea(registration);

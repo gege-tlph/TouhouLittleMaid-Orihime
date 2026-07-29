@@ -13,6 +13,7 @@ import com.github.tartaricacid.touhoulittlemaid.util.Rectangle;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import com.github.tartaricacid.touhoulittlemaid.network.message.ai.CheckSiteConfigPackage;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Renderable;
@@ -45,6 +46,8 @@ public class TTSSiteEditorScreen extends Screen {
     private final AIChatSettingsTTSSiteScreen parent;
     private final TTSSiteFormLayout layout;
     private final String siteDisplayName;
+    /** 站点 id：用于「检查配置」把请求指向服务端的哪一个站点 */
+    private final String siteId;
 
     /**
      * 固定字段列表（不滚动）
@@ -77,6 +80,7 @@ public class TTSSiteEditorScreen extends Screen {
 
         String nameKey = sourceSite.getNameKey();
         this.siteDisplayName = I18n.exists(nameKey) ? I18n.get(nameKey) : sourceSite.id();
+        this.siteId = sourceSite.id();
 
         this.initStateFromLayout();
     }
@@ -157,6 +161,13 @@ public class TTSSiteEditorScreen extends Screen {
         }
 
         // 底部按钮
+        // 「检查配置」而不是「测试连接」：它检查地址与密钥填没填、主机连不连得上，
+        // **不验证密钥是否正确**。叫成后者就是一个说谎的标签，而它仍然有用——
+        // 把「地址/网络不通」与「密钥不对」分开，这两种故障的处置完全不同。
+        this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 302, bottomY, 96, 20,
+                Component.translatable("ai.touhou_little_maid.chat.settings.hub.check_config"),
+                b -> ClientPlayNetworking.send(new CheckSiteConfigPackage(
+                        CheckSiteConfigPackage.TTS, this.siteId))));
         this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 200, bottomY, 90, 20, SAVE_NAME, b -> this.saveSite()));
         this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 102, bottomY, 90, 20, GUI_BACK, b -> this.onClose()));
     }
@@ -229,6 +240,7 @@ public class TTSSiteEditorScreen extends Screen {
         // 固定字段
         for (FormField field : this.fields) {
             this.renderInputField(graphics, field.box, mouseX, mouseY, partialTick);
+            this.renderSecretPlaceholder(graphics, field);
         }
 
         // 模型区
@@ -261,6 +273,20 @@ public class TTSSiteEditorScreen extends Screen {
         graphics.drawString(this.font, box.getMessage(), x + 2, y - 12, LABEL_COLOR, false);
         graphics.fill(x, y, x + width, y + height, 0xAA111111);
         box.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    /**
+     * 密钥框空着的时候，用灰字说明它到底是「已配置」还是「未配置」。
+     *
+     * <p>下行只有哨兵、框里一律是空的，不给这行字管理员就完全分不出服务端有没有密钥。
+     * <b>不用星号占位</b>：星号个数会泄漏长度，还会让人以为里面有内容能就地改。</p>
+     */
+    private void renderSecretPlaceholder(GuiGraphics graphics, FormField field) {
+        if (!field.secret || field.box == null || !field.box.getValue().isEmpty()) {
+            return;
+        }
+        graphics.drawString(this.font, field.secretPlaceholder(),
+                field.box.getX(), field.box.getY(), 0xFF808080, false);
     }
 
     private void renderModelArea(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {

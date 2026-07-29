@@ -8,7 +8,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 /**
- * | ---- arg0 arg1 arg2 var0 var1 var2 ---| --- ... --- | ↑ ↑ argOffset varOffset
+ * | ---- arg0 arg1 arg2 var0 var1 var2 ---| --- ... --- |
+ *        ↑              ↑
+ *        argOffset      varOffset
  */
 public class StackMemory implements ITempVariableStorage {
     private static final int MAX_STACK_DEPTH = 32;

@@ -15,7 +15,8 @@ import org.apache.commons.lang3.time.StopWatch;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 重新加载所有依赖当前资源包的客户端模型、纹理与动画数据源。
+ * Reloads every client-side model source that depends on the active resource packs.
+ * The order intentionally matches the 1.21.1 behavior baseline.
  */
 public final class CustomPackReloadListener extends SimplePreparableReloadListener<Void> {
     public static void asyncReload() {

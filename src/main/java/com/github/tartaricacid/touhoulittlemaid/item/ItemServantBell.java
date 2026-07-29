@@ -85,7 +85,7 @@ public class ItemServantBell extends Item {
         return super.use(worldIn, playerIn, handIn);
     }
 
-
+    // 1.21.11: Item.releaseUsing void → boolean（true=已处理释放，guard 失败返回 false，同 vanilla 约定）
     @Override
     public boolean releaseUsing(ItemStack stack, Level worldIn, LivingEntity entityLiving, int timeLeft) {
         if (!(entityLiving instanceof Player player) || timeLeft < MIN_USE_DURATION) {
@@ -109,7 +109,7 @@ public class ItemServantBell extends Item {
         if (player instanceof ServerPlayer serverPlayer) {
             InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.USE_SERVANT_BELL);
         }
-
+        // B5: 1.21.2+ ItemCooldowns.addCooldown(Item,int) → (ItemStack,int)（冷却组由 stack 派生 = item）
         player.getCooldowns().addCooldown(this.getDefaultInstance(), 20);
         return true;
     }

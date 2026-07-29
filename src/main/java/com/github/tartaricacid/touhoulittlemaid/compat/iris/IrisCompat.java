@@ -4,7 +4,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.irisshaders.iris.api.v0.IrisApi;
 
 /**
- * 可选虹膜桥。所有 Iris API 访问均受到保护，因此当 Iris 不存在或其 API 无法初始化时，正常 Fabric 客户端仍可加载。
+ * Optional Iris bridge. All Iris API access is guarded so the normal Fabric
+ * client remains loadable when Iris is absent or its API cannot initialize.
  */
 public final class IrisCompat {
     private static final String MOD_ID = "iris";
@@ -22,7 +23,7 @@ public final class IrisCompat {
             IrisApi.getInstance().isRenderingShadowPass();
             installed = true;
         } catch (Throwable ignored) {
-            // 不兼容的可选 API 不得阻止客户端加载。
+            // An incompatible optional API must not prevent the client from loading.
         }
     }
 

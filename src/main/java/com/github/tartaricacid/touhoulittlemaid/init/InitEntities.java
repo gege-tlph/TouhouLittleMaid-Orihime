@@ -27,7 +27,7 @@ import net.minecraft.world.entity.ai.behavior.PositionTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.schedule.Activity;
-
+// 1.21.11: Schedule/ScheduleBuilder 移除 → EnvironmentAttribute<Activity>
 import net.minecraft.world.attribute.AttributeTypes;
 import net.minecraft.world.attribute.EnvironmentAttribute;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -63,12 +63,25 @@ public final class InitEntities {
     public static MemoryModuleType<List<Entity>> VISIBLE_PICKUP_ENTITIES = registerMemoryModuleType("visible_pickup_entities", new MemoryModuleType<>(Optional.empty()));
     public static MemoryModuleType<PositionTracker> TARGET_POS = registerMemoryModuleType("target_pos", new MemoryModuleType<>(Optional.empty()));
     public static MemoryModuleType<MaidEdibleBlockAction> MAID_EDIBLE_BLOCK_ACTION = registerMemoryModuleType("maid_edible_block_action", new MemoryModuleType<>(Optional.empty()));
+    /**
+     * 偷吃/摆盘持有 {@link #TARGET_POS} 的到期游戏时刻。
+     *
+     * <p>无 codec，因此不随实体存档持久化——它是一个 tick 级仲裁量，重进世界后重新计时才是正确行为。</p>
+     */
+    public static MemoryModuleType<Long> MAID_EDIBLE_HOLD_EXPIRY = registerMemoryModuleType("maid_edible_hold_expiry", new MemoryModuleType<>(Optional.empty()));
     public static MemoryModuleType<Boolean> EMERGENCY_COMBAT_ACTIVE = registerMemoryModuleType("emergency_combat_active", new MemoryModuleType<>(Optional.empty()));
     public static SensorType<MaidNearestLivingEntitySensor> MAID_NEAREST_LIVING_ENTITY_SENSOR = registerSensorType("maid_nearest_living_entity", new SensorType<>(MaidNearestLivingEntitySensor::new));
     public static SensorType<MaidHostilesSensor> MAID_HOSTILES_SENSOR = registerSensorType("maid_hostiles", new SensorType<>(MaidHostilesSensor::new));
     public static SensorType<MaidPickupEntitiesSensor> MAID_PICKUP_ENTITIES_SENSOR = registerSensorType("maid_pickup_entities", new SensorType<>(MaidPickupEntitiesSensor::new));
 
-
+    // 1.21.11: Schedule/ScheduleBuilder 移除 → 调度改用 EnvironmentAttribute<Activity>（javap 确认）。
+    // 关键帧不再写在代码里，而在 datapack timeline JSON（data/touhou_little_maid/timeline/maid_schedule.json，
+    // 由 #minecraft:timeline/universal tag 烘焙）。此处仅注册 attribute key + 默认活动（timeline 缺失时的回退）。
+    // 日程行为（HEAD 原值，见 timeline JSON）：
+    //   day_shift : 06:00→WORK(0) / 18:00→IDLE(12000) / 22:00→REST(16000)
+    //   night_shift: 06:00→REST(0) / 14:00→IDLE(8000) / 18:00→WORK(12000)
+    //   all_day   : WORK(0)
+    // ID 与 timeline track key 必须逐字匹配（否则调度静默退化为 defaultValue）。
     public static EnvironmentAttribute<Activity> MAID_DAY_SHIFT_ACTIVITY = registerEnvironment("gameplay/maid_day_shift_activity",
             EnvironmentAttribute.builder(AttributeTypes.ACTIVITY).defaultValue(Activity.IDLE).build());
     public static EnvironmentAttribute<Activity> MAID_NIGHT_SHIFT_ACTIVITY = registerEnvironment("gameplay/maid_night_shift_activity",
@@ -88,7 +101,7 @@ public final class InitEntities {
         return Registry.register(BuiltInRegistries.SENSOR_TYPE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), sType);
     }
 
-
+    // 1.21.11: registerSchedule → registerEnvironment（BuiltInRegistries.SCHEDULE 移除 → ENVIRONMENT_ATTRIBUTE）
     private static EnvironmentAttribute<Activity> registerEnvironment(String id, EnvironmentAttribute<Activity> attribute) {
         return Registry.register(BuiltInRegistries.ENVIRONMENT_ATTRIBUTE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), attribute);
     }
@@ -98,9 +111,11 @@ public final class InitEntities {
     }
 
     private static void registerSerializer() {
-
+        // 1.21.11 Fabric: 自定义 EntityDataSerializer 禁止用 vanilla EntityDataSerializers.registerSerializer
+        //   （会 desync）→ 改用 FabricTrackedDataRegistry.register(Identifier, handler) 分配稳定网络 id。
         FabricTrackedDataRegistry.register(Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "maid_schedule"), MaidSchedule.DATA);
-
+        //   EntityGraphics/ChatBubbleRenderer/IChatBubbleRenderer 三个核心渲染类被掏空为 stub，且实体渲染管线需 1.21.11 重设计）。
+        //   此序列化器已孤立（其消费方 EntityMaid:245 的 CHAT_BUBBLE 数据字段已注释，A12）→ 冻结零功能损失。
         FabricTrackedDataRegistry.register(Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "chat_bubble"), ChatBubbleRegister.INSTANCE);
     }
 

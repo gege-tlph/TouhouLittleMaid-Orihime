@@ -70,7 +70,10 @@ public class MaidFishingHook extends Projectile {
     protected boolean openWater = true;
     protected FishHookState currentState = FishHookState.FLYING;
     /**
-     * 钓钩在客户端和服务端分别模拟移动，因此忽略网络插值目标，避免跟踪更新与客户端模拟互相拉扯。
+     * This hook is simulated on both sides. The 1.21.1 implementation ignored
+     * lerp packets; otherwise the five-tick tracking update fights the client
+     * simulation. The old hook is final in 1.21.11, so preserve that behavior
+     * with a no-op interpolation target.
      */
     private final InterpolationHandler interpolation = new InterpolationHandler(this) {
         @Override
@@ -346,7 +349,7 @@ public class MaidFishingHook extends Projectile {
         // 咬钩时间到了，收杆
         EntityMaid maid = getMaidOwner();
         int retrieveTime = Mth.nextInt(this.random, 2, 10);
-
+        // TODO：收杆应该有成功率，应该和好感度挂钩
         if (this.nibble <= retrieveTime && maid != null) {
             ItemStack rodItem = maid.getMainHandItem();
             int rodDamage = this.retrieve(rodItem);
@@ -370,7 +373,8 @@ public class MaidFishingHook extends Projectile {
                         .withParameter(LootContextParams.ORIGIN, this.position())
                         .withParameter(LootContextParams.TOOL, stack)
                         .withParameter(LootContextParams.THIS_ENTITY, this)
-
+                        // TODO: Fabric没允许这个param
+                        // .withParameter(LootContextParams.ATTACKING_ENTITY, maid)
                         .withLuck(this.luck + maid.getLuck())
                         .create(LootContextParamSets.FISHING);
 
@@ -519,7 +523,7 @@ public class MaidFishingHook extends Projectile {
 
     private boolean shouldStopFishing(EntityMaid maid) {
         ItemStack mainHandItem = maid.getMainHandItem();
-        boolean hasFishingRod = mainHandItem./* canPerformAction(ItemAbilities.FISHING_ROD_CAST) */getItem() instanceof FishingRodItem || mainHandItem.is(ConventionalItemTags.FISHING_ROD_TOOLS);
+        boolean hasFishingRod = mainHandItem./*canPerformAction(ItemAbilities.FISHING_ROD_CAST)*/getItem() instanceof FishingRodItem || mainHandItem.is(ConventionalItemTags.FISHING_ROD_TOOLS);
         boolean isFishingTask = maid.getTask() instanceof TaskFishing;
         boolean hasVehicle = maid.getVehicle() != null;
         if (!maid.isRemoved() && maid.isAlive() && hasVehicle && isFishingTask && hasFishingRod && this.distanceToSqr(maid) < 256) {

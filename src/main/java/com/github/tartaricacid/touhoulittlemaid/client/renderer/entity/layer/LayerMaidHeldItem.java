@@ -35,7 +35,8 @@ public class LayerMaidHeldItem extends RenderLayer<EntityMaidRenderState, Entity
 
         // 依据 root 模型的位移对整体进行物品进行偏移、旋转和缩放
         if (parentModel.root() instanceof BedrockPart part) {
-            // BedrockPart 的仅动画偏移（用于游泳）不包含在普通 ModelPart#translateAndRotate 中。
+            // BedrockPart's animation-only offsets (used by swimming) are not
+            // included by vanilla ModelPart#translateAndRotate.
             part.translateAndRotateBedrock(poseStack);
         }
 

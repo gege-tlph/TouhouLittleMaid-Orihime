@@ -17,7 +17,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
@@ -117,7 +117,10 @@ public class EntityExtinguishingAgent extends Entity {
         BlockPos minPos = center.offset(-hRange, -vRange, -hRange);
         BlockPos maxPos = center.offset(hRange, vRange, hRange);
         for (BlockPos pos : BlockPos.betweenClosed(minPos, maxPos)) {
-            if (level.getBlockState(pos).is(Blocks.FIRE)) {
+            // 上游缺陷（TartaricAcid/TouhouLittleMaid#1158）：原先只判 Blocks.FIRE，灵魂火漏网。
+            // 改判 BaseFireBlock —— 原版 FireBlock 与 SoulFireBlock 的共同父类，
+            // 同时覆盖继承该父类的模组火焰；非火焰方块不受影响。
+            if (level.getBlockState(pos).getBlock() instanceof BaseFireBlock) {
                 level.removeBlock(pos, false);
             }
         }

@@ -65,10 +65,15 @@ public class LayerMaidBanner extends RenderLayer<EntityMaidRenderState, EntityMa
 
             BannerPatternLayers patterns = state.backBanner.patterns;
             DyeColor baseColor = state.backBanner.baseColor;
-            // 底色旗面必须使用不透明的基础材质；若改用图集图案材质，Iris 或资源重载后会错误继承透明像素。
+            // Vanilla 1.21.11 passes the opaque banner base material here.
+            // submitPatterns itself selects Sheets.BANNER_BASE for the tinted
+            // pattern layer; passing that atlas material as the base as well
+            // makes the flag inherit its transparent pixels after an Iris
+            // pipeline/resource reload until the client is restarted.
             Material baseMaterial = ModelBakery.BANNER_BASE;
 
-            // submitPatterns 会同时提交底色旗面与图案，无需额外渲染基础模型。
+            // 旗帜图案：1.21.11 的 submitPatterns 同时渲染底色旗面 + 图案（含 baseMaterial），
+            // 故 26.1 的独立 flag submitModel（已删的 SpriteId/SpriteGetter 10-arg 重载）折叠进此调用（同 2c gecko Banner）。
             poseStack.mulPose(Axis.YN.rotationDegrees(90));
             poseStack.translate(0.75, 0.2, 0.1);
             submitPatterns(

@@ -30,7 +30,11 @@ import javax.script.Invocable;
 import java.util.HashMap;
 import java.util.List;
 
-
+/**
+ * 1.21.11 说明：vendored SBM 的 {@link AbstractBedrockEntityModel} 泛型已改为 RenderState 系
+ * （活跃女仆渲染线走 {@link EntityMaidModel}），本类保留 origin 的实体驱动式 setupAnim 入口，
+     * 供 legacy 调用方（如 EntityChairRenderer）使用。
+ */
 @Environment(EnvType.CLIENT)
 public class BedrockModel<T extends LivingEntity> extends AbstractBedrockEntityModel<EntityRenderState> {
     /**
@@ -40,7 +44,12 @@ public class BedrockModel<T extends LivingEntity> extends AbstractBedrockEntityM
     private final EntityChairWrapper entityChairWrapper = new EntityChairWrapper();
     protected final HashMap<String, ModelRendererWrapper> modelMapWrapper = Maps.newHashMap();
     private List<Object> animations = Lists.newArrayList();
-
+    /**
+     * origin/1.21.1 中这两个字段来自 EntityModel（由 LivingEntityRenderer 每帧填充：
+     * attackTime = getAttackAnim(entity, partialTicks)，riding = entity.isPassenger()）。
+     * 1.21.11 EntityModel 已删除它们（迁往 ArmedEntityRenderState.attackTime / HumanoidRenderState.isPassenger），
+     * 此处按 origin 语义重新落户，由 legacy 渲染调用方在调用 setupAnim 前填充。
+     */
     public float attackTime;
     public boolean riding;
 

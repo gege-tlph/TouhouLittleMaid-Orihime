@@ -15,11 +15,12 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.CreativeModeTab;
-
+// B6pre: EnchantedBookItem 已在 1.21.11 移除（javap 确认）→ 改用 EnchantmentHelper.createBook（见 addEnchantmentBook）
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
-
+// TODO: Patchouli excluded
+// import vazkii.patchouli.common.item.ItemModBook;
 
 import java.util.Optional;
 
@@ -34,7 +35,10 @@ public class InitCreativeTabs {
             .title(Component.translatable("item_group.touhou_little_maid.main"))
             .icon(() -> InitItems.HAKUREI_GOHEI.getDefaultInstance())
             .displayItems((par, output) -> {
-
+                // TODO: Patchouli excluded
+                // if (FabricLoader.getInstance().isModLoaded("patchouli")) {
+                //     output.accept(ItemModBook.forBook(MEMORIZABLE_GENSOKYO_LOCATION));
+                // }
                 output.accept(MAID_SPAWN_EGG);
                 output.accept(FAIRY_SPAWN_EGG);
                 output.accept(HAKUREI_GOHEI);
@@ -97,7 +101,7 @@ public class InitCreativeTabs {
                 if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
                     ItemEntityPlaceholder.fillItemCategory(output);
                 }
-
+                // B6pre 恢复：御币三附魔书（EnchantmentKeys 已随 B4 恢复；创建改用 EnchantmentHelper.createBook）
                 par.holders().lookup(Registries.ENCHANTMENT).ifPresent(reg -> {
                     addEnchantmentBook(reg.get(EnchantmentKeys.IMPEDING), output);
                     addEnchantmentBook(reg.get(EnchantmentKeys.SPEEDY), output);
@@ -105,7 +109,7 @@ public class InitCreativeTabs {
                 });
             }).build());
 
-
+    // [Codex] Restored origin's generated chair-model variants as their own creative tab.
     public static CreativeModeTab GARAGE_KIT_TAB = register("chair", FabricItemGroup.builder()
             .title(Component.translatable("item_group.touhou_little_maid.chair"))
             .icon(() -> InitItems.CHAIR.getDefaultInstance())
@@ -127,7 +131,7 @@ public class InitCreativeTabs {
     private static void addEnchantmentBook(Optional<Holder.Reference<Enchantment>> holder, CreativeModeTab.Output output) {
         holder.ifPresent(ref -> {
             EnchantmentInstance instance = new EnchantmentInstance(ref, ref.value().getMaxLevel());
-
+            // B6pre: EnchantedBookItem.createForEnchantment 已移除 → EnchantmentHelper.createBook（javap + 26.1 一致）
             output.accept(EnchantmentHelper.createBook(instance));
         });
     }

@@ -16,6 +16,7 @@ public class RenderHandEvent extends CancellableEvent {
     private final InteractionHand hand;
     private final ItemStack stack;
     private final PoseStack matrices;
+    // 1.21.11：提交式渲染管线，MultiBufferSource → SubmitNodeCollector
     private final SubmitNodeCollector vertexConsumers;
     private final float tickDelta;
     private final float pitch;

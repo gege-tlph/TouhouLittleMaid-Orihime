@@ -16,7 +16,9 @@ import net.minecraft.world.entity.Entity;
 import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 /**
- * 携带以前存储在同步实体数据字段中的任务数据复合物。这使用标准命名空间自定义有效负载协议，因此代理可以在不了解自定义实体元数据序列化器的情况下转发它。
+ * Carries the task-data compound formerly stored in a synched entity-data field.
+ * This uses the standard namespaced custom-payload protocol so proxies can forward
+ * it without understanding a custom entity metadata serializer.
  */
 public record SyncMaidTaskDataPackage(int entityId, CompoundTag taskData) implements CustomPacketPayload {
     public static final Type<SyncMaidTaskDataPackage> TYPE = new Type<>(modLoc("sync_maid_task_data"));

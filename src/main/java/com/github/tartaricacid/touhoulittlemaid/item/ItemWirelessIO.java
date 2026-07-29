@@ -146,7 +146,7 @@ public class ItemWirelessIO extends Item implements ExtendedScreenHandlerFactory
     @Override
     public InteractionResult use(Level worldIn, Player playerIn, InteractionHand handIn) {
         if (handIn == InteractionHand.MAIN_HAND && playerIn instanceof ServerPlayer) {
-            playerIn.openMenu(this/* , 缓冲区 -> ItemStack.STREAM_CODEC.encode(buffer,playerIn.getMainHandItem()) */);
+            playerIn.openMenu(this/*, buffer -> ItemStack.STREAM_CODEC.encode(buffer, playerIn.getMainHandItem())*/);
             return InteractionResult.SUCCESS_SERVER;
         }
         return super.use(worldIn, playerIn, handIn);

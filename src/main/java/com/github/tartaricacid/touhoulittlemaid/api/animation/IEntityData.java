@@ -2,25 +2,25 @@ package com.github.tartaricacid.touhoulittlemaid.api.animation;
 
 public interface IEntityData {
     /**
-     * 获取实体的世界数据
+     * Get entity's world data
      *
      * @return IWorldData
      */
     IWorldData getWorld();
 
     /**
-     * 获取实体的维度id
+     * Get entity's dimension id
      *
-     * @return 整数
+     * @return int
      * @deprecated In 1.16, dimension no longer uses numbers as ids
      */
     @Deprecated
     int getDim();
 
     /**
-     * 获取固定值，每个实体都不同，类似于实体的UUID
+     * Get a fixed value, each entity is different, similar to the entity's UUID
      *
-     * @return 实体的 uuid 最低有效位
+     * @return Entity's uuid least significant bits
      */
     long getSeed();
 }

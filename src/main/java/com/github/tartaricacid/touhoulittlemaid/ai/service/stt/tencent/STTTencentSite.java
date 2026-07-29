@@ -105,6 +105,11 @@ public class STTTencentSite implements STTSite {
         this.secretKey = secretKey;
     }
 
+    @Override
+    public boolean hasUsableCredentials() {
+        return StringUtils.isNotBlank(secretId) && StringUtils.isNotBlank(secretKey);
+    }
+
     public String getSecretId() {
         return secretId;
     }

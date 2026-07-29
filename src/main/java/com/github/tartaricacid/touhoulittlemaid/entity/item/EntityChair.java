@@ -102,12 +102,13 @@ public class EntityChair extends AbstractEntityFromItem implements OwnableEntity
     }
 
     /**
-     * 此参数会影响钓鱼钩和客户端的渲染交互。 所以将其设计为仅修改服务端，避免影响客户端渲染交互，同时不会在服务端被钓鱼钩影响
+     * 此参数会影响钓鱼钩和客户端的渲染交互。
+     * 所以将其设计为仅修改服务端，避免影响客户端渲染交互，同时不会在服务端被钓鱼钩影响
      */
     @Override
     public boolean isPickable() {
         //Fabric 不可用
-        return FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
+        return /*!EffectiveSide.get().isServer()*/ FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
     }
 
     @Override
@@ -158,7 +159,7 @@ public class EntityChair extends AbstractEntityFromItem implements OwnableEntity
         input.read(MODEL_ID_TAG_NAME, Codec.STRING).ifPresent(this::setModelId);
         input.read(MOUNTED_HEIGHT_TAG_NAME, Codec.FLOAT).ifPresent(this::setMountedHeight);
         input.read(TAMEABLE_CAN_RIDE_TAG_NAME, Codec.BOOL).ifPresent(this::setTameableCanRide);
-
+        // [Codex] Keep origin/1.21.1's OwnerUUID key for old-world compatibility.
         this.setOwnerReference(EntityReference.read(input, OWNER_UUID_TAG_NAME));
     }
 

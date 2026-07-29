@@ -4,7 +4,9 @@ import com.github.ysbbbbbb.kaleidoscopetavern.init.ModItems;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 保留未采摘的葡萄用于加工和储存，而不是将它们花在女仆定期的工作餐仪式上。紧急治疗使用单独的膳食类型，并且在需要时仍可能食用这些食物。
+ * Keeps raw grape harvests available for processing and storage instead of
+ * spending them on the maid's periodic work-meal ritual. Emergency healing
+ * uses a separate meal type and may still consume these foods when needed.
  */
 public final class TavernMealCompat {
     private TavernMealCompat() {

@@ -29,14 +29,15 @@ public class SlotItemHandler extends Slot {
         return this.getItemHandler().getStackInSlot(index);
     }
 
-    // 如果您的 IItemHandler 未实现 IItemHandlerModulated，则覆盖
+    // Override if your IItemHandler does not implement IItemHandlerModifiable
     @Override
     public void set(ItemStack stack) {
         ((IItemHandlerModifiable) this.getItemHandler()).setStackInSlot(index, stack);
         this.setChanged();
     }
 
-
+    // Override if your IItemHandler does not implement IItemHandlerModifiable
+    // @Override
     public void initialize(ItemStack stack) {
         ((IItemHandlerModifiable) this.getItemHandler()).setStackInSlot(index, stack);
         this.setChanged();
@@ -69,5 +70,10 @@ public class SlotItemHandler extends Slot {
     public IItemHandler getItemHandler() {
         return itemHandler;
     }
-
+/* TODO Slot patches
+@Override
+public boolean isSameInventory(Slot other)
+{
+return other instanceof SlotItemHandler && ((SlotItemHandler) other).getItemHandler() == this.itemHandler;
+}*/
 }

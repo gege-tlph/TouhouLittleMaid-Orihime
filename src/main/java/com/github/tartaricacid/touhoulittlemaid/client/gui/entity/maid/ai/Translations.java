@@ -14,7 +14,6 @@ public interface Translations {
     MutableComponent MODELS_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.models");
     MutableComponent VOICES_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.voices");
     MutableComponent SAVE_NAME = Component.translatable("selectWorld.edit.save");
-    MutableComponent SAVE_QUIT_NAME = Component.translatable("gui.touhou_little_maid.button.maid_ai_chat_config.edit_custom_setting.save_and_quit");
     MutableComponent ENG_SER_VICE_TYPE_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.eng_ser_vice_type");
     MutableComponent HOT_WORD_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.hot_word");
 
@@ -31,9 +30,11 @@ public interface Translations {
     MutableComponent SITE_LLM_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.site.llm");
     MutableComponent SITE_TTS_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.site.tts");
 
-    MutableComponent STT_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.stt").withStyle(ChatFormatting.UNDERLINE);
+    MutableComponent VOICE_INPUT_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.voice_input").withStyle(ChatFormatting.UNDERLINE);
+    MutableComponent SERVICE_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.service").withStyle(ChatFormatting.UNDERLINE);
+    MutableComponent USAGE_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.usage").withStyle(ChatFormatting.UNDERLINE);
+    MutableComponent USAGE_QUOTA_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.usage.quota");
     MutableComponent STT_CONFIG_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.stt.config");
-    MutableComponent STT_SITE_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.stt.site");
 
     static MutableComponent llmEditorTitle(Object... args) {
         return Component.translatable("ai.touhou_little_maid.chat.settings.llm_editor.title", args);
@@ -45,12 +46,5 @@ public interface Translations {
 
     static MutableComponent sttEditorTitle(Object... args) {
         return Component.translatable("ai.touhou_little_maid.chat.settings.stt_editor.title", args);
-    }
-
-    static MutableComponent sttEnable(boolean sttEnabled) {
-        if (sttEnabled) {
-            return Component.translatable("ai.touhou_little_maid.chat.settings.hub.enabled");
-        }
-        return Component.translatable("ai.touhou_little_maid.chat.settings.hub.disabled");
     }
 }

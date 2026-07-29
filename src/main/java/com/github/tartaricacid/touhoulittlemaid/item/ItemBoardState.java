@@ -55,7 +55,9 @@ public class ItemBoardState extends Item {
     @Override
     @Environment(EnvType.CLIENT)
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
-
+        // SWEEP R12-2：Screen.hasShiftDown() 1.21.11 已删（shift 态迁入 InputWithModifiers 事件对象）；
+        // tooltip 时刻的全局 shift 查询 = InputConstants.isKeyDown(window, KEY_LSHIFT/RSHIFT)
+        // （即旧 hasShiftDown 的底层实现）——还原 origin「按 shift 显示棋盘图」行为
         if (!tlm$hasShiftDown()) {
             return Optional.empty();
         }
@@ -80,7 +82,7 @@ public class ItemBoardState extends Item {
         return Optional.empty();
     }
 
-
+    // TODO: 1.21.11 fix - check if appendHoverText override matches supertype
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltip, TooltipFlag tooltipFlag){
         String[] state = getState(stack);
 
@@ -99,14 +101,16 @@ public class ItemBoardState extends Item {
             tooltip.accept(Component.translatable("tooltips.touhou_little_maid.board_state.author", author).withStyle(ChatFormatting.GRAY));
         }
 
-
+        // SWEEP R12-2：同上，还原 origin「未按 shift 时显示提示行」
         if (!tlm$hasShiftDown()) {
             tooltip.accept(Component.translatable("board_state.touhou_little_maid.show_picture")
                     .withStyle(ChatFormatting.DARK_GRAY).withStyle(ChatFormatting.ITALIC));
         }
     }
 
-
+    // SWEEP R12-2：旧 Screen.hasShiftDown() 的等价实现（底层同为 GLFW 键态轮询）。
+    // 仅客户端 tooltip 路径调用（getTooltipImage 有 @Environment(CLIENT)；appendHoverText 只在客户端执行，
+    // 与 origin import Screen 的 client-in-common 形态一致）。
     @Environment(EnvType.CLIENT)
     private static boolean tlm$hasShiftDown() {
         var window = net.minecraft.client.Minecraft.getInstance().getWindow();

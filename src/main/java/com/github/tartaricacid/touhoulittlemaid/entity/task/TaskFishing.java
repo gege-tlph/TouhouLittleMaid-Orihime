@@ -54,7 +54,7 @@ public class TaskFishing implements IMaidTask {
 
     @Override
     public List<Pair<String, Predicate<EntityMaid>>> getConditionDescription(EntityMaid maid) {
-        return Collections.singletonList(Pair.of("has_fishing_rod", e -> e.getMainHandItem()
+        return Collections.singletonList(Pair.of("has_fishing_rod", e -> e.getMainHandItem()/*.canPerformAction(ItemAbilities.FISHING_ROD_CAST)*/
                 .getItem() instanceof FishingRodItem || e.getMainHandItem().is(ConventionalItemTags.FISHING_ROD_TOOLS)
         ));
     }
@@ -66,10 +66,10 @@ public class TaskFishing implements IMaidTask {
 
     @Override
     public FunctionCallSwitchResult onFunctionCallSwitch(EntityMaid maid) {
-        if (maid.getMainHandItem().is(ConventionalItemTags.FISHING_ROD_TOOLS) || maid.getMainHandItem().getItem() instanceof FishingRodItem) {
+        if (maid.getMainHandItem()/*.canPerformAction(ItemAbilities.FISHING_ROD_CAST)*/.is(ConventionalItemTags.FISHING_ROD_TOOLS) || maid.getMainHandItem().getItem() instanceof FishingRodItem) {
             return FunctionCallSwitchResult.NO_CHANGE;
         }
-        if (TaskEquipUtil.tryEquipFromBackpack(maid, item -> item.is(ConventionalItemTags.FISHING_ROD_TOOLS) || item.getItem() instanceof FishingRodItem)) {
+        if (TaskEquipUtil.tryEquipFromBackpack(maid, item -> item.is(ConventionalItemTags.FISHING_ROD_TOOLS) || item.getItem() instanceof FishingRodItem /*item.canPerformAction(ItemAbilities.FISHING_ROD_CAST))*/)) {
             return FunctionCallSwitchResult.OK;
         }
         return FunctionCallSwitchResult.MISSING_REQUIRED_ITEM;

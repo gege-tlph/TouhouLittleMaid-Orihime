@@ -36,7 +36,8 @@ public class ZipPackTexture extends SizeTexture {
         return false;
     }
 
-
+    // 1.21.9+：load(ResourceManager) -> loadContents(ResourceManager) : TextureContents。
+    // 线程调度与 GPU 上传由 ReloadableTexture 负责。
     @Override
     public TextureContents loadContents(ResourceManager manager) throws IOException {
         try (ZipFile zipFile = new ZipFile(zipFilePath.toFile())) {

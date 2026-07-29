@@ -21,7 +21,9 @@ import net.minecraft.world.item.Items;
 
 import java.util.concurrent.CompletableFuture;
 
-
+// 1.21.2+ RecipeProvider 重构：FabricRecipeProvider 现为 RecipeProvider.Runner，配方逻辑移入内部 RecipeProvider
+//   （createRecipeProvider(HolderLookup.Provider, RecipeOutput)）。shaped/shapeless/has/getHasName 均为内部
+//   RecipeProvider 的成员方法；tag→Ingredient 通过 HolderGetter<Item> 解析。
 public class RecipeGenerator extends FabricRecipeProvider {
     public RecipeGenerator(FabricDataOutput pOutput, CompletableFuture<HolderLookup.Provider> pRegistries) {
         super(pOutput, pRegistries);
@@ -368,6 +370,17 @@ public class RecipeGenerator extends FabricRecipeProvider {
                         .unlockedBy(getHasName(Items.DIAMOND), has(ConventionalItemTags.DIAMOND_GEMS))
                         .save(this.output);
 
+                // COMPAT_PATCHOULI: 记忆幻想乡定位书配方依赖 vazkii.patchouli.common.item.*（Patchouli = A 级冻结，依赖不可用）
+                //   → 随 Patchouli 解冻恢复（连同 ItemStackShapelessRecipeBuilder + ResourceConditions modLoaded 门）。
+                // ResourceCondition modLoadedCondition = ResourceConditions.allModsLoaded(CompatRegistry.PATCHOULI);
+                // ItemStack patchouliBook = new ItemStack(PatchouliItems.BOOK);
+                // patchouliBook.set(PatchouliDataComponents.BOOK, InitItems.MEMORIZABLE_GENSOKYO_LOCATION);
+                // ItemStackShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, patchouliBook)
+                //         .requires(ConventionalItemTags.WHITE_DYES)
+                //         .requires(ConventionalItemTags.RED_DYES)
+                //         .requires(Items.BOOK)
+                //         .unlockedBy(getHasName(Items.BOOK), has(Items.BOOK))
+                //         .save(RecipeGenerator.this.withConditions(this.output, modLoadedCondition), InitItems.MEMORIZABLE_GENSOKYO_LOCATION);
 
                 this.shaped(RecipeCategory.MISC, InitItems.CHAIR)
                         .pattern("   ")

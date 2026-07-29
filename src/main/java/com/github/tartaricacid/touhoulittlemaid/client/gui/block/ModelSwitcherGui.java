@@ -165,6 +165,7 @@ public class ModelSwitcherGui extends Screen {
         if (this.maid == null) {
             return;
         }
+        // 1.21.11: renderBackground 已由 renderWithTooltipAndSubtitles 前置强制调用，屏内重复调用会二次 blur 崩溃
         graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos, topPos, 0F, 0F, imageWidth, imageHeight, 256, 256);
         if (bindUuid != null) {
             graphics.drawCenteredString(font, bindUuid.toString(), leftPos + 128, topPos - 10, 0xffffffff);

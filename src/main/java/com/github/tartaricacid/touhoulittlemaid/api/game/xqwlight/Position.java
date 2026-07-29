@@ -435,12 +435,12 @@ public class Position {
     static {
         Util.RC4 rc4 = new Util.RC4(new byte[]{0});
         PreGen_zobristKeyPlayer = rc4.nextLong();
-        rc4.nextLong(); // 跳过 ZobristLock0
+        rc4.nextLong(); // Skip ZobristLock0
         PreGen_zobristLockPlayer = rc4.nextLong();
         for (int i = 0; i < 14; i++) {
             for (int j = 0; j < 256; j++) {
                 PreGen_zobristKeyTable[i][j] = rc4.nextLong();
-                rc4.nextLong(); // 跳过 ZobristLock0
+                rc4.nextLong(); // Skip ZobristLock0
                 PreGen_zobristLockTable[i][j] = rc4.nextLong();
             }
         }
@@ -455,12 +455,12 @@ public class Position {
                     bookSize++;
                 }
             } catch (Exception e) {
-                // 当 IOException 发生时退出“while”
+                // Exit "while" when IOException occurs
             }
             try {
                 in.close();
             } catch (Exception e) {
-                // 被忽略
+                // Ignored
             }
         }
     }
@@ -1071,11 +1071,11 @@ public class Position {
             return 0;
         }
         boolean mirror = false;
-        int lock = zobristLock >>> 1; // 转换为无符号
+        int lock = zobristLock >>> 1; // Convert into Unsigned
         int index = Util.binarySearch(lock, bookLock, 0, bookSize);
         if (index < 0) {
             mirror = true;
-            lock = mirror().zobristLock >>> 1; // 转换为无符号
+            lock = mirror().zobristLock >>> 1; // Convert into Unsigned
             index = Util.binarySearch(lock, bookLock, 0, bookSize);
         }
         if (index < 0) {

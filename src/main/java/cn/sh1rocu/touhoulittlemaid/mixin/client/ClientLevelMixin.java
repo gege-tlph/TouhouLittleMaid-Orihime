@@ -45,6 +45,8 @@ public abstract class ClientLevelMixin extends Level {
             iEntity.onAddedToLevel();
     }
 
+    // 1.21.11：方块破坏粒子从 ParticleEngine.destroy 迁至 ClientLevel.addDestroyBlockEffect，
+    // 原 ParticleEngineMixin 的 IBlock 自定义破坏粒子钩子随宿主迁入本类（IBlock 签名不变，引擎取 Minecraft 实例）
     @ModifyExpressionValue(
             method = "addDestroyBlockEffect",
             at = @At(

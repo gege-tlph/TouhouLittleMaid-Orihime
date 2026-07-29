@@ -38,7 +38,6 @@ import java.util.concurrent.ExecutionException;
 import static com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil.clearMaidDataResidue;
 
 public class ClientMaidTooltip implements ClientTooltipComponent {
-
     private static final String EASTER_EGG_MODEL = "touhou_little_maid:easter_egg_model";
     private final @Nullable MaidModelInfo info;
     private final YsmMaidInfo ysmMaidInfo;
@@ -73,7 +72,7 @@ public class ClientMaidTooltip implements ClientTooltipComponent {
         return Component.translatable(ParseI18n.getI18nKey(info.getName()));
     }
 
-
+    // 1.21.11: ComponentSerialization.fromJson 移除 → CODEC + createSerializationContext(JsonOps)（同 EntityMaid YSM 名解析）
     @Nullable
     private static MutableComponent parseComponentJson(String json, RegistryAccess access) {
         if (StringUtils.isBlank(json)) {
@@ -87,6 +86,7 @@ public class ClientMaidTooltip implements ClientTooltipComponent {
     }
 
     @Override
+    // 1.21.11: getHeight() 现需 Font 参数
     public int getHeight(Font font) {
         return 70;
     }
@@ -97,6 +97,7 @@ public class ClientMaidTooltip implements ClientTooltipComponent {
     }
 
     @Override
+    // 1.21.11: renderImage 新增 w/h 两参
     public void renderImage(Font font, int pX, int pY, int width, int height, GuiGraphics guiGraphics) {
         if (info == null) {
             return;
@@ -118,13 +119,14 @@ public class ClientMaidTooltip implements ClientTooltipComponent {
             guiGraphics.drawString(font, name.withStyle(ChatFormatting.GRAY), pX, pY + 2, 0xFFFFFFFF);
         }
 
-
+        // 注意：形参 width 是 1.21.11 renderImage 新增的调用方给定宽度；
+        // 此处沿用 HEAD 的行为，仍按自身 getWidth(font) 计算，故用独立变量名避免遮蔽。
         int selfWidth = this.getWidth(font);
         int posY = pY + 64;
         EntityMaid maid;
         try {
             maid = (EntityMaid) EntityCacheUtil.ENTITY_CACHE.get(EntityMaid.TYPE, () -> {
-
+                // 1.21.11: EntityType.create(Level) → create(Level, EntitySpawnReason)
                 Entity e = EntityMaid.TYPE.create(world, EntitySpawnReason.LOAD);
                 return Objects.requireNonNullElseGet(e, () -> new EntityMaid(world));
             });

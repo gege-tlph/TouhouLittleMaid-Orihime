@@ -3,7 +3,11 @@ package com.github.tartaricacid.touhoulittlemaid.api.animation;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * 魔法咏唱状态接口 <p> 表示当前帧的魔法咏唱动画状态 <p> 注意：本模组不记录任何施法相关数据，所有状态数据由附属模组自行管理
+ * 魔法咏唱状态接口
+ * <p>
+ * 表示当前帧的魔法咏唱动画状态
+ * <p>
+ * 注意：本模组不记录任何施法相关数据，所有状态数据由附属模组自行管理
  *
  * @author Gardel &lt;gardel741@outlook.com&gt;
  * @since 2026-01-03

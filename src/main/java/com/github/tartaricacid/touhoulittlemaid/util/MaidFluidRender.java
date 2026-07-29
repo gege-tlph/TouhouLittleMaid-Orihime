@@ -18,19 +18,19 @@ import java.util.Optional;
 
 
 /**
- * 从 JEI：<a href="https://github.com/mezz/JustEnoughItems/blob/1.20/Fabric/src/main/java/mezz/jei/fabric/platform/FluidHelper.java">...</a>
+ * From JEI: <a href="https://github.com/mezz/JustEnoughItems/blob/1.20/Fabric/src/main/java/mezz/jei/fabric/platform/FluidHelper.java">...</a>
  */
 @Environment(EnvType.CLIENT)
 public final class MaidFluidRender {
     private static final int TEXTURE_SIZE = 16;
 
     public static Component getFluidName(String fluidId, long amount) {
-
+        // 1.21.11: Registry.get(Identifier) 返回 Optional<Reference<T>> → getValue 保留 1.21.1 defaulted 语义（在树先例 SetTankCountFunction）
         Fluid fluid = BuiltInRegistries.FLUID.getValue(Identifier.parse(fluidId));
         if (amount <= 0 || fluid == null || fluid.isSame(Fluids.EMPTY)) {
             return Component.translatable("tooltips.touhou_little_maid.tank_backpack.empty_fluid");
         }
-
+        //return fluid.getFluidType().getDescription();
         return FluidVariantAttributes.getName(FluidVariant.of(fluid));
     }
 
@@ -50,7 +50,7 @@ public final class MaidFluidRender {
             if (scaledAmount > height) {
                 scaledAmount = height;
             }
-
+            // 1.21.11: pose() 为 Matrix3x2fStack（GUI 2D 化），pushPose/popPose → pushMatrix/popMatrix，translate 去 z
             graphics.pose().pushMatrix();
             graphics.pose().translate(x, y);
             drawTiledSprite(graphics, width, height, fluidColor, scaledAmount, fluidStillSprite);
@@ -59,19 +59,28 @@ public final class MaidFluidRender {
     }
 
     public static int getColorTint(FluidVariant ingredient) {
-
+        //Fluid fluid = ingredient.getFluid();
+        //IClientFluidTypeExtensions renderProperties = IClientFluidTypeExtensions.of(fluid);
+        //return renderProperties.getTintColor(ingredient);
         return FluidVariantRendering.getColor(ingredient);
     }
 
     public static Optional<TextureAtlasSprite> getStillFluidSprite(FluidVariant fluidStack) {
-
+        //Fluid fluid = fluidStack.getFluid();
+        //IClientFluidTypeExtensions renderProperties = IClientFluidTypeExtensions.of(fluid);
+        //Identifier fluidStill = renderProperties.getStillTexture(fluidStack);
         TextureAtlasSprite fluidStill = FluidVariantRendering.getSprite(fluidStack);
         return Optional.ofNullable(fluidStill)
-;
+/*                .map(f -> Minecraft.getInstance()
+                        .getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
+                        .apply(f)
+                )
+                .filter(s -> s.atlasLocation() != MissingTextureAtlasSprite.getLocation())*/;
     }
 
     private static void drawTiledSprite(GuiGraphics guiGraphics, final int tiledWidth, final int tiledHeight, int color, long scaledAmount, TextureAtlasSprite sprite) {
-        // 贴图来自精灵所属图集，颜色参数使用 ARGB 乘算。
+        // 1.21.11: setShaderTexture/setShaderColor + Tesselator 直绘已移除；
+        // 贴图由 sprite.atlasLocation() 经 blitSprite 提供，染色经 blitSprite 的 color 参数（ARGB 乘算，等价原 setGLColorFromInt）
         final int xTileCount = tiledWidth / TEXTURE_SIZE;
         final int xRemainder = tiledWidth - (xTileCount * TEXTURE_SIZE);
         final long yTileCount = scaledAmount / TEXTURE_SIZE;
@@ -93,7 +102,11 @@ public final class MaidFluidRender {
     }
 
     private static void drawTextureWithMasking(GuiGraphics guiGraphics, int xCoord, int yCoord, TextureAtlasSprite textureSprite, long maskTop, long maskRight, int color) {
-
+        // 1.21.11: GUI Tesselator/BufferUploader 直绘路径已移除 → scissor + 整 sprite blit 重derive。
+        // 与 origin 逐像素等价：origin 把 sprite 左上 (16-maskRight)x(16-maskTop) 子区域按原比例绘制于
+        // (x, y+maskTop)..(x+16-maskRight, y+16)；此处将整个 16x16 sprite 绘制于 (x, y+maskTop) 并用
+        // scissor 裁掉右侧 maskRight 列与底部超界部分，像素映射相同（enableScissor 经 transformAxisAligned
+        // 随 pose 变换，上层 translate 安全）。zLevel(100) 随 GUI 2D 化丢弃。
         guiGraphics.enableScissor(xCoord, yCoord + (int) maskTop, xCoord + TEXTURE_SIZE - (int) maskRight, yCoord + TEXTURE_SIZE);
         guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, textureSprite, xCoord, yCoord + (int) maskTop, TEXTURE_SIZE, TEXTURE_SIZE, color);
         guiGraphics.disableScissor();

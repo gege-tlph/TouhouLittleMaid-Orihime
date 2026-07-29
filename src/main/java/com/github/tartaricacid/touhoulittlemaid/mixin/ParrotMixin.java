@@ -33,6 +33,7 @@ public abstract class ParrotMixin {
             // 服务端发送在鹦鹉坐标播放女仆语音的包
             if (!level.isClientSide()) {
                 NetworkHandler.sendToNearby(parrot, new PlayMaidSoundAtPosPackage(
+                        // 1.21.11: SoundEvent.getLocation()→location() · Parrot.getPitch(RandomSource) 移除 → 内联原版公式
                         soundevent.location(), maid.getSoundPackId(),
                         parrot.getX(), parrot.getY(), parrot.getZ(),
                         0.7F, (level.random.nextFloat() - level.random.nextFloat()) * 0.2F + 1.0F

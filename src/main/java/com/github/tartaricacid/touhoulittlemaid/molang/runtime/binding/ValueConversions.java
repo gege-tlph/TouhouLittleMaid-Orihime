@@ -36,7 +36,8 @@ public final class ValueConversions {
             return (Boolean) obj;
         }
         if (obj instanceof Number) {
-            // '0' 在这里被认为是假的，其他任何东西都被认为是真的。
+            // '0' is considered false here, anything else
+            // is considered true.
             return ((Number) obj).floatValue() != 0;
         }
         return true;

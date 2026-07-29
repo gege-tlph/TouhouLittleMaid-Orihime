@@ -10,6 +10,7 @@ import cn.sh1rocu.touhoulittlemaid.util.forge.CommonHooks;
 import cn.sh1rocu.touhoulittlemaid.util.itemhandler.*;
 import cn.sh1rocu.touhoulittlemaid.util.itemhandler.entity.EntityArmorInvWrapper;
 import cn.sh1rocu.touhoulittlemaid.util.itemhandler.entity.EntityHandsInvWrapper;
+// TODO: restore when simplebedrockmodel client is migrated
 import com.github.tartaricacid.simplebedrockmodel.client.bedrock.model.BedrockPart;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
@@ -24,16 +25,22 @@ import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargeti
 import com.github.tartaricacid.touhoulittlemaid.api.task.IAttackTask;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IMaidTask;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IRangedAttackTask;
+// TODO: 1.21.11 client exclusion
 import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.EntityMaidModel;
+// TODO: 1.21.11 client exclusion
 import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
+// TODO: 1.21.11 client exclusion
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelInfo;
+// TODO: 1.21.11 client exclusion
 import com.github.tartaricacid.touhoulittlemaid.compat.ysm.YsmCompat;
+// TODO: 1.21.11 client exclusion
 import com.github.tartaricacid.touhoulittlemaid.compat.ysm.event.YsmMaidClientTickEvent;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig;
 import com.github.tartaricacid.touhoulittlemaid.data.MaidNumAttachment;
+// TODO: 1.21.11 fix - TagBlock package not available, use inline tag keys
 // import com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagBlock;
 import com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagEntity;
 import com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagItem;
@@ -51,6 +58,7 @@ import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleRegi
 import com.github.tartaricacid.touhoulittlemaid.entity.data.MaidTaskDataMaps;
 import com.github.tartaricacid.touhoulittlemaid.entity.favorability.FavorabilityManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.favorability.Type;
+// TODO: 1.21.11 client exclusion
 import com.github.tartaricacid.touhoulittlemaid.entity.info.ServerCustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityPowerPoint;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityTombstone;
@@ -70,6 +78,7 @@ import com.github.tartaricacid.touhoulittlemaid.entity.backpack.BigBackpack;
 import com.github.tartaricacid.touhoulittlemaid.inventory.handler.MaidBackpackHandler;
 import com.github.tartaricacid.touhoulittlemaid.inventory.handler.MaidHandsInvWrapper;
 import com.github.tartaricacid.touhoulittlemaid.inventory.handler.MaidInvWrapper;
+// TODO: restore when ItemFilm compiles (needs network.client cascade)
 import com.github.tartaricacid.touhoulittlemaid.item.ItemFilm;
 import com.github.tartaricacid.touhoulittlemaid.mixin.accessor.ArrowAccessor;
 import com.github.tartaricacid.touhoulittlemaid.network.NetworkHandler;
@@ -156,6 +165,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
+// TODO: 等待 1.21.11 版本依赖
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -182,6 +192,7 @@ import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.*;
 
+// TODO: datagen excluded - restore when datagen is re-enabled
 import static com.github.tartaricacid.touhoulittlemaid.datagen.EnchantmentKeys.getEnchantmentLevel;
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataAttachment.MAID_NUM;
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent.MODEL_ID_TAG_NAME;
@@ -249,7 +260,9 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
     private static final EntityDataAccessor<Boolean> DATA_IS_AIMING = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.BOOLEAN);
 
     // 游戏数据记录，包括赢棋次数和赢棋状态
+    // TODO: COMPOUND_TAG removed in 1.21.11, needs data component migration
     // static final EntityDataAccessor<CompoundTag> GAME_SKILL = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.COMPOUND_TAG);
+    // TODO: COMPOUND_TAG removed in 1.21.11, needs data component migration
     static final EntityDataAccessor<Byte> GAME_STATUE = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.BYTE);
 
     // 给 MaidConfigManager 用的，必须在这里声明，避免 ID 不同步
@@ -270,7 +283,9 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
     /**
      * 开辟空间给任务存储使用,也便于附属模组存储数据
      */
+    // TODO: COMPOUND_TAG removed in 1.21.11, needs data component migration
     // private static final EntityDataAccessor<CompoundTag> TASK_DATA_SYNC = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.COMPOUND_TAG);
+    // TODO: COMPOUND_TAG removed in 1.21.11, needs data component migration
     private static final String TASK_TAG = "MaidTask";
     private static final String STRUCK_BY_LIGHTNING_TAG = "StruckByLightning";
     private static final String INVULNERABLE_TAG = "Invulnerable";
@@ -326,6 +341,7 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
     public long animationRecordTime = -1L;
     public boolean shouldReset = false;
 
+    // TODO: restore when SendEffectPackage compiles (needs network/client)
     private List<SendEffectPackage.EffectData> effects = Lists.newArrayList();
     private IMaidTask task = TaskManager.getIdleTask();
     private IMaidBackpack backpack = BackpackManager.getEmptyBackpack();
@@ -335,6 +351,7 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
     private int passiveUseShieldTick = 0;
     private IBackpackData backpackData = null;
     private boolean restoringPersistentState;
+    // TODO: COMPOUND_TAG removed in 1.21.11, needs data component migration
     // private boolean syncTaskDataMaps = false;
     private MaidConfigManager configManager = new MaidConfigManager(this.entityData);
     private MaidGameRecordManager gameRecordManager = new MaidGameRecordManager(this);
@@ -443,6 +460,7 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
         builder.define(BACKPACK_TYPE, EmptyBackpack.ID.toString());
         builder.define(BACKPACK_ITEM_SHOW, ItemStack.EMPTY);
         builder.define(BACKPACK_FLUID, StringUtils.EMPTY);
+        // TODO: COMPOUND_TAG removed in 1.21.11, needs data component migration
         // builder.define(TASK_DATA_SYNC, new CompoundTag());
 
         builder.define(DATA_IS_AIMING, false);
@@ -461,6 +479,7 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
     @Override
     public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);
+        // TODO: COMPOUND_TAG removed in 1.21.11, needs data component migration
         // if (this.level.isClientSide() && TASK_DATA_SYNC.equals(key)) {
         //     this.taskDataMaps.readFromServer(this.getSyncTaskData());
         // }
@@ -608,6 +627,7 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
         this.spawnPortalParticle();
         this.randomRestoreHealth();
         this.onMaidSleep();
+        // TODO: COMPOUND_TAG removed in 1.21.11, needs data component migration
         // this.syncData();
         this.gameRecordManager.tick();
     }
@@ -623,6 +643,7 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
         }
     }
 
+    // TODO: COMPOUND_TAG removed in 1.21.11, needs data component migration
     // /**
     //  * 把数据同步到客户端
     //  */
@@ -926,7 +947,16 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
 
     private ItemStack getArrowFromEntity(AbstractArrow entity) {
         if (entity instanceof ArrowAccessor mixinArrow) {
-            if (mixinArrow.tlmInGround() || entity.isNoPhysics()) {
+            // 落地箭矢：一律可捡，这是女仆回收箭矢的正常玩法
+            if (mixinArrow.tlmInGround()) {
+                return mixinArrow.getTlmPickupItem();
+            }
+            // 上游缺陷（TartaricAcid/TouhouLittleMaid#938）：isNoPhysics() 在 1.21.11 里等价于
+            // 「忠诚三叉戟正在飞回主人」——ThrownTrident.tick 对 loyalty>0 的返程 setNoPhysics(true)。
+            // 原版对该状态的拾取一律限定所有者（tryPickup 查 ownedBy、playerTouch 查 ownedBy||owner==null），
+            // 女仆原先照单全收，于是会在半空截走玩家的忠诚三叉戟。此处按原版同款判据收口，
+            // 女仆自己投出的三叉戟（owner == this）与无主投射物不受影响。
+            if (entity.isNoPhysics() && (entity.getOwner() == null || entity.getOwner() == this)) {
                 return mixinArrow.getTlmPickupItem();
             }
         }
@@ -1112,8 +1142,12 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
     }
 
     /**
-     * 基准实现只在跨维度传送时拒绝进入传送门，并尝试随机闪避和发光。
-     * 1.21.11 将维度切换统一到 {@link Entity#teleport(TeleportTransition)}；同维度传送仍交给原版处理。
+     * origin/1.21.1 此逻辑覆写的是 {@code changeDimension(DimensionTransition)}
+     * ——仅在女仆将要跨维度时触发一次（女仆拒绝进传送门，随机闪开 + 发光）。1.21.11 删除了
+     * changeDimension，维度切换统一走 {@code Entity.teleport(TeleportTransition)}（javap 证）。
+     * 此前该方法体被误嫁接到每 tick 调用的 {@code handlePortal()} 且丢失传送门前置检查
+     * → 服务端每 tick 无条件 randomTeleport（末影人式瞬移+紫粒子+音效，AI 全废）。
+     * 现按 origin 逐字还原（含无 break、return null 取消跨维度）；同维度 transition 放行 super。
      */
     @Override
     @Nullable
@@ -1659,6 +1693,7 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
 
     @Override
     public void remove(RemovalReason reason) {
+        // TODO: 尝试修复可能存在的目标生成丢失问题，可能会有问题
         if (reason == RemovalReason.KILLED && !alreadyDropped) {
             // 女仆被指令杀后也正常生成墓碑
             if (this.level instanceof ServerLevel sl) this.dropEquipment(sl);
@@ -1678,7 +1713,7 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
             MaidAfterEatEvent.CALLBACK.invoker().post(new MaidAfterEatEvent(
                     this, foodAfterEat.isEmpty() ? consumed : foodAfterEat.copy()));
         }
-        this.backCurrentHandItemStack();
+        this.backCurrentHandItemStack(usedHand);
     }
 
     /**
@@ -1703,22 +1738,33 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
 
     /**
      * 将之前临时存在背包里的物品再次放在对应的手上
+     * <p>
+     * 上游缺陷（TartaricAcid/TouhouLittleMaid#1177）：本方法原本硬编码操作副手，而
+     * {@code memoryHandItemStack} 的四个调用方（工作餐 / 家餐 / 自愈 / 换气）都用
+     * {@code HandUtils.NATIVE_HANDS} 挑「第一只空手」，主手为空时换的是**主手**。
+     * 于是主手空、副手有物时吃一次工作餐，副手那件与本次进食无关的物品会被塞进背包
+     * （背包满则掉地上），随后副手被清空——玩家侧表现为物品凭空消失。
+     * <p>
+     * 判据取 {@link #getUsedItemHand()}：三个 {@code IMaidMeal} 实现与 {@code MaidBreathAirTask}
+     * 都是 {@code maid.startUsingItem(hand)}，传入的正是换手时选中的那只手，因此它恒等于被换的手，
+     * 不需要额外持久化状态。
      */
-    private void backCurrentHandItemStack() {
-        // 先看看副手是否为空？
-        ItemStack offhandItem = this.getItemInHand(InteractionHand.OFF_HAND);
-        if (!offhandItem.isEmpty()) {
-            ItemStack stack = ItemHandlerHelper.insertItemStacked(this.getAvailableBackpackInv(), offhandItem.copy(), false);
+    private void backCurrentHandItemStack(InteractionHand usedHand) {
+        // 先看看这只手是否为空？（进食后此处通常是碗、瓶等剩余物）
+        ItemStack usedHandItem = this.getItemInHand(usedHand);
+        if (!usedHandItem.isEmpty()) {
+            ItemStack stack = ItemHandlerHelper.insertItemStacked(this.getAvailableBackpackInv(), usedHandItem.copy(), false);
             if (!stack.isEmpty()) {
                 ItemEntity itemEntity = new ItemEntity(this.level(), this.getX(), this.getY() + 0.5, this.getZ(), stack);
                 this.level.addFreshEntity(itemEntity);
             }
         }
-        // 副手此时为空，那么插入我们的物品
+        // 这只手此时为空，那么插入我们的物品
         ItemStack output = this.getHideInv().extractItem(0, this.getHideInv().getStackInSlot(0).getCount(), false);
-        this.setItemInHand(InteractionHand.OFF_HAND, output);
+        this.setItemInHand(usedHand, output);
     }
 
+    // TODO: eat() signature changed in 1.21.11, usingConvertsTo removed
     // @Override - signature changed
     public ItemStack tlmEat(Level level, ItemStack food, FoodProperties pFoodProperties) {
         ItemStack copy = food.copy();
@@ -2507,10 +2553,12 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
         return gameRecordManager;
     }
 
+    // TODO: COMPOUND_TAG removed in 1.21.11, needs data component migration
     // private CompoundTag getSyncTaskData() {
     //     return this.entityData.get(TASK_DATA_SYNC);
     // }
 
+    // TODO: COMPOUND_TAG removed in 1.21.11, needs data component migration
     // private void setSyncTaskData(CompoundTag compoundTag) {
     //     this.entityData.set(TASK_DATA_SYNC, compoundTag, true);
     // }
@@ -2637,6 +2685,7 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
                         .toList()));
     }
 
+    // TODO: Ingredient merge API changed in 1.21.11
     /*
     private Ingredient merge(Collection<Ingredient> parts) {
         return Ingredient.fromValues(
@@ -2782,6 +2831,7 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
         return !this.getSwimManager().wantToSwim();
     }
 
+    // TODO: travel() signature changed in 1.21.11
     // @Override
     public void travel(Vec3 travelVector) {
         if (this.isEffectiveAi() && isInWater()) {
@@ -2893,7 +2943,10 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
     @Override
     @Nullable
     public LivingEntity getOwner() {
-        // 直接按保存的主人 UUID 查询玩家，避免 EntityReference 暂时无法解析时丢失主人关系。
+        // origin 用 getOwnerUUID()（裸 UUID）→ 玩家列表直查；此前移植改成先 super.getOwner()
+        // 再取 UUID = 短路了本覆写的意义（vanilla EntityReference 解析失败时 origin 仍能按 UUID 找到玩家，
+        // 移植版直接返回 null → 跟随/传送等 owner 路径失效）。1.21.11 getOwnerUUID 已删 →
+        // 经 getOwnerReference().getUUID() 取裸 UUID（javap 证），不经实体解析，还原 origin 语义。
         EntityReference<LivingEntity> ownerRef = this.getOwnerReference();
         UUID uuid = ownerRef != null ? ownerRef.getUUID() : null;
         if (uuid == null) {
@@ -2925,7 +2978,8 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
         } else if (!canTeleportTo(new BlockPos(x, y, z))) {
             return false;
         } else {
-            // snapTo 会同步重置旧位置和朝向，避免传送落地帧继续从旧坐标插值。
+            // origin 用 moveTo(x,y,z,yRot,xRot)（1.21.11 纯改名 snapTo，同 MaidClimbTask）；
+            // setPos 不重置旧位置/朝向（setOldPosAndRot）→ 传送落地帧插值抖动，此处还原 origin 语义
             this.snapTo(x + 0.5, y, z + 0.5, this.getYRot(), this.getXRot());
             this.getNavigation().stop();
             this.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);

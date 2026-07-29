@@ -5,6 +5,8 @@ import cn.sh1rocu.touhoulittlemaid.api.extension.IBedBlock;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.event.*;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.RandomEmoji;
+import com.github.tartaricacid.touhoulittlemaid.config.AiClientConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.AiServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.GeneralConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ConfigFileMigration;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
@@ -63,22 +65,36 @@ public class TouhouLittleMaidFabric implements ModInitializer {
 
     private static void registerConfiguration() {
         ServerConfig.init();
+        AiServerRuleConfig.init();
         ServerRuleConfig.initializeDefaults();
+        AiServerRuleConfig.initializeDefaults();
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
             var spec = GeneralConfig.getConfigSpec();
+            var aiSpec = AiClientConfig.getConfigSpec();
             ConfigFileMigration.migrateGlobalFileIfNeeded(GeneralConfig.values(), spec);
             // 必须先于 spec 加载：旧 global 文件缺 ReplaceMagmaCubeModel 时继承旧史莱姆值，
             // 否则缺键会被默认 true 补掉。
             ConfigFileMigration.inheritMagmaCubeFromSlime();
+            // 同样必须先于注册：注册加载会把 -global.toml 里已不在 spec 的 ai 节剥掉，老值要先搬走
+            ConfigFileMigration.migrateAiFileIfNeeded(AiClientConfig.values(), aiSpec);
             ConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.CLIENT,
                     spec, ConfigFileMigration.GLOBAL_FILE_NAME);
+            ConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.CLIENT,
+                    aiSpec, ConfigFileMigration.AI_FILE_NAME);
         }
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             if (!ServerRuleConfig.loadForServer(server)) {
                 throw new IllegalStateException("Failed to load Touhou Little Maid world config");
             }
+            // AI 规则是实例级文件（§17 v2）；首次启动会先从本存档的旧世界文件播种老值
+            if (!AiServerRuleConfig.loadForServer(server)) {
+                throw new IllegalStateException("Failed to load Touhou Little Maid AI rule config");
+            }
         });
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> ServerRuleConfig.unloadWorld());
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            ServerRuleConfig.unloadWorld();
+            AiServerRuleConfig.unload();
+        });
     }
 
     private void subscribeEvents() {
@@ -111,7 +127,7 @@ public class TouhouLittleMaidFabric implements ModInitializer {
         PotentialSpawnsEvent.CALLBACK.register(MobSpawnInfoRegistry::addMobSpawnInfo);
         UseItemCallback.EVENT.register(CancelSaddleMaidEvent::onItemRightClick);
         UseEntityCallback.EVENT.register(CopyEntityIdEvent::copyEntityId);
-        // 保持基准行为：允许把坐垫安装到空船上。
+        // [Codex] Preserve origin behaviour: install a chair item onto an empty boat.
         UseEntityCallback.EVENT.register(InstallChairEvent::onPlayerEntityInteract);
         PlayerLoggedInEvent.CALLBACK.register(EnterServerEvent::onAttachCapabilityEvent);
         ProjectileImpactEvent.CALLBACK.register(EntityHurtEvent::onArrowImpact);

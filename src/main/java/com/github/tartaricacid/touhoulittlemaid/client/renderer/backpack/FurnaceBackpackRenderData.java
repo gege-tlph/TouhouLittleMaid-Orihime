@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
 import static com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid.MOD_ID;
 import static com.github.tartaricacid.touhoulittlemaid.client.resource.bedrock.InternalBedrockModelRegistry.FURNACE_BACKPACK;
 
-
+// origin FurnaceBackpack 的 client 渲染三元组（逐字还原）
 public class FurnaceBackpackRenderData extends MaidBackpackRenderData {
     private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(MOD_ID, "textures/bedrock/entity/backpack/furnace_backpack.png");
 

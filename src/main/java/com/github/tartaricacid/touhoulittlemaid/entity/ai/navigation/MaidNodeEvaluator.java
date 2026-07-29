@@ -95,7 +95,7 @@ public class MaidNodeEvaluator extends WalkNodeEvaluator {
         }
 
         BlockState blockState = context.getBlockState(pos);
-
+        // B4 恢复：先检查方块是否在避让黑名单中（TagBlock un-excluded）
         if (blockState.is(TagBlock.MAID_AVOID_BLOCK)) {
             return PathType.DAMAGE_OTHER;
         }

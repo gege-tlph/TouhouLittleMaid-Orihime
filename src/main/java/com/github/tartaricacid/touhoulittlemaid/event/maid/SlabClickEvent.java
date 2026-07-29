@@ -18,7 +18,7 @@ public final class SlabClickEvent {
         Item emptySmartSlab = InitItems.SMART_SLAB_EMPTY;
         Item maidSmartSlab = InitItems.SMART_SLAB_HAS_MAID;
         if (stack.getItem() == emptySmartSlab) {
-
+            // B6b: 1.21.11 ItemCooldowns.isOnCooldown(Item) → (ItemStack)（同 addCooldown）；stack 即 emptySmartSlab 堆
             if (!player.getCooldowns().isOnCooldown(stack)) {
                 ItemStack output = maidSmartSlab.getDefaultInstance();
                 maid.setHomeModeEnable(false);

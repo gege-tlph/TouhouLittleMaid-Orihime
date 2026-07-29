@@ -57,5 +57,12 @@ public abstract class TileEntityJoyRenderer<T extends TileEntityJoy> implements 
         return true;
     }
 
-
+    // TODO
+//    @Override
+//    public AABB getRenderBoundingBox(T te) {
+//        return RenderHelper.getAABB(
+//                te.getBlockPos().offset(-2, 0, -2),
+//                te.getBlockPos().offset(2, 1, 2)
+//        );
+//    }
 }

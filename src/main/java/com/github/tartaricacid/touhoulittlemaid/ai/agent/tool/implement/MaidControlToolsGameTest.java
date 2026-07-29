@@ -66,7 +66,9 @@ public class MaidControlToolsGameTest {
         String result = invokeWorkTool(maid,
                 new SwitchWorkTaskTool.Result(TaskAttack.UID, forbiddenTarget.getId()));
 
-        assertInvalidAttackIsAtomic(helper, maid, previousTarget, result, "excluded by server attack rules");
+        // 609546e1 放宽了工具拒绝文案（SwitchWorkTaskTool.TARGET_NOT_ALLOWED），断言当时漏改，
+        // GameTest 自那次提交起一直红着。这里对齐现行文案的稳定片段，不再锁整句。
+        assertInvalidAttackIsAtomic(helper, maid, previousTarget, result, "is a protected target");
         helper.succeed();
     }
 

@@ -42,7 +42,9 @@ import java.util.concurrent.Executors;
 import static com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid.LOGGER;
 
 /**
- * 女仆数据备份管理器 <p> 存储结构：
+ * 女仆数据备份管理器
+ * <p>
+ * 存储结构：
  * <pre>
  * maid_backups/
  * ├── owner_uuid/
@@ -82,9 +84,10 @@ public final class MaidBackupsManager {
      * 保存女仆数据备份
      *
      * @param server 服务器实例
-     * @param maid 要备份的女仆实体
+     * @param maid   要备份的女仆实体
      */
     public static void save(@NotNull MinecraftServer server, @NotNull EntityMaid maid) {
+        // 1.21.11: TamableAnimal.getOwnerUUID() 已移除，owner 改为 EntityReference<LivingEntity>
         EntityReference<LivingEntity> ownerRef = maid.getOwnerReference();
         if (ownerRef == null) {
             return;
@@ -137,7 +140,8 @@ public final class MaidBackupsManager {
             Path saveFolder = buildBackupFolderPath(maid, overWorld, ownerId);
             String saveFileName = generateBackupFileName();
 
-
+            // 1.21.11: saveAsPassenger 改收 ValueOutput。TagValueOutput 是官方的
+            // ValueOutput -> CompoundTag 桥（createWithContext + buildResult）。
             TagValueOutput valueOutput = TagValueOutput.createWithContext(
                     ProblemReporter.DISCARDING, maid.registryAccess());
             boolean saveResult = maid.saveAsPassenger(valueOutput);
@@ -391,7 +395,9 @@ public final class MaidBackupsManager {
     }
 
     /**
-     * 使用注册表感知的编解码上下文将文本组件序列化为 JSON，确保含注册表引用的组件也能正确保存。
+     * 1.21.11: {@code Component.Serializer} 整个类已移除，且 {@code ComponentSerialization}
+     * 只暴露 {@code CODEC}（并无 toJson/fromJson —— 此前代码调用的是不存在的方法）。
+     * 正路是 CODEC 配合 {@code HolderLookup.Provider.createSerializationContext(JsonOps.INSTANCE)}。
      */
     private static String componentToJson(Component component, RegistryAccess access) {
         return ComponentSerialization.CODEC

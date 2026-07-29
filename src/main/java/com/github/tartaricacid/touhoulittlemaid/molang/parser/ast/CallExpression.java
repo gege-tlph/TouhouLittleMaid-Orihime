@@ -30,9 +30,11 @@ import org.jetbrains.annotations.NotNull;
 import static java.util.Objects.requireNonNull;
 
 /**
- * 调用表达式实现，使用某些参数执行函数。
+ * Call expression implementation, executes function
+ * with certain arguments.
  *
- * <p>调用表达式示例：{@code print('hello')}、{@code math.sqrt(9)}、{@code math.pow(3, 2)}</p>
+ * <p>Example call expressions: {@code print('hello')},
+ * {@code math.sqrt(9)}, {@code math.pow(3, 2)}</p>
  *
  * @since 3.0.0
  */
@@ -50,7 +52,7 @@ public final class CallExpression implements Expression {
     }
 
     /**
-     * 获取函数表达式。
+     * Gets the function expression.
      *
      * @since 3.0.0
      */
@@ -59,7 +61,8 @@ public final class CallExpression implements Expression {
     }
 
     /**
-     * 获取要传递给函数的参数列表。
+     * Gets the list of arguments to pass to
+     * the function.
      *
      * @since 3.0.0
      */

@@ -5,7 +5,7 @@ import com.github.tartaricacid.touhoulittlemaid.api.event.MaidFavorabilityLevelC
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import com.github.tartaricacid.touhoulittlemaid.network.NetworkHandler;
-
+// TODO: restore when SpawnParticlePackage compiles (needs network.client)
 import com.github.tartaricacid.touhoulittlemaid.network.message.SpawnParticlePackage;
 import com.google.common.collect.Maps;
 import net.minecraft.nbt.CompoundTag;
@@ -21,7 +21,9 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.Map;
 
-
+/**
+ * FIXME：这个好感度机制太落伍了，未来需要重新设计一个更合理的好感度系统
+ */
 public class FavorabilityManager {
     public static final Map<String, Type> TYPES = Maps.newHashMap();
 
@@ -100,6 +102,10 @@ public class FavorabilityManager {
 
     private void addCooldown(String type, int tickCount) {
         this.counter.put(type, new Time(tickCount));
+    }
+
+    public boolean canAdd(Type type) {
+        return this.canAdd(type.getTypeName());
     }
 
     public boolean canAdd(String type) {
@@ -320,7 +326,8 @@ public class FavorabilityManager {
         this.add(LEVEL_3_POINT);
     }
 
-
+    // 1.21.11: 迁移到 ValueOutput/ValueInput。counter 是任意字符串 key 的 map，用 COMPOUND_TAG_CODEC
+    // 桥接把 TAG_NAME 子 compound 直接存/读，与 HEAD 的 compound.put(TAG_NAME, data) 逐字节同格式。
     public void addAdditionalSaveData(ValueOutput output) {
         CompoundTag data = new CompoundTag();
         this.counter.forEach((name, time) -> data.putInt(name, time.getTickCount()));

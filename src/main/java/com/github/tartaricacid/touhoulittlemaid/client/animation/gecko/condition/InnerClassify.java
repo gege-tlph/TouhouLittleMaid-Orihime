@@ -1,7 +1,8 @@
 package com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.condition;
 
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-
+// TODO: 1.21.11 — restore when ItemGohei is un-excluded
+// import com.github.tartaricacid.touhoulittlemaid.item.ItemGohei;
 import net.fabricmc.fabric.api.tag.convention.v1.ConventionalItemTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
@@ -27,7 +28,10 @@ public class InnerClassify {
      */
     public static String getClassify(ItemStack itemInHand) {
         Item item = itemInHand.getItem();
-
+        // TODO: 1.21.11 — restore when ItemGohei is available
+        // if (item instanceof ItemGohei) {
+        //     return "gohei";
+        // }
         if (item instanceof MaceItem) {
             return "mace";
         }

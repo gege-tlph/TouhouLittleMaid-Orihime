@@ -6,7 +6,8 @@ import com.github.tartaricacid.touhoulittlemaid.api.backpack.IBackpackData;
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.IMaidBackpack;
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.MaidBackpackRenderData;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.backpack.FurnaceBackpackRenderData;
-
+// TODO: 1.21.11 client exclusion
+// import com.github.tartaricacid.touhoulittlemaid.client.resource.BedrockModelLoader;
 import com.github.tartaricacid.touhoulittlemaid.entity.backpack.data.FurnaceBackpackData;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityTombstone;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -32,6 +33,8 @@ import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nullable;
 
+// TODO: 1.21.11 client exclusion
+// import static com.github.tartaricacid.touhoulittlemaid.client.resource.BedrockModelLoader.FURNACE_BACKPACK;
 
 public class FurnaceBackpack extends IMaidBackpack {
     public static final Identifier ID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "furnace_backpack");
@@ -85,7 +88,10 @@ public class FurnaceBackpack extends IMaidBackpack {
                 return false;
             }
 
-
+/*            @Override
+            public boolean shouldTriggerClientSideContainerClosingOnOpen() {
+                return false;
+            }*/
         };
     }
 
@@ -107,7 +113,7 @@ public class FurnaceBackpack extends IMaidBackpack {
 
     @Override
     public MaidBackpackRenderData getRenderData() {
-
+        // 模型已入 InternalBedrockModelRegistry（origin 本就渲染此背包，旧 EMPTY 注释系误判）
         return new FurnaceBackpackRenderData();
     }
 
@@ -115,7 +121,8 @@ public class FurnaceBackpack extends IMaidBackpack {
     @Override
     @Environment(EnvType.CLIENT)
     public EntityModel<?> getBackpackModel(EntityModelSet modelSet) {
-
+        // TODO: 1.21.11 client exclusion
+        // return BedrockModelLoader.getModel(FURNACE_BACKPACK);
         return null;
     }
 

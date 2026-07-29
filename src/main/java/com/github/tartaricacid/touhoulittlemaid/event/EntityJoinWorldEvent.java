@@ -36,7 +36,8 @@ public class EntityJoinWorldEvent {
             var goals = List.copyOf(goalSelector.getAvailableGoals());
             goals.stream().filter(goal -> goal.getGoal() instanceof TemptGoal).findFirst().ifPresent(g -> {
                 if (g.getGoal() instanceof TemptGoal temptGoal) {
-
+                    // B6b: TemptGoal 的 mob/speedModifier/items/canScare 现为 protected/private → 经 TemptGoalAccessor 读取
+                    //   （mob 字段类型为 Mob，TemptGoal 恒挂在 PathfinderMob 上，故安全下转）
                     TemptGoalAccessor acc = (TemptGoalAccessor) temptGoal;
                     MaidTemptGoal maidTemptGoal = new MaidTemptGoal((PathfinderMob) acc.tlm$mob(), acc.tlm$speedModifier(), acc.tlm$items(), acc.tlm$canScare());
                     goalSelector.addGoal(g.getPriority(), maidTemptGoal);

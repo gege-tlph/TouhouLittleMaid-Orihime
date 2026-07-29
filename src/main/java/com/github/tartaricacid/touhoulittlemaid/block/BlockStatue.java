@@ -54,7 +54,7 @@ public class BlockStatue extends Block implements EntityBlock, IBlock {
     @Environment(EnvType.CLIENT)
     @Override
     public boolean tlm$addDestroyEffects(BlockState state, Level world, BlockPos pos, ParticleEngine manager) {
-
+        // 1.21.11：ParticleEngine.destroy → ClientLevel.addDestroyBlockEffect（origin 语义=黏土粒子）
         if (world instanceof ClientLevel clientLevel) {
             clientLevel.addDestroyBlockEffect(pos, Blocks.CLAY.defaultBlockState());
         }
@@ -131,6 +131,8 @@ public class BlockStatue extends Block implements EntityBlock, IBlock {
         return new TileEntityStatue(pos, state);
     }
 
+    // 1.21.11: RenderShape.ENTITYBLOCK_ANIMATED 已移除（仅剩 INVISIBLE/MODEL）。
+    // 与本仓库既定处理一致（BlockJoy/MaidBed/PicnicMat/SnackCabinet）：移除该覆盖，回落默认 MODEL。
 
     @Override
     public boolean isPathfindable(BlockState state, PathComputationType type) {

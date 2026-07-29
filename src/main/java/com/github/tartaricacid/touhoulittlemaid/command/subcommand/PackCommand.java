@@ -24,7 +24,11 @@ public final class PackCommand {
 
     private static int reloadAllPack(CommandContext<CommandSourceStack> context) {
         context.getSource().sendSuccess(() -> Component.translatable("commands.touhou_little_maid.pack.reload.start"), true);
-
+        // Same shape as origin's PackCommand: the client-only class is referenced behind the
+        // environment check, so a dedicated server never loads it. The client half goes through
+        // CustomPackReloadListener (this port's replacement for origin's ReloadResourceEvent,
+        // same reload chain; dispatched to the render thread because 1.21.11's
+        // TextureManager.registerAndLoad uploads immediately and asserts the render thread).
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
             CustomPackReloadListener.asyncReload();
         }

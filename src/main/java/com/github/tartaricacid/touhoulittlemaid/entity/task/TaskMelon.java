@@ -70,7 +70,7 @@ public class TaskMelon implements IFarmTask {
     @Override
     public void harvest(EntityMaid maid, BlockPos cropPos, BlockState cropState) {
         ItemStack mainHandItem = maid.getMainHandItem();
-
+        // B4 恢复：精准采集时保留西瓜方块（EnchantmentKeys un-excluded）
         RegistryAccess access = maid.level.registryAccess();
         if (cropState.is(Blocks.MELON) && getEnchantmentLevel(access, Enchantments.SILK_TOUCH, mainHandItem) > 0) {
             if (maid.destroyBlock(cropPos, false)) {

@@ -31,6 +31,7 @@ public class ClientItemContainerTooltip implements ClientTooltipComponent {
         }
     }
 
+    // 1.21.11: ClientTooltipComponent.getHeight() 现需 Font 参数
     @Override
     public int getHeight(Font font) {
         if (emptyTip != null) {
@@ -47,6 +48,7 @@ public class ClientItemContainerTooltip implements ClientTooltipComponent {
         return items.size() * 20;
     }
 
+    // 1.21.11: renderImage 新增 w/h 两参（本实现按槽位自行布局，不使用它们）
     @Override
     public void renderImage(Font font, int pX, int pY, int width, int height, @NotNull GuiGraphics guiGraphics) {
         if (emptyTip != null) {

@@ -64,6 +64,7 @@ public class MaidModelGui extends AbstractModelGui<EntityMaid, MaidModelInfo> {
         var allTextures = Minecraft.getInstance().getTextureManager().byPath;
         if (MiscConfig.MODEL_ICON_CACHE.get() && allTextures.containsKey(cacheIconId)) {
             int textureSize = 24;
+            // 1.21.11: legacy blit(Identifier, x, y, w, h, u, v, uW, vH, texW, texH) -> 管线形态（w==uW、h==vH，语义等价）
             graphics.blit(RenderPipelines.GUI_TEXTURED, cacheIconId, posX - textureSize / 2, posY - textureSize, 0F, 0F, textureSize, textureSize, textureSize, textureSize);
         } else {
             drawEntity(graphics, posX, posY, modelItem);

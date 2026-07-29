@@ -3,9 +3,9 @@ package cn.sh1rocu.touhoulittlemaid.util.itemhandler;
 import net.minecraft.world.item.ItemStack;
 
 public class CombinedInvWrapper implements IItemHandlerModifiable {
-    protected final IItemHandlerModifiable[] itemHandler; // 处理程序
-    protected final int[] baseIndex; // 不同处理程序的索引偏移量
-    protected final int slotCount; // 总槽数
+    protected final IItemHandlerModifiable[] itemHandler; // the handlers
+    protected final int[] baseIndex; // index-offsets of the different handlers
+    protected final int slotCount; // number of total slots
 
     public CombinedInvWrapper(IItemHandlerModifiable... itemHandler) {
         this.itemHandler = itemHandler;
@@ -18,7 +18,7 @@ public class CombinedInvWrapper implements IItemHandlerModifiable {
         this.slotCount = index;
     }
 
-
+    // returns the handler index for the slot
     protected int getIndexForSlot(int slot) {
         if (slot < 0)
             return -1;

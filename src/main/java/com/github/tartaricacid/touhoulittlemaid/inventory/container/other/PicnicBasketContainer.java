@@ -28,7 +28,7 @@ public class PicnicBasketContainer extends AbstractContainerMenu {
             this.addSlot(new SlotItemHandler(container, i, 8 + i * 18, 18) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
-
+                    //return stack.getFoodProperties(null) != null;
                     return stack.get(DataComponents.FOOD) != null;
                 }
             });

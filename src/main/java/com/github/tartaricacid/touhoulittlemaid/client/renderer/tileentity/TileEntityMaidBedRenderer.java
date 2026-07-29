@@ -90,5 +90,12 @@ public class TileEntityMaidBedRenderer implements BlockEntityRenderer<TileEntity
         return true;
     }
 
-
+    // TODO
+//    @Override
+//    public AABB getRenderBoundingBox(TileEntityMaidBed bed) {
+//        return RenderHelper.getAABB(
+//                bed.getBlockPos().offset(-2, 0, -2),
+//                bed.getBlockPos().offset(2, 1, 2)
+//        );
+//    }
 }

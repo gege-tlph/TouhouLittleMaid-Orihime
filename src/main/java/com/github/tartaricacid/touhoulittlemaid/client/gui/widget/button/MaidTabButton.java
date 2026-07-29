@@ -20,7 +20,7 @@ public class MaidTabButton extends Button implements ITooltipButton {
     private final List<Component> tooltips;
 
     public MaidTabButton(int x, int y, int left, String key, Button.OnPress onPressIn) {
-
+        //super(Button.builder(Component.empty(), onPressIn).pos(x, y).size(24, 26));
         super(x, y, 24, 26, Component.empty(), onPressIn, Button.DEFAULT_NARRATION);
         this.left = left;
         this.tooltips = Lists.newArrayList(
@@ -30,7 +30,7 @@ public class MaidTabButton extends Button implements ITooltipButton {
     }
 
     @Override
-
+    // 1.21.11: renderWidget 现为 final → 覆写 renderContents；RenderSystem.enableDepthTest 移除（管线接管）
     protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         if (!this.active) {
             graphics.blit(RenderPipelines.GUI_TEXTURED, SIDE, this.getX(), this.getY(), left, 21F, this.width, this.height, 256, 256);
@@ -46,7 +46,7 @@ public class MaidTabButton extends Button implements ITooltipButton {
     @Override
     public void renderTooltip(GuiGraphics graphics, Minecraft mc, int mouseX, int mouseY) {
         Font font = Minecraft.getInstance().font;
-
+        // 1.21.11: renderComponentTooltip 移除 → setTooltipForNextFrame（延迟到帧末渲染）
         graphics.setTooltipForNextFrame(font, tooltips, Optional.empty(), mouseX, mouseY);
     }
 }

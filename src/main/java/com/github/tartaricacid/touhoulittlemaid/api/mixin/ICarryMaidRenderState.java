@@ -1,8 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.api.mixin;
 
-/**
- * 客户端渲染状态标志用于保留携带女仆的玩家手臂姿势。
- */
+/** Client render-state flag used to preserve the carried-maid player arm pose. */
 public interface ICarryMaidRenderState {
     boolean tlm$isCarryingMaid();
 

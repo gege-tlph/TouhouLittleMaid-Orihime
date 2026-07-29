@@ -434,6 +434,8 @@ public class BlockGomoku extends BlockJoy implements IBoardGameBlock, IBlock {
         return simpleCodec((properties) -> new BlockGomoku(properties));
     }
 
+    // 1.21.11: RenderShape.ENTITYBLOCK_ANIMATED 已移除（仅剩 INVISIBLE/MODEL）。
+    // 与本仓库既定处理一致（BlockJoy/MaidBed/PicnicMat/SnackCabinet）：移除该覆盖，回落默认 MODEL。
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {

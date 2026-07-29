@@ -15,7 +15,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * 在原版可见实体状态提取期间标记 Gecko 的不可变更新阶段，确保同一帧只读取一致的模型状态。
+ * Marks vanilla's level entity-state extraction as an immutable Gecko update context.
+ *
+ * <p>MC 1.21.11 still performs extraction inside {@code renderLevel}; the later 26.1
+ * implementation split this work into {@code extractLevel}. Wrapping the actual
+ * {@code extractVisibleEntities} call preserves the same frame lifecycle without
+ * borrowing the newer method shape.</p>
  */
 @Mixin(LevelRenderer.class)
 public class LevelRendererMixin {

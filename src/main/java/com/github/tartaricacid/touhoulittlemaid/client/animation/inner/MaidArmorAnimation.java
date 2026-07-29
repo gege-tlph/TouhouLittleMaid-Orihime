@@ -19,7 +19,7 @@ public final class MaidArmorAnimation {
     public static void init() {
         INNER_ANIMATION.put(Identifier.parse("touhou_little_maid:animation/maid/default/armor/default.js"), getArmorDefault());
         INNER_ANIMATION.put(Identifier.parse("touhou_little_maid:animation/maid/default/armor/reverse.js"), getArmorReverse());
-
+        // SWEEP R11-2：还原 origin 的 4 个生物群系温度装扮动画注册（origin 逐字：读 getAtBiomeTemp()）
         INNER_ANIMATION.put(Identifier.parse("touhou_little_maid:animation/maid/default/armor/temp/cold.js"), getArmorTempCold());
         INNER_ANIMATION.put(Identifier.parse("touhou_little_maid:animation/maid/default/armor/temp/medium.js"), getArmorTempMedium());
         INNER_ANIMATION.put(Identifier.parse("touhou_little_maid:animation/maid/default/armor/temp/ocean.js"), getArmorTempOcean());
@@ -54,7 +54,7 @@ public final class MaidArmorAnimation {
                 );
     }
 
-
+    // SWEEP R11-2：origin 骨骼名 = <part>Temp<Cold|Medium|Ocean|Warm>——helper 前缀/后缀拼接精确复刻
     public static IAnimation<EntityMaidRenderState> getArmorTempCold() {
         return (state, models) -> setArmorVisible(models, "TempCold", "COLD".equals(state.atBiomeTemp));
     }

@@ -26,7 +26,12 @@ public final class MaidKillRecordManager {
     private int witherCount;
     private int enderDragonCount;
 
-
+    // 1.21.11: 迁移到 ValueOutput/ValueInput，用 COMPOUND_TAG_CODEC 桥接 "KillRecord" 子 compound，
+    // 与 HEAD 的 compound.put(KILL_RECORD, killRecord) 逐字节同格式（此前的移植版把 4 个 int 平铺到根
+    // = 破坏与 1.21.1 存档的兼容，已还原 HEAD 布局）。
+    // ⚠️ 保留 HEAD 既有的键不对称：写时 totalCount 存入子键 "KillRecord"（=KILL_RECORD），读时却从 "TotalCount"
+    //    (=TOTAL_COUNT) 取 → totalCount 实际从不回存（重载后归 0）。这是 HEAD 的原有行为，此处忠实保留；
+    //    修它属独立的 gameplay 决策，非移植任务。
     void addAdditionalSaveData(ValueOutput output) {
         CompoundTag killRecord = new CompoundTag();
         killRecord.putInt(KILL_RECORD, totalCount);

@@ -26,6 +26,7 @@ import net.minecraft.world.phys.EntityHitResult;
 
 public class EntityDanmaku extends ThrowableProjectile {
     public static final EntityType<EntityDanmaku> TYPE = EntityType.Builder.<EntityDanmaku>of(EntityDanmaku::new, MobCategory.MISC)
+            // 1.21.11: EntityType.Builder.build(String) 已移除 -> build(ResourceKey)
             .sized(0.25F, 0.25F).clientTrackingRange(6).updateInterval(10).noSave()
             .build(ResourceKey.create(Registries.ENTITY_TYPE,
                     Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "danmaku")));
@@ -43,6 +44,7 @@ public class EntityDanmaku extends ThrowableProjectile {
         super(type, worldIn);
     }
 
+    // 1.21.11: ThrowableProjectile(EntityType,LivingEntity,Level) 已移除 -> (EntityType,double,double,double,Level) + setOwner（同 26.1/vanilla）
     public EntityDanmaku(Level worldIn, LivingEntity throwerIn) {
         super(TYPE, throwerIn.getX(), throwerIn.getEyeY() - 0.1, throwerIn.getZ(), worldIn);
         this.setOwner(throwerIn);
@@ -52,6 +54,8 @@ public class EntityDanmaku extends ThrowableProjectile {
         super(TYPE, x, y, z, worldIn);
     }
 
+    // 1.21.11: TamableAnimal.getOwnerUUID() 已移除，owner 改为 EntityReference<LivingEntity>。
+    // 语义保持：任一方无主人即视为不同主人（原实现中 B 为 null 时 equals(null) 亦返回 false）。
     private static boolean hasSameOwner(TamableAnimal tameableA, TamableAnimal tameableB) {
         EntityReference<LivingEntity> ownerA = tameableA.getOwnerReference();
         EntityReference<LivingEntity> ownerB = tameableB.getOwnerReference();
@@ -109,6 +113,7 @@ public class EntityDanmaku extends ThrowableProjectile {
             hit.hurt(source, this.getDamage());
             if (this.impedingLevel > 0 && hit instanceof LivingEntity livingEntity) {
                 int duration = (20 + this.impedingLevel * 10) * 20;
+                // 1.21.11: MobEffects.MOVEMENT_SLOWDOWN -> SLOWNESS（重命名）
                 livingEntity.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, duration, this.impedingLevel));
             }
             this.discard();

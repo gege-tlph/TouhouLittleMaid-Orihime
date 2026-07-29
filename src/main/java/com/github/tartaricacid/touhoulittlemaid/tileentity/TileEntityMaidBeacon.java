@@ -158,7 +158,7 @@ public class TileEntityMaidBeacon extends BlockEntity implements IBlockEntityPer
     }
 
     public enum BeaconEffect {
-        // 效果
+        // Effects
         SPEED(MobEffects.SPEED),
         FIRE_RESISTANCE(MobEffects.FIRE_RESISTANCE),
         STRENGTH(MobEffects.STRENGTH),
@@ -182,7 +182,11 @@ public class TileEntityMaidBeacon extends BlockEntity implements IBlockEntityPer
 
 
     /**
-     * 1.21.2+ 方块移除重设计：{@code Block.onRemove(state, Level, pos, newState, isMoving)} 已完全移除。 掉落改由 {@code BlockEntity.preRemoveSideEffects} 负责（LevelChunk 在 BE 尚存活时调用； {@code Block.affectNeighborsAfterRemoval} 只管邻居更新）。其默认实现仅对 {@code implements Container} 的 BE 自动掉落——本类是 {@code extends BlockEntity} + 自研 handler，**不会**被自动处理， 故在此显式恢复原本位于 Block.onRemove 的逻辑。
+     * 1.21.2+ 方块移除重设计：{@code Block.onRemove(state, Level, pos, newState, isMoving)} 已完全移除。
+     * 掉落改由 {@code BlockEntity.preRemoveSideEffects} 负责（LevelChunk 在 BE 尚存活时调用；
+     * {@code Block.affectNeighborsAfterRemoval} 只管邻居更新）。其默认实现仅对 {@code implements Container}
+     * 的 BE 自动掉落——本类是 {@code extends BlockEntity} + 自研 handler，**不会**被自动处理，
+     * 故在此显式恢复原本位于 Block.onRemove 的逻辑。
      */
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {

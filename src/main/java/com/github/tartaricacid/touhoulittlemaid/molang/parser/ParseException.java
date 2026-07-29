@@ -29,7 +29,8 @@ import com.github.tartaricacid.touhoulittlemaid.molang.lexer.Cursor;
 import java.io.IOException;
 
 /**
- * 解析阶段可能抛出的异常
+ * Exception that can be thrown during the
+ * parsing phase
  *
  * @since 3.0.0
  */
@@ -61,7 +62,10 @@ public class ParseException extends IOException {
     }
 
     private static String appendCursor(String message, Cursor cursor) {
-        if (cursor == null) return message;
+        if (cursor == null) return message; // todo
+        // default format for exception messages, i.e.
+        // "unexpected token: '%'"
+        // "    at line 2, column 6"
         return message + "\n  at " + cursor.toString();
     }
 

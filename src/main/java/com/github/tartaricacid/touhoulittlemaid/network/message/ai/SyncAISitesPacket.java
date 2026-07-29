@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message.ai;
 
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.AvailableSites;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.SiteConfigStorage;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializableSite;
@@ -61,12 +62,31 @@ public record SyncAISitesPacket(Map<String, LLMSite> llmSites,
         context.client().execute(() -> SyncAISitesPacketProxy.handle(message));
     }
 
-    /** Pushes the latest LLM/TTS snapshot without forcing another editor's screen open. */
+    /**
+     * Pushes the latest LLM/TTS snapshot without forcing another editor's screen open.
+     *
+     * <p>{@link SiteConfigStorage} 读的是<b>严格</b>版本：文件损坏且 {@code .last-good} 也不可用时抛异常。
+     * 那是编辑器该有的语义——不能让管理员在残缺数据上编辑——但异常必须在这里接住。调用方
+     * {@code AIChatCommand.reload} 在这一行之后还要同步世界规则、并向管理员返回「部分站点文件加载失败」
+     * 的回执；让异常穿过去会把这两件事一起吃掉，而三个 {@code Save*SitePacket} 早就各自 catch 了它。</p>
+     *
+     * <p>读取提到循环外：每位可编辑者各读一遍文件，只是在重复解析同一份 JSON。</p>
+     */
     public static void syncToSiteEditors(MinecraftServer server) {
+        Map<String, LLMSite> llmSites;
+        Map<String, TTSSite> ttsSites;
+        try {
+            llmSites = SiteConfigStorage.readLLM();
+            ttsSites = SiteConfigStorage.readTTS();
+        } catch (IllegalStateException exception) {
+            // 宁可不刷新编辑器，也不能推一份残缺清单过去——那会让管理员以为站点真的没了
+            TouhouLittleMaid.LOGGER.warn("Skipping AI site sync to editors, site config is unreadable: {}",
+                    exception.getMessage());
+            return;
+        }
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (canEditSite(player)) {
-                ServerPlayNetworking.send(player, new SyncAISitesPacket(
-                        SiteConfigStorage.readLLM(), SiteConfigStorage.readTTS(), false, false));
+                ServerPlayNetworking.send(player, new SyncAISitesPacket(llmSites, ttsSites, false, false));
             }
         }
     }
@@ -93,9 +113,16 @@ public record SyncAISitesPacket(Map<String, LLMSite> llmSites,
         return sites;
     }
 
+    /**
+     * **下行一律脱敏**：已配置的密钥换成哨兵，明文永不离开服务端。
+     *
+     * <p>哨兵同时告诉客户端「这一项已配置」，所以不需要再并行下发一个 hasSecret 布尔；
+     * 而客户端原样回传哨兵时，服务端会把真实值填回去（见 {@code Save*SitePacket.updateSite}），
+     * 于是「不改密钥」成了默认行为，而不是需要客户端主动表达的特例。</p>
+     */
     @SuppressWarnings("unchecked")
     private static <T extends Site> void writeSiteToNetwork(T site, FriendlyByteBuf buf) {
-        ((SerializableSite<T>) site.serializer()).writeToNetwork(site, buf);
+        ((SerializableSite<T>) site.serializer()).writeRedactedToNetwork(site, buf);
     }
 
     @Nullable

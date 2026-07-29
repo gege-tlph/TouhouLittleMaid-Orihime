@@ -29,6 +29,7 @@ public class AltarRecipeBuilder implements RecipeBuilder {
     private final Item result;
     private final NonNullList<Ingredient> ingredients;
     private final ItemStack resultStack;
+    // 1.21.11: Ingredient.of(TagKey) 已移除 —— tag→Ingredient 需经 HolderGetter<Item> 解析为 HolderSet。
     private final HolderGetter<Item> items;
     private float power;
     private Identifier entityType;

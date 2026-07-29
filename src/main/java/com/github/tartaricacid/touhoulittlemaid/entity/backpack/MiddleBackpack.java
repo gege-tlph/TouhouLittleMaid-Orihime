@@ -3,7 +3,8 @@ package com.github.tartaricacid.touhoulittlemaid.entity.backpack;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.IMaidBackpack;
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.MaidBackpackRenderData;
-
+// TODO: 1.21.11 client exclusion
+// import com.github.tartaricacid.touhoulittlemaid.client.resource.BedrockModelLoader;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.backpack.MiddleBackpackRenderData;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityTombstone;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -29,6 +30,8 @@ import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nullable;
 
+// TODO: 1.21.11 client exclusion
+// import static com.github.tartaricacid.touhoulittlemaid.client.resource.BedrockModelLoader.MIDDLE_BACKPACK;
 
 public class MiddleBackpack extends IMaidBackpack {
     public static final Identifier ID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "middle_backpack");
@@ -69,7 +72,10 @@ public class MiddleBackpack extends IMaidBackpack {
                 return false;
             }
 
-
+/*            @Override
+            public boolean shouldTriggerClientSideContainerClosingOnOpen() {
+                return false;
+            }*/
         };
     }
 
@@ -87,7 +93,8 @@ public class MiddleBackpack extends IMaidBackpack {
     @Override
     @Environment(EnvType.CLIENT)
     public EntityModel<?> getBackpackModel(EntityModelSet modelSet) {
-
+        // TODO: 1.21.11 client exclusion
+        // return BedrockModelLoader.getModel(MIDDLE_BACKPACK);
         return null;
     }
 

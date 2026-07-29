@@ -49,7 +49,8 @@ public class WirelessIOContainer extends AbstractContainerMenu {
         ItemWirelessIO.setFilterList(player.registryAccess(), wirelessIO, filterListInv);
     }
 
-
+    // WirelessIOFilterSlotPackage（移植期新增，HEAD 无）的消费方：按索引写入过滤库存槽。
+    // 容器用 filterListInv(ItemStackHandler) 存过滤项，此方法与 setFilterList/关闭时回写机制一致。
     public void setFilterSlot(int index, ItemStack stack) {
         this.filterListInv.setStackInSlot(index, stack);
     }

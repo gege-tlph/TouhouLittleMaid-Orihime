@@ -27,22 +27,41 @@ public class PapiReplacer {
      * 基础设定提示词的关键字替换
      */
     public static String replaceSetting(String input, EntityMaid maid, String language) {
-        Map<String, String> valueMap = Util.make(Maps.newHashMap(), map -> {
+        Map<String, String> valueMap = valueMap(input, maid, language);
+        return renderFullSetting(valueMap) + outputFormat(valueMap, maid, language);
+    }
+
+    /**
+     * 追加在历史记录之后的权威要求。
+     *
+     * <p>与 {@link #replaceSetting} 里那份是同一段格式要求，<b>差别只在位置</b>：这一份紧贴生成位置，
+     * 用来压过历史里的旧范例。成因与实测见 {@link StringConstant#HISTORY_IS_NOT_INSTRUCTION}。</p>
+     */
+    public static String trailingRequirements(EntityMaid maid, String language) {
+        Map<String, String> valueMap = valueMap(StringUtils.EMPTY, maid, language);
+        return new StrSubstitutor(valueMap).replace(HISTORY_IS_NOT_INSTRUCTION)
+                + outputFormat(valueMap, maid, language);
+    }
+
+    private static Map<String, String> valueMap(String input, EntityMaid maid, String language) {
+        return Util.make(Maps.newHashMap(), map -> {
             map.put("main_setting", input);
             map.put("owner_name", getOwnerName(maid));
             map.put("chat_language", getChatLanguage(language));
             map.put("tts_language", getTtsLanguage(maid));
             map.put("available_skills", SkillLoader.getSkillSummary());
         });
+    }
 
-        String base = renderFullSetting(valueMap);
-        if (language.equals(maid.getAiChatManager().getTTSLanguage())) {
-            base += new StrSubstitutor(valueMap).replace(OUTPUT_FORMAT_REQUIREMENTS_SAME_LANGUAGES);
-        } else {
-            base += new StrSubstitutor(valueMap).replace(OUTPUT_FORMAT_REQUIREMENTS_DIFFERENT_LANGUAGES);
-        }
-
-        return base;
+    /**
+     * 只有当第二段真的会被拿去合成、且与第一段内容不同时才索取它，否则模型在为一份被丢弃的
+     * 或逐字重复的副本付输出 token。判定见 {@code MaidAIChatManager#needsSeparateTtsText}。
+     */
+    private static String outputFormat(Map<String, String> valueMap, EntityMaid maid, String language) {
+        String template = maid.getAiChatManager().needsSeparateTtsText(language)
+                ? OUTPUT_FORMAT_REQUIREMENTS_DIFFERENT_LANGUAGES
+                : OUTPUT_FORMAT_REQUIREMENTS_SINGLE;
+        return new StrSubstitutor(valueMap).replace(template);
     }
 
     static String renderFullSetting(Map<String, String> valueMap) {

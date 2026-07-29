@@ -113,10 +113,12 @@ public class MicrophoneManager {
         IS_RECORDING.set(false);
     }
 
-    public static void cancelRecord() {
-        RECORDING_SESSION.incrementAndGet();
-        IS_RECORDING.set(false);
-    }
+    // 这里原本还有 cancelRecord()：停录并让本次结果作废。它唯一的调用者是
+    // STTChatKey.cancelServerRecording，用于服务端撤回凭据时丢弃正在进行的录音。
+    // 「服务器提供 STT」撤除后没有任何东西需要作废一次录音——本地录音总是录完即交付。
+    //
+    // RECORDING_SESSION 仍然有用，别跟着删：startRecord 每次自增它，
+    // 于是快速连按两次时，前一次的结果不会在后一次开始后才被交付。
 
     private static void doRecord(String deviceName, AudioFormat format, Consumer<byte[]> consumer, long session) {
         try (TargetDataLine dataLine = getMicrophone(deviceName, format)) {

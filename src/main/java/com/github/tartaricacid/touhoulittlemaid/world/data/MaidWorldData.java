@@ -33,11 +33,16 @@ public class MaidWorldData extends SavedData {
                     .fieldOf("MaidInfos").forGetter(o -> (HashMap<UUID, List<MaidInfo>>) o.infos),
             Codec.unboundedMap(UUIDUtil.STRING_CODEC, TOMBS_STONE_CODEC_LIST).xmap(Maps::newHashMap, Function.identity())
                     .fieldOf("MaidTombstones").forGetter(o -> (HashMap<UUID, List<MaidInfo>>) o.tombstones),
-            // dirty 仅用于运行时；存档中缺少该字段时按 false 处理。
+            // 1.21.1 saves predate the codec migration and do not contain this
+            // runtime-only flag. Accept the port-era field without requiring it.
             Codec.BOOL.optionalFieldOf("dirty", false).forGetter(SavedData::isDirty)
     ).apply(ins, (MaidWorldData::new)));
 
-
+    // 1.21.11 SavedDataType 的 id 直接当存档文件名
+    // （data/<id>.dat）。移植时误用 Identifier.toString() = "touhou_little_maid:world_data"——
+    // ① 冒号在 Windows 是非法路径字符 → InvalidPathException，世界数据永远无法读/写；
+    // ② 文件名偏离 origin → 破坏 1.21.1 存档兼容。origin/1.21.1（及上游 release tag）逐字
+    // 为 "touhou_little_maid_world_data"，此处必须原样还原。
     private static final String IDENTIFIER = "touhou_little_maid_world_data";
     private final Map<UUID, List<MaidInfo>> infos;
     private final Map<UUID, List<MaidInfo>> tombstones;
@@ -91,7 +96,8 @@ public class MaidWorldData extends SavedData {
         }
     }
 
-    // 无主人时保持返回 null，调用方据此跳过玩家索引。
+    // 1.21.11: TamableAnimal.getOwnerUUID() 已移除，owner 改为 EntityReference<LivingEntity>（可为 null）。
+    //   语义保持：无主人时返回 null（与原 getOwnerUUID() 一致）。参照 EntityDanmaku 既有迁移。
     @Nullable
     private static UUID ownerUuid(EntityMaid maid) {
         EntityReference<LivingEntity> ref = maid.getOwnerReference();

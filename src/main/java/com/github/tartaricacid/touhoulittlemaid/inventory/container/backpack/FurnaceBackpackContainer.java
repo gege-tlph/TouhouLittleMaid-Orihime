@@ -3,7 +3,8 @@ package com.github.tartaricacid.touhoulittlemaid.inventory.container.backpack;
 import com.github.tartaricacid.touhoulittlemaid.entity.backpack.data.FurnaceBackpackData;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.MaidMainContainer;
-
+// TODO: FuelRegistry was removed from Fabric API in Minecraft 1.21.11
+// import net.fabricmc.fabric.api.registry.FuelRegistry;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.world.Container;
@@ -50,7 +51,8 @@ public class FurnaceBackpackContainer extends MaidMainContainer {
     }
 
     private boolean isFuel(ItemStack stack) {
-
+        // SWEEP R12-1：Fabric FuelRegistry 已并入 vanilla——1.21.11 用 level.fuelValues().isFuel(stack)
+        // （javap 证），语义 == origin 的 burnTime>0；此前硬编码 false = 熔炉背包不识别任何燃料
         return this.getMaid().level().fuelValues().isFuel(stack);
     }
 

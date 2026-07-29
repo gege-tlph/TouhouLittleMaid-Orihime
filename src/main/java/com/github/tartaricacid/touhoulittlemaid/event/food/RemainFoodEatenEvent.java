@@ -12,10 +12,14 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
 public class RemainFoodEatenEvent {
+    private static final Logger LOGGER = LogManager.getLogger(RemainFoodEatenEvent.class);
+
     public static void onAfterMaidEat(MaidAfterEatEvent event) {
         ItemStack foodAfterEat = event.getFoodAfterEat();
         if (!foodAfterEat.isEmpty()) {
@@ -23,9 +27,19 @@ public class RemainFoodEatenEvent {
 
             if (craftingRemainingItem.isEmpty()) {
                 String itemId = ItemsUtil.getItemId(foodAfterEat.getItem());
-                for (List<String> strings : ServerRuleConfig.get(MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST)) {
-                    if (strings.get(0).equals(itemId)) {
-                        craftingRemainingItem = getItemStack(strings.get(1));
+                // 上游缺陷（TartaricAcid/TouhouLittleMaid#1139）：配置声明为 List<List<String>>，
+                // 但 MaidConfig 用的是无校验器的 builder.define，磁盘上写成扁平 ["minecraft:bowl"]
+                // 会在增强 for 的隐式 checkcast 上抛 ClassCastException，写成 [["minecraft:bowl"]]
+                // 会在 get(1) 抛 IndexOutOfBoundsException。本方法挂在 MaidAfterEatEvent 上、
+                // 跑在服务端 tick 内，一条手写坏的配置就能让 tick 崩。故按 Object 迭代逐项校验形状。
+                for (Object entry : ServerRuleConfig.get(MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST)) {
+                    if (!(entry instanceof List<?> pair) || pair.size() < 2
+                            || !(pair.get(0) instanceof String foodId) || !(pair.get(1) instanceof String containerId)) {
+                        LOGGER.warn("Ignoring malformed MaidEatenReturnContainerList entry {}; expected [item, container]", entry);
+                        continue;
+                    }
+                    if (foodId.equals(itemId)) {
+                        craftingRemainingItem = getItemStack(containerId);
                         break;
                     }
                 }
@@ -45,8 +59,14 @@ public class RemainFoodEatenEvent {
     }
 
     private static ItemStack getItemStack(String itemId) {
-        Identifier resourceLocation = Identifier.parse(itemId);
-
+        // 同 #1139：容器 id 同样来自手改配置，非法字符会让 Identifier.parse 抛异常，
+        // 一样能崩掉服务端 tick，故用 tryParse 的等价语义降级为「忽略该项」。
+        Identifier resourceLocation = Identifier.tryParse(itemId);
+        if (resourceLocation == null) {
+            LOGGER.warn("Ignoring malformed MaidEatenReturnContainerList container id {}", itemId);
+            return ItemStack.EMPTY;
+        }
+        // B6b: 1.21.11 BuiltInRegistries.ITEM.get(id) 返回 Optional<Holder.Reference<Item>>（javap 确认）
         return BuiltInRegistries.ITEM.get(resourceLocation)
                 .map(ref -> new ItemStack(ref.value()))
                 .orElse(ItemStack.EMPTY);

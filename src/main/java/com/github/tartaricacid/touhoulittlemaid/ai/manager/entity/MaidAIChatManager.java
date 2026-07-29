@@ -33,6 +33,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import com.github.tartaricacid.touhoulittlemaid.ai.manager.response.ResponseChat;
+import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.Role;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.core.lookup.StrSubstitutor;
 import org.jetbrains.annotations.NotNull;
@@ -132,7 +134,7 @@ public final class MaidAIChatManager extends MaidAIChatData {
     private void onSettingIsEmpty(ChatClientInfo clientInfo, LLMClient chatClient) {
         ChatBubbleManager bubbleManager = this.maid.getChatBubbleManager();
         if (ServerRuleConfig.get(AIConfig.AUTO_GEN_SETTING_ENABLED)) {
-            // 未配置角色设定时，由服务端生成初始设定并通过聊天气泡反馈。
+            // #4: AutoGenSettingCallback 误排除已恢复（服务端自动生成女仆人设；chatbubble 视觉反馈 P5 延后）
             List<LLMMessage> messages = this.autoGenSetting(this.maid, clientInfo);
             AutoGenSettingCallback callback = new AutoGenSettingCallback(this, messages);
             chatClient.chat(callback);
@@ -162,33 +164,80 @@ public final class MaidAIChatManager extends MaidAIChatData {
         }
     }
 
+    /**
+     * 本次回复是否需要模型额外产出一段独立的 TTS 文本。
+     *
+     * <p>只有「TTS 确实会被调用」且「合成语言与聊天语言不同」时才需要。同语言时第二段是第一段的
+     * 逐字副本，TTS 关闭或站点不可用时第二段生成完就被丢弃——两种情况下索取它都只是在多付一倍
+     * 输出 token，还平白给正文里的 {@code ---} 一个被当成分隔符的机会。</p>
+     *
+     * <p>这组条件必须与 {@link LLMCallback#onSuccess} 里决定是否真的去合成的那组保持一致，
+     * 一旦分叉就会出现「要了第二段却不用」或「用第二段却没要」。</p>
+     */
+    public boolean needsSeparateTtsText(String chatLanguage) {
+        if (StringUtils.equals(chatLanguage, this.getTTSLanguage())) {
+            return false;
+        }
+        TTSSite site = this.getTTSSite();
+        return ServerRuleConfig.get(AIConfig.TTS_ENABLED) && site != null && site.enabled();
+    }
+
+    /**
+     * 用本次对话已记录的聊天语言判定，见 {@link #needsSeparateTtsText(String)}
+     */
+    public boolean needsSeparateTtsText() {
+        return this.needsSeparateTtsText(this.chatLanguage);
+    }
+
     private List<LLMMessage> getMessages(MaidAIChatManager chatManager, String language) {
         // 如果含有自定义设定，则直接使用自定义设定
         if (StringUtils.isNotBlank(chatManager.customSetting)) {
             EntityMaid maid = chatManager.getMaid();
             String setting = PapiReplacer.replaceSetting(chatManager.customSetting, maid, language);
-            return this.buildMessage(setting, maid, chatManager.getHistory());
+            return this.buildMessage(setting, maid, chatManager.getHistory(), language);
         }
 
         // 其他情况下，获取默认设定文件
         return chatManager.getSetting().map(s -> {
             EntityMaid maid = chatManager.getMaid();
             String setting = s.getSetting(maid, language);
-            return this.buildMessage(setting, maid, chatManager.getHistory());
+            return this.buildMessage(setting, maid, chatManager.getHistory(), language);
         }).orElse(Lists.newArrayList());
     }
 
     /**
      * 根据女仆的设定和历史记录，构建发送给 LLM 的完整消息列表。
      * <p>
-     * 最终结构为：{@code [SYSTEM 设定, SYSTEM 摘要(可选), ...历史记录(从旧到新)]}
+     * 最终结构为：{@code [SYSTEM 设定, SYSTEM 摘要(可选), ...历史记录(从旧到新), SYSTEM 权威要求]}
+     *
+     * <p>末尾那条是有意的：历史紧贴生成位置、权重高于开头的系统提示词，实测会让女仆照抄旧语言、
+     * 或跟着一段纯聊天的历史继续不调用工具。详见 {@link StringConstant#HISTORY_IS_NOT_INSTRUCTION}。</p>
      */
-    private List<LLMMessage> buildMessage(String setting, EntityMaid maid, CappedQueue<LLMMessage> history) {
+    private List<LLMMessage> buildMessage(String setting, EntityMaid maid,
+                                          CappedQueue<LLMMessage> history, String language) {
         List<LLMMessage> chatList = Lists.newArrayList();
         chatList.add(LLMMessage.systemChat(maid, setting));
         this.historySummaryManager.appendSummaryMessage(chatList);
-        history.getDeque().descendingIterator().forEachRemaining(chatList::add);
+        history.getDeque().descendingIterator()
+                .forEachRemaining(message -> chatList.add(withoutTtsHalf(message)));
+        chatList.add(LLMMessage.systemChat(maid, PapiReplacer.trailingRequirements(maid, language)));
         return chatList;
+    }
+
+    /**
+     * 回放历史时剥掉旧版残留的 TTS 半段。
+     *
+     * <p>助手回复现在只存对话文本，但**已有存档里存的是 {@code chat---tts} 整串**，那些女仆的
+     * 历史无法靠「以后不再写脏数据」自愈。这里在回放时归一化，让旧档立刻受益；
+     * 无分隔符的新记录原样返回。</p>
+     */
+    static LLMMessage withoutTtsHalf(LLMMessage message) {
+        if (message.role() != Role.ASSISTANT || StringUtils.isBlank(message.message())
+                || !message.message().contains("---")) {
+            return message;
+        }
+        return new LLMMessage(message.role(), new ResponseChat(message.message()).getChatText(),
+                message.gameTime(), message.toolCalls(), message.toolCallId());
     }
 
     private List<LLMMessage> autoGenSetting(EntityMaid maid, ChatClientInfo clientInfo) {

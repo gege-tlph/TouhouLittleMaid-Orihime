@@ -40,7 +40,8 @@ import net.minecraft.world.phys.Vec3;
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataAttachment.POWER_NUM;
 
 public class EntityPowerPoint extends Entity implements IEntityWithComplexSpawn, IEntityExtension {
-
+    // 1.21.11: EntityType.Builder.build(String) 已移除 -> build(ResourceKey)
+    // （与仓库既定写法一致：EntityFairy / EntityBox / EntityChair / EntitySit）
     public static final EntityType<EntityPowerPoint> TYPE = EntityType.Builder.<EntityPowerPoint>of(EntityPowerPoint::new, MobCategory.MISC)
             .sized(0.5F, 0.5F).clientTrackingRange(6).updateInterval(20)
             .build(ResourceKey.create(Registries.ENTITY_TYPE,
@@ -122,7 +123,7 @@ public class EntityPowerPoint extends Entity implements IEntityWithComplexSpawn,
         if (level.isClientSide()) {
             spawnExplosionParticle(level, x, y, z, random);
         } else {
-
+            // SWEEP R9-2：原「等 network.message 编译」延后已过期（两包早已注册+编译）——还原 origin
             NetworkHandler.sendToNearby(this, new BeaconAbsorbPackage(x, y, z));
         }
     }
@@ -166,7 +167,7 @@ public class EntityPowerPoint extends Entity implements IEntityWithComplexSpawn,
         double slipperiness = 0.98;
         if (this.onGround()) {
             BlockPos pos = new BlockPos((int) this.getX(), (int) (this.getY() - 1.0), (int) this.getZ());
-
+            //slipperiness = this.level.getBlockState(pos).getFriction(this.level, pos, this) * 0.98;
             slipperiness = this.level.getBlockState(pos).getBlock().getFriction() * 0.98;
         }
         this.setDeltaMovement(this.getDeltaMovement().multiply(slipperiness, 0.98, slipperiness));
@@ -223,7 +224,9 @@ public class EntityPowerPoint extends Entity implements IEntityWithComplexSpawn,
     protected void doWaterSplashEffect() {
     }
 
-
+    // 1.21.11: Entity.hurt 现 final void → 伤害逻辑迁到 hurtServer(ServerLevel,DamageSource,float)（服务端权威，
+    //   isClientSide 检查不再需要）。isInvulnerableTo(source) → isInvulnerableToBase(source)（1.21.11 保留的 protected 等价）。
+    //   还原 HEAD 行为：非无敌时扣血、<=0 discard；返回 false（本实体自管血量，见 CLIENT_AUDIT §I.B/B1）。
     @Override
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
         if (!this.isAlive() || this.isInvulnerableToBase(source)) {
@@ -237,7 +240,8 @@ public class EntityPowerPoint extends Entity implements IEntityWithComplexSpawn,
         return false;
     }
 
-
+    // 1.21.11: CompoundTag → ValueOutput/ValueInput；键 Health/Age/Value 逐字节对齐 origin/1.21.1（short）。
+    //   此前为空 {} → Value/Age chunk 重载丢失（CLIENT_AUDIT §I.B/B1）。
     @Override
     public void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput output) {
         output.putShort("Health", (short) this.health);
@@ -275,7 +279,7 @@ public class EntityPowerPoint extends Entity implements IEntityWithComplexSpawn,
                     player.setAttached(POWER_NUM, new PowerAttachment(power.get()));
                 }
             }
-
+            // SWEEP R9-2：同上，还原 origin 的拾取同步
             ServerPlayNetworking.send((ServerPlayer) player, new SyncDataPackage(power.get(), maidNum.get()));
             this.discard();
             if (player instanceof ServerPlayer serverPlayer) {

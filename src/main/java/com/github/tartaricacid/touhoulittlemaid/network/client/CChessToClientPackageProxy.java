@@ -29,7 +29,7 @@ public final class CChessToClientPackageProxy {
         boolean maidLost = CChessUtil.isMaid(position) && position.isMate();
         boolean playerLost = false;
         if (!maidLost) {
-
+            // TODO: 暂时不做女仆的棋技系统
             move = new Search(position, 12).searchMain(levelTime);
             // 玩家是否输了
             playerLost = position.makeMove(move) && CChessUtil.isPlayer(position) && position.isMate();

@@ -109,7 +109,7 @@ public class TaskAttack implements IAttackTask {
 
     @Override
     public boolean isWeapon(EntityMaid maid, ItemStack stack) {
-        ItemAttributeModifiers attributeModifiers = stack./* getAttributeModifiers() */get(DataComponents.ATTRIBUTE_MODIFIERS);
+        ItemAttributeModifiers attributeModifiers = stack./*getAttributeModifiers()*/get(DataComponents.ATTRIBUTE_MODIFIERS);
         return attributeModifiers != null && attributeModifiers.modifiers()
                 .stream()
                 .anyMatch(modifier -> modifier.attribute().is(Attributes.ATTACK_DAMAGE));

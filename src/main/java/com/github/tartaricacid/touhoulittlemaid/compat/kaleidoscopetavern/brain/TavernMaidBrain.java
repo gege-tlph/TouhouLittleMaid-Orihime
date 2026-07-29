@@ -39,7 +39,9 @@ public final class TavernMaidBrain implements IExtraMaidBrain {
 
     @Override
     public boolean canClimbBlock(EntityMaid maid, BlockPos pos, BlockState state) {
-        // 所有三种栽培葡萄变种都使用这种公共上游类型。它们仍然可供玩家和其他生物攀爬；只有女仆路径规划避免使用密集的作物格子作为垂直捷径。
+        // All three cultivated grape variants use this public upstream type.
+        // They remain climbable for players and other mobs; only maid path
+        // planning avoids using dense crop trellises as vertical shortcuts.
         return !(state.getBlock() instanceof GrapevineTrellisBlock);
     }
 }

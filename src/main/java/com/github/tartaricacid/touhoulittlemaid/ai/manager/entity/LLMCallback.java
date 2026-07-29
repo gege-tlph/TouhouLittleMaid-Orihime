@@ -117,7 +117,9 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
     }
 
     /**
-     * 当前是否运行在服务端主线程。 <p> 若当前上下文不在 {@link ServerLevel}，则返回 {@code false}。
+     * 当前是否运行在服务端主线程。
+     * <p>
+     * 若当前上下文不在 {@link ServerLevel}，则返回 {@code false}。
      */
     public boolean isOnServerThread() {
         if (!(maid.level instanceof ServerLevel serverLevel)) {
@@ -166,17 +168,21 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
      */
     @Override
     public void onSuccess(ResponseChat responseChat) {
-        String chatText = responseChat.getChatText();
-        String ttsText = responseChat.getTtsText();
+        // 没索取第二段时整段响应都是对话文本，此时正文里的 --- 只是内容，拆分只会截断回复
+        ResponseChat response = chatManager.needsSeparateTtsText() ? responseChat : responseChat.asSinglePart();
+        String chatText = response.getChatText();
+        String ttsText = response.getTtsText();
 
         if (chatText.isBlank() || ttsText.isBlank()) {
-            String message = "Error in Response Chat: %s".formatted(responseChat);
+            String message = "Error in Response Chat: %s".formatted(response);
             this.onFailure(null, new Throwable(message), ErrorCode.CHAT_TEXT_IS_EMPTY);
             return;
         }
 
-        // 记录 LLM 的回答到历史中，供后续对话使用
-        chatManager.addAssistantHistory(responseChat.toString());
+        // 记录 LLM 的回答到历史中，供后续对话使用。
+        // 只存对话那一半：ttsText 是拿去合成语音的翻译，对后续对话零信息量，存进去只会让模型
+        // 把「上一次用的是哪种语言」当成范例照抄——玩家改了 TTS 语言后，历史里的旧语言反而胜出。
+        chatManager.addAssistantHistory(chatText);
 
         TTSSite site = chatManager.getTTSSite();
         if (ServerRuleConfig.get(AIConfig.TTS_ENABLED) && site != null && site.enabled()) {
@@ -318,7 +324,8 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
     }
 
     /**
-     * 如果大模型出现了幻觉，此时需要 tool result 里需要严肃指出， 让大模型自己意识到这一点，并且在下一轮对话里进行纠正。
+     * 如果大模型出现了幻觉，此时需要 tool result 里需要严肃指出，
+     * 让大模型自己意识到这一点，并且在下一轮对话里进行纠正。
      */
     private LLMCallback onToolErrorCall(ToolCall toolCall, String invalidMsg, LLMCallback callback) {
         // 日志记录一下
@@ -331,7 +338,10 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
     }
 
     /**
-     * 对同一批次中的 tool_call 列表按签名去重，保留首次出现的调用。 <p> LLM 偶尔会在同一轮返回完全相同的 tool_call（名称 + 参数一致）， 重复执行没有意义且会浪费 token，因此在这里统一过滤。
+     * 对同一批次中的 tool_call 列表按签名去重，保留首次出现的调用。
+     * <p>
+     * LLM 偶尔会在同一轮返回完全相同的 tool_call（名称 + 参数一致），
+     * 重复执行没有意义且会浪费 token，因此在这里统一过滤。
      */
     private List<ToolCall> dedupToolCalls(List<ToolCall> toolCalls) {
         List<ToolCall> safeToolCalls = toolCalls == null ? List.of() : toolCalls;
@@ -346,7 +356,12 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
     }
 
     /**
-     * 在执行一批 tool_call 之前进行前置检查，包括： <ul> <li>累加工具调用轮次计数器，超过 {@link #MAX_TOOL_TURN_COUNT} 时中断；</li> <li>比较本轮批次签名与上一轮签名，检测连续重复调用并在超过 {@link #MAX_REPEAT_TOOL_BATCH_COUNT} 时中断。</li> </ul>
+     * 在执行一批 tool_call 之前进行前置检查，包括：
+     * <ul>
+     *   <li>累加工具调用轮次计数器，超过 {@link #MAX_TOOL_TURN_COUNT} 时中断；</li>
+     *   <li>比较本轮批次签名与上一轮签名，检测连续重复调用并在超过
+     *       {@link #MAX_REPEAT_TOOL_BATCH_COUNT} 时中断。</li>
+     * </ul>
      *
      * @return {@code true} 表示可以继续执行，{@code false} 表示应中断当前调用链
      */
@@ -382,9 +397,16 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
     }
 
     /**
-     * 依次执行一批去重后的 tool_call，逐个调用 {@link #onSingleCall}。 <p> 若某个工具返回了与当前主回调不同的子流程回调（如知识库查询产生的 {@code GroundedAnswerCallback}）， 不会中断主流程，而是将其收集到 {@code sideCallbacks} 中由调用方独立发送， 同时向主回调补充一条占位 tool result，以满足 LLM 协议对每个 tool_call 都需要响应的要求。 <p> 若某个工具调用抛出 {@link JsonSyntaxException}，会通过 {@link #onToolErrorCall} 将错误信息写入 tool result，让 LLM 在下一轮自行纠正，而不会中断整批后续调用。
+     * 依次执行一批去重后的 tool_call，逐个调用 {@link #onSingleCall}。
+     * <p>
+     * 若某个工具返回了与当前主回调不同的子流程回调（如知识库查询产生的 {@code GroundedAnswerCallback}），
+     * 不会中断主流程，而是将其收集到 {@code sideCallbacks} 中由调用方独立发送，
+     * 同时向主回调补充一条占位 tool result，以满足 LLM 协议对每个 tool_call 都需要响应的要求。
+     * <p>
+     * 若某个工具调用抛出 {@link JsonSyntaxException}，会通过 {@link #onToolErrorCall}
+     * 将错误信息写入 tool result，让 LLM 在下一轮自行纠正，而不会中断整批后续调用。
      *
-     * @param toolCalls 去重后的工具调用列表
+     * @param toolCalls            去重后的工具调用列表
      * @param hasMultipleToolCalls 本批是否包含多个工具调用，用于决定子流程回调的处理策略
      * @return 主流程的 {@link LLMCallback}，始终为当前会话的主回调
      */
@@ -440,7 +462,9 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
     }
 
     /**
-     * 将一批 tool_call 列表的各个签名用 {@code "||"} 连接，生成批次级别的签名字符串。 <p> 该签名用于与上一轮批次签名对比，判断 LLM 是否在连续重复调用同一组工具。
+     * 将一批 tool_call 列表的各个签名用 {@code "||"} 连接，生成批次级别的签名字符串。
+     * <p>
+     * 该签名用于与上一轮批次签名对比，判断 LLM 是否在连续重复调用同一组工具。
      */
     private String createToolBatchSignature(List<ToolCall> toolCalls) {
         StringJoiner joiner = new StringJoiner("||");
@@ -451,7 +475,13 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
     }
 
     /**
-     * 为单个 {@link ToolCall} 生成归一化签名，格式为 {@code "name|arguments"}。 <p> 签名会移除 arguments 中的所有空白字符，使得仅因 JSON 格式化差异 （如换行、缩进）不同的两次调用被视为相同调用。 <p> 同时用于 {@link #dedupToolCalls} 的去重 key 和 {@link #createToolBatchSignature} 的批次签名拼接。
+     * 为单个 {@link ToolCall} 生成归一化签名，格式为 {@code "name|arguments"}。
+     * <p>
+     * 签名会移除 arguments 中的所有空白字符，使得仅因 JSON 格式化差异
+     * （如换行、缩进）不同的两次调用被视为相同调用。
+     * <p>
+     * 同时用于 {@link #dedupToolCalls} 的去重 key
+     * 和 {@link #createToolBatchSignature} 的批次签名拼接。
      */
     private String getToolCallSignature(ToolCall toolCall) {
         FunctionToolCall function = toolCall.getFunction();
@@ -477,7 +507,13 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
     }
 
     /**
-     * 返回一个保证在服务端主线程上执行任务的 {@link Executor}。 <p> {@link net.minecraft.util.thread.BlockableEventLoop#execute} 内部已实现 "若当前在主线程则 inline 执行，否则调度到主线程"的逻辑， 因此同步工具不会引入额外的 tick 延迟，而异步工具能正确切回主线程。 <p> 若当前不在 {@link ServerLevel}，则退化为 inline 执行。
+     * 返回一个保证在服务端主线程上执行任务的 {@link Executor}。
+     * <p>
+     * {@link net.minecraft.util.thread.BlockableEventLoop#execute} 内部已实现
+     * "若当前在主线程则 inline 执行，否则调度到主线程"的逻辑，
+     * 因此同步工具不会引入额外的 tick 延迟，而异步工具能正确切回主线程。
+     * <p>
+     * 若当前不在 {@link ServerLevel}，则退化为 inline 执行。
      */
     private Executor serverExecutor() {
         if (maid.level instanceof ServerLevel serverLevel) {

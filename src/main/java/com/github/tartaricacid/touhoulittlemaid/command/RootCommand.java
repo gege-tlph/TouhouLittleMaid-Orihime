@@ -22,7 +22,10 @@ public final class RootCommand {
         root.then(PowerCommand.get().requires(GAME_MASTER));
         root.then(MaidNumCommand.get().requires(GAME_MASTER));
         root.then(MaidDebugCommand.get().requires(GAME_MASTER));
-        root.then(AIChatCommand.get().requires(GAME_MASTER));
+        // 与 canEditSite/config 同款：单人档房主（关作弊）在界面里本就有完整 AI 管理权，
+        // 命令层再卡 GAME_MASTER 就成了「界面能改、命令不能 reload」的半开门
+        root.then(AIChatCommand.get()
+                .requires(source -> GAME_MASTER.test(source) || isSingleplayerOwner(source)));
         root.then(ConfigCommand.get()
                 .requires(source -> GAME_MASTER.test(source) || isSingleplayerOwner(source)));
         root.then(MaidCommand.get().requires(GAME_MASTER));

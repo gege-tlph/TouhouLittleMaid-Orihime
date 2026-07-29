@@ -21,7 +21,8 @@ public class MaidDropBaubleEvent {
         // 0 和 1 级：10 个格子
         int startIndex = newLevel <= 1 ? 10 : 20;
         BaubleItemHandler maidBauble = maid.getMaidBauble();
-
+        // B5: 1.21.11 Entity.spawnAtLocation(ItemStack) → spawnAtLocation(ServerLevel, ItemStack)
+        //   （掉落本就仅服务端有效；用 instanceof ServerLevel 守卫，与仓库既有 EntityBox/ItemsUtil 同款）
         if (maid.level instanceof ServerLevel serverLevel) {
             for (int i = startIndex; i < maidBauble.getSlots(); i++) {
                 ItemStack drop = maidBauble.extractItem(i, 1, false);

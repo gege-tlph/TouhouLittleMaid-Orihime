@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 
 public class BeaconEffectButton extends TouhouStateSwitchButton {
     private static final Identifier BG = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_beacon.png");
-
+    // 1.21.11: MobEffectTextureManager（TextureAtlasSprite）已移除 → gui sprite Identifier（Gui.getMobEffectSprite，同一 mob_effect/* 贴图）
     private final Identifier sprite;
     private final Component tooltips;
     private final int potionIndex;
@@ -36,7 +36,7 @@ public class BeaconEffectButton extends TouhouStateSwitchButton {
     }
 
     @Override
-
+    // 1.21.11: onClick(double,double) → onClick(MouseButtonEvent, boolean)
     public void onClick(MouseButtonEvent event, boolean doubleClick) {
         this.isStateTriggered = !this.isStateTriggered;
         ClientPlayNetworking.send(new SetBeaconPotionPackage(pos, isStateTriggered ? potionIndex : -1));
@@ -46,13 +46,13 @@ public class BeaconEffectButton extends TouhouStateSwitchButton {
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         super.renderWidget(graphics, mouseX, mouseY, partialTicks);
-
+        // 1.21.11: blit(x,y,z,w,h,TextureAtlasSprite) 移除 → blitSprite（z 丢弃，管线接管）
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, this.sprite, this.getX() + 2, this.getY() + 2, 18, 18);
     }
 
     public void renderToolTip(GuiGraphics graphics, Screen screen, int pMouseX, int pMouseY) {
         if (this.isHovered) {
-
+            // 1.21.11: renderTooltip 移除 → setTooltipForNextFrame（Component 重载）
             graphics.setTooltipForNextFrame(Screens.getClient(screen).font, tooltips, pMouseX, pMouseY);
         }
     }

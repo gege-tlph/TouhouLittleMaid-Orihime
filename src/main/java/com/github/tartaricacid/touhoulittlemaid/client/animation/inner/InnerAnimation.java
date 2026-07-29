@@ -21,7 +21,8 @@ public final class InnerAnimation {
 
     public static void init() {
         INNER_ANIMATION.clear();
-
+        // 已被 2a 富化消除——9 个类全部编译（合计 81 个注册）。此前只接了空壳 init() → 注册表为空 →
+        // 女仆零动画（平移/不转头/呆滞）。现按 origin 全量注册。
         MaidBaseAnimation.init();
         MaidExtraAnimation.init();
         MaidArmorAnimation.init();

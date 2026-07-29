@@ -11,6 +11,7 @@ public final class GeoModelStateExtractor {
     public static void extract(AnimatedGeoModel model, GeoModelState state) {
         state.init(model.geoModel());
 
+        // 低版本移植注意：此处若有性能问题，需要额外实现一套基于数组+索引的 stack。可参考 26.1 实现
         var poseStack = getPoseStack();
         var tempMat = new Matrix4f();
         var poseStackDepth = 0;

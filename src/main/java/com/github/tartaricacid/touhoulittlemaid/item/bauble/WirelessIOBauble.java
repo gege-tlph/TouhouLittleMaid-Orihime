@@ -166,7 +166,12 @@ public class WirelessIOBauble implements IMaidBauble {
             }
             if (allowMove) {
                 int beforeCount = maidInvItem.getCount();
-
+/*                ItemStack after = ItemHandlerHelper.insertItemStacked(chest, maidInvItem.copy(), false);
+                int afterCount = after.getCount();
+                // Sync Client & Server
+                if (beforeCount != afterCount) {
+                    maid.extractItem(i, beforeCount - afterCount, false);
+                }*/
                 try (Transaction transaction = Transaction.openOuter()) {
                     long inserted = chest.insert(ItemVariant.of(maidInvItem.copy()), beforeCount, transaction);
                     if (inserted > 0) {
@@ -194,9 +199,9 @@ public class WirelessIOBauble implements IMaidBauble {
                 int beforeCount = (int) view.getAmount();
                 ItemStack after = insertItemStacked(maid, chestInvStack.toStack(beforeCount).copy(), false, slotConfig);
                 int afterCount = after.getCount();
-                // 同步客户端和服务器
+                // Sync Client & Server
                 if (beforeCount != afterCount) {
-
+                    //chest.extractItem(i, beforeCount - afterCount, false);
                     try (Transaction transaction = Transaction.openOuter()) {
                         chest.extract(view.getResource(), beforeCount - afterCount, transaction);
                         transaction.commit();

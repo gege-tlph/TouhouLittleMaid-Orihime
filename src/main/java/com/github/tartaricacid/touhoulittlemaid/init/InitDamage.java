@@ -13,7 +13,7 @@ public final class InitDamage {
     public static final ResourceKey<DamageType> DANMAKU = ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "danmaku"));
     public static final ResourceKey<DamageType> DANMAKU_ENDER_KILLER = ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "danmaku_ender_killer"));
 
-
+    // HEAD/26.1 均为 2 参（由 danmaku.isHurtEnderman() 内部决定伤害类型）；移植期误改成 boolean 参且未更新调用点 → 还原 2 参。
     public static DamageSource danmakuDamage(Entity thrower, EntityDanmaku danmaku) {
         var damageTypes = thrower.level().registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE);
         if (danmaku.isHurtEnderman()) {

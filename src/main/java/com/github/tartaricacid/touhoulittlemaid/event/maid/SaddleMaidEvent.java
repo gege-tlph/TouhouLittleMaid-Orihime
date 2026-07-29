@@ -21,7 +21,7 @@ public class SaddleMaidEvent {
         ItemStack stack = event.getStack();
         if (stack.is(Items.SADDLE)) {
             if (player.getPassengers().isEmpty() && maid.getPassengers().isEmpty()) {
-
+                // FIXME 抱起后概率导致女仆留在原地悬空
                 boolean success = maid.startRiding(player);
                 if (success && FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
                     SaddleMaidEvent.showTips();
@@ -47,7 +47,7 @@ public class SaddleMaidEvent {
         Minecraft minecraft = Minecraft.getInstance();
         Component component = Component.translatable("message.touhou_little_maid.saddle.how_to_eject");
         minecraft.gui.setOverlayMessage(component, false);
-
+        // B6b: 1.21.11 GameNarrator.sayNow(Component) → saySystemNow(Component)（javap 确认）
         minecraft.getNarrator().saySystemNow(component);
     }
 }

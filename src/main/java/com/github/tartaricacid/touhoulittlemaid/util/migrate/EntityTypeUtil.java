@@ -7,7 +7,7 @@ import net.minecraft.world.entity.EntityType;
 import java.util.Optional;
 
 /**
- * 实体类型创建与渲染所需的兼容辅助方法。
+ * Utility for 1.21.1 → 1.21.11 entity type migration
  */
 public final class EntityTypeUtil {
     private EntityTypeUtil() {

@@ -14,9 +14,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.function.Supplier;
 
-/**
- * 在渲染时选择替换项目模型，以便配置切换保持活动状态。
- */
+/** Selects a replacement item model at render time so config toggles remain live. */
 public final class ReplaceableBakedModel extends WrapperBakedItemModel {
     private final ItemModel replacement;
     private final Supplier<Boolean> replace;

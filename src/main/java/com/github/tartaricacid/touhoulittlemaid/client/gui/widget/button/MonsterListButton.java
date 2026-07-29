@@ -16,7 +16,8 @@ public class MonsterListButton extends Button {
     private final Identifier entityId;
 
     public MonsterListButton(Component entityName, int x, int y, Identifier entityId, AttackTaskConfigGui parents) {
-
+/*        super(Button.builder(entityName, b -> {
+        }).pos(x, y).size(164, 13));*/
         super(x, y, 164, 13, entityName, b -> {
         }, Button.DEFAULT_NARRATION);
         this.parents = parents;
@@ -24,7 +25,7 @@ public class MonsterListButton extends Button {
     }
 
     @Override
-
+    // 1.21.11: renderWidget 现为 final → 覆写 renderContents；RenderSystem.enableDepthTest 移除（管线接管）
     protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float pPartialTick) {
         Minecraft mc = Minecraft.getInstance();
         if (deleteClick(mouseX, mouseY)) {
@@ -39,7 +40,7 @@ public class MonsterListButton extends Button {
     }
 
     @Override
-
+    // 1.21.11: onClick(double,double) → onClick(MouseButtonEvent, boolean)；origin 即不调 super（onPress 为空 lambda）
     public void onClick(MouseButtonEvent event, boolean doubleClick) {
         double mouseX = event.x();
         double mouseY = event.y();

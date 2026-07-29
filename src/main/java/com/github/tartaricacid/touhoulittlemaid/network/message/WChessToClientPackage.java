@@ -37,7 +37,7 @@ public record WChessToClientPackage(BlockPos pos, String fenData) implements Cus
         context.client().execute(() -> clientHandle(message));
     }
 
-
+    // B7b: 还原 HEAD 的 @Environment(CLIENT) 内联模式（移植期外提的 proxy 已 P5 排除）。逻辑不变（棋算在客户端后台线程）。
     @Environment(EnvType.CLIENT)
     private static void clientHandle(WChessToClientPackage message) {
         CompletableFuture.runAsync(() -> onHandle(message), Util.backgroundExecutor());
@@ -57,7 +57,7 @@ public record WChessToClientPackage(BlockPos pos, String fenData) implements Cus
         boolean maidLost = WChessUtil.isMaid(position) && position.isMate();
         boolean playerLost = false;
         if (!maidLost) {
-
+            // TODO: 暂时不做女仆的棋技系统
             move = new Search(position, 12).searchMain(levelTime);
             // 玩家是否输了
             playerLost = position.makeMove(move) && WChessUtil.isPlayer(position) && position.isMate();

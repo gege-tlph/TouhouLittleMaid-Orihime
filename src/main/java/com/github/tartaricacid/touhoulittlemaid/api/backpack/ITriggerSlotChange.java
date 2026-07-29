@@ -8,8 +8,8 @@ import javax.annotation.Nullable;
 /**
  * 实现该接口的 SlotItemHandler 类会在槽位变化时触发饰品或者背包 takeoff 事件
  * <p>
- * Shift 点击转移物品时，槽位回调触发前原物品可能已经被清空，无法取得变化前的数据，
- * 因此由该接口额外保存并传递槽位变更信息。
+ * Mojang 非常奇妙，Shift 点击转移物品时无法在 SlotItemHandler 自带的的 takeoff 方法中获取变化前物品的信息
+ * 因为物品已经被清空了，所以只能通过自己来实现类似的功能
  */
 public interface ITriggerSlotChange {
     /**

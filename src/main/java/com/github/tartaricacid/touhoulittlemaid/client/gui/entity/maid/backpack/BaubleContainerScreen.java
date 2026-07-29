@@ -68,11 +68,13 @@ public class BaubleContainerScreen extends AbstractMaidContainerGui<BaubleContai
     protected void renderAdditionTransTooltip(GuiGraphics graphics, int x, int y) {
         if (favorabilityLevel < 2) {
             if (leftPos + 152 <= x && x < leftPos + 240 && topPos + 81 <= y && y < topPos + 115) {
+                // 1.21.11: renderTooltip 移除 → setTooltipForNextFrame
                 graphics.setTooltipForNextFrame(font, Component.translatable("gui.touhou_little_maid.bauble_button.need_favorability_level", 2), x, y);
             }
         }
         if (favorabilityLevel < 3) {
             if (leftPos + 152 <= x && x < leftPos + 240 && topPos + 117 <= y && y < topPos + 151) {
+                // 1.21.11: renderTooltip 移除 → setTooltipForNextFrame
                 graphics.setTooltipForNextFrame(font, Component.translatable("gui.touhou_little_maid.bauble_button.need_favorability_level", 3), x, y);
             }
         }

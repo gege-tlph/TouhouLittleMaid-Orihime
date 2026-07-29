@@ -2,37 +2,37 @@ package com.github.tartaricacid.touhoulittlemaid.api.animation;
 
 public interface IWorldData {
     /**
-     * 获取 Minecraft 世界时间，范围为 0～24000。
+     * Get the Minecraft's world time, 0-24000
      *
-     * @return 世界时间
+     * @return world time
      */
     long getWorldTime();
 
     /**
-     * 判断当前世界是否为白天。
+     * Minecraft's world is day?
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean isDay();
 
     /**
-     * 判断当前世界是否为夜晚。
+     * Minecraft's world is night?
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean isNight();
 
     /**
-     * 判断当前世界是否正在下雨。
+     * Minecraft's world is raining?
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean isRaining();
 
     /**
-     * 判断当前世界是否正在打雷。
+     * Minecraft's world is thundering?
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean isThundering();
 }

@@ -19,8 +19,9 @@ import java.util.List;
 import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 /**
- * 通过标准 Fabric 自定义载荷向客户端同步祭坛配方的最小显示摘要。
- * 载荷不替代或修改原版数据包，也不发送完整服务端配方对象。
+ * Sends only the display data that the 1.21.1 client used from its RecipeManager.
+ * Minecraft 1.21.11 no longer synchronizes custom recipe types to clients, so this
+ * stays on Fabric's standard custom-payload channel instead of altering vanilla packets.
  */
 public record SyncAltarRecipesPackage(List<AltarRecipeSummary> recipes) implements CustomPacketPayload {
     public static final Type<SyncAltarRecipesPackage> TYPE = new Type<>(modLoc("sync_altar_recipes"));

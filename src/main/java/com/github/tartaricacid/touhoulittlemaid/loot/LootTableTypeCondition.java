@@ -10,7 +10,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootTable;
-
+// TODO: LootContextParamSet was renamed to ContextKeySet in Minecraft 1.21.11
+// import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
 import net.minecraft.util.context.ContextKeySet;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
@@ -37,7 +38,10 @@ public record LootTableTypeCondition(Identifier lootTableType,
     }
 
     private boolean typeAreEquals(LootContext context) {
-
+        // SWEEP R9-3（2026-07-19）：原 TODO「accessor 被注释」系过期断言——LootContextParamSetsAccessor
+        // 已适配 1.21.11（BiMap<Identifier,ContextKeySet>）、已编译、已入 mixin 配置；
+        // LootTable.getParamSet() 亦存在（javap 证）→ 还原 origin 逻辑（LootContextParamSet→ContextKeySet 纯改名；
+        // 1.21.11 HolderGetter.Provider.get 收单个 ResourceKey，不再要 registry 前缀参）
         ResourceKey<LootTable> currentLootTable = ResourceKey.create(Registries.LOOT_TABLE, ((ILootContext) context).tlm$getQueriedLootTableId());
         ContextKeySet lootContextParamSet = LootContextParamSetsAccessor.tlm$getRegistry().get(lootTableType);
         return context.getResolver().get(currentLootTable).map(lootTable ->
@@ -49,7 +53,7 @@ public record LootTableTypeCondition(Identifier lootTableType,
         if (this.lootTableId == null) {
             return true;
         }
-
+        // 1.21.11: ResourceKey.location() → identifier()（javap 确认；lootTableId 为 ResourceKey<LootTable>，非 TagKey）
         return ((ILootContext) context).tlm$getQueriedLootTableId().equals(this.lootTableId.identifier());
     }
 

@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.network.message.config;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import net.minecraft.network.FriendlyByteBuf;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,12 +40,30 @@ class ConfigPayloadCodecTest {
     }
 
     @Test
-    void oversizedPayloadIsRejectedBeforeItCanReachTheServerThread() {
+    void oversizedPayloadIsRejectedByOurOwnEncoder() {
         String oversized = "x".repeat(1_048_577);
         ByteBuf buffer = Unpooled.buffer();
         try {
             assertThrows(RuntimeException.class, () -> SaveServerRulesPacket.STREAM_CODEC.encode(
                     buffer, new SaveServerRulesPacket(oversized)));
+        } finally {
+            buffer.release();
+        }
+    }
+
+    /**
+     * 上面那条只证明**我们自己的**客户端发不出超长载荷，而攻击者不会使用我们的编码器。
+     * 这里绕开编码器、直接写一个格式合法但超长的字符串，断言**解码侧自己**会拒绝——
+     * 服务端的长度上限必须由接收方强制，不能依赖发送方自律。
+     */
+    @Test
+    void oversizedPayloadIsRejectedOnDecodeWhenOurEncoderIsBypassed() {
+        String oversized = "x".repeat(1_048_577);
+        ByteBuf buffer = Unpooled.buffer();
+        try {
+            new FriendlyByteBuf(buffer).writeUtf(oversized, oversized.length());
+            assertThrows(RuntimeException.class,
+                    () -> SaveServerRulesPacket.STREAM_CODEC.decode(buffer));
         } finally {
             buffer.release();
         }

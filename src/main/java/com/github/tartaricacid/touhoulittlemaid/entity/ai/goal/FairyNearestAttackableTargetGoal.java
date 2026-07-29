@@ -42,7 +42,9 @@ public class FairyNearestAttackableTargetGoal<T extends LivingEntity> extends Ta
     }
 
     private void findTarget() {
-
+        // B5 恢复：1.21.11 移除了 Level.getNearestEntity(List,...) → getEntitiesOfClass（含 tag + targetConditions
+        //   谓词，test 现需 ServerLevel 首参）+ 最近距离筛选，忠实复刻原「按 tag 找最近可攻击目标」。
+        //   AI Goal 仅服务端 tick → ServerLevel 守卫等价原行为。
         if (this.mob.level instanceof ServerLevel serverLevel) {
             AABB searchArea = this.getTargetSearchArea(this.getFollowDistance());
             List<LivingEntity> entities = serverLevel.getEntitiesOfClass(LivingEntity.class, searchArea,

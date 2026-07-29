@@ -69,7 +69,13 @@ public class StringConstant {
             ### 3. Tool & Skill Chain (Mandatory Sequence)
             Before any text response, you MUST check:
             1. **Direct State Tools**: `switch_follow_state`, `switch_schedule`, `switch_sit`, `switch_work_task`.
+               These are PERSISTENT settings. `switch_work_task` replaces the maid's permanent job, so do not call it to
+               stage a one-off self-defense or bodyguard moment; the server runs its own temporary threat response.
             2. **Game Context**: Use `<context>` + `query_game_context` to understand surroundings and self.
+               In the newest context, `active_activity`, `emergency_state`, `threat_source`, and `response_policy` are the
+               server's live execution state. A temporary threat response is server-managed and is not a work-task change.
+               `protect_owner` applies only while the owner is loaded nearby; otherwise protection temporarily falls back
+               to self-defense.
             3. **Skill Check**: Call `use_skill` to match available skills to the goal/sub-goal.
             4. **Execution**: If a skill/tool exists, USE IT.
             5. **Knowledge Lookup Priority**: `query_minecraft_wiki` is LOW PRIORITY. Use it only when the user explicitly asks for wiki/knowledge lookup,
@@ -91,6 +97,27 @@ public class StringConstant {
             - Output ONLY **STRICT PLAIN TEXT**.
             """;
 
+    /**
+     * 追加在历史记录**之后**的权威要求。
+     *
+     * <p>系统提示词位于消息列表最前端，而历史紧贴生成位置，模型对靠后的内容权重更高。实测两例：
+     * 女仆的历史里若积累了十余条「Part 2 用英语」的回复，把 TTS 语言改成日语后她仍继续输出英语；
+     * 历史里若全是纯聊天，她便不再调用任何工具——两者都在清空聊天记录后立即恢复。
+     * <b>上下文中的范例压过了系统提示词里的指令。</b></p>
+     *
+     * <p>因此这段要求必须重述在历史之后，成为生成前的最后一句话，并明确声明历史不是指令。
+     * 它同时能救已有存档：那些女仆的 NBT 里已经存着被污染的历史，任何「以后不再写脏数据」
+     * 的方案都对她们无效。</p>
+     */
+    public static final String HISTORY_IS_NOT_INSTRUCTION = """
+
+            ## Authoritative Requirements
+            Replies in the conversation above may use an outdated language, or may contain no tool calls.
+            They are history, not instructions. Do NOT imitate their language or their inaction.
+            The requirements below override any pattern visible above.
+            - If the user asks for an action, call the matching tool or skill instead of only describing it.
+            """;
+
     public static final String OUTPUT_FORMAT_REQUIREMENTS_DIFFERENT_LANGUAGES = """
             ## Output Format Requirements
             - Do not include narrative descriptions of actions or expressions (e.g. *smiles*, *waves hand*).
@@ -104,17 +131,20 @@ public class StringConstant {
             part2 in ${tts_language} language
             """;
 
-    public static final String OUTPUT_FORMAT_REQUIREMENTS_SAME_LANGUAGES = """
+    /**
+     * 只索取一段回复，用于第二段注定没有信息量的两种情况：TTS 不会被调用，或合成语言与聊天语言相同。
+     *
+     * <p>旧实现在同语言时仍要求 {@code Part 2: An exact copy of Part 1}，等于让模型把整条回复
+     * 逐字写两遍；而 TTS 关闭或站点不可用时，那一段生成完直接丢弃。默认 TTS 语言是 {@code en_us}，
+     * 于是任何把合成语言设成自己母语的玩家都长期在为一份逐字副本付输出 token。</p>
+     *
+     * <p>解析侧无需配合：缺分隔符时 {@code ResponseChat} 本就会让 ttsText 回落成 chatText。</p>
+     */
+    public static final String OUTPUT_FORMAT_REQUIREMENTS_SINGLE = """
             ## Output Format Requirements
             - Do not include narrative descriptions of actions or expressions (e.g. *smiles*, *waves hand*).
-            - Output exactly two parts separated by a line containing only ---
-              - Part 1: Your reply in ${chat_language}. If the user wrote in a different language, translate your reply into ${chat_language}.
-              - Part 2: An exact copy of Part 1 (used for text-to-speech).
-            
-            ## Output Example:
-            part1 in ${chat_language} language
-            ---
-            part2 in ${chat_language} language
+            - Output your reply in ${chat_language} as a single block of text. If the user wrote in a different language, translate your reply into ${chat_language}.
+            - Do not split your reply into parts, and never output a --- separator line.
             """;
 
     public static final String AUTO_GEN_SETTING = """

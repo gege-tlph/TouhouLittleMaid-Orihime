@@ -11,7 +11,7 @@ import net.minecraft.world.effect.MobEffect;
 import javax.annotation.Nullable;
 
 /**
- * 集中封装不同界面调用点共用的兼容操作。
+ * 方便 26.1 -> 26.2 的迁移，用此类归一化
  */
 public final class ScreenUtil {
     private ScreenUtil() {

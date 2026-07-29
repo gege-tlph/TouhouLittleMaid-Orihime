@@ -16,7 +16,7 @@ import java.util.List;
 
 public class MaidHealSelfTask extends MaidCheckRateTask {
     private static final int MAX_DELAY_TIME = 50;
-
+    // TODO 配置文件管控
     private static final int MAX_CHECK_MISSING_HEATH = 2;
 
     public MaidHealSelfTask() {

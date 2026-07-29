@@ -68,7 +68,7 @@ public class BlockGarageKit extends Block implements EntityBlock, IBlock {
     @Environment(EnvType.CLIENT)
     @Override
     public boolean tlm$addDestroyEffects(BlockState state, Level world, BlockPos pos, ParticleEngine manager) {
-
+        // 1.21.11：ParticleEngine.destroy → ClientLevel.addDestroyBlockEffect（origin 语义=黏土粒子）
         if (world instanceof ClientLevel clientLevel) {
             clientLevel.addDestroyBlockEffect(pos, Blocks.CLAY.defaultBlockState());
         }
@@ -114,7 +114,7 @@ public class BlockGarageKit extends Block implements EntityBlock, IBlock {
 
     @Environment(EnvType.CLIENT)
     public static void fillItemCategory(CreativeModeTab.Output items) {
-
+        // 原注释声称依赖被排除的 ServerCustomPackLoader——假前提：origin 用的就是客户端 CustomPackLoader（假 TODO，2026-07-20 还原）
         for (String modelId : CustomPackLoader.MAID_MODELS.getModelIdSet()) {
             ItemStack stack = new ItemStack(InitBlocks.GARAGE_KIT);
             CustomData customData = stack.get(InitDataComponent.MAID_INFO);
@@ -139,6 +139,8 @@ public class BlockGarageKit extends Block implements EntityBlock, IBlock {
         return new TileEntityGarageKit(pos, state);
     }
 
+    // 1.21.11: BlockBehaviour.onRemove(5参) 移除 → 掉落逻辑迁至 TileEntityGarageKit.preRemoveSideEffects
+    //（BE 尚存活可读 extraData；同 BlockAltar/TileEntityAltar 架构）。此处不再需要覆盖。
 
     @Override
     public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
@@ -151,6 +153,7 @@ public class BlockGarageKit extends Block implements EntityBlock, IBlock {
         });
     }
 
+    // 1.21.11: getCloneItemStack 增加 boolean includeData 参数（手办始终携带自身数据，与 includeData 无关）
     @Override
     public ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state, boolean includeData) {
         return getGarageKitFromWorld(world, pos);
@@ -176,11 +179,13 @@ public class BlockGarageKit extends Block implements EntityBlock, IBlock {
         CompoundTag data = new CompoundTag();
         data.putString("id", id);
 
-
+        // 1.21.11: EntityType.create(Level) -> create(Level, EntitySpawnReason)
         Entity entity = type.create(worldIn, EntitySpawnReason.SPAWN_ITEM_USE);
         if (entity instanceof Mob mobEntity) {
             mobEntity.finalizeSpawn((ServerLevel) worldIn, ((ServerLevel) worldIn).getCurrentDifficultyAt(pos), EntitySpawnReason.SPAWN_ITEM_USE, null);
-
+            // 1.21.11: CustomData.loadInto(Entity) 移除；此处 data 仅含 "id"（mob 已由 type.create 生成为该 type）→ loadInto 本就冗余，移除。
+            // HEAD 用 mobEntity.addAdditionalSaveData(data) 捕获 mob 数据，但该方法在 Mob 现为 protected（跨包不可调）→
+            // 改用 public 的 saveWithoutId(ValueOutput)（捕获 id/pos/附加数据的超集；手办为静态展示，多余字段无害），桥接 merge 回 data。
             TagValueOutput valueOutput = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, ((ServerLevel) worldIn).registryAccess());
             mobEntity.saveWithoutId(valueOutput);
             data.merge(valueOutput.buildResult());
@@ -206,6 +211,7 @@ public class BlockGarageKit extends Block implements EntityBlock, IBlock {
 
     @Nullable
     public EntityType<?> getType(@Nullable CompoundTag nbt) {
+        // 1.21.11: getCompound/getString 现返 Optional
         if (nbt != null) {
             Optional<CompoundTag> entityTag = nbt.getCompound("EntityTag");
             if (entityTag.isPresent()) {
@@ -218,6 +224,8 @@ public class BlockGarageKit extends Block implements EntityBlock, IBlock {
         return null;
     }
 
+    // 1.21.11: RenderShape.ENTITYBLOCK_ANIMATED 已移除（仅剩 INVISIBLE/MODEL）。
+    // 与本仓库既定处理一致（BlockJoy/MaidBed/PicnicMat/SnackCabinet）：移除该覆盖，回落默认 MODEL。
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {

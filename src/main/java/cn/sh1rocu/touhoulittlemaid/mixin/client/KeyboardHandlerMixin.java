@@ -13,12 +13,12 @@ import org.spongepowered.asm.mixin.injection.Slice;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * 来自 Porting_Lib
+ * From Porting_Lib
  */
 @Environment(EnvType.CLIENT)
 @Mixin(KeyboardHandler.class)
 public abstract class KeyboardHandlerMixin {
-    // 如果满足条件，则跳过第一个返回操作码。
+    // First return opcode is jumped over if condition is met.
     @Inject(
             method = "keyPress",
             slice = @Slice(

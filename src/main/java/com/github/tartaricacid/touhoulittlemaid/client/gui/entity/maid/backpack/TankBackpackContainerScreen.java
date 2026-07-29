@@ -62,6 +62,7 @@ public class TankBackpackContainerScreen extends AbstractMaidContainerGui<TankBa
                     this.menu.getClientFluidCount() / 81).withStyle(ChatFormatting.GRAY);
             MutableComponent capacityInfo = Component.translatable("tooltips.touhou_little_maid.tank_backpack.capacity", TankBackpackData.CAPACITY / 81)
                     .withStyle(ChatFormatting.GRAY);
+            // 1.21.11: renderComponentTooltip 移除 → setTooltipForNextFrame（延迟到帧末渲染）
             graphics.setTooltipForNextFrame(font, Lists.newArrayList(fluidInfo, capacityInfo), Optional.empty(), x, y);
         }
     }

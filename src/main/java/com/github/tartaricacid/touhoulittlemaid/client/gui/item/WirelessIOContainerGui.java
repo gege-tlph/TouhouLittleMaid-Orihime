@@ -64,6 +64,7 @@ public class WirelessIOContainerGui extends AbstractContainerScreen<WirelessIOCo
 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTicks, int x, int y) {
+        // 1.21.11: setShader/setShaderTexture 移除（管线接管）；blit 增 RenderPipeline 首参 + 显式贴图尺寸（旧 7 参隐含 256x256）
         graphics.blit(RenderPipelines.GUI_TEXTURED, MAIN, leftPos, topPos, 0F, 0F, imageWidth, imageHeight, 256, 256);
         if (isBlacklist) {
             graphics.blit(RenderPipelines.GUI_TEXTURED, MAIN, leftPos + 61, topPos + 15, 0F, 166F, 54, 55, 256, 256);

@@ -41,7 +41,9 @@ public abstract class GeoReplacedEntityRenderer<TEntity extends LivingEntity, TS
     }
 
     public void submit(@NotNull TState state, @Nullable TData data, @NotNull PoseStack poseStack, @NotNull SubmitNodeCollector submitNodeCollector, @NotNull CameraRenderState camera) {
-
+//        if (NeoForge.EVENT_BUS.post(new RenderLivingEvent.Pre<>(state, this, state.partialTick, poseStack, submitNodeCollector)).isCanceled()) {
+//            return;
+//        }
 
         if (data != null && !data.isClosed()) {
             final var modelData = data.modelData;
@@ -80,7 +82,7 @@ public abstract class GeoReplacedEntityRenderer<TEntity extends LivingEntity, TS
             poseStack.popPose();
         }
         ((LivingEntityRendererAccessor) this).tlm$renderNameTag(state, poseStack, submitNodeCollector, camera);
-
+//        NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.client.event.RenderLivingEvent.Post<>(state, this, state.partialTick, poseStack, submitNodeCollector));
     }
 
 
@@ -136,5 +138,9 @@ public abstract class GeoReplacedEntityRenderer<TEntity extends LivingEntity, TS
 
     public final void addLayer(GeoLayerRenderer<? super TState, ? super TData> layer) {
         this.layerRenderers.add(layer);
+    }
+
+    public List<GeoLayerRenderer<? super TState, ? super TData>> getLayerRenderers() {
+        return this.layerRenderers;
     }
 }

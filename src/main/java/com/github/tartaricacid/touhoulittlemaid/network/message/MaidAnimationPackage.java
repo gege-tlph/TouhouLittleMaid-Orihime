@@ -11,7 +11,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
 /**
- * 用于同步客户端播放动画的消息 目前只包含拾取雪球的动画
+ * 用于同步客户端播放动画的消息
+ * 目前只包含拾取雪球的动画
  */
 public record MaidAnimationPackage(int maidId, int animationId) implements CustomPacketPayload {
     public static final int NONE = 0;
@@ -33,7 +34,9 @@ public record MaidAnimationPackage(int maidId, int animationId) implements Custo
     }
 
     public static MaidAnimationPackage pickUpSnowball(EntityMaid maid) {
-
+        // 播放丢雪球动画之前，先禁止女仆移动
+        // SWEEP R12-4：原延后注释引用 26.1 的 getAnimationManager() 形态；本树按 HEAD-align（节点 1 裁定）
+        // 用 EntityMaid 直字段 animationId/animationRecordTime（:332/:333 已存在）——按 origin 逐字还原
         maid.animationId = PICK_UP_SNOWBALL;
         maid.animationRecordTime = System.currentTimeMillis();
         // 返回消息

@@ -36,7 +36,8 @@ public class ItemKappaCompass extends Item {
     }
 
     public static void addPoint(Activity activity, BlockPos pos, ItemStack compass) {
-        // 持久映射编解码器解码为不可变映射。始终在添加另一个点之前进行复制，以便在重新加载后可以恢复部分配置的罗盘。
+        // Persistent map codecs decode to an immutable map. Always copy before adding
+        // another point so a partially configured compass can be resumed after reload.
         Map<String, BlockPos> activityPos = new HashMap<>(Objects.requireNonNullElse(
                 compass.get(KAPPA_COMPASS_ACTIVITY_POS), Map.of()));
         activityPos.put(activity.getName(), pos);

@@ -13,7 +13,7 @@ public final class PosListData {
     public ListTag serialize() {
         ListTag nbt = new ListTag();
         for (BlockPos pos : data) {
-
+            // 1.21.11: ListTag.addIntArray 移除 → add(new IntArrayTag(...))（javap 确认）
             nbt.add(new IntArrayTag(new int[]{pos.getX(), pos.getY(), pos.getZ()}));
         }
         return nbt;

@@ -46,10 +46,10 @@ public class TaskShears implements IMaidTask {
 
     @Override
     public FunctionCallSwitchResult onFunctionCallSwitch(EntityMaid maid) {
-        if (maid.getMainHandItem().is(ConventionalItemTags.SHEAR_TOOLS) || maid.getMainHandItem().getItem() instanceof ShearsItem) {
+        if (maid.getMainHandItem()/*.canPerformAction(ItemAbilities.SHEARS_HARVEST)*/.is(ConventionalItemTags.SHEAR_TOOLS) || maid.getMainHandItem().getItem() instanceof ShearsItem) {
             return FunctionCallSwitchResult.NO_CHANGE;
         }
-        if (TaskEquipUtil.tryEquipFromBackpack(maid, item -> item.is(ConventionalItemTags.SHEAR_TOOLS) || item.getItem() instanceof ShearsItem)) {
+        if (TaskEquipUtil.tryEquipFromBackpack(maid, item -> item.is(ConventionalItemTags.SHEAR_TOOLS) || item.getItem() instanceof ShearsItem/*item.canPerformAction(ItemAbilities.SHEARS_HARVEST)*/)) {
             return FunctionCallSwitchResult.OK;
         }
         return FunctionCallSwitchResult.MISSING_REQUIRED_ITEM;

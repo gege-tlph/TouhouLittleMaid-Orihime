@@ -77,7 +77,8 @@ public class TileEntityGarageKit extends BlockEntity implements IBlockEntityPers
     }
 
     /**
-     * 方块移除时，在方块实体仍可读取额外数据的阶段掉落带数据的车库套件物品。
+     * 1.21.11: 破坏时掉落带数据的手办物品。原位于 {@code BlockGarageKit.onRemove}（5 参 onRemove 已移除），
+     * 迁至此处（BE 尚存活可读 extraData；同 {@code TileEntityAltar.preRemoveSideEffects} 架构）。
      */
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {

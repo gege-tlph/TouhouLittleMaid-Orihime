@@ -102,7 +102,7 @@ public class MolangContext<TEntity> implements IContext<TEntity> {
         }
     }
 
-
+    // FIXME: 需要同时更新 animatable 和 entity 两个属性，再加上源属性
     @Override
     public <TChild> IContext<TChild> createChild(TChild child) {
         return new MolangContext<>(child, this);

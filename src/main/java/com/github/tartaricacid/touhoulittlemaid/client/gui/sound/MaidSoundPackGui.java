@@ -193,6 +193,7 @@ public class MaidSoundPackGui extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
+        // 1.21.11: renderBackground 已由 renderWithTooltipAndSubtitles 前置强制调用，屏内重复调用会二次 blur 崩溃
         graphics.fill(startX, startY, startX + 240, startY + 220, 0xFF2A2A2A);
         graphics.fill(startX + 242, startY, startX + 400, startY + 220, 0xFF2A2A2A);
         graphics.drawCenteredString(font, Component.translatable("gui.touhou_little_maid.custom_sound.pack.title"), startX + 120, startY + 6, 0xFFFFFFFF);

@@ -11,7 +11,7 @@ import org.joml.Matrix4f;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public final class GeoModelState {
+public final class GeoModelState implements IGeoLocatorSource {
     private GeoModel model;
     float[] data;
     final ShortArrayList renderBoneIndices;
@@ -64,6 +64,11 @@ public final class GeoModelState {
         }
     }
 
+    /**
+     * 这里不需要再判缩放：{@code GeoModelStateExtractor} 在填 {@code activeLocatorGroups} 时
+     * 已经把「缩放任意两个分量为 0」与「cubes 被隐藏」的骨骼剔除掉了，进到这里的都是要画的。
+     */
+    @Override
     public void visitLocatorGroup(GeoLocatorType type, PoseStack poseStack, Consumer<PoseStack> visitor) {
         var group = activeLocatorGroups.get(type.getSeq());
         if (!group.isEmpty()) {
@@ -78,6 +83,7 @@ public final class GeoModelState {
         }
     }
 
+    @Override
     public int locatorGroupSize(GeoLocatorType type) {
         return activeLocatorGroups.get(type.getSeq()).size();
     }

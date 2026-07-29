@@ -19,7 +19,8 @@ public class PotionItemUse {
             if (!potionStack.isEmpty()) {
                 CombinedInvWrapper inv = maid.getAvailableInv(false);
                 ItemStack leftStack = ItemHandlerHelper.insertItemStacked(inv, new ItemStack(Items.GLASS_BOTTLE), false);
-
+                // 如果背包满了，那就生成掉落物，预防一些改动物品堆叠的模组
+                // B5: spawnAtLocation 加 ServerLevel 首参（1.21.11）
                 if (!leftStack.isEmpty() && maid.level instanceof ServerLevel serverLevel) {
                     maid.spawnAtLocation(serverLevel, leftStack);
                 }

@@ -17,9 +17,6 @@ import java.util.List;
 import static cn.sh1rocu.touhoulittlemaid.TouhouLittleMaidFabric.*;
 
 @Environment(EnvType.CLIENT)
-/**
- * 可取消的女仆渲染事件，允许客户端扩展替换模型信息与动画集合。
- */
 public class RenderMaidEvent extends CancellableEvent {
     private final IMaid maid;
     private final ModelData modelData;
@@ -48,7 +45,11 @@ public class RenderMaidEvent extends CancellableEvent {
     }
 
     /**
-     * 本次渲染使用的可变模型数据。模型与动画允许为空，模型信息始终存在。
+     * origin/1.21.1 的载荷类型是 MaidModels.ModelData（BedrockModel&lt;Mob&gt;/MaidModelInfo/List&lt;Object&gt;）。
+     * <p>
+     * 1.21.11 RenderState 体系下 MaidModels 已按 26.1 形态重写（不再含 ModelData，模型类型改为
+     * {@link EntityMaidModel}，动画改为 {@link IAnimation}&lt;{@link EntityMaidRenderState}&gt;），
+     * 故 ModelData 迁移到事件内部，字段语义与 origin 一一对应。
      */
     public static class ModelData {
         private @Nullable EntityMaidModel model;

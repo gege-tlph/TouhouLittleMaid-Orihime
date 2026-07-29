@@ -210,7 +210,7 @@ public final class EntityMaidWrapper implements IMaidData {
         return Math.abs(maid.asEntity().getUUID().getLeastSignificantBits());
     }
 
-
+    // TODO 既然Biome有codec了，直接用应该也可以吧
     @Override
     public Biome getAtBiome() {
         return BiomeCacheUtil.getCacheBiome(maid.asEntity());

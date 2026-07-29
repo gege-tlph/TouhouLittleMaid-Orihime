@@ -10,7 +10,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-
+// TODO: 等待 1.21.11 版本依赖
+// import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -20,7 +21,8 @@ public class ShowPowerOverlay {
 
     public static final ShowPowerOverlay INSTANCE = new ShowPowerOverlay();
 
-
+    // TODO: 等待 1.21.11 版本依赖
+    // @Override
     public void render(@NotNull GuiGraphics guiGraphics, @NotNull DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
         Options options = minecraft.options;

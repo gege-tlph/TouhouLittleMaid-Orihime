@@ -67,7 +67,7 @@ public class MaidFeedAnimalTask extends MaidCheckRateTask {
                 feedEntity = null;
             }
         } else {
-
+            // this.chatBubbleKey = maid.getChatBubbleManager().addTextChatBubbleIfTimeout("chat_bubble.touhou_little_maid.inner.feed_animal.max_number", chatBubbleKey);
         }
     }
 

@@ -65,7 +65,7 @@ public class MaidAttackTridentTask extends Behavior<EntityMaid> {
 
             // 如果攻击时间大于 -1
             if (this.strafingTime > -1) {
-
+                // B4 恢复：引雷危险区判定（EnchantmentKeys un-excluded）
                 RegistryAccess access = owner.level.registryAccess();
                 boolean hasChanneling = getEnchantmentLevel(access, Enchantments.CHANNELING, owner.getMainHandItem()) > 0;
                 boolean canUseChanneling = owner.level.isThundering() && !owner.isUnderWater() && hasChanneling;

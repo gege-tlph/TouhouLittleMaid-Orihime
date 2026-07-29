@@ -19,6 +19,8 @@ public final class EntityHurtEvent {
         if (attacker instanceof TamableAnimal thrower && ray instanceof EntityHitResult hitResult) {
             Entity victim = hitResult.getEntity();
             if (victim instanceof TamableAnimal tameable) {
+                // 同一主人，那么免伤
+                // 1.21.11: TamableAnimal.getOwnerUUID() 已移除 → EntityReference<LivingEntity>.getUUID()
                 EntityReference<LivingEntity> victimOwner = tameable.getOwnerReference();
                 EntityReference<LivingEntity> throwerOwner = thrower.getOwnerReference();
                 if (victimOwner != null && throwerOwner != null

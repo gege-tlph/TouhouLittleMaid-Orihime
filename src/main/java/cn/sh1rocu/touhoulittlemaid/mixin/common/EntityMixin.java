@@ -25,7 +25,9 @@ public class EntityMixin {
             self.level.getChunk((int) Math.floor(x) >> 4, (int) Math.floor(z) >> 4);
     }
 
-    // 在原版 canRide 判定之后补充模组事件；三个布尔参数必须与目标方法签名保持一致。
+    // 1.21.11: startRiding(Entity,boolean) 已移除，改为 startRiding(Entity,boolean,boolean)
+    // （javap 确认：1 参版委托为 startRiding(e, false, true)）。3 参版内部仍调用 canRide(Entity)，
+    // 故注入点不变；handler 参数须与新目标签名一致。
     @Inject(
             method = "startRiding(Lnet/minecraft/world/entity/Entity;ZZ)Z",
             at = @At(

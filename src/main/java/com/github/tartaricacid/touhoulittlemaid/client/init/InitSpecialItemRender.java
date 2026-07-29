@@ -25,7 +25,8 @@ public final class InitSpecialItemRender implements ModelLoadingPlugin {
 
     @Override
     public void initialize(Context context) {
-        // 烘焙前修改器在 vanilla 的正常依赖行走之后运行。额外的模型使两种替代几何形状可以尽早发现。
+        // Before-bake modifiers run after vanilla's normal dependency walk.
+        // Extra models make the two replacement geometries discoverable early.
         context.addModel(LIFE_POINT_KEY, SimpleUnbakedExtraModel.blockStateModel(LIFE_POINT));
         context.addModel(POINT_ITEM_KEY, SimpleUnbakedExtraModel.blockStateModel(POINT_ITEM));
         context.modifyItemModelBeforeBake().register(ModelModifier.WRAP_PHASE, (model, bakeContext) -> {

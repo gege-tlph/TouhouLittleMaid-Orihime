@@ -98,9 +98,9 @@ public class BackupCommand {
             MutableComponent pos = Component.translatable("tooltips.touhou_little_maid.fox_scroll.position", data.pos().toShortString());
             String command = "/tlm backup get @s %s".formatted(id);
 
-
+            // B5: 1.21.11 HoverEvent 亦改为 sealed 抽象类 → new HoverEvent.ShowText(comp)（26.1+javap 一致）
             HoverEvent hoverEvent = new HoverEvent.ShowText(CommonComponents.joinLines(dimension, pos));
-
+            // B5: 1.21.11 ClickEvent 改为 sealed 抽象类 → new ClickEvent.RunCommand(cmd)（26.1+javap 一致）
             ClickEvent clickEvent = new ClickEvent.RunCommand(command);
 
             msg.withStyle(style -> style.withHoverEvent(hoverEvent))
@@ -133,7 +133,7 @@ public class BackupCommand {
             MutableComponent msg = Component.literal(backupFile).withStyle(ChatFormatting.DARK_PURPLE);
 
             String command = "/tlm backup get @s %s \"%s\"".formatted(uuid, backupFile);
-
+            // B5: 1.21.11 ClickEvent 改为 sealed 抽象类 → new ClickEvent.RunCommand(cmd)（26.1+javap 一致）
             ClickEvent clickEvent = new ClickEvent.RunCommand(command);
             msg.withStyle(style -> style.withClickEvent(clickEvent));
 

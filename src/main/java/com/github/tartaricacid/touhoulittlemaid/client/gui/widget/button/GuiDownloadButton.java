@@ -18,6 +18,7 @@ public class GuiDownloadButton extends Button {
         }
     }
 
+    // 1.21.11: Button 现为 abstract，子类须实现 renderContents（默认按钮=sprite+label）
     @Override
     protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderDefaultSprite(graphics);

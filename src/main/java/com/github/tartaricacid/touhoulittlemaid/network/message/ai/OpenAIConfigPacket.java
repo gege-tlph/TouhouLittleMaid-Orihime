@@ -31,6 +31,11 @@ public record OpenAIConfigPacket() implements CustomPacketPayload {
         context.server().execute(() -> sendSites(context.player()));
     }
 
+    /** 供命令入口复用：权限判定仍只有下面这一处。 */
+    public static void sendSitesTo(ServerPlayer player) {
+        sendSites(player);
+    }
+
     private static void sendSites(ServerPlayer player) {
         boolean canEdit = GameModeUtil.canEditSite(player);
         ServerPlayNetworking.send(player, new SyncAISitesPacket(

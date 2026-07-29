@@ -282,5 +282,12 @@ public class TileEntityCChessRenderer implements BlockEntityRenderer<TileEntityC
         return true;
     }
 
-
+//    // TODO
+//    @Override
+//    public AABB getRenderBoundingBox(TileEntityCChess be) {
+//        return RenderHelper.getAABB(
+//                be.getBlockPos().offset(-3, 0, -3),
+//                be.getBlockPos().offset(3, 1, 3)
+//        );
+//    }
 }

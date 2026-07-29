@@ -58,7 +58,7 @@ public class MaidMeleeAttack {
     private static boolean isHoldingUsableProjectileWeapon(EntityMaid maid) {
         return maid.isHolding((itemStack) -> {
             Item item = itemStack.getItem();
-
+            // 1.21.11: Mob.canFireProjectileWeapon(ProjectileWeaponItem) 已移除 → canUseNonMeleeWeapon(ItemStack)（javap + 26.1 确认）
             return item instanceof ProjectileWeaponItem && maid.canUseNonMeleeWeapon(itemStack);
         });
     }

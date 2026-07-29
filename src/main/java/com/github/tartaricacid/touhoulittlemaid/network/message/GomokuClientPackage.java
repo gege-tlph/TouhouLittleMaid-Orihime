@@ -48,7 +48,7 @@ public record GomokuClientPackage(BlockPos pos, List<byte[]> chessData, Point po
         context.client().execute(() -> clientHandle(message));
     }
 
-
+    // B7b: 还原 HEAD 的 @Environment(CLIENT) 内联模式（移植期外提的 proxy 已 P5 排除）。逻辑不变（棋算在客户端后台线程）。
     @Environment(EnvType.CLIENT)
     private static void clientHandle(GomokuClientPackage message) {
         CompletableFuture.runAsync(() -> onHandle(message), Util.backgroundExecutor());

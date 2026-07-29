@@ -6,6 +6,7 @@ import com.github.tartaricacid.touhoulittlemaid.api.client.render.MaidRenderStat
 import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.SimpleBedrockModel;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.blockentity.state.GarageKitRenderState;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.bedrock.InternalBedrockModelRegistry;
+import com.github.tartaricacid.touhoulittlemaid.compat.ysm.YsmCompat;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
 import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityGarageKit;
@@ -42,10 +43,7 @@ import static com.github.tartaricacid.touhoulittlemaid.client.resource.bedrock.I
 import static com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil.clearMaidDataResidue;
 import static net.minecraft.util.ProblemReporter.DISCARDING;
 
-
-/**
- * 已放置车库套件的方块实体渲染器，负责提取并提交其中保存的实体模型。
- */
+/** [Codex] 1.21.11 render-state renderer for a placed garage-kit figure. */
 public final class GarageKitRenderer implements BlockEntityRenderer<TileEntityGarageKit, GarageKitRenderState> {
     private static final Identifier TEXTURE = IdentifierUtil.modLoc("textures/bedrock/block/statue_base.png");
     private final EntityRenderDispatcher dispatcher;
@@ -99,7 +97,12 @@ public final class GarageKitRenderer implements BlockEntityRenderer<TileEntityGa
         if (entity instanceof EntityMaid maid) {
             clearMaidDataResidue(maid, true);
             maid.renderState = MaidRenderState.GARAGE_KIT;
-            maid.tickCount = 0;
+            // YSM 模型靠 tickCount 推进动画，冻结为 0 会让展示柜里的 YSM 女仆定格（HEAD 同款分支）
+            if (YsmCompat.isInstalled() && maid.isYsmModel()) {
+                maid.tickCount = (int) level.getGameTime();
+            } else {
+                maid.tickCount = 0;
+            }
         }
 
         state.entityRenderState = dispatcher.extractEntity(entity, partialTick);

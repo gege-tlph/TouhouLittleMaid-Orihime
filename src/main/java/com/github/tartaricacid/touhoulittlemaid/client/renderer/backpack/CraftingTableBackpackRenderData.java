@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
 import static com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid.MOD_ID;
 import static com.github.tartaricacid.touhoulittlemaid.client.resource.bedrock.InternalBedrockModelRegistry.CRAFTING_TABLE_BACKPACK;
 
-
+// origin CraftingTableBackpack 的 client 渲染三元组（模型/纹理/offset 逐字还原）
 public class CraftingTableBackpackRenderData extends MaidBackpackRenderData {
     private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(MOD_ID, "textures/bedrock/entity/backpack/crafting_table_backpack.png");
 

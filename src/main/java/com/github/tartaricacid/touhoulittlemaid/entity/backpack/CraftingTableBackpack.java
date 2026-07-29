@@ -4,7 +4,8 @@ import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.IMaidBackpack;
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.MaidBackpackRenderData;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.backpack.CraftingTableBackpackRenderData;
-
+// TODO: 1.21.11 client exclusion
+// import com.github.tartaricacid.touhoulittlemaid.client.resource.BedrockModelLoader;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityTombstone;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
@@ -27,6 +28,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
+// TODO: 1.21.11 client exclusion
+// import static com.github.tartaricacid.touhoulittlemaid.client.resource.BedrockModelLoader.CRAFTING_TABLE_BACKPACK;
 
 public class CraftingTableBackpack extends IMaidBackpack {
     public static final Identifier ID = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "crafting_table_backpack");
@@ -67,7 +70,10 @@ public class CraftingTableBackpack extends IMaidBackpack {
                 return false;
             }
 
-
+/*            @Override
+            public boolean shouldTriggerClientSideContainerClosingOnOpen() {
+                return false;
+            }*/
         };
     }
 
@@ -78,7 +84,7 @@ public class CraftingTableBackpack extends IMaidBackpack {
 
     @Override
     public MaidBackpackRenderData getRenderData() {
-
+        // 模型已入 InternalBedrockModelRegistry（origin 本就渲染此背包，旧 EMPTY 注释系误判）
         return new CraftingTableBackpackRenderData();
     }
 
@@ -92,7 +98,8 @@ public class CraftingTableBackpack extends IMaidBackpack {
     @Override
     @Environment(EnvType.CLIENT)
     public EntityModel<?> getBackpackModel(EntityModelSet modelSet) {
-
+        // TODO: 1.21.11 client exclusion
+        // return BedrockModelLoader.getModel(CRAFTING_TABLE_BACKPACK);
         return null;
     }
 

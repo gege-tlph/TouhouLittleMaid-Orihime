@@ -138,7 +138,7 @@ public class TaskFeedAnimal implements IAttackTask {
 
     @Override
     public boolean isWeapon(EntityMaid maid, ItemStack stack) {
-        ItemAttributeModifiers attributeModifiers = stack.get(DataComponents.ATTRIBUTE_MODIFIERS);
+        ItemAttributeModifiers attributeModifiers = stack/*.getAttributeModifiers()*/.get(DataComponents.ATTRIBUTE_MODIFIERS);
         return attributeModifiers != null && attributeModifiers.modifiers()
                 .stream()
                 .anyMatch(modifier -> modifier.attribute().is(Attributes.ATTACK_DAMAGE));
@@ -149,7 +149,7 @@ public class TaskFeedAnimal implements IAttackTask {
     }
 
     private boolean hasAssaultWeapon(EntityMaid maid) {
-        ItemAttributeModifiers attributeModifiers = maid.getMainHandItem().get(DataComponents.ATTRIBUTE_MODIFIERS);
+        ItemAttributeModifiers attributeModifiers = maid.getMainHandItem()/*.getAttributeModifiers()*/.get(DataComponents.ATTRIBUTE_MODIFIERS);
         return attributeModifiers != null && attributeModifiers.modifiers()
                 .stream()
                 .anyMatch(modifier -> modifier.attribute().is(Attributes.ATTACK_DAMAGE));

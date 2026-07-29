@@ -67,7 +67,7 @@ public class InvWrapper implements IItemHandlerModifiable {
 
                 return ItemStack.EMPTY;
             } else {
-        // 复制物品堆，避免修改调用方持有的原对象。
+                // copy the stack to not modify the original one
                 stack = stack.copy();
                 if (!simulate) {
                     ItemStack copy = stack.split(m);
@@ -86,7 +86,7 @@ public class InvWrapper implements IItemHandlerModifiable {
 
             m = Math.min(stack.getMaxStackSize(), getSlotLimit(slot));
             if (m < stack.getCount()) {
-        // 复制物品堆，避免修改调用方持有的原对象。
+                // copy the stack to not modify the original one
                 stack = stack.copy();
                 if (!simulate) {
                     getInv().setItem(slot, stack.split(m));

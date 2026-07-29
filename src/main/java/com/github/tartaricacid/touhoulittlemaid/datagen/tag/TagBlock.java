@@ -11,15 +11,19 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagBuilder;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
 import java.util.concurrent.CompletableFuture;
 
-
+// B4_DATAGEN_RESTORE 已恢复（Phase 2 datagen 解冻）：既是**运行时 TagKey 常量持有类**（女仆寻路/可食/避让方块
+//   TagKey 被 gameplay 引用），又恢复其 datagen provider 职责（extends FabricTagProvider.BlockTagProvider）。
+//   1.21.11 迁移：getOrCreateTagBuilder → valueLookupBuilder（对象/TagKey）+ getOrCreateRawBuilder（跨模组 Identifier 可选引用）。
 public class TagBlock extends FabricTagProvider.BlockTagProvider {
     /**
-     * 女仆有时候会在一些不该触发跳跃逻辑的方块上反复尝试跳来跳去， 故添加此标签来将一些方块放入黑名单中
+     * 女仆有时候会在一些不该触发跳跃逻辑的方块上反复尝试跳来跳去，
+     * 故添加此标签来将一些方块放入黑名单中
      */
     public static final TagKey<Block> MAID_JUMP_FORBIDDEN_BLOCK = createTagKey("maid_jump_forbidden_block");
 
@@ -34,17 +38,23 @@ public class TagBlock extends FabricTagProvider.BlockTagProvider {
     public static final TagKey<Block> ALTAR_TORII = createTagKey("altar_torii");
 
     /**
-     * 在修建祭坛时，可以当做祭坛柱子材料的方块； <p> 默认已经包含 <code>#minecraft:logs</code> 标签
+     * 在修建祭坛时，可以当做祭坛柱子材料的方块；
+     * <p>
+     * 默认已经包含 <code>#minecraft:logs</code> 标签
      */
     public static final TagKey<Block> ALTAR_PILLAR = createTagKey("altar_pillar");
 
     /**
-     * 女仆有偷吃方块食物的机制，但是这可能会误把一些拿来做装饰的食物方块也偷吃掉 <p> 故我们现在为一些方块添加 tag，只有放在此方块上承载的食物方块女仆才会偷吃
+     * 女仆有偷吃方块食物的机制，但是这可能会误把一些拿来做装饰的食物方块也偷吃掉
+     * <p>
+     * 故我们现在为一些方块添加 tag，只有放在此方块上承载的食物方块女仆才会偷吃
      */
     public static final TagKey<Block> MAID_SNACK_STAND_BLOCK = createTagKey("maid_snack_stand_block");
 
     /**
-     * 零食柜会在上方摆放特定方块时，渲染出玻璃橱窗的效果 <p> 在此标签中的方块才会让下方零食柜渲染完整玻璃橱窗
+     * 零食柜会在上方摆放特定方块时，渲染出玻璃橱窗的效果
+     * <p>
+     * 在此标签中的方块才会让下方零食柜渲染完整玻璃橱窗
      */
     public static final TagKey<Block> SNACK_CABINET_FULL = createTagKey("snack_cabinet_full");
 
@@ -57,6 +67,22 @@ public class TagBlock extends FabricTagProvider.BlockTagProvider {
      * CarryOn 黑名单标签，被此标签包含的方块将无法被 CarryOn 抱起
      */
     public static final TagKey<Block> CARRYON_BLOCK_BLACKLIST = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("carryon", "block_blacklist"));
+
+    /**
+     * 家具重制的木种变体前缀（与该模组自己的 {@code tuckable} 标签成员一一对应）。
+     * 原版没有涵盖 {@code pale_oak} 之外全部值的现成枚举，故显式列出。
+     */
+    private static final String[] REFURBISHED_WOOD_TYPES = {
+            "oak", "spruce", "birch", "jungle", "acacia", "dark_oak",
+            "mangrove", "cherry", "crimson", "warped", "pale_oak"
+    };
+
+    /**
+     * 家具重制的厨房台面家族。这几类会连成一整排台面，女仆踩上去与踩桌子是一回事。
+     */
+    private static final String[] REFURBISHED_KITCHEN_COUNTERS = {
+            "kitchen_cabinetry", "kitchen_drawer", "kitchen_sink", "kitchen_storage_cabinet"
+    };
 
     public TagBlock(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider) {
         super(output, lookupProvider);
@@ -77,6 +103,7 @@ public class TagBlock extends FabricTagProvider.BlockTagProvider {
                 .forceAddTag(BlockTags.FENCES)
                 .forceAddTag(BlockTags.CLIMBABLE);
         addKaleidoscopeFurniture(getOrCreateRawBuilder(MAID_JUMP_FORBIDDEN_BLOCK));
+        addRefurbishedFurniture(getOrCreateRawBuilder(MAID_JUMP_FORBIDDEN_BLOCK));
 
         valueLookupBuilder(ALTAR_TORII)
                 .add(Blocks.RED_WOOL)
@@ -87,10 +114,14 @@ public class TagBlock extends FabricTagProvider.BlockTagProvider {
 
         valueLookupBuilder(MAID_SNACK_STAND_BLOCK).add(InitBlocks.SNACK_CABINET);
         getOrCreateRawBuilder(MAID_SNACK_STAND_BLOCK).addOptionalTag(Identifier.parse("kaleidoscope_cookery:table"));
-        // 酒馆没有共享餐桌标签。保持这些确切的家具 ID 可选，这样基本 mod 既不会加载 Tavern 类，也不会创建硬依赖项。
+        // Tavern has no shared table tag. Keep these exact furniture ids optional so
+        // the base mod neither loads Tavern classes nor creates a hard dependency.
         getOrCreateRawBuilder(MAID_SNACK_STAND_BLOCK)
                 .addOptionalElement(Identifier.parse("kaleidoscope_tavern:table"))
                 .addOptionalElement(Identifier.parse("kaleidoscope_tavern:bar_counter"));
+        // 家具重制的桌子与书桌。该模组唯一的方块标签就是 tuckable（可把椅子塞进去的桌面），
+        // 语义正好是「桌面」，新增木种会自动进来。
+        getOrCreateRawBuilder(MAID_SNACK_STAND_BLOCK).addOptionalTag(Identifier.parse("refurbished_furniture:tuckable"));
 
         // 蛋糕全部是完整玻璃橱窗
         valueLookupBuilder(SNACK_CABINET_FULL).add(Blocks.CAKE);
@@ -157,6 +188,7 @@ public class TagBlock extends FabricTagProvider.BlockTagProvider {
         valueLookupBuilder(MAID_AVOID_BLOCK).addTag(MAID_SNACK_STAND_BLOCK);
         TagBuilder avoid = getOrCreateRawBuilder(MAID_AVOID_BLOCK);
         addKaleidoscopeFurniture(avoid);
+        addRefurbishedFurniture(avoid);
         // 机械动力
         avoid.addOptionalElement(Identifier.parse("create:mechanical_saw"));
         avoid.addOptionalElement(Identifier.parse("create:crushing_wheel"));
@@ -205,5 +237,43 @@ public class TagBlock extends FabricTagProvider.BlockTagProvider {
         builder.addOptionalElement(Identifier.parse("kaleidoscope_tavern:bar_counter"));
         builder.addOptionalElement(Identifier.parse("kaleidoscope_tavern:bar_cabinet"));
         builder.addOptionalElement(Identifier.parse("kaleidoscope_tavern:glass_bar_cabinet"));
+    }
+
+    /**
+     * MrCrayfish 的家具：重制。与森罗那批同一套处理：桌面与坐具既避让又禁跳。
+     * <p>
+     * 该模组只发布了一个方块标签 {@code tuckable}（= 11 种木头的桌子与书桌），正好是「桌面」那一类，
+     * 直接引用它，新木种自动覆盖。其余家具的 {@code sofas} / {@code stools} / {@code kitchen} 等
+     * <b>都是物品标签</b>，方块标签引用不到，只能按 id 枚举；好在 id 是「木种或颜色 × 家具类型」的
+     * 规则组合，按前缀生成即可，且全部走 optional，未装该模组时不产生任何引用。
+     * <p>
+     * 收录的是<b>桌面与坐具</b>：桌子、书桌、椅子、沙发、圆凳，以及连成一排的厨房台面
+     * （台柜 / 抽屉柜 / 水槽 / 储物台柜）。<b>不收</b>独立的储物家具（板条箱、储物罐、储物柜、
+     * 冷藏箱、冰箱、抽屉柜），它们在玩家直觉里更接近箱子而不是桌面；女仆能把它们当容器用，
+     * 见 {@code RefurbishedStorageChestType}。
+     */
+    private static void addRefurbishedFurniture(TagBuilder builder) {
+        builder.addOptionalTag(Identifier.parse("refurbished_furniture:tuckable"));
+
+        for (String wood : REFURBISHED_WOOD_TYPES) {
+            builder.addOptionalElement(refurbished(wood + "_chair"));
+        }
+        for (DyeColor color : DyeColor.values()) {
+            builder.addOptionalElement(refurbished(color.getSerializedName() + "_sofa"));
+            builder.addOptionalElement(refurbished(color.getSerializedName() + "_stool"));
+        }
+        // 厨房台面：木种与颜色两套变体共用同一批后缀
+        for (String counter : REFURBISHED_KITCHEN_COUNTERS) {
+            for (String wood : REFURBISHED_WOOD_TYPES) {
+                builder.addOptionalElement(refurbished(wood + "_" + counter));
+            }
+            for (DyeColor color : DyeColor.values()) {
+                builder.addOptionalElement(refurbished(color.getSerializedName() + "_" + counter));
+            }
+        }
+    }
+
+    private static Identifier refurbished(String path) {
+        return Identifier.fromNamespaceAndPath("refurbished_furniture", path);
     }
 }

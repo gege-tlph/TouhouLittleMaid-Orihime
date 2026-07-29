@@ -23,7 +23,8 @@ public class MaidConfigButton extends Button {
     private Component value;
 
     public MaidConfigButton(int x, int y, Component title, Component value, OnPress onLeftPressIn, OnPress onRightPressIn) {
-
+/*        super(Button.builder(title, b -> {
+        }).pos(x, y).size(164, 13));*/
         super(x, y, 164, 13, title, b -> {
         }, Button.DEFAULT_NARRATION);
         this.leftPress = onLeftPressIn;
@@ -36,7 +37,7 @@ public class MaidConfigButton extends Button {
     }
 
     @Override
-
+    // 1.21.11: renderWidget 现为 final → 覆写 renderContents；RenderSystem.enableDepthTest 移除（管线接管）
     protected void renderContents(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
         Minecraft mc = Minecraft.getInstance();
         if (this.isHovered) {
@@ -52,7 +53,7 @@ public class MaidConfigButton extends Button {
         this.value = value;
     }
 
-
+    // 1.21.11: AbstractWidget.clicked(double,double) 钩子已移除 → 降级为普通方法，由下方 mouseClicked 复刻 origin 判定链
     protected boolean clicked(double mouseX, double mouseY) {
         if (!this.active || !this.visible) {
             return false;
@@ -72,7 +73,8 @@ public class MaidConfigButton extends Button {
     }
 
     @Override
-
+    // 1.21.11: 复刻 1.21.1 AbstractWidget.mouseClicked 流程（isValidClickButton → clicked → playDownSound → onClick），
+    // 保持 origin 行为：仅左右两个热区可点击，点击按钮其余区域不消费事件
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (this.isValidClickButton(event.buttonInfo()) && this.clicked(event.x(), event.y())) {
             this.playDownSound(Minecraft.getInstance().getSoundManager());
@@ -83,7 +85,7 @@ public class MaidConfigButton extends Button {
     }
 
     @Override
-
+    // 1.21.11: onPress() → onPress(InputWithModifiers)
     public void onPress(InputWithModifiers input) {
         if (leftClicked) {
             leftPress.onPress(this);

@@ -59,7 +59,7 @@ public class TaskButton extends Button implements ITooltipButton {
     }
 
     @Override
-
+    // 1.21.11: mouseClicked(double,double,int) → mouseClicked(MouseButtonEvent, boolean)
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         // 禁用声音
         if (!enable) {
@@ -70,7 +70,7 @@ public class TaskButton extends Button implements ITooltipButton {
 
     @Override
     @SuppressWarnings("all")
-
+    // 1.21.11: renderWidget 现为 final → 覆写 renderContents；RenderSystem.enableDepthTest 移除（管线接管）
     protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         Minecraft minecraft = Minecraft.getInstance();
         int i = this.yTexStart;
@@ -95,7 +95,7 @@ public class TaskButton extends Button implements ITooltipButton {
     @Override
     public void renderTooltip(GuiGraphics graphics, Minecraft mc, int mouseX, int mouseY) {
         if (!this.tooltips.isEmpty()) {
-
+            // 1.21.11: renderComponentTooltip 移除 → setTooltipForNextFrame（延迟到帧末渲染）
             graphics.setTooltipForNextFrame(mc.font, this.tooltips, Optional.empty(), mouseX, mouseY);
         }
     }

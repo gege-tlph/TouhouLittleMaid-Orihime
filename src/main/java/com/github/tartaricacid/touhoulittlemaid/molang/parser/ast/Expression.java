@@ -27,22 +27,25 @@ package com.github.tartaricacid.touhoulittlemaid.molang.parser.ast;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 表达式接口。它是所有表达式类型的超级接口。
+ * The expression interface. It's the super-interface for
+ * all the expression types.
  *
- * <p>表达式是代码的可评估部分，表达式由解析器发出。</p>
+ * <p>Expressions are evaluable parts of code, expressions
+ * are emitted by the parser.</p>
  *
- * <p>在Molang中，几乎每个表达式的计算结果都是数值</p>
+ * <p>In Molang, almost every expression evaluates to a numerical
+ * value</p>
  *
  * @since 3.0.0
  */
 public interface Expression {
 
     /**
-     * 使用给定的访问者访问此表达式。
+     * Visits this expression with the given visitor.
      *
-     * @param visitor 表达访客
-     * @param <R> 访问结果返回类型
-     * @return 参观结果
+     * @param visitor The expression visitor
+     * @param <R>     The visit result return type
+     * @return The visit result
      * @since 3.0.0
      */
     <R> R visit(final @NotNull ExpressionVisitor<R> visitor);

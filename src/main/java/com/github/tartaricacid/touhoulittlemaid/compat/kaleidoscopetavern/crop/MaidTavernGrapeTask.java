@@ -70,7 +70,8 @@ public final class MaidTavernGrapeTask extends MaidCheckRateTask {
                 if (maid.getOwner() instanceof ServerPlayer serverPlayer) {
                     InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.MAID_FARM);
                 }
-                // 匹配正常的耕作任务：生产性工作结束后，几乎立即寻找附近的下一种作物，而不是等待 6-12 秒。
+                // Match the normal farming task: after productive work, look for the
+                // next nearby crop almost immediately instead of waiting 6-12 seconds.
                 this.setNextCheckTickCount(CONTINUOUS_SCAN_DELAY);
             }
         }

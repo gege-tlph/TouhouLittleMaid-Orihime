@@ -30,6 +30,7 @@ public class SoundPackButton extends FlatColorButton {
     }
 
     @Override
+    // 1.21.11: renderWidget 现为 final → 覆写 renderContents；RenderSystem.setShader/setShaderTexture 移除（管线接管）
     protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float pPartialTick) {
         super.renderContents(graphics, mouseX, mouseY, pPartialTick);
         Identifier icon = info.getIcon();

@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 public class PressAIChatKeyEvent {
-
+    // 1.21.11 KeyMapping.matches 只收 KeyEvent（无 int,int 重载）→ 从回调 4 参构造 KeyEvent(key,scancode,modifiers)。
     public static void onOpenConfig(int key, int scanCode, int action, int mods) {
         if (isInGame() && ServerRuleConfig.get(AIConfig.LLM_ENABLED) && keyIsMatch(key, scanCode, action, mods)) {
             EntityMaid maid = maidCheck();

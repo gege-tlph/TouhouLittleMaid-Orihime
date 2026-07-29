@@ -93,7 +93,10 @@ public abstract class MaidAIChatData extends MaidAIChatSerializable {
         return super.writeToTag(tag);
     }
 
-
+    // 1.21.11 entity-save 路径（ValueOutput/ValueInput）。与 writeToTag/readFromTag 写出完全相同的根级键
+    // （历史 list 用同一 LLMMessage.CODEC.listOf() → ListTag、summary/tokenUsage 同守卫、"MaidAIChat" 子 compound），
+    // 逐字节同 HEAD 存档格式。writeToTag/readFromTag(CompoundTag) 保留给网络同步（SyncMaidAIDataPacket）。
+    // ⚠️ 两条路径字段必须保持一致 —— 新增字段时两处都要改。
     @Override
     public void addAdditionalSaveData(ValueOutput output) {
         if (this.history.size() > 0) {
@@ -130,19 +133,38 @@ public abstract class MaidAIChatData extends MaidAIChatSerializable {
 
     @Nullable
     public LLMSite getLLMSite() {
-        LLMSite site;
-        if (StringUtils.isBlank(llmSite)) {
-            site = getDefaultLLMSite();
-        } else {
-            site = AvailableSites.getLLMSite(llmSite);
-            if (site == null || !site.enabled()) {
-                site = getDefaultLLMSite();
-            }
-        }
-        return site;
+        return resolveLLMSite(llmSite);
     }
 
-    private LLMSite getDefaultLLMSite() {
+    /**
+     * 显式的两层继承链：覆盖 → 世界默认 → 内置兜底。
+     *
+     * <p>空的 {@code overrideSite} 表示「跟随默认」，这是一个<b>合法状态</b>而不是缺数据——
+     * 管理员换默认时，跟随的女仆自动跟着变；写了具体值（哪怕和默认相同）则钉住不跟。
+     * 旧档里的具体值天然成为覆盖，旧档里的空天然成为跟随，无需迁移。</p>
+     *
+     * <p>静态化是为了让 JUnit 不用构造 EntityMaid 就能测整条链。</p>
+     */
+    @Nullable
+    public static LLMSite resolveLLMSite(String overrideSite) {
+        if (StringUtils.isNotBlank(overrideSite)) {
+            LLMSite site = AvailableSites.getLLMSite(overrideSite);
+            if (site != null && site.enabled()) {
+                return site;
+            }
+            // 覆盖失效（站点被删/被禁）→ 回落到默认，而不是直接跳内置兜底
+        }
+        String defaultSite = ServerRuleConfig.get(AIConfig.DEFAULT_LLM_SITE);
+        if (StringUtils.isNotBlank(defaultSite)) {
+            LLMSite site = AvailableSites.getLLMSite(defaultSite);
+            if (site != null && site.enabled()) {
+                return site;
+            }
+        }
+        return builtinFallbackLLMSite();
+    }
+
+    private static LLMSite builtinFallbackLLMSite() {
         LLMSite site = AvailableSites.getLLMSite(DefaultLLMSite.DEEPSEEK.id());
         return site == null ? DefaultLLMSite.DEEPSEEK : site;
     }
@@ -152,50 +174,79 @@ public abstract class MaidAIChatData extends MaidAIChatSerializable {
         if (isNoTTSSite(ttsSite)) {
             return null;
         }
+        return resolveTTSSite(ttsSite);
+    }
 
-        TTSSite site;
-        if (StringUtils.isBlank(ttsSite)) {
-            site = AvailableSites.getTTSSite(TTSSystemSite.API_TYPE);
-        } else {
-            site = AvailableSites.getTTSSite(ttsSite);
-            if (site == null || !site.enabled()) {
-                site = AvailableSites.getTTSSite(TTSSystemSite.API_TYPE);
+    /**
+     * 与 {@link #resolveLLMSite} 同构。{@code __none__}（不说话）在调用方处理，
+     * 本方法只管「跟随/覆盖/回落」三态——不说话是覆盖的一种，默认怎么变都不影响它。
+     */
+    @Nullable
+    public static TTSSite resolveTTSSite(String overrideSite) {
+        if (StringUtils.isNotBlank(overrideSite)) {
+            TTSSite site = AvailableSites.getTTSSite(overrideSite);
+            if (site != null && site.enabled()) {
+                return site;
             }
         }
-        return site;
+        String defaultSite = ServerRuleConfig.get(AIConfig.DEFAULT_TTS_SITE);
+        if (StringUtils.isNotBlank(defaultSite)) {
+            TTSSite site = AvailableSites.getTTSSite(defaultSite);
+            if (site != null && site.enabled()) {
+                return site;
+            }
+        }
+        return AvailableSites.getTTSSite(TTSSystemSite.API_TYPE);
     }
 
     public String getLLMModel() {
-        LLMSite site = getLLMSite();
-        String model = StringUtils.EMPTY;
-        if (site instanceof SupportModelSelect select) {
-            if (StringUtils.isBlank(llmModel)) {
-                model = select.getDefaultModel();
-            } else {
-                model = select.getModel(llmModel);
-            }
+        return resolveLLMModel(llmSite, llmModel);
+    }
+
+    /**
+     * 模型也走链：跟随（站点覆盖为空）且真的落在默认站点上时，用世界默认模型；
+     * 其余情况沿用原逻辑（空 → 站点的第一个模型）。
+     *
+     * <p>「真的落在默认站点上」这个条件不能省：默认站点失效时链会滑到内置兜底，
+     * 把默认模型套在另一个站点头上是错的。</p>
+     */
+    public static String resolveLLMModel(String overrideSite, String overrideModel) {
+        LLMSite site = resolveLLMSite(overrideSite);
+        if (!(site instanceof SupportModelSelect select)) {
+            return StringUtils.EMPTY;
         }
-        return model;
+        String chosen = overrideModel;
+        if (StringUtils.isBlank(chosen) && StringUtils.isBlank(overrideSite)
+                && site.id().equals(ServerRuleConfig.get(AIConfig.DEFAULT_LLM_SITE))) {
+            chosen = ServerRuleConfig.get(AIConfig.DEFAULT_LLM_MODEL);
+        }
+        return StringUtils.isBlank(chosen) ? select.getDefaultModel() : select.getModel(chosen);
     }
 
     public String getTTSModel() {
-        TTSSite site = getTTSSite();
-        String model = StringUtils.EMPTY;
-        if (site instanceof SupportModelSelect select) {
-            if (StringUtils.isBlank(ttsModel)) {
-                model = select.getDefaultModel();
-            } else {
-                model = select.getModel(ttsModel);
-            }
+        return resolveTTSModel(ttsSite, ttsModel);
+    }
+
+    public static String resolveTTSModel(String overrideSite, String overrideModel) {
+        TTSSite site = resolveTTSSite(overrideSite);
+        if (!(site instanceof SupportModelSelect select)) {
+            return StringUtils.EMPTY;
         }
-        return model;
+        String chosen = overrideModel;
+        if (StringUtils.isBlank(chosen) && StringUtils.isBlank(overrideSite)
+                && site.id().equals(ServerRuleConfig.get(AIConfig.DEFAULT_TTS_SITE))) {
+            chosen = ServerRuleConfig.get(AIConfig.DEFAULT_TTS_MODEL);
+        }
+        return StringUtils.isBlank(chosen) ? select.getDefaultModel() : select.getModel(chosen);
     }
 
     public String getTTSLanguage() {
         if (StringUtils.isNotBlank(ttsLanguage)) {
             return ttsLanguage;
         }
-        return ServerRuleConfig.get(AIConfig.TTS_LANGUAGE);
+        // 语种是纯女仆属性（T 屏语种按钮是唯一编辑点）。空值只出现在从未打开过聊天屏的女仆身上，
+        // 兜底与 T 屏强填的取值一致——「世界默认语种」因与之重合且实际管不到人，已按用户定案删除
+        return "en_us";
     }
 
     public String getChatLanguage() {

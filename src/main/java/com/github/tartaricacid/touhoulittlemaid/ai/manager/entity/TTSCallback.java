@@ -16,7 +16,7 @@ import net.minecraft.world.entity.LivingEntity;
 
 import java.net.http.HttpRequest;
 
-public class TTSCallback implements ResponseCallback<byte[]> {
+public class TTSCallback implements com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSResponse {
     private final EntityMaid maid;
     private final String chatText;
     private final long waitingChatBubbleId;
@@ -40,7 +40,9 @@ public class TTSCallback implements ResponseCallback<byte[]> {
                 maid.getChatBubbleManager().addLLMChatText(chatText, waitingChatBubbleId);
             });
         }
-        TouhouLittleMaid.LOGGER.error("LLM request failed: {}, error is {}", request, throwable.getMessage());
+        // 这里是 TTS 的失败，原先却记成 "LLM request failed"——按日志找故障的人会被送去查错误的服务，
+        // 而「文案指向哪里故障就在哪里」正是本项目栽过的坑
+        TouhouLittleMaid.LOGGER.error("TTS request failed: {}, error is {}", request, throwable.getMessage());
     }
 
     @Override

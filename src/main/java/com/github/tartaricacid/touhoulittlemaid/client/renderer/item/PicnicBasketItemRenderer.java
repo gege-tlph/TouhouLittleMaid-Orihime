@@ -19,9 +19,8 @@ import org.joml.Vector3fc;
 
 import java.util.function.Consumer;
 
-
 /**
- * 野餐篮物品渲染器：物品栏中使用清晰的平面图标，手持与世界展示时使用三维模型。
+ * [Codex] Preserves origin's flat GUI icon and 3D in-hand picnic basket.
  */
 public final class PicnicBasketItemRenderer implements SpecialModelRenderer<Unit> {
     public static final Identifier ID = IdentifierUtil.modLoc("picnic_basket_item");
@@ -49,7 +48,12 @@ public final class PicnicBasketItemRenderer implements SpecialModelRenderer<Unit
                 GUI_MODEL.renderToBuffer(geometryPose, buffer, light, overlay, -1);
             });
         } else {
-
+            // The 8-arg submitModel overload's third int is the OUTLINE color, not a tint
+            // (the default method maps (i, j, k, crumbling) -> (light, overlay, tint=-1,
+            // sprite=null, outline=k, crumbling)). Passing -1 here painted a white outline
+            // over the basket in hand and on the ground; the GUI pass skips the outline
+            // feature, which is why the inventory icon looked fine. Vanilla special
+            // renderers (e.g. ShieldSpecialRenderer) forward their received outlineColor.
             collector.submitModel(model, Unit.INSTANCE, poseStack, RenderTypes.entityCutoutNoCull(TEXTURE),
                     light, overlay, outlineColor, null);
         }

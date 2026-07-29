@@ -44,12 +44,14 @@ public class InitLootModifier {
     }
 
     public static void init() {
-
+        // SWEEP R9-3（2026-07-19）：原「datagen excluded」TODO 系假前提——此块是 Fabric LootTableEvents 运行时注入
+        // （与 datagen 无关），且 LootTableGenerator 早已编译。还原 origin；唯一适配 key.location()->key.identifier()。
+        // Global Modifier
         LootTableEvents.MODIFY.register((key, builder, source, provider) -> {
-                    // 所有箱子
+                    // all chests
                     if (key.identifier().toString().startsWith("minecraft:chests"))
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.CHEST_POWER_POINT)));
-
+        
                     if (key.equals(BuiltInLootTables.SPAWN_BONUS_CHEST))
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.SPAWN_BONUS)));
                     else if (key.equals(BuiltInLootTables.VILLAGE_TEMPLE))
@@ -84,13 +86,13 @@ public class InitLootModifier {
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.SHRINE_LESS)));
                     else if (key.equals(BuiltInLootTables.END_CITY_TREASURE))
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.SHRINE_MORE)));
-
+        
                     else if (key.equals(BuiltInLootTables.BURIED_TREASURE))
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.MAID_BURIED_TREASURE)));
-
+        
                     else if (key.equals(BuiltInLootTables.PILLAGER_OUTPOST))
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.STRUCTURE_SPAWN_MAID_GIFT)));
-
+        
                     else if (key.equals(BuiltInLootTables.FISHING_JUNK))
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.FISHING_POWER_POINT)));
                 }

@@ -74,7 +74,10 @@ public class EmptyBackpack extends IMaidBackpack {
                 return false;
             }
 
-
+/*            @Override
+            public boolean shouldTriggerClientSideContainerClosingOnOpen() {
+                return false;
+            }*/
         };
     }
 

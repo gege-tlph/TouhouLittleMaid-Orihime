@@ -82,13 +82,15 @@ public class ModelDownloadGui extends Screen {
         String textCache = textField == null ? "" : textField.getValue();
         boolean focus = textField != null && textField.isFocused();
         textField = new EditBox(Screens.getTextRenderer(this), x + 273, y + 78, 144, 16, Component.empty());
-
+        // 1.21.11 文字色为 ARGB——无 Alpha 即全透明（B2-2 轮 3「GUI 文字消失」同因，此处漏网）
         textField.setTextColor(0xFFF3EFE0);
         textField.setFocused(focus);
         textField.setValue(textCache);
+        // 1.21.11：Screen.hasShiftDown() 已移除，等价实现（GLFW 键态轮询，左右 Shift 均判定）
         textField.moveCursorToEnd(tlmHasShiftDown());
         this.addWidget(this.textField);
-
+        // [Codex] init() replaces the EditBox after every filter change. In 1.21.11 the
+        // screen retains the old listener as its focused child unless focus is transferred.
         if (focus) {
             this.setFocused(this.textField);
         }
@@ -192,7 +194,9 @@ public class ModelDownloadGui extends Screen {
         }
     }
 
-
+    // origin 背景 = 仅模糊、无暗色底图；1.21.11 renderWithTooltipAndSubtitles（final）强制在 render()
+    // 前调用本方法（默认还会铺 renderMenuBackground），故收窄覆写为仅 blur——render() 内不得再调
+    //（"Can only blur once per frame"）
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBlurredBackground(graphics);
@@ -314,7 +318,7 @@ public class ModelDownloadGui extends Screen {
     }
 
     /**
-     * 判断左右任意一个 Shift 键是否按下。
+     * 1.21.11：Screen.hasShiftDown() 已移除，等价实现（底层同为 GLFW 键态轮询，左右 Shift 均判定）
      */
     private static boolean tlmHasShiftDown() {
         var window = Minecraft.getInstance().getWindow();

@@ -43,6 +43,7 @@ public class MaidConfigContainerGui extends AbstractMaidContainerGui<MaidConfigC
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTicks, int x, int y) {
         super.renderBg(graphics, partialTicks, x, y);
+        // 1.21.11: blit 增 RenderPipeline 首参 + 显式贴图尺寸（旧 7 参隐含 256x256）
         graphics.blit(RenderPipelines.GUI_TEXTURED, ICON, leftPos + 80, topPos + 28, 0F, 0F, imageWidth, imageHeight, 256, 256);
     }
 

@@ -44,7 +44,7 @@ import java.util.UUID;
 import static com.github.tartaricacid.touhoulittlemaid.util.ItemsUtil.canItemInsert;
 
 public class EntityTombstone extends Entity {
-
+    // 1.21.11: EntityType.Builder.build(String) 已移除 -> build(ResourceKey)
     public static final EntityType<EntityTombstone> TYPE = EntityType.Builder.<EntityTombstone>of(EntityTombstone::new, MobCategory.MISC)
             .sized(0.8f, 1.2f).clientTrackingRange(10)
             .build(ResourceKey.create(Registries.ENTITY_TYPE,
@@ -111,7 +111,7 @@ public class EntityTombstone extends Entity {
             return InteractionResult.SUCCESS;
         }
 
-
+        // 还原 HEAD：非拥有者交互时提示 "not yours"。1.21.11: Ingredient.getItems() 移除 → items():Stream<Holder<Item>>。
         if (!player.level().isClientSide()) {
             ItemStack stack = ntrItem.items().findFirst().map(h -> new ItemStack(h.value())).orElse(ItemStack.EMPTY);
             Component displayName = stack.getDisplayName();
@@ -128,11 +128,12 @@ public class EntityTombstone extends Entity {
 
     @Override
     public void addAdditionalSaveData(ValueOutput output) {
-
+        // owner：HEAD 用 putUUID（int-array）→ UUIDUtil.CODEC（逐字节兼容；同 EntityBroom）。
         output.store(OWNER_ID_TAG, UUIDUtil.CODEC, this.ownerId);
-
+        // items：HEAD 用 compound.put(TAG, serializeNBT) → COMPOUND_TAG_CODEC（逐字节兼容）。
         output.store(TOMBSTONE_ITEMS_TAG, CustomData.COMPOUND_TAG_CODEC, this.items.serializeNBT(this.registryAccess()));
-
+        // MAID_NAME：HEAD 用 Component.Serializer.toJson(...)（已移除）存 JSON 字符串。
+        // 忠实保留 JSON-string 格式：ComponentSerialization.CODEC + 注册表 JsonOps。
         JsonElement nameJson = ComponentSerialization.CODEC
                 .encodeStart(this.registryAccess().createSerializationContext(JsonOps.INSTANCE), this.getMaidName())
                 .getOrThrow();
@@ -171,6 +172,11 @@ public class EntityTombstone extends Entity {
         return true;
     }
 
+    // TODO: 1.21.11 fix - hurt() is now final in Entity, cannot override
+    // @Override
+    // public boolean hurt(DamageSource pSource, float pAmount) {
+    //     return false;
+    // }
 
     @Override
     public void move(MoverType pType, Vec3 pPos) {

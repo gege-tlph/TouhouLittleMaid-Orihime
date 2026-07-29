@@ -11,12 +11,11 @@ import com.github.tartaricacid.touhoulittlemaid.client.download.InfoGetManager;
 import com.github.tartaricacid.touhoulittlemaid.client.event.*;
 import com.github.tartaricacid.touhoulittlemaid.client.init.*;
 import com.github.tartaricacid.touhoulittlemaid.client.input.DismountBroomKey;
-
 import com.github.tartaricacid.touhoulittlemaid.client.input.STTChatKey;
-
+// TODO: DebugClientRenderEvent commented out due to WorldRenderContext API changes
+// import com.github.tartaricacid.touhoulittlemaid.debug.target.DebugClientRenderEvent;
 import com.github.tartaricacid.touhoulittlemaid.event.ClientExtensionsEvent;
 import com.github.tartaricacid.touhoulittlemaid.event.ClientTickEvent;
-
 import com.github.tartaricacid.touhoulittlemaid.event.maid.UseNameTagEvent;
 import com.github.tartaricacid.touhoulittlemaid.network.NetworkHandler;
 import com.github.tartaricacid.touhoulittlemaid.network.client.ClientAltarRecipeCache;
@@ -27,7 +26,8 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
-
+// TODO: WorldRenderEvents API changed in Fabric API 0.141.4+
+// import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.event.Event;
 
@@ -44,7 +44,7 @@ public class TouhouLittleMaidFabricClient implements ClientModInitializer {
 
         ClientTickEvents.START_CLIENT_TICK.register(ClientTickEvent::onClientTick);
 
-        // 必须先于渲染器注册：Gecko 横幅层需要内部模型管理器。
+        // Must precede renderer registration: Gecko banner layers require the internal model manager.
         com.github.tartaricacid.touhoulittlemaid.client.init.ClientReloadListenerRegistry.onRegisterClientReloadListeners();
 
         ItemTooltipCallback.EVENT.addPhaseOrdering(Event.DEFAULT_PHASE, LOW);
@@ -54,9 +54,7 @@ public class TouhouLittleMaidFabricClient implements ClientModInitializer {
         RenderHandEvent.CALLBACK.register(CarryMaidHideArmEvent::onRenderHandEvent);
         WorldRenderEvents.END_EXTRACTION.register(CompassRenderEvent::onRender);
         WorldRenderEvents.END_EXTRACTION.register(MaidAreaRenderEvent::onRender);
-
         InteractMaidEvent.CALLBACK.register(UseNameTagEvent::onInteractClient);
-
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.JOIN.register(
                 (handler, sender, client) -> PlayerLoggedInNotice.onEnterGame(client));
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register(
@@ -68,13 +66,9 @@ public class TouhouLittleMaidFabricClient implements ClientModInitializer {
                 });
         PlaySoundEvent.CALLBACK.register(MaidSoundFreqEvent::onPlaySoundEvent);
         PlaySoundSourceEvent.CALLBACK.register(PlayMaidSoundEvent::onPlaySoundSource);
-
         KeyInputCallback.EVENT.register(PressAIChatKeyEvent::onOpenConfig);
         KeyInputCallback.EVENT.register(DismountBroomKey::onDismountPress);
-
         KeyInputCallback.EVENT.register(STTChatKey::onSttChatPress);
-        WorldRenderEvents.END_EXTRACTION.register(ScrollRenderEvent::onRenderWorldLastEvent);
-
         ScreenEvents.AFTER_INIT.register(ShowOptifineScreen::showOptifineWarning);
 
         // 模型详情屏调试地板的自定义 PiP 渲染器（AbstractModelDetailsGui showFloor 分支的提交端）
@@ -88,11 +82,10 @@ public class TouhouLittleMaidFabricClient implements ClientModInitializer {
         MaidPackLoaderEvent.LEGACY.register(HardcodedAnimation::onMaidPackLoader);
 
         WorldRenderEvents.END_EXTRACTION.register(WirelessIORenderEvent::onRender);
-
         ClientSetupEvent.onClientSetup();
         ClientSetupEvent.onRegisterGuiLayers();
         ClientSetupEvent.onRegisterClientReloadListeners();
-
+        // TooltipComponent 时 ClientTooltipComponent.create 抛「Unknown TooltipComponent」崩溃（打开物品栏必崩）
         TooltipComponentCallback.EVENT.register(InitClientTooltip::onRegisterClientTooltip);
         InitContainerGui.clientSetup();
         InitEntitiesRender.onEntityRenderers();
@@ -100,6 +93,7 @@ public class TouhouLittleMaidFabricClient implements ClientModInitializer {
         ModelLoadingPlugin.register(new InitSpecialItemRender());
         EntityJoinLevelEvent.CALLBACK.register(EntityCacheUtil::onChangeDim);
 
-
+        // TODO: WorldRenderEvents API changed in Fabric API 0.141.4+
+        // WorldRenderEvents.AFTER_ENTITIES.register(DebugClientRenderEvent::onRender);
     }
 }

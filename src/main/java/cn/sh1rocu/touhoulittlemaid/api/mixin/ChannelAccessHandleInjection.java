@@ -4,7 +4,7 @@ import com.mojang.blaze3d.audio.Library;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundEngine;
 
-// 来自 Kilt
+// From Kilt
 public interface ChannelAccessHandleInjection {
     void tlm$setPool(Library.Pool pool);
 

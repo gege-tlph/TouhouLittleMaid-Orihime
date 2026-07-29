@@ -45,7 +45,7 @@ public class GeckoLayerMaidBanner implements GeoLayerRenderer<EntityMaidRenderSt
     public void submit(SubmitNodeCollector submitNode, PoseStack poseStack, EntityMaidRenderState state,
                        GeckoMaidRenderData data, CameraRenderState camera) {
         if (state.backBanner != null) {
-            data.modelState.visitLocatorGroup(GeoLocatorType.BACKPACK, poseStack, locator -> {
+            data.locators().visitLocatorGroup(GeoLocatorType.BACKPACK, poseStack, locator -> {
                 locator.translate(0, 0.75, 0.3);
                 locator.scale(0.65F, -0.65F, -0.65F);
                 locator.mulPose(Axis.YN.rotationDegrees(180));
@@ -61,10 +61,13 @@ public class GeckoLayerMaidBanner implements GeoLayerRenderer<EntityMaidRenderSt
 
                 BannerPatternLayers patterns = state.backBanner.patterns;
                 DyeColor baseColor = state.backBanner.baseColor;
-                // 匹配原版 BannerRenderer：第一次提交是不透明的 ModelBakery 基础； SubmitPatterns 仅针对着色图案图层选择 Sheets.BANNER_BASE。
+                // Match vanilla BannerRenderer: the first submit is the
+                // opaque ModelBakery base; submitPatterns chooses
+                // Sheets.BANNER_BASE only for the tinted pattern layer.
                 Material baseMaterial = ModelBakery.BANNER_BASE;
 
-                // submitPatterns 会同时提交底色旗面与图案，无需额外渲染基础模型。
+                // 旗帜图案：1.21.11 的 submitPatterns 同时渲染底色旗面 + 图案（含 baseMaterial），
+                // 故 26.1 的独立 flag submitModel（已删的 SpriteId/SpriteGetter 10-arg 重载）折叠进此调用。
                 poseStack.mulPose(Axis.YN.rotationDegrees(90));
                 poseStack.translate(0.75, 0.2, 0.1);
                 submitPatterns(

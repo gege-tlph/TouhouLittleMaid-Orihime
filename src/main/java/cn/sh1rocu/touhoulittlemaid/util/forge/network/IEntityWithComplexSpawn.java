@@ -3,20 +3,23 @@ package cn.sh1rocu.touhoulittlemaid.util.forge.network;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 
 /**
- * 实体的接口，在生成时需要在服务器和客户端之间传递额外信息。
+ * An interface for Entities that need extra information to be communicated
+ * between the server and client when they are spawned.
  */
 public interface IEntityWithComplexSpawn {
     /**
-     * 在构建生成数据包时由服务器调用。数据应添加到提供的流中。
+     * Called by the server when constructing the spawn packet.
+     * Data should be added to the provided stream.
      *
-     * @param buffer 数据包数据流
+     * @param buffer The packet data stream
      */
     void writeSpawnData(RegistryFriendlyByteBuf buffer);
 
     /**
-     * 当客户端收到实体生成数据包时调用。数据应该以与写入相同的方式从流中读出。
+     * Called by the client when it receives a Entity spawn packet.
+     * Data should be read out of the stream in the same way as it was written.
      *
-     * @param additionalData 数据包数据流
+     * @param additionalData The packet data stream
      */
     void readSpawnData(RegistryFriendlyByteBuf additionalData);
 }

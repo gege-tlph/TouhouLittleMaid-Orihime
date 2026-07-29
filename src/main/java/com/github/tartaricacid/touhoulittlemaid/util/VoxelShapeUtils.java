@@ -24,7 +24,7 @@ public class VoxelShapeUtils {
     private static final Vec3 FROM_ORIGIN = new Vec3(-0.5, -0.5, -0.5);
 
     /**
-     * 打印出一个易于复制粘贴的字符串，表示形状的长方体
+     * Prints out an easy to copy-paste string representing the cuboid of a shape
      */
     public static void print(double x1, double y1, double z1, double x2, double y2, double z2) {
         TouhouLittleMaid.LOGGER.info("box({}, {}, {}, {}, {}, {}),", Math.min(x1, x2), Math.min(y1, y2), Math.min(z1, z2),
@@ -32,7 +32,7 @@ public class VoxelShapeUtils {
     }
 
     /**
-     * 打印出一组字符串，使复制粘贴更容易，以简化体素形状
+     * Prints out a set of strings that make copy-pasting easier, for simplifying a voxel shape
      */
     public static void printSimplified(String name, VoxelShape shape) {
         TouhouLittleMaid.LOGGER.info("Simplified: {}", name);
@@ -40,11 +40,11 @@ public class VoxelShapeUtils {
     }
 
     /**
-     * 将 {@link AABB} 旋转到特定一侧，类似于块状态旋转模型的方式。
+     * Rotates an {@link AABB} to a specific side, similar to how the block states rotate models.
      *
-     * @param box 要旋转的 {@link AABB}
-     * @param side 将其旋转到的一侧。
-     * @return 旋转后的 {@link AABB}
+     * @param box  The {@link AABB} to rotate
+     * @param side The side to rotate it to.
+     * @return The rotated {@link AABB}
      */
     public static AABB rotate(AABB box, Direction side) {
         return switch (side) {
@@ -58,11 +58,11 @@ public class VoxelShapeUtils {
     }
 
     /**
-     * 根据特定旋转来旋转 {@link AABB}。
+     * Rotates an {@link AABB} according to a specific rotation.
      *
-     * @param box 要旋转的 {@link AABB}
-     * @param rotation 我们正在执行的轮换。
-     * @return 旋转后的 {@link AABB}
+     * @param box      The {@link AABB} to rotate
+     * @param rotation The rotation we are performing.
+     * @return The rotated {@link AABB}
      */
     public static AABB rotate(AABB box, Rotation rotation) {
         return switch (rotation) {
@@ -74,11 +74,11 @@ public class VoxelShapeUtils {
     }
 
     /**
-     * 将 {@link AABB} 水平旋转到特定侧。这是关于 {@link #rotate(AABB, Rotation)} 的默认最常见旋转设置
+     * Rotates an {@link AABB} to a specific side horizontally. This is a default most common rotation setup as to {@link #rotate(AABB, Rotation)}
      *
-     * @param box 要旋转的 {@link AABB}
-     * @param side 将其旋转到的一侧。
-     * @return 旋转后的 {@link AABB}
+     * @param box  The {@link AABB} to rotate
+     * @param side The side to rotate it to.
+     * @return The rotated {@link AABB}
      */
     public static AABB rotateHorizontal(AABB box, Direction side) {
         return switch (side) {
@@ -91,99 +91,99 @@ public class VoxelShapeUtils {
     }
 
     /**
-     * 将 {@link VoxelShape} 旋转到特定一侧，类似于块状态旋转模型的方式。
+     * Rotates a {@link VoxelShape} to a specific side, similar to how the block states rotate models.
      *
-     * @param shape 要旋转的 {@link VoxelShape}
-     * @param side 将其旋转到的一侧。
-     * @return 旋转后的 {@link VoxelShape}
+     * @param shape The {@link VoxelShape} to rotate
+     * @param side  The side to rotate it to.
+     * @return The rotated {@link VoxelShape}
      */
     public static VoxelShape rotate(VoxelShape shape, Direction side) {
         return rotate(shape, box -> rotate(box, side));
     }
 
     /**
-     * 根据特定旋转旋转 {@link VoxelShape}。
+     * Rotates a {@link VoxelShape} according to a specific rotation.
      *
-     * @param shape 要旋转的 {@link VoxelShape}
-     * @param rotation 我们正在执行的轮换。
-     * @return 旋转后的 {@link VoxelShape}
+     * @param shape    The {@link VoxelShape} to rotate
+     * @param rotation The rotation we are performing.
+     * @return The rotated {@link VoxelShape}
      */
     public static VoxelShape rotate(VoxelShape shape, Rotation rotation) {
         return rotate(shape, box -> rotate(box, rotation));
     }
 
     /**
-     * 将 {@link VoxelShape} 水平旋转到特定侧。这是关于 {@link #rotate(VoxelShape, Rotation)} 的默认最常见旋转设置
+     * Rotates a {@link VoxelShape} to a specific side horizontally. This is a default most common rotation setup as to {@link #rotate(VoxelShape, Rotation)}
      *
-     * @param shape 要旋转的 {@link VoxelShape}
-     * @param side 将其旋转到的一侧。
-     * @return 旋转后的 {@link VoxelShape}
+     * @param shape The {@link VoxelShape} to rotate
+     * @param side  The side to rotate it to.
+     * @return The rotated {@link VoxelShape}
      */
     public static VoxelShape rotateHorizontal(VoxelShape shape, Direction side) {
         return rotate(shape, box -> rotateHorizontal(box, side));
     }
 
     /**
-     * 使用 {@link VoxelShape} 中每个 {@link AABB} 的特定变换函数来旋转 {@link VoxelShape}。
+     * Rotates a {@link VoxelShape} using a specific transformation function for each {@link AABB} in the {@link VoxelShape}.
      *
-     * @param shape 要旋转的 {@link VoxelShape}
-     * @param rotateFunction 应用到 {@link VoxelShape} 中每个 {@link AABB} 的变换函数。
-     * @return 旋转后的 {@link VoxelShape}
+     * @param shape          The {@link VoxelShape} to rotate
+     * @param rotateFunction The transformation function to apply to each {@link AABB} in the {@link VoxelShape}.
+     * @return The rotated {@link VoxelShape}
      */
     public static VoxelShape rotate(VoxelShape shape, UnaryOperator<AABB> rotateFunction) {
         List<VoxelShape> rotatedPieces = new ArrayList<>();
-        // 将体素形状分解为边界框
+        //Explode the voxel shape into bounding boxes
         List<AABB> sourceBoundingBoxes = shape.toAabbs();
-        // 旋转它们并将它们转换回体素形状
+        //Rotate them and convert them each back into a voxel shape
         for (AABB sourceBoundingBox : sourceBoundingBoxes) {
-            // 使边界框以中间为中心，旋转后向后移动
+            //Make the bounding box be centered around the middle, and then move it back after rotating
             rotatedPieces.add(Shapes.create(rotateFunction.apply(sourceBoundingBox.move(FROM_ORIGIN.x, FROM_ORIGIN.y, FROM_ORIGIN.z))
                     .move(-FROM_ORIGIN.x, -FROM_ORIGIN.z, -FROM_ORIGIN.z)));
         }
-
+        //return the recombined rotated voxel shape
         return combine(rotatedPieces);
     }
 
     /**
-     * 用于质量组合形状
+     * Used for mass combining shapes
      *
-     * @param shapes 要包含的 {@link VoxelShape} 列表
-     * @return 简化的 {@link VoxelShape} 包括输入形状的所有内容。
+     * @param shapes The list of {@link VoxelShape}s to include
+     * @return A simplified {@link VoxelShape} including everything that is part of the input shapes.
      */
     public static VoxelShape combine(VoxelShape... shapes) {
         return batchCombine(Shapes.empty(), BooleanOp.OR, true, shapes);
     }
 
     /**
-     * 用于质量组合形状
+     * Used for mass combining shapes
      *
-     * @param shapes 要包括的 {@link VoxelShape} 的集合
-     * @return 简化的 {@link VoxelShape} 包括输入形状的所有内容。
+     * @param shapes The collection of {@link VoxelShape}s to include
+     * @return A simplified {@link VoxelShape} including everything that is part of the input shapes.
      */
     public static VoxelShape combine(Collection<VoxelShape> shapes) {
         return batchCombine(Shapes.empty(), BooleanOp.OR, true, shapes);
     }
 
     /**
-     * 用于从完整的立方体中切割形状
+     * Used for cutting shapes out of a full cube
      *
-     * @param shapes 要剪切的 {@link VoxelShape} 列表
-     * @return A {@link VoxelShape} 包括不属于输入形状的所有内容。
+     * @param shapes The list of {@link VoxelShape}s to cut out
+     * @return A {@link VoxelShape} including everything that is not part of the input shapes.
      */
     public static VoxelShape exclude(VoxelShape... shapes) {
         return batchCombine(Shapes.block(), BooleanOp.ONLY_FIRST, true, shapes);
     }
 
     /**
-     * 用于使用特定的 {@link BooleanOp} 和给定的起始形状进行质量组合形状。
+     * Used for mass combining shapes using a specific {@link BooleanOp} and a given start shape.
      *
-     * @param initial 从 {@link VoxelShape} 开始
-     * @param function 要执行的 {@link BooleanOp}
-     * @param simplify 如果返回的形状应运行 {@link VoxelShape#optimize()}，则为 True，否则为 False
-     * @param shapes 要包括的 {@link VoxelShape} 的集合
-     * @return 基于输入参数的 {@link VoxelShape}。
+     * @param initial  The {@link VoxelShape} to start with
+     * @param function The {@link BooleanOp} to perform
+     * @param simplify True if the returned shape should run {@link VoxelShape#optimize()}, False otherwise
+     * @param shapes   The collection of {@link VoxelShape}s to include
+     * @return A {@link VoxelShape} based on the input parameters.
      * @implNote We do not do any simplification until after combining all the shapes, and then only if the {@code simplify} is True. This is because there is a
-     * 如果我们仍然有更多的改变，那么每次计算简化形状时的性能都会受到影响。
+     * performance hit in calculating the simplified shape each time if we still have more changers we are making to it.
      */
     public static VoxelShape batchCombine(VoxelShape initial, BooleanOp function, boolean simplify, Collection<VoxelShape> shapes) {
         VoxelShape combinedShape = initial;
@@ -194,15 +194,15 @@ public class VoxelShapeUtils {
     }
 
     /**
-     * 用于使用特定的 {@link BooleanOp} 和给定的起始形状进行质量组合形状。
+     * Used for mass combining shapes using a specific {@link BooleanOp} and a given start shape.
      *
-     * @param initial 从 {@link VoxelShape} 开始
-     * @param function 要执行的 {@link BooleanOp}
-     * @param simplify 如果返回的形状应运行 {@link VoxelShape#optimize()}，则为 True，否则为 False
-     * @param shapes 要包含的 {@link VoxelShape} 列表
-     * @return 基于输入参数的 {@link VoxelShape}。
+     * @param initial  The {@link VoxelShape} to start with
+     * @param function The {@link BooleanOp} to perform
+     * @param simplify True if the returned shape should run {@link VoxelShape#optimize()}, False otherwise
+     * @param shapes   The list of {@link VoxelShape}s to include
+     * @return A {@link VoxelShape} based on the input parameters.
      * @implNote We do not do any simplification until after combining all the shapes, and then only if the {@code simplify} is True. This is because there is a
-     * 如果我们仍然有更多的改变，那么每次计算简化形状时的性能都会受到影响。
+     * performance hit in calculating the simplified shape each time if we still have more changers we are making to it.
      */
     public static VoxelShape batchCombine(VoxelShape initial, BooleanOp function, boolean simplify, VoxelShape... shapes) {
         VoxelShape combinedShape = initial;

@@ -15,12 +15,12 @@ public class GeckoLayerMaidHeld implements GeoLayerRenderer<EntityMaidRenderStat
     @Override
     public void submit(SubmitNodeCollector submitNode, PoseStack poseStack, EntityMaidRenderState state, GeckoMaidRenderData data, CameraRenderState camera) {
         if (!state.rightHandItemState.isEmpty()) {
-            data.modelState.visitLocatorGroup(GeoLocatorType.RIGHT_HAND, poseStack, locator ->
+            data.locators().visitLocatorGroup(GeoLocatorType.RIGHT_HAND, poseStack, locator ->
                     this.renderArmWithItem(state, state.rightHandItemState, locator, submitNode)
             );
         }
         if (!state.leftHandItemState.isEmpty()) {
-            data.modelState.visitLocatorGroup(GeoLocatorType.LEFT_HAND, poseStack, locator ->
+            data.locators().visitLocatorGroup(GeoLocatorType.LEFT_HAND, poseStack, locator ->
                     this.renderArmWithItem(state, state.leftHandItemState, locator, submitNode)
             );
         }

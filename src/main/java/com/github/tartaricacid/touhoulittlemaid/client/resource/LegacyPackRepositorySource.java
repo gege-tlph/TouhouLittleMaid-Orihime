@@ -29,7 +29,7 @@ public class LegacyPackRepositorySource implements RepositorySource {
         MutableComponent title = Component.translatable("pack.touhou_little_maid.legacy_resources_pack.title");
         MutableComponent desc = Component.translatable("pack.touhou_little_maid.legacy_resources_pack.desc");
         PackLocationInfo info = new PackLocationInfo(PACK_NAME, title, PackSource.BUILT_IN, Optional.empty());
-        Pack.Metadata metadata = new Pack.Metadata(desc, PackCompatibility.COMPATIBLE, FeatureFlagSet.of(), Collections.emptyList()/* , 假 */);
+        Pack.Metadata metadata = new Pack.Metadata(desc, PackCompatibility.COMPATIBLE, FeatureFlagSet.of(), Collections.emptyList()/*, false*/);
         PackSelectionConfig config = new PackSelectionConfig(false, Pack.Position.TOP, false);
         this.legacyPack = new Pack(info, supplier, metadata, config);
     }

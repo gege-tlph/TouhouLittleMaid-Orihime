@@ -1,6 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.block;
 
-
+// TODO: datagen excluded - restore when datagen is re-enabled
 import com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagBlock;
 import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntitySnackCabinet;
 import com.mojang.serialization.MapCodec;
@@ -71,7 +71,7 @@ public class BlockSnackCabinet extends BaseEntityBlock {
     public BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks,
                                   BlockPos pos, Direction direction, BlockPos neighborPos,
                                   BlockState neighborState, RandomSource random) {
-
+        // B4 恢复：依据上方相邻方块的高度 tag 设置柜体形态（TagBlock un-excluded）
         if (direction == Direction.UP) {
             if (neighborState.is(TagBlock.SNACK_CABINET_HALF)) {
                 return state.setValue(TYPE, TYPE_HALF);
@@ -143,6 +143,8 @@ public class BlockSnackCabinet extends BaseEntityBlock {
         return CODEC;
     }
 
+    // TODO: 1.21.11 — RenderShape.ENTITYBLOCK_ANIMATED + appendHoverText removed in 1.21.5
+    //                      Block entity rendering + BlockItem tooltips handle these
 
     @Override
     public BlockState rotate(BlockState pState, Rotation pRot) {

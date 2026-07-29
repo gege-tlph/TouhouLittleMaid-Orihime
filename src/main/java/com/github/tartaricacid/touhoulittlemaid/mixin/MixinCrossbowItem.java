@@ -29,7 +29,7 @@ public class MixinCrossbowItem {
                     attackValue = attackDamage.getBaseValue();
                 }
                 float multiplier = (float) (attackValue / 2.0f);
-
+                // B5: getBaseDamage() 已移除（1.21.11）→ 从原版箭基础伤害 2.0 重算（同 TaskBowAttack）
                 arrow.setBaseDamage(Math.max(1.0, 2.0 * multiplier));
             }
             this.shootCrossbowProjectile(shooter, target, projectile, 1.6F);

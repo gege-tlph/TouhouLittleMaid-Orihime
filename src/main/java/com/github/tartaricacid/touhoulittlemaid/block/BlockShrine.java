@@ -101,6 +101,7 @@ public class BlockShrine extends BaseEntityBlock {
         return super.useItemOn(itemStack, state, worldIn, pos, playerIn, hand, hit);
     }
 
+    // 1.21.2+：Block.onRemove 已移除；掉落逻辑已迁至 TileEntityShrine.preRemoveSideEffects
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
@@ -112,6 +113,8 @@ public class BlockShrine extends BaseEntityBlock {
         return simpleCodec((properties) -> new BlockShrine(properties));
     }
 
+    // 1.21.11: RenderShape.ENTITYBLOCK_ANIMATED 已移除（仅剩 INVISIBLE/MODEL）。
+    // 与本仓库既定处理一致（BlockJoy/MaidBed/PicnicMat/SnackCabinet）：移除该覆盖，回落默认 MODEL。
 
     @Nullable
     @Override

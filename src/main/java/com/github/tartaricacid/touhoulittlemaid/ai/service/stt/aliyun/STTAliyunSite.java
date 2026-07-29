@@ -150,6 +150,11 @@ public class STTAliyunSite implements STTSite {
         return Map.of();
     }
 
+    @Override
+    public boolean hasUsableCredentials() {
+        return StringUtils.isNotBlank(secretKey) && StringUtils.isNotBlank(appKey);
+    }
+
     public String getSecretKey() {
         return secretKey;
     }

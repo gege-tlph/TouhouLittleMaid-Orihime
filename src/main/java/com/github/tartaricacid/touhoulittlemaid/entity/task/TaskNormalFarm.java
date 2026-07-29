@@ -3,7 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.entity.task;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IFarmTask;
 import com.github.tartaricacid.touhoulittlemaid.api.task.ISpecialCropHandler;
-
+// TODO: datagen excluded - restore when datagen is re-enabled
 import com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagItem;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.task.crop.SpecialCropManager;
@@ -39,7 +39,10 @@ public class TaskNormalFarm implements IFarmTask {
         if (handler != null) {
             return handler.isSeed(stack);
         }
-
+        // TODO: datagen excluded - restore when datagen is re-enabled
+        // 然后是默认情况
+        // B4/B5 恢复：可种植种子判据 = MAID_PLANTABLE_SEEDS tag（B4 恢复）+ BlockItem
+        //   （1.21.11 ItemNameBlockItem 已并入 BlockItem，javap+26.1 确认；tag 收窄至真正的种子）
         return stack.is(TagItem.MAID_PLANTABLE_SEEDS) && stack.getItem() instanceof BlockItem;
     }
 

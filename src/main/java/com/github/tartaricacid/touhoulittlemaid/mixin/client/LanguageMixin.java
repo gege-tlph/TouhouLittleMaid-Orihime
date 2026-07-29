@@ -1,6 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.mixin.client;
 
-
+// SWEEP R13-2：旧 client.resource.CustomPackLoader 已退役——重指向新 loader facade 的 LanguageLoader
 import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.LanguageLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.ClientLanguage;

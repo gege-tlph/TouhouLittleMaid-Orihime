@@ -138,6 +138,8 @@ public class ItemStackHandler implements IItemHandler, IItemHandlerModifiable, I
             if (!stacks.get(i).isEmpty()) {
                 CompoundTag itemTag = new CompoundTag();
                 itemTag.putInt("Slot", i);
+                // 1.21.11 移除了 ItemStack.save(provider, tag)，codec 序列化必须走注册表感知的
+                // RegistryOps（provider.createSerializationContext），否则附魔等注册表组件编码失败、物品静默丢失
                 ItemStack.CODEC.encodeStart(provider.createSerializationContext(NbtOps.INSTANCE), stacks.get(i))
                         .resultOrPartial(err -> TouhouLittleMaid.LOGGER.error("Failed to save item stack: {}", err))
                         .ifPresent(t -> {

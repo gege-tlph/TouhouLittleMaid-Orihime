@@ -280,5 +280,10 @@ public class TileEntityWChessRenderer implements BlockEntityRenderer<TileEntityW
         return true;
     }
 
-
+    // TODO
+//    @Override
+//    public AABB getRenderBoundingBox(TileEntityWChess blockEntity) {
+//        BlockPos pos = blockEntity.getBlockPos();
+//        return RenderHelper.getAABB(pos.offset(-3, 0, -3), pos.offset(3, 1, 3));
+//    }
 }

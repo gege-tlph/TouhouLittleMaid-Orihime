@@ -26,7 +26,9 @@ package com.github.tartaricacid.touhoulittlemaid.molang.lexer;
 
 
 /**
- * 实用程序类持有用于处理字符标记的实用程序静态方法
+ * Utility class holding utility static
+ * methods for working with character
+ * tokens
  */
 final class Characters {
 

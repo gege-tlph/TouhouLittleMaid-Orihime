@@ -44,7 +44,7 @@ public final class SerializerRegister {
         register.register(ServiceType.TTS, TTSMiniMaxSite.API_TYPE, new TTSMiniMaxSite.Serializer());
         register.register(ServiceType.TTS, TTSSiliconflowSite.API_TYPE, new TTSSiliconflowSite.Serializer());
 
-
+        // B8 修复: 注释理由「EXTENSIONS 26.1 才有」是**假的** —— TouhouLittleMaid.EXTENSIONS(:21) 与 ILittleMaid.registerAIChatSerializer(:124) 均存在。还原第三方插件 AI 序列化器注册。
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             littleMaid.registerAIChatSerializer(register);
         }

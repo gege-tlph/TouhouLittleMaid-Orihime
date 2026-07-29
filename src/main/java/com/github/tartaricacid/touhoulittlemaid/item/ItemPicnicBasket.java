@@ -34,7 +34,8 @@ public class ItemPicnicBasket extends BlockItem implements ExtendedScreenHandler
     private static final int PICNIC_BASKET_SIZE = 9;
 
     public ItemPicnicBasket(Identifier id, Block block) {
-
+        // 1.21.11: Item.getDescriptionId() 现 final → Properties.overrideDescription（javap 确认）。
+        //   BlockItem 默认 descriptionId 可能带 block. 前缀，故显式设为 HEAD 原键，保证行为等价。
         super(block, (new Properties()).setId(ResourceKey.create(Registries.ITEM, id)).stacksTo(1).overrideDescription("item.touhou_little_maid.picnic_basket"));
     }
 
@@ -66,7 +67,7 @@ public class ItemPicnicBasket extends BlockItem implements ExtendedScreenHandler
     @Override
     public InteractionResult use(Level worldIn, Player playerIn, InteractionHand handIn) {
         if (handIn == InteractionHand.MAIN_HAND && playerIn instanceof ServerPlayer serverPlayer) {
-            serverPlayer.openMenu(this/* , 数据 -> ItemStack.STREAM_CODEC.encode(data, serverPlayer.getMainHandItem()) */);
+            serverPlayer.openMenu(this/*, data -> ItemStack.STREAM_CODEC.encode(data, serverPlayer.getMainHandItem())*/);
             return InteractionResult.SUCCESS_SERVER;
         }
         return super.use(worldIn, playerIn, handIn);

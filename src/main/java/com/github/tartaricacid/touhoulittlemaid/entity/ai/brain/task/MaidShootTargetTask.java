@@ -92,7 +92,7 @@ public class MaidShootTargetTask extends Behavior<EntityMaid> {
                 } else if (canSee) {
                     // 否则开始进行远程攻击
                     int ticksUsingItem = owner.getTicksUsingItem();
-
+                    // 拿到快速射击附魔的等级（B4 恢复：EnchantmentKeys un-excluded）
                     int level = getEnchantmentLevel(owner.level.registryAccess(), Enchantments.QUICK_CHARGE, owner.getMainHandItem());
 
                     // 物品最大使用计数大于 20 才可以

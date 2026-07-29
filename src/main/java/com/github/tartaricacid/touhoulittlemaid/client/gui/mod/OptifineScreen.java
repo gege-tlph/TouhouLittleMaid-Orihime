@@ -14,7 +14,7 @@ import net.minecraft.network.chat.MutableComponent;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * 参考：https://github.com/TeamTwilight/twilightforest/blob/1.20.x/src/main/java/twilightforest/client/OptifineWarningScreen.java
+ * Refer: https://github.com/TeamTwilight/twilightforest/blob/1.20.x/src/main/java/twilightforest/client/OptifineWarningScreen.java
  */
 public class OptifineScreen extends Screen {
     public final Screen lastScreen;

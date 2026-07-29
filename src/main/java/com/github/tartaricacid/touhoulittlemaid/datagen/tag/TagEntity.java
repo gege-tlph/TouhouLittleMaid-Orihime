@@ -14,7 +14,9 @@ import net.minecraft.world.entity.EntityType;
 
 import java.util.concurrent.CompletableFuture;
 
-
+// B4_DATAGEN_RESTORE 已恢复（Phase 2 datagen 解冻）：既是**运行时 TagKey 常量持有类**（妖精目标/骑乘 tag 被
+//   gameplay 引用），又恢复其 datagen provider 职责（extends FabricTagProvider.EntityTypeTagProvider）。
+//   1.21.11 迁移：getOrCreateTagBuilder → valueLookupBuilder（对象/TagKey）+ getOrCreateRawBuilder（跨模组 Identifier 可选引用）。
 public class TagEntity extends FabricTagProvider.EntityTypeTagProvider {
     /**
      * 女仆妖精的攻击目标，默认仅攻击铁傀儡和玩家
@@ -22,7 +24,9 @@ public class TagEntity extends FabricTagProvider.EntityTypeTagProvider {
     public static TagKey<EntityType<?>> MAID_FAIRY_ATTACK_GOAL = createTagKey("maid_fairy_attack_goal");
 
     /**
-     * 女仆在骑乘时，为了朝向一致，会强制同步女仆朝向和当前骑乘实体朝向； <p> 但是部分模组（如机械动力）这么做反而会导致女仆异常旋转，故添加此标签
+     * 女仆在骑乘时，为了朝向一致，会强制同步女仆朝向和当前骑乘实体朝向；
+     * <p>
+     * 但是部分模组（如机械动力）这么做反而会导致女仆异常旋转，故添加此标签
      */
     public static TagKey<EntityType<?>> MAID_VEHICLE_ROTATE_BLOCKLIST = createTagKey("maid_vehicle_rotate_blocklist");
 

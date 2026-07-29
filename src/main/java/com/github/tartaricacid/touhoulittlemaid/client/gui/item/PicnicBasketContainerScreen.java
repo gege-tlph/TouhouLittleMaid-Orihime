@@ -27,6 +27,7 @@ public class PicnicBasketContainerScreen extends AbstractContainerScreen<PicnicB
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         int middleX = (this.width - this.imageWidth) / 2;
         int middleY = (this.height - this.imageHeight) / 2;
+        // 1.21.11: blit 增 RenderPipeline 首参 + 显式贴图尺寸（旧 7 参隐含 256x256）
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, CONTAINER_BACKGROUND, middleX, middleY, 0F, 0F, this.imageWidth, 35, 256, 256);
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, CONTAINER_BACKGROUND, middleX, middleY + 35, 0F, 126F, this.imageWidth, 96, 256, 256);
     }

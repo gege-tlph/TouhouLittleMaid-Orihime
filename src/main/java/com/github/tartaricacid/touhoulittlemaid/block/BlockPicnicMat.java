@@ -239,6 +239,7 @@ public class BlockPicnicMat extends Block implements EntityBlock, IBlock {
         return new TileEntityPicnicMat(pos, state);
     }
 
+    // TODO: 1.21.11 — RenderShape.ENTITYBLOCK_ANIMATED removed in 1.21.5
 
     @Override
     public boolean isPathfindable(BlockState state, PathComputationType type) {

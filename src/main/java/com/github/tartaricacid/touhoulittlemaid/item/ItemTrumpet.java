@@ -35,7 +35,10 @@ public class ItemTrumpet extends Item {
         super((new Properties()).setId(ResourceKey.create(Registries.ITEM, id)).stacksTo(1));
     }
 
-
+    // 1.21.11: Item.releaseUsing 返回值 void -> boolean。
+    // 语义（字节码确认）：ItemStack.releaseUsing 仅在其返回 true 时才调用
+    // applyAfterUseComponentSideEffects(...) —— 即 true = 「本次使用真的生效」。
+    // 故沿用 HEAD 的条件：满足使用条件并执行传送后返回 true，否则 false。
     @Override
     public boolean releaseUsing(ItemStack stack, Level worldIn, LivingEntity entityLiving, int timeLeft) {
         if (entityLiving instanceof Player player && timeLeft >= MIN_USE_DURATION) {
@@ -54,7 +57,7 @@ public class ItemTrumpet extends Item {
             if (player instanceof ServerPlayer serverPlayer) {
                 InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.USE_TRUMPET);
             }
-
+            // 1.21.2+: ItemCooldowns.addCooldown(Item,int) -> (ItemStack,int)
             player.getCooldowns().addCooldown(stack, 200);
             return true;
         }

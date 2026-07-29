@@ -23,7 +23,8 @@ public class ToolRegister {
         register.register(new SwitchScheduleTool());
         register.register(new SwitchSitTool());
 
-
+        // SWEEP R9-1（2026-07-19）：原「EXTENSIONS not available (26.1 feature)」TODO 系误判——
+        // TouhouLittleMaid.EXTENSIONS(:21) 本树存在且他处在用；还原 origin 的 addon 扩展点循环
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             littleMaid.registerAITool(register);
         }

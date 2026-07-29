@@ -21,7 +21,7 @@ public final class SpecialMaidRenderEvent {
      */
     private static final String PLAYER_NAME_PREFIX = "=>";
 
-    // @SubscribeEvent（优先级 = EventPriority.HIGHEST）
+    //@SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRenderPlayerNamedMaid(RenderMaidEvent event) {
         Component customName = event.getMaid().asEntity().getCustomName();
         if (customName == null) {
@@ -38,7 +38,7 @@ public final class SpecialMaidRenderEvent {
         }
     }
 
-    // @SubscribeEvent（优先级 = EventPriority.NORMAL）
+    //@SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onRenderEncryptNamedMaid(RenderMaidEvent event) {
         Component customName = event.getMaid().asEntity().getCustomName();
         if (customName == null) {
@@ -50,7 +50,7 @@ public final class SpecialMaidRenderEvent {
         }
     }
 
-    // @SubscribeEvent（优先级 = EventPriority.LOW）
+    //@SubscribeEvent(priority = EventPriority.LOW)
     public static void onRenderNormalNamedMaid(RenderMaidEvent event) {
         Component customName = event.getMaid().asEntity().getCustomName();
         if (customName == null) {
@@ -62,7 +62,7 @@ public final class SpecialMaidRenderEvent {
         }
     }
 
-    // @SubscribeEvent（优先级 = EventPriority.LOWEST）
+    //@SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onRenderEasterEggModel(RenderMaidEvent event) {
         String id = event.getMaid().getModelId();
         if (EASTER_EGG_MODEL.equals(id)) {
@@ -74,7 +74,14 @@ public final class SpecialMaidRenderEvent {
         }
     }
 
-
+    /**
+     * origin：彩蛋数据在装载期整体存为 MaidModels.ModelData，命中 tag 后用其覆写事件数据。
+     * <p>
+     * 新装载器（MaidPackLoader.putEasterEggData）只登记 tag → modelId，模型/信息/动画照常入库，
+     * 故此处按 modelId 反查后覆写，语义与 origin 一致：
+     * model 无条件覆写（Gecko 彩蛋无 bedrock 模型 → 覆写为 null，同 origin data.getModel()==null）、
+     * info 覆写、动画仅在非空时覆写。
+     */
     private static void modelDataSet(RenderMaidEvent event, String modelId) {
         RenderMaidEvent.ModelData rawData = event.getModelData();
         rawData.setModel(MAID_MODELS.getModel(modelId).orElse(null));

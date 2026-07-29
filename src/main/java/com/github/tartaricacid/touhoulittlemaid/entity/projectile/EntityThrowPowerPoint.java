@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.projectile;
 
-
+// TODO: IdentifierUtil was removed - using built-in Minecraft ResourceLocation API instead
+// import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityPowerPoint;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
@@ -48,7 +49,7 @@ public class EntityThrowPowerPoint extends ThrowableItemProjectile {
     protected void onHit(HitResult result) {
         super.onHit(result);
         if (!this.level.isClientSide()) {
-
+            // 1.21.11: PotionContents.getColor(Holder<Potion>) 移除 → 实例方法 getColor()（javap 确认）
             this.level.levelEvent(LevelEvent.PARTICLES_SPELL_POTION_SPLASH, this.blockPosition(), new PotionContents(Potions.HEALING).getColor());
             int count = 30 + this.level.random.nextInt(30) + this.level.random.nextInt(30);
             while (count > 0) {

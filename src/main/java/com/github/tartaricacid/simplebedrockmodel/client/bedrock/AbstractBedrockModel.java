@@ -28,8 +28,9 @@ public abstract class AbstractBedrockModel<T> extends Model<T> implements Bedroc
         }
     }
 
-    // 几何数据必须加载到传给父类的同一个根部件，否则 Model.root() 会指向空模型。
-    // 通过中间构造器先完成加载，再把该根部件交给父类。
+    // 1.21.11 关键修复：几何须加载进「传给 super() 的同一个 root」。此前 loadFromStream/POJO 内部各自 new BedrockPart()
+    // （root B）加载几何，却把另一个空 BedrockPart（root A）传给 super → Model.root() 为空 → 渲染 cubes=0/children=0（不可见）。
+    // Java 21 无 statements-before-super，故经中间构造器把同一 root 串起来：先 load 进 root，再 super(root)。
     public AbstractBedrockModel(InputStream stream) {
         this(new BedrockPart(), stream);
     }

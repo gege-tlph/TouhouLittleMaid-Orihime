@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author TartaricAcid
  * @date 2020/1/12 15:32
- */
+ **/
 @Environment(EnvType.CLIENT)
 public class InfoGetManager {
     /**

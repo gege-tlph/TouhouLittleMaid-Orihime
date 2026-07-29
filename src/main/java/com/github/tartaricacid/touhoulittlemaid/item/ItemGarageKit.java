@@ -1,7 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.item;
 
 import com.github.tartaricacid.touhoulittlemaid.client.proxy.ItemGarageKitProxy;
-
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelInfo;
 import com.github.tartaricacid.touhoulittlemaid.compat.ysm.YsmCompat;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -66,5 +65,37 @@ public class ItemGarageKit extends BlockItem {
         return super.getName(stack);
     }
 
-
+    //   （模型包=客户端资源，已排除，无服务端等价）+ MaidModelInfo。专用服务端从不调用 getName → 客户端显示名延后 P5。
+    //   P5 恢复：un-exclude CustomPackLoader 后还原下方逻辑，并做其内的 1.21.11 迁移：
+    //     · CustomData.read(Codec.fieldOf) 签名 · BuiltInRegistries.ENTITY_TYPE.get 现返 Optional<Reference>
+    //     · ComponentSerialization.fromJson 移除（→ 从 JSON 字符串经 CODEC + JsonOps 解析）。
+    // @Override @Environment(EnvType.CLIENT)
+    // public Component getName(ItemStack stack) {
+    //     if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT && Minecraft.getInstance().level != null) {
+    //         MutableComponent prefix = Component.translatable("block.touhou_little_maid.garage_kit.prefix");
+    //         CustomData data = getMaidData(stack);
+    //         String entityId = data.read(Codec.STRING.fieldOf(ENTITY_ID_TAG_NAME)).result().orElse(DEFAULT_ENTITY_ID);
+    //         if (!entityId.equals(DEFAULT_ENTITY_ID)) {
+    //             EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(entityId));
+    //             return prefix.append(entityType.getDescription());
+    //         }
+    //         if (YsmCompat.isInstalled()) {
+    //             YsmMaidInfo ysmMaidInfo = YsmCompat.getYsmMaidInfo(data.copyTag());
+    //             if (ysmMaidInfo.isYsmModel()) {
+    //                 MutableComponent name = ComponentSerialization.fromJson(ysmMaidInfo.name(), Minecraft.getInstance().level.registryAccess());
+    //                 if (name == null || name.equals(Component.empty())) {
+    //                     return prefix.append(ysmMaidInfo.modelId());
+    //                 }
+    //                 return prefix.append(name);
+    //             }
+    //         }
+    //         String modelId = data.read(Codec.STRING.fieldOf(MODEL_ID_TAG_NAME)).result().orElse(DEFAULT_MODEL_ID);
+    //         MaidModelInfo info = CustomPackLoader.MAID_MODELS.getInfo(modelId).orElse(null);
+    //         if (info != null) {
+    //             return prefix.append(ParseI18n.parse(info.name()));
+    //         }
+    //         return super.getName(stack);
+    //     }
+    //     return super.getName(stack);
+    // }
 }

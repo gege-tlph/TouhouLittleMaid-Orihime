@@ -1,11 +1,15 @@
 package com.github.tartaricacid.touhoulittlemaid.api;
 
 /**
- * 此注释可以让东方小女仆 mod 检测 mod 扩展名。所有 {@link com.github.tartaricacid.touhoulittlemaid.api.ILittleMaid} 必须具有此注释和不带参数的构造函数。
+ * This annotation lets touhou little maid mod detect mod extension.
+ * All {@link com.github.tartaricacid.touhoulittlemaid.api.ILittleMaid} must have this annotation and a constructor with no arguments.
  */
 
 /**
- * 注意：这用于 (Neo)Forge。 Fabric 使用入口点来替换它，因此您需要在类上实现 {@link com.github.tartaricacid.touhoulittlemaid.api.ILittleMaid} 接口，并将其添加为 Fabric.mod.json 中“little_maid_extension”类型的入口点
+ * Note: This is used for (Neo)Forge.
+ * Fabric use entry point to replace it,
+ * so you need implement the {@link com.github.tartaricacid.touhoulittlemaid.api.ILittleMaid} interface
+ * on a class and add that as an entry point of type "little_maid_extension" in your fabric.mod.json
  */
 @Deprecated
 public @interface LittleMaidExtension {

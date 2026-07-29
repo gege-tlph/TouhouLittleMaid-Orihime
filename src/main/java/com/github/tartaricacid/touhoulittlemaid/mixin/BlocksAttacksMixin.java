@@ -11,9 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * 恢复女仆使用的非玩家护盾耐久路径。
- */
+/** Restores the non-player shield durability path used by maids. */
 @Mixin(BlocksAttacks.class)
 public abstract class BlocksAttacksMixin {
     @Inject(method = "hurtBlockingItem", at = @At("HEAD"))

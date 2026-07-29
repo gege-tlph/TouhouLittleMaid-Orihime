@@ -180,7 +180,7 @@ public class EntityBox extends Entity {
     private void addStageChange() {
         this.setOpenStage(this.getOpenStage() + 1);
         if (this.getOpenStage() > THIRD_STAGE && this.level instanceof ServerLevel serverLevel) {
-            // 匹配原版的爆炸声音参数，而不产生破坏性爆炸。
+            // Match vanilla's explosion sound parameters without creating a damaging explosion.
             float explosionPitch = (1.0f + (this.random.nextFloat() - this.random.nextFloat()) * 0.2f) * 0.7f;
             serverLevel.playSound(
                     null,

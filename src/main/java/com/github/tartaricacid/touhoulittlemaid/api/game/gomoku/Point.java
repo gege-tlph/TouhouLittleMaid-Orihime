@@ -1,7 +1,9 @@
 /*
  * https://github.com/anlingyi/xechat-idea
  *
- * Apache 许可证版本 2.0，2004 年 1 月 http://www.apache.org/licenses/
+ *        Apache License
+ *   Version 2.0, January 2004
+ * http://www.apache.org/licenses/
  */
 package com.github.tartaricacid.touhoulittlemaid.api.game.gomoku;
 

@@ -38,7 +38,9 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
- * Gecko女仆模型的客户端动画外观。模型包初始化/更新 Molang 处理程序是动画契约的一部分：没有它们，模型可以成功渲染，而每个控制器保持静态。
+ * Client-side animation facade for Gecko maid models. Model-pack init/update
+ * Molang handlers are part of the animation contract: without them a model can
+ * render successfully while every controller remains static.
  */
 public class GeckoMaidEntity<T extends EntityMaid> extends AnimatableEntity<T> {
     @SuppressWarnings("rawtypes")

@@ -13,7 +13,7 @@ import net.minecraft.world.item.enchantment.Enchantments;
 
 public class ItemDamageableBauble extends Item {
     public ItemDamageableBauble(Identifier id, int durability) {
-        super((new Properties()).setId(ResourceKey.create(Registries.ITEM, id)).durability(durability)/* setNoRepair() */);
+        super((new Properties()).setId(ResourceKey.create(Registries.ITEM, id)).durability(durability)/*setNoRepair()*/);
     }
 
     @Override
@@ -21,10 +21,22 @@ public class ItemDamageableBauble extends Item {
         return true;
     }
 
+//    @Override
+//    public boolean supportsEnchantment(ItemStack stack, Holder<Enchantment> enchantment) {
+//        if (enchantment == Enchantments.MENDING && stack.is(TagItem.MAID_MENDING_BLOCKLIST_ITEM)) {
+//            return false;
+//        }
+//        if (enchantment == Enchantments.VANISHING_CURSE && stack.is(TagItem.MAID_VANISHING_BLOCKLIST_ITEM)) {
+//            return false;
+//        }
+//        return super.supportsEnchantment(stack, enchantment);
+//    }
 
     @Override
     public boolean canBeEnchantedWith(ItemStack stack, Holder<Enchantment> enchantment, EnchantingContext context) {
-
+        // B4 恢复：修补/消失诅咒黑名单（TagItem un-excluded）。
+        //   1.21.11 API 变更（javap 确认）：Enchantments.X 现为 ResourceKey，enchantment 为 Holder →
+        //   HEAD 的 `enchantment == Enchantments.X` 不再成立，改用 `enchantment.is(Enchantments.X)`。
         if (enchantment.is(Enchantments.MENDING) && stack.is(TagItem.MAID_MENDING_BLOCKLIST_ITEM)) {
             return false;
         }

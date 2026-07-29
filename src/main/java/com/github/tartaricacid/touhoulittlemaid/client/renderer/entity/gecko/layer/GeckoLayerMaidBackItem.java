@@ -21,8 +21,8 @@ public class GeckoLayerMaidBackItem implements GeoLayerRenderer<EntityMaidRender
         if (state.backItem.isEmpty() || state.backpack == null) {
             return;
         }
-        if (data.modelState.locatorGroupSize(GeoLocatorType.BACKPACK) > 0) {
-            data.modelState.visitLocatorGroup(GeoLocatorType.BACKPACK, poseStack,
+        if (data.locators().locatorGroupSize(GeoLocatorType.BACKPACK) > 0) {
+            data.locators().visitLocatorGroup(GeoLocatorType.BACKPACK, poseStack,
                     locator -> renderBackItem(submitNode, locator, state));
         } else {
             renderBackItem(submitNode, poseStack, state);

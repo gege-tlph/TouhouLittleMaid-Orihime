@@ -64,7 +64,7 @@ public final class InternalBedrockModelRegistry {
     public static final Identifier BIG_BACKPACK = addEntityModel("backpack/big_backpack");
     public static final Identifier MIDDLE_BACKPACK = addEntityModel("backpack/middle_backpack");
     public static final Identifier SMALL_BACKPACK = addEntityModel("backpack/small_backpack");
-
+    // 4 个功能背包模型（origin BedrockModelLoader 同名注册；此前未注册 → EMPTY 渲染数据 → 装备后不显示）
     public static final Identifier CRAFTING_TABLE_BACKPACK = addEntityModel("backpack/crafting_table_backpack");
     public static final Identifier END_CHEST_BACKPACK = addEntityModel("backpack/end_chest_backpack");
     public static final Identifier FURNACE_BACKPACK = addEntityModel("backpack/furnace_backpack");
@@ -93,7 +93,6 @@ public final class InternalBedrockModelRegistry {
         ENTITY_MODELS.put(location, function);
         return location;
     }
-
 
     @SuppressWarnings("unchecked")
     public static <T> SimpleBedrockModel<T> getModel(Identifier location) {

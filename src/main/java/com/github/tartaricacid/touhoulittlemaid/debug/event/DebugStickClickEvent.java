@@ -21,7 +21,8 @@ public class DebugStickClickEvent {
         EntityMaid maid = event.getMaid();
         if (player.getMainHandItem().is(Items.DEBUG_STICK) && TouhouLittleMaid.DEBUG) {
             if (player.isShiftKeyDown()) {
-
+                // B6b: 1.21.11 TamableAnimal.setOwnerUUID(UUID) 已移除 → setOwnerReference(EntityReference.of(UUID))
+                //   （EntityReference(UUID) 构造器 private；EntityReference.of(UUID) 是公开工厂，javap 确认）
                 maid.setOwnerReference(net.minecraft.world.entity.EntityReference.of(UUID.randomUUID()));
                 maid.level.broadcastEntityEvent(maid, EntityEvent.TAMING_SUCCEEDED);
                 if (!event.getWorld().isClientSide()) {

@@ -2,7 +2,6 @@ package com.github.tartaricacid.touhoulittlemaid.config;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.Config;
-import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ChairConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ExperimentalConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
@@ -29,10 +28,17 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 专服全局菜单可编辑的服务器权威配置白名单。
+ * 专服全局菜单可编辑的服务器权威配置白名单（**存档级**玩法规则）。
  *
  * <p>这些值仍保存在原有 common/server TOML 中，避免迁移配置键；客户端只持有菜单快照，
  * 保存时由服务器重新解析、校验并写入自己的配置文件。</p>
+ *
+ * <p>⚠️ <b>镜像契约</b>：{@link AiServerRuleConfig} 是本类状态机的镜像（AI 规则于 §17 v2 拆去
+ * 实例级）。凡改动本类的快照簿记 / 加载恢复 / applyJson 语义，**必须同步检查那边**；
+ * 编解码与 IO 已共享（{@code decode}/{@code copyValue}/{@code readUnchecked}/
+ * {@code ConfigFileMigration}/{@code AtomicConfigFileWriter}），不许各写各的。
+ * 两店的有意差异只有三条：文件作用域（存档 vs 实例）、激活策略（专服延迟 vs 恒立即）、
+ * 派生状态（本类有 meal regex 刷新，AI 店无）。若将来需要第三家店，先抽公共引擎再添。</p>
  */
 public final class ServerRuleConfig {
     private static final Gson GSON = new Gson();
@@ -226,14 +232,30 @@ public final class ServerRuleConfig {
         return true;
     }
 
+    /**
+     * 唯一读口。AI 规则已迁到 {@link AiServerRuleConfig}，但全仓几十处读点仍从这里进——
+     * 按键归属路由，不让「配置搬了家、读的人不知道」成为新的所有权混放事故面。
+     */
     @SuppressWarnings("unchecked")
     public static <T> T get(ModConfigSpec.ConfigValue<T> value) {
+        if (AiServerRuleConfig.owns(value)) {
+            return AiServerRuleConfig.get(value);
+        }
         Object active = activeValues.get(value);
         return active == null ? value.get() : (T) active;
     }
 
     public static String key(ModConfigSpec.ConfigValue<?> value) {
         return String.join(".", value.getPath());
+    }
+
+    /** 保存包按键分拣用：本店认领的键名全集 */
+    public static Set<String> jsonKeys() {
+        java.util.Set<String> keys = new java.util.HashSet<>();
+        for (ModConfigSpec.ConfigValue<?> value : values()) {
+            keys.add(key(value));
+        }
+        return Set.copyOf(keys);
     }
 
     public static List<ModConfigSpec.ConfigValue<?>> values() {
@@ -280,35 +302,24 @@ public final class ServerRuleConfig {
                 MiscConfig.SHRINE_LAMP_MAX_RANGE,
                 MiscConfig.SCARECROW_RANGE,
                 ExperimentalConfig.SMOOTH_FOLLOW,
-                AIConfig.LLM_ENABLED,
-                AIConfig.AUTO_GEN_SETTING_ENABLED,
-                AIConfig.LLM_PROXY_ADDRESS,
-                AIConfig.MAID_HISTORY_COMPRESS_TOKEN_LIMIT,
-                AIConfig.MAX_TOKENS_PER_PLAYER,
-                AIConfig.TTS_ENABLED,
-                AIConfig.TTS_LANGUAGE,
-                AIConfig.TTS_PROXY_ADDRESS,
+                // AI 规则已整体迁往 AiServerRuleConfig（实例级），本表不再含任何 AI 条目
                 ServerConfig.CLIENT_PACK_DOWNLOAD_URLS,
                 ServerConfig.MAID_AI_TIME_DEBUG,
                 ServerConfig.MAID_BACKUP_INTERVAL_SECONDS,
-                ServerConfig.MAID_BACKUP_MAX_COUNT,
-                ServerConfig.PROVIDE_SERVER_STT,
-                ServerConfig.PROXY_SERVER_COMPATIBILITY,
-                ServerConfig.SERVER_STT_TYPE
+                ServerConfig.MAID_BACKUP_MAX_COUNT
         );
     }
 
     private static List<ModConfigSpec.ConfigValue<?>> publicRuntimeValues() {
         List<ModConfigSpec.ConfigValue<?>> result = new ArrayList<>(values());
-        result.remove(AIConfig.LLM_PROXY_ADDRESS);
-        result.remove(AIConfig.TTS_PROXY_ADDRESS);
         result.remove(ServerConfig.MAID_AI_TIME_DEBUG);
         result.remove(ServerConfig.MAID_BACKUP_INTERVAL_SECONDS);
         result.remove(ServerConfig.MAID_BACKUP_MAX_COUNT);
         return result;
     }
 
-    private static Object copyValue(Object value) {
+    /** 编解码三件套开放给 {@link AiServerRuleConfig} 复用（同包）：两店一套语义，别各写各的 */
+    static Object copyValue(Object value) {
         if (value instanceof List<?> list) {
             List<Object> copy = new ArrayList<>();
             for (Object element : list) {
@@ -325,11 +336,18 @@ public final class ServerRuleConfig {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static Object readUnchecked(ModConfigSpec.ConfigValue value, Config config) {
+    static Object readUnchecked(ModConfigSpec.ConfigValue value, Config config) {
         return value.getRaw(config, value.getPath(), value::getDefault);
     }
 
-    private static @Nullable Object decode(ModConfigSpec.ConfigValue<?> value, JsonElement element) {
+    /**
+     * 伪造包防线：字符串一律封顶。GUI 端 512 的输入上限只是君子锁——改装客户端可以直塞 1MB
+     * 字符串（载荷解码上限才拦 1MB），它会被写进 TOML、进公开快照、再广播给**每个进服玩家**。
+     * 4096 覆盖最长的合法值（下载 URL、代理地址）仍有富余。
+     */
+    private static final int MAX_STRING_VALUE_LENGTH = 4096;
+
+    static @Nullable Object decode(ModConfigSpec.ConfigValue<?> value, JsonElement element) {
         try {
             Object defaultValue = value.getDefault();
             if (defaultValue instanceof Boolean) {
@@ -348,7 +366,7 @@ public final class ServerRuleConfig {
                 return element.getAsDouble();
             }
             if (defaultValue instanceof String) {
-                return element.getAsString();
+                return boundedString(element);
             }
             if (defaultValue instanceof Enum<?> enumValue) {
                 return decodeEnum(enumValue.getDeclaringClass(), element.getAsString());
@@ -362,6 +380,14 @@ public final class ServerRuleConfig {
         return null;
     }
 
+    private static String boundedString(JsonElement element) {
+        String decoded = element.getAsString();
+        if (decoded.length() > MAX_STRING_VALUE_LENGTH) {
+            throw new IllegalArgumentException("String value exceeds " + MAX_STRING_VALUE_LENGTH + " chars");
+        }
+        return decoded;
+    }
+
     private static List<?> decodeList(ModConfigSpec.ConfigValue<?> value, JsonArray array) {
         if (value == MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST) {
             List<List<String>> result = new ArrayList<>();
@@ -370,14 +396,14 @@ public final class ServerRuleConfig {
                 if (pair.size() != 2) {
                     throw new IllegalArgumentException("Container return entry must contain exactly two item ids");
                 }
-                result.add(List.of(pair.get(0).getAsString(), pair.get(1).getAsString()));
+                result.add(List.of(boundedString(pair.get(0)), boundedString(pair.get(1))));
             }
             return result;
         }
 
         List<String> result = new ArrayList<>();
         for (JsonElement element : array) {
-            result.add(element.getAsString());
+            result.add(boundedString(element));
         }
         return result;
     }

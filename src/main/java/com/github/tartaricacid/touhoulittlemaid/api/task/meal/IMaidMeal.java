@@ -1,6 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.api.task.meal;
 
-
+// TODO: datagen excluded - restore when datagen is re-enabled
 import com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagItem;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -12,7 +12,7 @@ import java.util.List;
 
 public interface IMaidMeal {
     static boolean isBlockList(ItemStack food, List<String> blockList) {
-
+        // B4 恢复：先过进食 tag 黑名单（TagItem un-excluded）
         if (food.is(TagItem.MAID_EAT_BLOCKLIST_ITEM)) {
             return true;
         }

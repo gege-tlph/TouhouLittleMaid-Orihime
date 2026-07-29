@@ -58,7 +58,7 @@ public class TaskHoney implements IMaidTask {
     }
 
     private boolean hasShears(EntityMaid maid) {
-        return maid.getMainHandItem().getItem() instanceof ShearsItem
+        return maid.getMainHandItem().getItem() /*.canPerformAction(ItemAbilities.SHEARS_HARVEST)*/ instanceof ShearsItem
                 || maid.getMainHandItem().is(ConventionalItemTags.SHEAR_TOOLS);
     }
 
@@ -68,7 +68,7 @@ public class TaskHoney implements IMaidTask {
         if (hasShears(maid)) {
             return FunctionCallSwitchResult.NO_CHANGE;
         }
-        if (TaskEquipUtil.tryEquipFromBackpack(maid, item -> item.is(ConventionalItemTags.SHEAR_TOOLS) || item.getItem() instanceof ShearsItem)) {
+        if (TaskEquipUtil.tryEquipFromBackpack(maid, item -> item.is(ConventionalItemTags.SHEAR_TOOLS) || item.getItem() instanceof ShearsItem /*item.canPerformAction(ItemAbilities.SHEARS_HARVEST)*/)) {
             return FunctionCallSwitchResult.OK;
         }
         // 若无剪刀，但有玻璃瓶则允许仅用瓶子进行部分功能（部分成功）

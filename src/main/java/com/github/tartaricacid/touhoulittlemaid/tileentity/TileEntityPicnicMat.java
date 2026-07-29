@@ -35,7 +35,7 @@ public class TileEntityPicnicMat extends BlockEntity implements IBlockEntityPers
     private final ItemStackHandler handler = new ItemStackHandler(9) {
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return stack.get(DataComponents.FOOD) != null;
+            return /*stack.getFoodProperties(null)*/stack.get(DataComponents.FOOD) != null;
         }
     };
     private final UUID[] sitIds = new UUID[]{Util.NIL_UUID, Util.NIL_UUID, Util.NIL_UUID, Util.NIL_UUID};

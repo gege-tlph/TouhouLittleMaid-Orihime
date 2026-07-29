@@ -84,6 +84,8 @@ public abstract class BlockJoy extends BaseEntityBlock {
         }
     }
 
+    // TODO: 1.21.11 — onRemove signature changed in 1.21.5; Entity.discard() → Entity.remove()
+    //                      Restore when 1.21.5+ API migration is complete
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
@@ -95,6 +97,7 @@ public abstract class BlockJoy extends BaseEntityBlock {
         return true;
     }
 
+    // TODO: 1.21.11 — RenderShape.ENTITYBLOCK_ANIMATED removed in 1.21.5
 
     @Override
     public BlockState rotate(BlockState pState, Rotation pRot) {

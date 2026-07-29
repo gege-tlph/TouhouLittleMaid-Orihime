@@ -55,7 +55,7 @@ public class TaskIdle implements IMaidTask {
     private boolean canSnowballFight(EntityMaid maid) {
         Level world = maid.level();
         BlockPos pos = maid.blockPosition();
-
+        // B5: coldEnoughToSnow 新增 int seaLevel 参数（1.21.11）
         return !maid.isBegging() && world.getBiome(pos).value().coldEnoughToSnow(pos, world.getSeaLevel()) && world.getBlockState(pos).is(Blocks.SNOW);
     }
 

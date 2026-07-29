@@ -22,7 +22,8 @@ final class CustomPackTextureLoader {
         if (!TMP_REGISTER_TEXTURE.contains(texturePath)) {
             CustomPackTexture texture = new CustomPackTexture(accessor, texturePath);
             if (texture.isExist()) {
-
+                // origin 1.21.1 的 register() 延迟到绑定时才上传 GL，任意线程可调；
+                // 1.21.11 registerAndLoad() 立即上传，必须渲染线程——游戏内下载走 TLM Downloader 线程，需分派
                 Minecraft minecraft = Minecraft.getInstance();
                 minecraft.execute(() -> minecraft.getTextureManager().registerAndLoad(texturePath, texture));
                 TMP_REGISTER_TEXTURE.add(texturePath);

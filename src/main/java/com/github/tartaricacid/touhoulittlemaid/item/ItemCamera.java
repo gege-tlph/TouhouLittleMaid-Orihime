@@ -70,7 +70,7 @@ public class ItemCamera extends Item {
 
     public static void spawnMaidPhoto(Level worldIn, CompoundTag data, Player playerIn) {
         ItemStack photo = InitItems.PHOTO.getDefaultInstance();
-
+        // 1.21.11: EntityType.create(CompoundTag, Level) -> create(ValueInput, Level, EntitySpawnReason)
         Optional<Entity> optional = EntityType.create(
                 TagValueInput.create(ProblemReporter.DISCARDING, worldIn.registryAccess(), data),
                 worldIn, EntitySpawnReason.SPAWN_ITEM_USE);
@@ -78,7 +78,7 @@ public class ItemCamera extends Item {
             return;
         }
         maid.setHomeModeEnable(false);
-
+        // 1.21.11: Entity.saveWithoutId(CompoundTag) -> saveWithoutId(ValueOutput)
         TagValueOutput valueOutput = TagValueOutput.createWithContext(
                 ProblemReporter.DISCARDING, maid.registryAccess());
         maid.saveWithoutId(valueOutput);
@@ -95,7 +95,7 @@ public class ItemCamera extends Item {
     private void spawnMaidPhoto(Level worldIn, EntityMaid maid, Player playerIn) {
         ItemStack photo = InitItems.PHOTO.getDefaultInstance();
         maid.setHomeModeEnable(false);
-
+        // 1.21.11: Entity.saveWithoutId(CompoundTag) -> saveWithoutId(ValueOutput)
         TagValueOutput valueOutput = TagValueOutput.createWithContext(
                 ProblemReporter.DISCARDING, maid.registryAccess());
         maid.saveWithoutId(valueOutput);

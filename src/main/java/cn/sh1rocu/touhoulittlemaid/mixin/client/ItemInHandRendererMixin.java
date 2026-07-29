@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Environment(EnvType.CLIENT)
 @Mixin(ItemInHandRenderer.class)
 public abstract class ItemInHandRendererMixin {
+    // 1.21.11：renderArmWithItem 缓冲参数 MultiBufferSource → SubmitNodeCollector（提交式渲染管线）
     @Inject(method = "renderArmWithItem", at = @At("HEAD"), cancellable = true)
     private void tlm$renderHand(AbstractClientPlayer player, float tickDelta, float pitch, InteractionHand hand, float swingProgress, ItemStack stack, float equipProgress, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, CallbackInfo ci) {
         RenderHandEvent event = new RenderHandEvent(player, hand, stack, matrices, vertexConsumers, tickDelta, pitch, swingProgress, equipProgress, light);

@@ -13,7 +13,7 @@ import net.minecraft.world.level.Level;
 
 public class ItemExtinguisher extends Item {
     public ItemExtinguisher(Identifier id) {
-        super((new Properties()).setId(ResourceKey.create(Registries.ITEM, id)).durability(128));
+        super((new Properties()).setId(ResourceKey.create(Registries.ITEM, id)).durability(128)/*.setNoRepair()*/);
     }
 
     @Override

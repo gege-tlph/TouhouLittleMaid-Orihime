@@ -8,6 +8,7 @@ import java.nio.file.Path;
 
 @Mixin(DimensionDataStorage.class)
 public interface DimensionDataStorageAccessor {
+    // 1.21.11: DimensionDataStorage.dataFolder 字段类型 java.io.File → java.nio.file.Path
     @Accessor("dataFolder")
     Path tlm$getDataFolder();
 }

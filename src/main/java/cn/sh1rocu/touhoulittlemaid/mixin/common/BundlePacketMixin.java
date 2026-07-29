@@ -11,10 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 这是 {@link cn.sh1rocu.touhoulittlemaid.util.forge.network.IEntityWithComplexSpawn} 在专用服务器上正常工作所必需的，因为它最终会嵌套捆绑数据包。
+ * this is needed for {@link cn.sh1rocu.touhoulittlemaid.util.forge.network.IEntityWithComplexSpawn} to work properly on dedicated servers, since it ends up nesting bundle packets.
  */
 
-// 来源：PortingLib
+// PortingLib
 @Mixin(BundlePacket.class)
 public class BundlePacketMixin {
     @ModifyVariable(method = "<init>", at = @At("HEAD"), argsOnly = true)

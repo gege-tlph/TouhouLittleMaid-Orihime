@@ -46,7 +46,9 @@ public class ItemStackShapelessRecipeBuilder implements RecipeBuilder {
     }
 
     public ItemStackShapelessRecipeBuilder requires(TagKey<Item> tag) {
-
+        // SWEEP VQ-6：origin 无条件 requires(Ingredient.of(tag))；此前 ifPresent 会在 tag 缺失时
+        // 静默丢一个材料（配方悄悄变便宜）。改 getOrThrow = 缺 tag 时 datagen 立即失败（fail-fast，
+        // 语义不弱于 origin）。当前唯一调用方为冻结的 Patchouli 配方（注释态）。
         Registry<Item> registry = BuiltInRegistries.ITEM;
         this.requires(Ingredient.of(registry.getOrThrow(tag)));
         return this;
@@ -108,7 +110,7 @@ public class ItemStackShapelessRecipeBuilder implements RecipeBuilder {
         recipeOutput.accept(id, shapelessrecipe, builder.build(Identifier.fromNamespaceAndPath(id.registry().getNamespace(), id.registry().getPath()).withPrefix("recipes/" + this.category.getFolderName() + "/")));
     }
 
-
+    // TODO: Legacy save method for compatibility - remove when all callers are updated
     public void save(RecipeOutput recipeOutput, @NotNull Identifier id) {
         this.save(recipeOutput, ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, id));
     }

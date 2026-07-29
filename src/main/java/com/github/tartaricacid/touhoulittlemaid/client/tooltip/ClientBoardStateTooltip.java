@@ -56,6 +56,7 @@ public class ClientBoardStateTooltip implements ClientTooltipComponent {
     }
 
     @Override
+    // 1.21.11: getHeight() 现需 Font 参数
     public int getHeight(Font font) {
         if (boardGameData == null) {
             return 0;
@@ -82,6 +83,7 @@ public class ClientBoardStateTooltip implements ClientTooltipComponent {
     }
 
     @Override
+    // 1.21.11: renderImage 新增 w/h 两参
     public void renderImage(Font font, int pX, int pY, int width, int height, GuiGraphics graphics) {
         if (boardGameData == null) {
             return;

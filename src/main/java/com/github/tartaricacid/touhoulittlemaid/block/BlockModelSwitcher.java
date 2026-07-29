@@ -76,7 +76,7 @@ public class BlockModelSwitcher extends BaseEntityBlock implements IRedstoneConn
     }
 
     @Override
-
+    // 1.21.11: BlockBehaviour.neighborChanged 第 5 参 BlockPos → Orientation（javap 确认；本体未用该参）
     public void neighborChanged(BlockState pState, Level pLevel, BlockPos pPos, Block pBlock, Orientation pOrientation, boolean pIsMoving) {
         if (pLevel.isClientSide()) {
             return;
@@ -163,6 +163,7 @@ public class BlockModelSwitcher extends BaseEntityBlock implements IRedstoneConn
         }
     }
 
+    // 1.21.2+：Block.onRemove 已移除；掉落逻辑已迁至 TileEntityModelSwitcher.preRemoveSideEffects
 
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {

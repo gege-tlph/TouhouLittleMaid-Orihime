@@ -3,7 +3,10 @@ package com.github.tartaricacid.touhoulittlemaid.debug.target;
 import cn.sh1rocu.touhoulittlemaid.api.event.PlayerTickEvent;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-
+// TODO: GameTestAddMarkerDebugPayload and PathfindingDebugPayload were removed in Minecraft 1.21.11
+// import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+// import net.minecraft.network.protocol.common.custom.GameTestAddMarkerDebugPayload;
+// import net.minecraft.network.protocol.common.custom.PathfindingDebugPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.VisibleForDebug;
 import net.minecraft.world.level.pathfinder.Path;
@@ -30,7 +33,25 @@ public class SendMaidDebugDataEvent {
     }
 
     private static void renderForMaid(@Nullable EntityMaid maid, ServerPlayer player) {
+        // TODO: GameTestAddMarkerDebugPayload and PathfindingDebugPayload were removed in Minecraft 1.21.11
+        // Debug payload system has changed - needs to be updated when the new API is available
+        /*
+        if (maid == null) {
+            return;
+        }
 
+        if (!maid.getNavigation().isDone()) {
+            Path path = maid.getNavigation().getPath();
+            if (path != null) {
+                player.connection.send(new ClientboundCustomPayloadPacket(new PathfindingDebugPayload(maid.getId(), path, 0.5f)));
+            }
+        }
 
+        DebugMaidManager.getDebugTargets(maid).forEach(target -> {
+            GameTestAddMarkerDebugPayload payload = new GameTestAddMarkerDebugPayload(
+                    target.pos(), target.color(), target.text(), target.lifeTime());
+            player.connection.send(new ClientboundCustomPayloadPacket(payload));
+        });
+        */
     }
 }

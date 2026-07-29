@@ -81,7 +81,7 @@ public class TaskCocoa implements IFarmTask {
                     Level world = maid.level();
                     BlockState cocoaState = Blocks.COCOA.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, direction.getOpposite());
                     world.setBlock(directionPos, cocoaState, Block.UPDATE_ALL_IMMEDIATE);
-
+                    //SoundType soundType = cocoaState.getSoundType(world, directionPos, maid);
                     SoundType soundType = cocoaState.getSoundType();
                     world.playSound(null, directionPos, soundType.getPlaceSound(), SoundSource.BLOCKS,
                             (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);

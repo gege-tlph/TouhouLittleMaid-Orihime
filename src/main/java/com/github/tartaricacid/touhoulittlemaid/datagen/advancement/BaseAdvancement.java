@@ -119,6 +119,7 @@ public class BaseAdvancement {
         return Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id);
     }
 
+    // 1.21.11: RecipeCraftedTrigger.craftedItem 现取 ResourceKey<Recipe<?>>（原为 Identifier）。
     private static ResourceKey<Recipe<?>> recipeKey(String path) {
         return ResourceKey.create(Registries.RECIPE, id(path));
     }

@@ -28,7 +28,8 @@ public record BeaconAbsorbPackage(float x, float y, float z) implements CustomPa
         context.client().execute(() -> spawnParticle(message));
     }
 
-
+    // B7b: 还原 HEAD 的 @Environment(CLIENT) 内联模式（移植期外提的 network/client/*Proxy 已 P5 排除）。
+    //   逻辑与 HEAD 逐字一致，仅带入 proxy 已做的 1.21.11 API 迁移（level.random→getRandom()）。服务端由 Fabric 剥离本方法。
     @Environment(EnvType.CLIENT)
     private static void spawnParticle(BeaconAbsorbPackage message) {
         Minecraft mc = Minecraft.getInstance();

@@ -26,7 +26,8 @@ public final class JERIUtil {
     }
 
     private static void recipeMaker(AltarRecipeMaker maker, AltarRecipe altarRecipe) {
-
+        // 1.21.11：ClientLevel 已无 RecipeManager（origin 此处的枚举调用本就是无消费的死代码，删）；
+        // getResultItem(registryAccess) → 仓库 AltarRecipe 适配后的 getResult()
         Identifier recipeId = altarRecipe.getId();
         ItemStack output = altarRecipe.getResult();
         if (!altarRecipe.isItemCraft()) {

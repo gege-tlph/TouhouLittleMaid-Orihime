@@ -14,7 +14,7 @@ import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.phys.HitResult;
 
 public class EventHooks {
-
+    // 1.21.11: WeightedRandomList -> WeightedList；create() -> of()。逻辑与 HEAD 一致。
     private static final WeightedList<MobSpawnSettings.SpawnerData> NO_SPAWNS = WeightedList.of();
 
     public static WeightedList<MobSpawnSettings.SpawnerData> getPotentialSpawns(LevelAccessor level, MobCategory category, BlockPos pos, WeightedList<MobSpawnSettings.SpawnerData> oldList) {
@@ -32,7 +32,7 @@ public class EventHooks {
         EntityMountEvent.CALLBACK.invoker().post(event);
         if (event.isCanceled()) {
             entityMounting.setPos(entityMounting.getX(), entityMounting.getY(), entityMounting.getZ());
-
+            // 1.21.11: setRot(yRot,xRot) 为 protected → 用 public 的 setYRot/setXRot 分别设置，语义等价（恢复挂载取消时的旋转）。
             entityMounting.setYRot(entityMounting.yRotO);
             entityMounting.setXRot(entityMounting.xRotO);
             return false;

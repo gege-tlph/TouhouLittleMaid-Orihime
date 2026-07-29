@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.function.Consumer;
 
-// 来自 Kilt https://github.com/KiltMC/Kilt/blob/version/1.21.1/src/main/java/xyz/bluspring/kilt/forgeinjects/client/sounds/SoundEngineInject.java
+// From Kilt https://github.com/KiltMC/Kilt/blob/version/1.21.1/src/main/java/xyz/bluspring/kilt/forgeinjects/client/sounds/SoundEngineInject.java
 @Environment(EnvType.CLIENT)
 @Mixin(SoundEngine.class)
 public abstract class SoundEngineMixin {
@@ -41,7 +41,7 @@ public abstract class SoundEngineMixin {
         return refInstance.get() != null && original.call(refInstance.get());
     }
 
-
+    // 1.21.11: play() 返回类型 void → SoundEngine.PlayResult，@Inject 回调须改用 CallbackInfoReturnable
     @Inject(method = "play", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/sounds/ChannelAccess$ChannelHandle;execute(Ljava/util/function/Consumer;)V", shift = At.Shift.AFTER))
     private void tlm$prepareChannelInfo(SoundInstance soundInstance, CallbackInfoReturnable<SoundEngine.PlayResult> cir, @Local ChannelAccess.ChannelHandle channelHandle, @Local Sound sound) {
         var injection = ((ChannelAccessHandleInjection) channelHandle);
@@ -62,5 +62,9 @@ public abstract class SoundEngineMixin {
     }
 
     // 暂时用不到
-
+/*    @ModifyArg(method = "method_19758", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/sounds/ChannelAccess$ChannelHandle;execute(Ljava/util/function/Consumer;)V"))
+    private static Consumer<Channel> kilt$storeStreamConsumer(Consumer<Channel> consumer) {
+        SoundConsumerStorage.soundConsumerChannels.add(consumer);
+        return consumer;
+    }*/
 }

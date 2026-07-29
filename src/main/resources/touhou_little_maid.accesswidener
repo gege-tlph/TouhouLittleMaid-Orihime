@@ -61,3 +61,4 @@ accessible field net/minecraft/client/model/geom/ModelPart zRot F
 accessible field net/minecraft/client/model/geom/ModelPart xScale F
 accessible field net/minecraft/client/model/geom/ModelPart yScale F
 accessible field net/minecraft/client/model/geom/ModelPart zScale F
+accessible method net/minecraft/client/renderer/GameRenderer getFov (Lnet/minecraft/client/Camera;FZ)F

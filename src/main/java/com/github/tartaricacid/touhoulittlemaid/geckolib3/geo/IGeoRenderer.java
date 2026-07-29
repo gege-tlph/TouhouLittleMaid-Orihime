@@ -73,7 +73,7 @@ public interface IGeoRenderer<TState extends EntityRenderState, TData extends Ge
 
     default void renderCubesOfBone(GeoBone bone, PoseStack.Pose poseState, VertexConsumer buffer, TState state, GeckoRenderData data) {
         GeoMesh mesh = bone.cubes();
-
+        
         var packedLight = bone.glow() ? Mth.square(15) : state.lightCoords;
         var packedOverlay = data.overlayUV;
         var color = data.color;
@@ -115,7 +115,7 @@ public interface IGeoRenderer<TState extends EntityRenderState, TData extends Ge
                 nz.mul(-1);
             }
 
-            if ((faces & 0b000001) != 0) // 下方
+            if ((faces & 0b000001) != 0) // DOWN
             {
                 buffer.addVertex(C101.x, C101.y, C101.z)
                         .setColor(color)
@@ -142,7 +142,7 @@ public interface IGeoRenderer<TState extends EntityRenderState, TData extends Ge
                         .setLight(packedLight)
                         .setNormal(-ny.x, -ny.y, -ny.z);
             }
-            if ((faces & 0b000010) != 0) // 上方
+            if ((faces & 0b000010) != 0) // UP
             {
                 buffer.addVertex(C110.x, C110.y, C110.z)
                         .setColor(color)
@@ -169,7 +169,7 @@ public interface IGeoRenderer<TState extends EntityRenderState, TData extends Ge
                         .setLight(packedLight)
                         .setNormal(ny.x, ny.y, ny.z);
             }
-            if ((faces & 0b000100) != 0) // 北方
+            if ((faces & 0b000100) != 0) // NORTH
             {
                 buffer.addVertex(C100.x, C100.y, C100.z)
                         .setColor(color)
@@ -196,7 +196,7 @@ public interface IGeoRenderer<TState extends EntityRenderState, TData extends Ge
                         .setLight(packedLight)
                         .setNormal(-nz.x, -nz.y, -nz.z);
             }
-            if ((faces & 0b001000) != 0) // 南方
+            if ((faces & 0b001000) != 0) // SOUTH
             {
                 buffer.addVertex(C001.x, C001.y, C001.z)
                         .setColor(color)
@@ -223,7 +223,7 @@ public interface IGeoRenderer<TState extends EntityRenderState, TData extends Ge
                         .setLight(packedLight)
                         .setNormal(nz.x, nz.y, nz.z);
             }
-            if ((faces & 0b010000) != 0) { // 西方
+            if ((faces & 0b010000) != 0) { // WEST
                 buffer.addVertex(C000.x, C000.y, C000.z)
                         .setColor(color)
                         .setUv(mesh.westU0(i), mesh.westV1(i))
@@ -249,7 +249,7 @@ public interface IGeoRenderer<TState extends EntityRenderState, TData extends Ge
                         .setLight(packedLight)
                         .setNormal(-nx.x, -nx.y, -nx.z);
             }
-            if ((faces & 0b100000) != 0) { // 东方
+            if ((faces & 0b100000) != 0) { // EAST
                 buffer.addVertex(C101.x, C101.y, C101.z)
                         .setColor(color)
                         .setUv(mesh.eastU0(i), mesh.eastV1(i))
@@ -282,7 +282,9 @@ public interface IGeoRenderer<TState extends EntityRenderState, TData extends Ge
     default RenderType getRenderType(GeckoRenderData data, boolean visible, boolean glowing) {
         var ctx = data.ctx;
         if (visible || (!ctx.level()) || ctx.irisShadow()) {
-            // Gecko 模型常用单面或零厚度平面绘制眼睛、头发和尾巴，必须禁用背面剔除。
+            // Keep the 1.21.1 renderer's no-cull contract. Gecko packs commonly
+            // use one-sided/zero-thickness planes for eyes, hair and tails; the
+            // 26.1 culling choice drops those faces when viewed from their back.
             return RenderTypes.entityCutoutNoCull(data.texture);
         }
         if (glowing) {

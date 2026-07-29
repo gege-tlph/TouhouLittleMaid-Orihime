@@ -48,7 +48,9 @@ public final class TavernSeatAdapter {
             SitUtil.removeSitEntity(level, pos);
             return false;
         }
-
+        // Match the maid's existing 1.21.1 seat behavior: AI-selected seats use
+        // forced mounting. The 1.21.11 equivalent of startRiding(entity, true)
+        // is startRiding(entity, true, true).
         if (!maid.startRiding(seat, true, true)) {
             seat.discard();
             return false;
@@ -77,7 +79,11 @@ public final class TavernSeatAdapter {
     }
 
     private static void alignToFurniture(EntityMaid maid, SitEntity seat, BlockState state) {
-        // 沙发的正面是固定的。酒馆自己的玩家交互保留了玩家的视线方向，但AI选择的座位没有可继承的点击方向，因此将SitEntity保留在偏航0处可以将女仆放在靠背上。酒吧凳有意通过 Tavern 的块实体逻辑与乘客一起自由旋转。
+        // Sofas have a fixed front. Tavern's own player interaction preserves
+        // the player's look direction, but an AI-selected seat has no click
+        // direction to inherit, so leaving the SitEntity at yaw 0 can put the
+        // maid into the backrest. Bar stools intentionally remain free to
+        // rotate with their passenger via Tavern's block entity logic.
         if (state.getBlock() instanceof SofaBlock && state.hasProperty(HorizontalDirectionalBlock.FACING)) {
             float yaw = state.getValue(HorizontalDirectionalBlock.FACING).toYRot();
             seat.setYRot(yaw);

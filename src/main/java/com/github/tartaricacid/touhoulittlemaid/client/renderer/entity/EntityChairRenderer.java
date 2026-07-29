@@ -29,9 +29,9 @@ import net.minecraft.world.phys.Vec3;
 import javax.annotation.Nullable;
 import java.util.Collections;
 
-
 /**
- * 椅子实体渲染器。按模型信息选择 Bedrock 或 Gecko 路径，并保留动画与碰撞箱显示行为。
+ * [Codex] Chair renderer ported to the 1.21.11 extraction/submission pipeline.
+ * Model selection, animation and hit-box behaviour remain the same as origin/1.21.1.
  */
 public class EntityChairRenderer extends LivingEntityRenderer<EntityChair, EntityChairRenderState, EntityChairModel> {
     public static final Identifier DEFAULT_TEXTURE = IdentifierUtil.modLoc("textures/entity/empty.png");

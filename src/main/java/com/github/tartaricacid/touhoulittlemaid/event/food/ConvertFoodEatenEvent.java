@@ -15,7 +15,8 @@ public class ConvertFoodEatenEvent {
     public static void onAfterMaidEat(MaidAfterEatEvent event) {
         ItemStack foodAfterEat = event.getFoodAfterEat();
         EntityMaid maid = event.getMaid();
-
+        // B6b: 1.21.11 FoodProperties.usingConvertsTo() 已移除 → 进食后返还物（如碗）改由
+        //   DataComponents.USE_REMAINDER（UseRemainder.convertInto()）表达（javap 确认）。
         net.minecraft.world.item.component.UseRemainder useRemainder = foodAfterEat.get(DataComponents.USE_REMAINDER);
         if (!foodAfterEat.isEmpty() && useRemainder != null && !useRemainder.convertInto().isEmpty()) {
             ItemStack convertedStack = useRemainder.convertInto();

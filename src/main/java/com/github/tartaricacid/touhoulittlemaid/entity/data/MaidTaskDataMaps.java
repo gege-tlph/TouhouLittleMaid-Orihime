@@ -43,7 +43,8 @@ public final class MaidTaskDataMaps {
         dataMaps.put(dataKey, Optional.of(value));
     }
 
-
+    // 1.21.11: 迁移到 ValueOutput/ValueInput。TAG_NAME 子 compound 的 key 是任意 TaskDataKey id，
+    // 用 COMPOUND_TAG_CODEC 桥接直接存/读该子 compound，与 HEAD 的 entityTag.put(TAG_NAME, dataTags) 逐字节同格式。
     @SuppressWarnings("all")
     public void writeSaveData(ValueOutput output) {
         CompoundTag dataTags = new CompoundTag();

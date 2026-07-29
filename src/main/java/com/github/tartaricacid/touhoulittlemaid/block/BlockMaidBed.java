@@ -176,6 +176,10 @@ public class BlockMaidBed extends HorizontalDirectionalBlock implements EntityBl
         }
     }
 
+/*    @Override
+    public PushReaction getPistonPushReaction(BlockState state) {
+        return PushReaction.DESTROY;
+    }*/
 
     @Override
     protected long getSeed(BlockState state, BlockPos pos) {
@@ -215,7 +219,9 @@ public class BlockMaidBed extends HorizontalDirectionalBlock implements EntityBl
         return null;
     }
 
-
+    // SWEEP R10-2：原 TODO「getCloneItemStack removed in 1.21.5」系误判——1.21.11 仍有
+    // getCloneItemStack(LevelReader,BlockPos,BlockState,boolean)（javap 证，多一 boolean 参）与
+    // getDrops(BlockState,LootParams.Builder)。还原 origin 的床颜色保全逻辑。
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
         List<ItemStack> stacks = super.getDrops(state, params);

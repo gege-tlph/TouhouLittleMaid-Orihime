@@ -56,7 +56,7 @@ public class MaidTorchPlaceTask extends Behavior<EntityMaid> {
                 BlockPos pos = posWrapper.currentBlockPosition().above();
                 BlockState torchState = Blocks.TORCH.defaultBlockState();
                 world.setBlock(pos, torchState, Block.UPDATE_ALL_IMMEDIATE);
-
+                //SoundType soundType = torchState.getSoundType(world, pos, maid);
                 SoundType soundType = torchState.getSoundType();
                 world.playSound(null, pos, soundType.getPlaceSound(), SoundSource.BLOCKS,
                         (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);

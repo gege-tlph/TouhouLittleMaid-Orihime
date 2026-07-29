@@ -31,6 +31,8 @@ public final class MaidContexts {
         register.registerContext(CATEGORY, new EmergencyStateContext());
         register.registerContext(CATEGORY, new ThreatSourceContext());
         register.registerContext(CATEGORY, new CurrentTaskContext());
+        register.registerContext(CATEGORY, new TableFoodContext());
+        register.registerContext(CATEGORY, new TableFoodCooldownContext());
     }
 
     private static final class MaidHealthContext extends AbstractMaidContext {
@@ -156,6 +158,37 @@ public final class MaidContexts {
         @Override
         public String getValue(EntityMaid maid) {
             return maid.isEmergencyCombatActive() ? "active" : "inactive";
+        }
+    }
+
+    /**
+     * 桌上食物是否被允许——**开关**回答「她能不能吃」。
+     *
+     * <p>玩家真正会问的是「她为什么不去吃那块蛋糕」，而那有两个完全不同的原因：开关关着，
+     * 或者刚吃过还在冷却。只给开关会让模型把冷却期说成「功能被关了」，所以两个都给。</p>
+     */
+    private static final class TableFoodContext extends AbstractMaidContext {
+        private TableFoodContext() {
+            super("table_food", "table_food");
+        }
+
+        @Override
+        public String getValue(EntityMaid maid) {
+            return maid.getConfigManager().isTableFoodAllowed() ? "allowed" : "disallowed";
+        }
+    }
+
+    /** 冷却回答「她现在为什么不吃」——与开关是两个问题，别合并 */
+    private static final class TableFoodCooldownContext extends AbstractMaidContext {
+        private TableFoodCooldownContext() {
+            super("table_food_cooldown", "table_food_cooldown");
+        }
+
+        @Override
+        public String getValue(EntityMaid maid) {
+            return maid.getFavorabilityManager()
+                    .canAdd(com.github.tartaricacid.touhoulittlemaid.entity.favorability.Type.STEAL_EDIBLE_BLOCK)
+                    ? "ready" : "cooling_down";
         }
     }
 

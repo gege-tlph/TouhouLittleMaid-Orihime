@@ -30,7 +30,8 @@
       "cn.sh1rocu.touhoulittlemaid.TouhouLittleMaidFabric"
     ],
     "little_maid_extension": [
-      "com.github.tartaricacid.touhoulittlemaid.compat.kaleidoscopetavern.TavernCompat"
+      "com.github.tartaricacid.touhoulittlemaid.compat.kaleidoscopetavern.TavernCompat",
+      "com.github.tartaricacid.touhoulittlemaid.compat.refurbishedfurniture.RefurbishedFurnitureCompat"
     ],
     "modmenu": [
       "cn.sh1rocu.touhoulittlemaid.compat.modmenu.ModMenuApiImpl"
@@ -54,7 +55,11 @@
       "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidEmergencyCombatGameTest",
       "com.github.tartaricacid.touhoulittlemaid.entity.ai.combat.MaidCombatIntentGameTest",
       "com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicyGameTest",
-      "com.github.tartaricacid.touhoulittlemaid.entity.passive.MaidSwimmingGameTest"
+      "com.github.tartaricacid.touhoulittlemaid.entity.passive.MaidSwimmingGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidTableFoodGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.command.TlmCommandSmokeGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.ai.manager.site.DedicatedSiteFilesGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.entity.passive.MaidUpstreamBugFixGameTest"
     ]
   },
   "mixins": [

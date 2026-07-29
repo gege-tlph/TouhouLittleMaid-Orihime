@@ -133,6 +133,7 @@ public class LLMOpenAIClient implements LLMClient {
 
     /**
      * 用于添加额外的参数，主要用于一些非标准 OpenAI API 模型的额外参数添加
+     *
      */
     protected ChatCompletion extraArgs(ChatCompletion chatCompletion) {
         // 部分国内模型站点会添加此字段

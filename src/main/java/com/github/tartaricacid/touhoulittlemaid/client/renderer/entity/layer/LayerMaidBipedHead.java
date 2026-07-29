@@ -52,7 +52,8 @@ public class LayerMaidBipedHead extends RenderLayer<EntityMaidRenderState, Entit
         if (state.wornHeadType != null) {
             poseStack.pushPose();
             parentModel.getHead().translateAndRotate(poseStack);
-
+            // 还原 origin/1.21.1 的颅骨变换（负 Y/Z scale + 反平移；1.21.11 原版 CustomHeadLayer
+            // 逐字相同约定）——此前正 scale 无平移 = 颅骨颠倒/朝后/偏移
             poseStack.scale(1.1875F, -1.1875F, -1.1875F);
             poseStack.translate(-0.5D, 0.0D, -0.5D);
 
@@ -60,7 +61,8 @@ public class LayerMaidBipedHead extends RenderLayer<EntityMaidRenderState, Entit
             SkullModelBase skullModel = this.skullModels.apply(type);
             RenderType renderType = this.resolveSkullRenderType(state, type);
 
-
+            // 1.21.11 submitSkull 增了 (Direction, float yaw) 前缀（vanilla 用 null, 180.0F；同 2c gecko BipedHead）
+            // 动画参数 origin 硬编码 0.0F（不随行走摆动）= 行为基准
             SkullBlockRenderer.submitSkull(
                     null, 180.0F, 0.0F, poseStack, submitNode, light,
                     skullModel, renderType, state.outlineColor, null
@@ -68,7 +70,7 @@ public class LayerMaidBipedHead extends RenderLayer<EntityMaidRenderState, Entit
             poseStack.popPose();
         }
 
-
+        // 读 state.headBlockState(BlockState) 用 renderSingleBlock 渲染裸方块模型（同 2c gecko BipedHead）。
         if (state.headBlockState != null) {
             poseStack.pushPose();
             parentModel.getHead().translateAndRotate(poseStack);

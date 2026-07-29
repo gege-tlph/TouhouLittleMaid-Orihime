@@ -47,7 +47,8 @@ public record SyncMaidAIDataPacket(int entityId, CompoundTag configData, int cur
     };
 
     public SyncMaidAIDataPacket(EntityMaid maid, ServerPlayer player) {
-
+        // 还原 HEAD 形态：writeToTag(CompoundTag) 仍存在（MaidAIChatData:75）。移植期改成 save(TagValueOutput) +
+        //   this() 非首语句 = Java 21 非法且 save 不存在 → 复原为单表达式 this()。行为对齐 HEAD。
         this(maid.getId(), maid.getAiChatManager().writeToTag(new CompoundTag()),
                 player.getAttachedOrCreate(InitDataAttachment.CHAT_TOKENS).get(),
                 ServerRuleConfig.get(AIConfig.MAX_TOKENS_PER_PLAYER)

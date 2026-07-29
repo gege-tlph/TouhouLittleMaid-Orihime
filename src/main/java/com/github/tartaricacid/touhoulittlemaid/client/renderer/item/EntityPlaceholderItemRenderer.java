@@ -28,7 +28,8 @@ import java.nio.file.Paths;
 import java.util.function.Consumer;
 
 /**
- * 根据祭坛配方动态选择图标的占位物品渲染器。
+ * [Codex] Dynamic altar-result icon renderer. It preserves origin's
+ * recipe-id-to-texture fallback without relying on the removed BEWLR API.
  */
 public final class EntityPlaceholderItemRenderer implements SpecialModelRenderer<EntityPlaceholderItemRenderer.Icon> {
     public static final Identifier ID = IdentifierUtil.modLoc("entity_placeholder_item");
@@ -43,7 +44,9 @@ public final class EntityPlaceholderItemRenderer implements SpecialModelRenderer
         }
         Path path = Paths.get(recipeId.getPath());
         String name = path.getFileName().toString();
-
+        // origin rendered the baked item model of ns:item/<name>, so the icon animated with
+        // the atlas. A directly bound texture never does: .mcmeta frames are ticked on the
+        // stitched sprite. Resolving that sprite is the faithful 1.21.11 equivalent.
         TextureAtlasSprite sprite = findItemSprite(
                 Identifier.fromNamespaceAndPath(recipeId.getNamespace(), "item/" + name));
         if (sprite != null) {
@@ -56,8 +59,12 @@ public final class EntityPlaceholderItemRenderer implements SpecialModelRenderer
     }
 
     /**
-     * GUI 会按模型标识缓存物品图标，而特殊模型无法自行把状态标记为逐帧动画。
-     * 对动画精灵加入当前游戏刻，使缓存每刻失效，确保序列帧按正常速度更新。
+     * The GUI caches a rendered icon under {@code TrackingItemStackRenderState.getModelIdentity}
+     * and only redraws every frame once the state is marked animated. Only BlockModelWrapper does
+     * that; SpecialModelWrapper marks a state animated for enchantment glint alone, and a special
+     * renderer cannot reach the state to mark it itself. So for an animated sprite we fold the
+     * game time into the argument instead: the identity then changes each tick, the cache misses,
+     * and the frames advance at their real rate rather than whenever the cache happens to drop.
      */
     private static long animationEpoch(TextureAtlasSprite sprite) {
         if (!sprite.contents().isAnimated()) {
@@ -68,11 +75,14 @@ public final class EntityPlaceholderItemRenderer implements SpecialModelRenderer
     }
 
     /**
-     * 从物品图集中查找已缝合的精灵；找不到时返回 {@code null}，由调用方改用独立纹理。
+     * @return the stitched item-atlas sprite, or null when the id is not on the atlas, which
+     * mirrors origin falling back to a flat texture when the recipe had no baked model.
      */
     private static TextureAtlasSprite findItemSprite(Identifier spriteId) {
-        // TextureAtlas.LOCATION_ITEMS 是图集纹理路径，并不是图集注册键，因此需通过 Material 查询。
-        // 返回后再核对精灵名称，以区分目标精灵和缺失纹理占位符。
+        // Look the sprite up through Material, NOT getAtlasOrThrow: the latter keys on the
+        // atlas id while TextureAtlas.LOCATION_ITEMS is the atlas texture path, so it threw
+        // "Invalid atlas id". AtlasManager.get(Material) keys on exactly that texture path
+        // and answers with the atlas' missing sprite when the id was never stitched.
         TextureAtlasSprite sprite = Minecraft.getInstance().getAtlasManager()
                 .get(new Material(TextureAtlas.LOCATION_ITEMS, spriteId));
         return spriteId.equals(sprite.contents().name()) ? sprite : null;
@@ -81,7 +91,9 @@ public final class EntityPlaceholderItemRenderer implements SpecialModelRenderer
     @Override
     public void submit(Icon icon, ItemDisplayContext displayContext, PoseStack poseStack,
                        SubmitNodeCollector collector, int light, int overlay, boolean foil, int outlineColor) {
-        // 与野餐篮图标使用相同的四边形几何；动画路径和回退路径只更换纹理来源。
+        // Geometry is deliberately untouched: this placement is shared with
+        // PicnicBasketItemRenderer, which renders correctly, so only the texture source
+        // differs between the animated and the flat fallback path.
         TextureAtlasSprite sprite = icon.sprite();
         RenderType renderType = RenderTypes.entityCutoutNoCull(
                 sprite != null ? sprite.atlasLocation() : icon.texture());
@@ -91,7 +103,10 @@ public final class EntityPlaceholderItemRenderer implements SpecialModelRenderer
         collector.submitCustomGeometry(poseStack, renderType, (pose, buffer) -> {
             PoseStack geometryPose = new PoseStack();
             geometryPose.last().set(pose);
-
+            // NOT sprite.wrap(): SpriteCoordinateExpander.addVertex returns the delegate
+            // rather than itself, so the chained setColor().setUv() that BedrockCubeBox emits
+            // lands on the raw buffer and the remap is skipped, leaving the model sampling the
+            // whole 1024x512 item atlas (renders as colour noise). This wrapper returns itself.
             VertexConsumer target = sprite != null ? new SpriteUv(buffer, sprite) : buffer;
             MODEL.renderToBuffer(geometryPose, target, light, overlay, -1);
         });
@@ -105,13 +120,16 @@ public final class EntityPlaceholderItemRenderer implements SpecialModelRenderer
     }
 
     /**
-     * 图标数据。{@code sprite} 与 {@code texture} 只会设置其中一个：前者支持图集动画，后者用于回退纹理。
+     * Exactly one of the two is set: an item-atlas sprite when the recipe has one (animated),
+     * otherwise the flat texture origin fell back to.
      */
     public record Icon(TextureAtlasSprite sprite, Identifier texture, long animationEpoch) {
     }
 
     /**
-     * 可安全链式调用的 UV 重映射包装器。每个构建方法都返回自身，确保后续调用仍经过精灵坐标转换。
+     * Chain-safe replacement for {@link TextureAtlasSprite#wrap}: every builder method returns
+     * {@code this}, so a model that emits {@code addVertex(..).setColor(..).setUv(..)} keeps
+     * going through the remap instead of falling back to the raw buffer.
      */
     private record SpriteUv(VertexConsumer delegate, TextureAtlasSprite sprite) implements VertexConsumer {
         @Override

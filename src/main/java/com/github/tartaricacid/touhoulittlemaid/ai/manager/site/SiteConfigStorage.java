@@ -5,6 +5,8 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.LLMSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.stt.STTSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSSite;
 import com.github.tartaricacid.touhoulittlemaid.config.AtomicConfigFileWriter;
+import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializerRegister;
+import com.github.tartaricacid.touhoulittlemaid.ai.service.SiteJsonConfigWriter;
 import com.google.common.collect.Maps;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -12,7 +14,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.io.Reader;
+import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import net.minecraft.util.GsonHelper;
 
 /** Reads and writes the editable site files without mutating the active runtime site maps. */
@@ -39,6 +43,29 @@ public final class SiteConfigStorage {
     public static Map<String, STTSite> readSTT() {
         return Files.exists(STT_FILE) ? Maps.newLinkedHashMap(readSTTStrict())
                 : Maps.newLinkedHashMap(AvailableSites.STT_SITES);
+    }
+
+    /**
+     * 磁盘上那些**本安装不认识**的站点 id（未知 {@code api_type}，多半来自没装的扩展）。
+     *
+     * <p>它们被严格读取跳过，因而不在运行时站点表里——于是「这个 id 有没有被占用」的判断
+     * 如果只看运行时表，就会把它们判成空位，让管理员新建一个同 id 的内置站点把人家顶掉。
+     * 保存包据此拒绝这类创建。读不出来时返回空集：拿不准就别拦，写入层还有最后一道拒绝。</p>
+     */
+    public static Set<String> foreignLLMIds() {
+        return foreignIds(LLM_FILE, apiType -> SerializerRegister.getLLMSerializer(apiType) != null);
+    }
+
+    public static Set<String> foreignTTSIds() {
+        return foreignIds(TTS_FILE, apiType -> SerializerRegister.getTTSSerializer(apiType) != null);
+    }
+
+    private static Set<String> foreignIds(Path file, java.util.function.Predicate<String> knownApiType) {
+        try {
+            return SiteJsonConfigWriter.foreignIds(file, knownApiType);
+        } catch (IOException | RuntimeException exception) {
+            return Set.of();
+        }
     }
 
     public static boolean writeLLM(Map<String, LLMSite> sites) {

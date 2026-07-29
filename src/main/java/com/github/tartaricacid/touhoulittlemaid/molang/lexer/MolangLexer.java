@@ -34,13 +34,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Molang 语言词法分析器。
+ * Lexical analyzer for the Molang language.
  *
- * <p>将字符流转换为词元流。</p>
+ * <p>The lexical analyzer converts character streams
+ * to token streams</p>
  *
- * <p>这是一个流式词法分析器：只有继续调用 {@link #next()}，它才会继续读取输入。</p>
+ * <p>Note that this is a stream-based lexer, this means
+ * that it will not consume the entire reader if it doesn't
+ * continue having next() calls</p>
  *
- * <p>基本用法：</p>
+ * <p>See the following example on correctly lexing a string:</p>
  * <pre>{@code
  *     MolangLexer lexer = MolangLexer.lexer(new StringReader("1 + 1"));
  *     List<Token> tokens = new ArrayList<>();
@@ -51,7 +54,7 @@ import java.util.List;
  *     // tokens: [ Double, Plus, Double ]
  * }</pre>
  *
- * <p>也可以使用便捷方法一次读取全部词元：</p>
+ * <p>Or using the shorter, convenience method:</p>
  * <pre>{@code
  *      List<Token> tokens = MolangLexer.tokenizeAll("1 + 1");
  *      // tokens: [ Double, Plus, Double ]
@@ -59,47 +62,55 @@ import java.util.List;
  *
  * @since 3.0.0
  */
-public interface MolangLexer extends Closeable {
+public /* sealed */ interface MolangLexer /* permits MolangLexerImpl */ extends Closeable {
 
     /**
-     * 返回当前游标。游标记录行号与列号，用于定位词法错误。
+     * Returns the cursor for this lexer, the cursor maintains
+     * track of the current line and column, it is used for
+     * error reporting.
      *
-     * @return 词法分析器游标
+     * @return The lexer cursor
      * @since 3.0.0
      */
     @NotNull Cursor cursor();
 
     /**
-     * 返回最近一次调用 {@link #next()} 得到的词元。
+     * Returns the last emitted token (the last token value
+     * returned when calling {@link MolangLexer#next()})
      *
-     * <p>调用此方法前必须至少成功调用一次 {@link #next()}。</p>
+     * <p>Requires the user to call {@link MolangLexer#next()}
+     * at least once first.</p>
      *
-     * @return 最近读取的词元
-     * @throws IllegalStateException 尚未读取任何词元时抛出
+     * @return The last emitted token
+     * @throws IllegalStateException If there is no current token
      * @since 3.0.0
      */
     @NotNull Token current();
 
     /**
-     * 从输入流中读取并返回下一个词元。
+     * Reads the internal reader until it gets a token and
+     * then returns it.
      *
-     * <p>返回值不会为 {@code null}，但可能是 {@link TokenKind#EOF} 或 {@link TokenKind#ERROR}。</p>
+     * <p>The returned token will never be null, but it can
+     * be of kind {@link TokenKind#EOF} or {@link TokenKind#ERROR}.</p>
      *
-     * <p>首次读到 {@link TokenKind#EOF} 后即可停止；后续调用仍会返回 EOF 词元。</p>
+     * <p>We can stop lexing when we find a {@link TokenKind#EOF} token
+     * for the first time, since following tokens will be EOF too.</p>
      *
-     * @return 下一个词元
-     * @throws IOException 如果读取失败
+     * @return The emitted token after reading characters from the internal reader
+     * @throws IOException If reading fails
      * @since 3.0.0
      */
     @NotNull Token next() throws IOException;
 
     /**
-     * 读取全部词元，直到遇到 {@link TokenKind#EOF}。
+     * Reads all the tokens until it finds a {@link TokenKind#EOF}.
      *
-     * <p>调用完成后输入流已读至末尾，后续读取均应得到 EOF。</p>
+     * <p>After this method is called, the lexer should be
+     * done and all next tokens should be EOF</p>
      *
-     * @return 读取到的全部词元，不包含 EOF
-     * @throws IOException 如果读取失败
+     * @return All the read tokens
+     * @throws IOException If reading fails
      * @since 3.0.0
      */
     default @NotNull List<Token> tokenizeAll() throws IOException {
@@ -112,20 +123,21 @@ public interface MolangLexer extends Closeable {
     }
 
     /**
-     * 关闭此词法分析器和内部 {@link Reader}。
+     * Closes this lexer and the internal {@link Reader}.
      *
-     * @throws IOException 如果关闭失败
+     * @throws IOException If closing fails
      * @since 3.0.0
      */
     @Override
     void close() throws IOException;
 
     /**
-     * 创建从指定字符流读取内容的词法分析器。
+     * Creates a new lexer that will read the characters from the
+     * given reader.
      *
-     * @param reader 输入字符流
-     * @return 创建的词法分析器
-     * @throws IOException 如果词法分析器初始化失败。
+     * @param reader The reader to use.
+     * @return The created lexer
+     * @throws IOException If lexer initialization fails.
      * @since 3.0.0
      */
     static @NotNull MolangLexer lexer(final @NotNull Reader reader) throws IOException {
@@ -133,11 +145,12 @@ public interface MolangLexer extends Closeable {
     }
 
     /**
-     * 创建读取指定字符串的词法分析器。
+     * Creates a new lexer that will read the characters from
+     * the given string.
      *
-     * @param string 要进行词法分析的字符串
-     * @return 创建的词法分析器
-     * @throws IOException 如果词法分析器初始化失败。
+     * @param string The string to tokenize.
+     * @return The created lexer
+     * @throws IOException If lexer initialization fails.
      * @since 3.0.0
      */
     static @NotNull MolangLexer lexer(final @NotNull String string) throws IOException {
@@ -145,11 +158,11 @@ public interface MolangLexer extends Closeable {
     }
 
     /**
-     * 对指定字符流中的全部内容进行词法分析。
+     * Tokenizes all the data from the given reader.
      *
-     * @param reader 输入字符流
-     * @return 读取到的全部词元
-     * @throws IOException 如果读取失败。
+     * @param reader The reader.
+     * @return The emitted tokens.
+     * @throws IOException If reading fails.
      * @since 3.0.0
      */
     static @NotNull List<Token> tokenizeAll(final @NotNull Reader reader) throws IOException {
@@ -159,11 +172,11 @@ public interface MolangLexer extends Closeable {
     }
 
     /**
-     * 对指定字符串进行词法分析。
+     * Tokenizes the provided string.
      *
-     * @param string 输入字符串
-     * @return 读取到的全部词元
-     * @throws IOException 如果读取失败。
+     * @param string The string.
+     * @return The emitted tokens.
+     * @throws IOException If reading fails.
      * @since 3.0.0
      */
     static @NotNull List<Token> tokenizeAll(final @NotNull String string) throws IOException {

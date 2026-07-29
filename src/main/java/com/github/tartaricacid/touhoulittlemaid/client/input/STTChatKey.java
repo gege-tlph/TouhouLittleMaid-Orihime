@@ -5,12 +5,10 @@ import com.github.tartaricacid.touhoulittlemaid.ai.manager.entity.STTCallback;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.AvailableSites;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.stt.STTConfig;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.stt.STTSite;
-import com.github.tartaricacid.touhoulittlemaid.client.sound.record.MicrophoneManager;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitSounds;
-import com.github.tartaricacid.touhoulittlemaid.network.client.config.ServerRulesClientCache;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -31,10 +29,10 @@ import java.util.function.Consumer;
 @Environment(EnvType.CLIENT)
 public class STTChatKey {
     private static STTSite activeRecordingSite;
-    private static boolean activeRecordingUsesServer;
 
     public static final KeyMapping STT_CHAT_KEY = new KeyMapping("key.touhou_little_maid.stt_chat.desc",
-// KeyConflictContext.IN_GAME,KeyModifier.NONE,
+//            KeyConflictContext.IN_GAME,
+//            KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_X,
             TouhouLittleMaidClient.KEY_CATEGORY);
@@ -69,7 +67,7 @@ public class STTChatKey {
 
     private static boolean keyIsMatch(int key, int scanCode, int action, int mods) {
         return STT_CHAT_KEY.matches(new KeyEvent(key, scanCode, mods))
-;
+                /*&& STT_CHAT_KEY.getKeyModifier().equals(KeyModifier.getActiveModifier())*/;
     }
 
     private static void getNearestMaid(LocalPlayer player, Consumer<EntityMaid> consumer, boolean isStart) {
@@ -111,30 +109,18 @@ public class STTChatKey {
             return;
         }
         activeRecordingSite = null;
-        activeRecordingUsesServer = false;
-        boolean serverProvided = ServerRulesClientCache.isUsingServerStt();
-        STTSite sttSite = serverProvided
-                ? ServerRulesClientCache.runtimeServerSttSite()
-                : AvailableSites.getSTTSite(AIConfig.STT_TYPE.get().getName());
+        STTSite sttSite = AvailableSites.getSTTSite(AIConfig.STT_TYPE.get().getName());
         if (sttSite == null) {
-            if (serverProvided) {
-                ServerRulesClientCache.requestServerSttSite();
-                player.displayClientMessage(Component.translatable(
-                        "ai.touhou_little_maid.chat.stt.server_unavailable"), false);
-            } else {
-                player.displayClientMessage(Component.translatable("ai.touhou_little_maid.chat.stt.empty"), false);
-            }
+            player.displayClientMessage(Component.translatable("ai.touhou_little_maid.chat.stt.empty"), false);
             return;
         }
         activeRecordingSite = sttSite;
-        activeRecordingUsesServer = serverProvided;
-        tryToStart(maid, player, sttSite, serverProvided);
+        tryToStart(maid, player, sttSite);
     }
 
-    private static void tryToStart(EntityMaid maid, LocalPlayer player, STTSite sttSite,
-                                   boolean serverProvided) {
+    private static void tryToStart(EntityMaid maid, LocalPlayer player, STTSite sttSite) {
         STTConfig config = new STTConfig();
-        STTCallback callback = new STTCallback(player, maid, serverProvided);
+        STTCallback callback = new STTCallback(player, maid);
         sttSite.client().startRecord(config, callback);
     }
 
@@ -146,19 +132,9 @@ public class STTChatKey {
         STTSite sttSite = activeRecordingSite;
         if (sttSite != null) {
             STTConfig config = new STTConfig();
-            STTCallback callback = new STTCallback(player, maid, activeRecordingUsesServer);
+            STTCallback callback = new STTCallback(player, maid);
             sttSite.client().stopRecord(config, callback);
         }
         activeRecordingSite = null;
-        activeRecordingUsesServer = false;
-    }
-
-    public static void cancelServerRecording() {
-        if (!activeRecordingUsesServer) {
-            return;
-        }
-        MicrophoneManager.cancelRecord();
-        activeRecordingSite = null;
-        activeRecordingUsesServer = false;
     }
 }

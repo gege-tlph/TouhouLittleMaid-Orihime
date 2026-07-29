@@ -6,7 +6,7 @@ import net.minecraft.util.Mth;
 /**
  * @author MicroCraft
  *
- * <a href="https://www.youtube.com/watch?v=KPoeNZZ6H4s">使用数学赋予程序动画个性</a>
+ * <a href="https://www.youtube.com/watch?v=KPoeNZZ6H4s">Giving Personality to Procedural Animations using Math</a>
  */
 public class SecondOrder implements IPhysics {
     private float inputFunction = 0;

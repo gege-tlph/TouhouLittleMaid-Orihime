@@ -17,6 +17,7 @@ public enum MaidSchedule {
     // 日程表的模式
     DAY, NIGHT, ALL;
 
+    // 1.21.11: Schedule 移除 → 每个模式映射到一个 EnvironmentAttribute<Activity>（InitEntities 注册，datapack timeline 供关键帧）
     public EnvironmentAttribute<Activity> getEnvironmentAttribute() {
         return switch (this) {
             case DAY -> InitEntities.MAID_DAY_SHIFT_ACTIVITY;

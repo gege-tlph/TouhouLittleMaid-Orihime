@@ -16,7 +16,7 @@ public class MolangValue implements IValue {
 
     @Override
     public Object evalUnsafe(ExpressionEvaluator<?> evaluator) {
-
+        // 移植期 ExpressionEvaluator.evalMultiExpressionUnsafe 被移除 → 内联多表达式求值
         Object result = null;
         for (Expression expression : expressions) {
             result = evaluator.eval(expression);

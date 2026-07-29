@@ -18,7 +18,8 @@ public final class MultiBlockManager {
     public static void init() {
         MultiBlockManager manager = new MultiBlockManager();
         manager.add(new MultiBlockAltar());
-
+        // SWEEP R9-1（2026-07-19）：原「EXTENSIONS not available (26.1 feature)」TODO 系误判——
+        // TouhouLittleMaid.EXTENSIONS(:21) 本树存在且他处在用；还原 origin 的 addon 扩展点循环
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             littleMaid.addMultiBlock(manager);
         }

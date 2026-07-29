@@ -19,7 +19,10 @@ public interface IHasPowerPoint {
      * @param entity 掉落该 P 点的实体
      */
     default void dropPowerPoint(LivingEntity entity) {
-
+        // 需要考虑 doMobLoot 规则
+        // SWEEP R9-4：1.21.11 doMobLoot 更名 mob_drops（GameRuleRegistryFix 证），且 getGameRules()
+        // 移到 ServerLevel（同树 AbstractEntityFromItem:84 同款）——还原 origin 检查；客户端侧
+        // 本就被下方 !isClientSide 拦截，行为不变
         if (entity.level instanceof ServerLevel serverLevel && !serverLevel.getGameRules().get(GameRules.MOB_DROPS)) {
             return;
         }

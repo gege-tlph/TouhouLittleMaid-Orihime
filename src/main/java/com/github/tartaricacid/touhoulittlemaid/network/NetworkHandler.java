@@ -3,10 +3,8 @@ package com.github.tartaricacid.touhoulittlemaid.network;
 import cn.sh1rocu.touhoulittlemaid.util.forge.network.AdvancedAddEntityPayload;
 import com.github.tartaricacid.touhoulittlemaid.network.message.*;
 import com.github.tartaricacid.touhoulittlemaid.network.message.ai.*;
-import com.github.tartaricacid.touhoulittlemaid.network.message.config.RequestServerSTTSitePacket;
 import com.github.tartaricacid.touhoulittlemaid.network.message.config.SaveServerRulesPacket;
 import com.github.tartaricacid.touhoulittlemaid.network.message.config.SyncServerRulesPacket;
-import com.github.tartaricacid.touhoulittlemaid.network.message.config.SyncServerSTTSitePacket;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
@@ -28,7 +26,7 @@ public class NetworkHandler {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayNetworking.send(handler.player,
                     SyncAltarRecipesPackage.from(server.getRecipeManager()));
-            SyncServerRulesPacket.sendInitialTo(handler.player);
+            SyncServerRulesPacket.sendTo(handler.player);
         });
     }
 
@@ -59,6 +57,8 @@ public class NetworkHandler {
         ClientPlayNetworking.registerGlobalReceiver(CChessToClientPackage.TYPE, CChessToClientPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(WChessToClientPackage.TYPE, WChessToClientPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(TTSAudioToClientPackage.TYPE, TTSAudioToClientPackage::handle);
+        // 仅安装 YSM 后才会发送此包
+        ClientPlayNetworking.registerGlobalReceiver(SyncYsmMaidDataPackage.TYPE, SyncYsmMaidDataPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(TTSSystemAudioToClientPackage.TYPE, TTSSystemAudioToClientPackage::handle);
 
         ClientPlayNetworking.registerGlobalReceiver(AdvancedAddEntityPayload.TYPE, AdvancedAddEntityPayload::handle);
@@ -73,7 +73,7 @@ public class NetworkHandler {
         ClientPlayNetworking.registerGlobalReceiver(SyncAISitesPacket.TYPE, SyncAISitesPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncMaidAIDataPacket.TYPE, SyncMaidAIDataPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncServerRulesPacket.TYPE, SyncServerRulesPacket::handle);
-        ClientPlayNetworking.registerGlobalReceiver(SyncServerSTTSitePacket.TYPE, SyncServerSTTSitePacket::handle);
+        ClientPlayNetworking.registerGlobalReceiver(VoicePreviewResultPackage.TYPE, VoicePreviewResultPackage::handle);
     }
 
     public static void registerS2CPackets() {
@@ -93,6 +93,8 @@ public class NetworkHandler {
         registerS2CPacket(CChessToClientPackage.TYPE, CChessToClientPackage.STREAM_CODEC);
         registerS2CPacket(WChessToClientPackage.TYPE, WChessToClientPackage.STREAM_CODEC);
         registerS2CPacket(TTSAudioToClientPackage.TYPE, TTSAudioToClientPackage.STREAM_CODEC);
+        // 仅安装 YSM 后才会发送此包（注册无条件，与 HEAD 一致——发送方在 EntityMaid/MaidTrackEvent 按 isYsmModel 守卫）
+        registerS2CPacket(SyncYsmMaidDataPackage.TYPE, SyncYsmMaidDataPackage.STREAM_CODEC);
         registerS2CPacket(TTSSystemAudioToClientPackage.TYPE, TTSSystemAudioToClientPackage.STREAM_CODEC);
 
         registerS2CPacket(AdvancedAddEntityPayload.TYPE, AdvancedAddEntityPayload.STREAM_CODEC);
@@ -100,7 +102,8 @@ public class NetworkHandler {
         registerS2CPacket(MaidAnimationPackage.TYPE, MaidAnimationPackage.STREAM_CODEC);
         registerS2CPacket(PlayMaidSoundAtPosPackage.TYPE, PlayMaidSoundAtPosPackage.STREAM_CODEC);
         registerS2CPacket(SyncBaublePackage.TYPE, SyncBaublePackage.STREAM_CODEC);
-
+        // B8 修复(CRITICAL): 移植期删除了此 S2C 注册，但包仍被 ServerPlayNetworking.send（TankBackpackData:32 / EntityMaid:1538）
+        //   → 未注册 payload send 崩网络线程、玩家掉线。还原 HEAD 注册。
         registerS2CPacket(SyncFluidAmountPackage.TYPE, SyncFluidAmountPackage.STREAM_CODEC);
         registerS2CPacket(TeleportItemParticlePackage.TYPE, TeleportItemParticlePackage.STREAM_CODEC);
         registerS2CPacket(SyncMaidTaskDataPackage.TYPE, SyncMaidTaskDataPackage.STREAM_CODEC);
@@ -109,14 +112,14 @@ public class NetworkHandler {
         registerS2CPacket(SyncAISitesPacket.TYPE, SyncAISitesPacket.STREAM_CODEC);
         registerS2CPacket(SyncMaidAIDataPacket.TYPE, SyncMaidAIDataPacket.STREAM_CODEC);
         registerS2CPacket(SyncServerRulesPacket.TYPE, SyncServerRulesPacket.STREAM_CODEC);
-        registerS2CPacket(SyncServerSTTSitePacket.TYPE, SyncServerSTTSitePacket.STREAM_CODEC);
+        registerS2CPacket(VoicePreviewResultPackage.TYPE, VoicePreviewResultPackage.STREAM_CODEC);
 
 
     }
 
     public static void registerC2SPackets() {
         registerC2SPacket(MaidModelPackage.TYPE, MaidModelPackage.STREAM_CODEC, MaidModelPackage::handle);
-
+        // [Codex] Chair model selection must reach the authoritative server entity.
         registerC2SPacket(ChairModelPackage.TYPE, ChairModelPackage.STREAM_CODEC, ChairModelPackage::handle);
         registerC2SPacket(MaidConfigPackage.TYPE, MaidConfigPackage.STREAM_CODEC, MaidConfigPackage::handle);
         registerC2SPacket(MaidTaskPackage.TYPE, MaidTaskPackage.STREAM_CODEC, MaidTaskPackage::handle);
@@ -140,7 +143,13 @@ public class NetworkHandler {
         registerC2SPacket(CChessToServerPackage.TYPE, CChessToServerPackage.STREAM_CODEC, CChessToServerPackage::handle);
         registerC2SPacket(WChessToServerPackage.TYPE, WChessToServerPackage.STREAM_CODEC, WChessToServerPackage::handle);
         registerC2SPacket(SendUserChatPackage.TYPE, SendUserChatPackage.STREAM_CODEC, SendUserChatPackage::handle);
+        // 仅安装 YSM 后才会发送此包
+        registerC2SPacket(YsmMaidModelPackage.TYPE, YsmMaidModelPackage.STREAM_CODEC, YsmMaidModelPackage::handle);
         registerC2SPacket(SaveMaidAIDataPackage.TYPE, SaveMaidAIDataPackage.STREAM_CODEC, SaveMaidAIDataPackage::handle);
+        registerC2SPacket(CheckSiteConfigPackage.TYPE, CheckSiteConfigPackage.STREAM_CODEC,
+                CheckSiteConfigPackage::handle);
+        registerC2SPacket(RequestVoicePreviewPackage.TYPE, RequestVoicePreviewPackage.STREAM_CODEC,
+                RequestVoicePreviewPackage::handle);
         registerC2SPacket(ClearMaidAIDataPacket.TYPE, ClearMaidAIDataPacket.STREAM_CODEC, ClearMaidAIDataPacket::handle);
         registerC2SPacket(OpenMaidGuiPackage.TYPE, OpenMaidGuiPackage.STREAM_CODEC, OpenMaidGuiPackage::handle);
         registerC2SPacket(DismountPackage.TYPE, DismountPackage.STREAM_CODEC, DismountPackage::handle);
@@ -149,10 +158,7 @@ public class NetworkHandler {
         registerC2SPacket(OpenMaidAIChatPacket.TYPE, OpenMaidAIChatPacket.STREAM_CODEC, OpenMaidAIChatPacket::handle);
         registerC2SPacket(SaveLLMSitePacket.TYPE, SaveLLMSitePacket.STREAM_CODEC, SaveLLMSitePacket::handle);
         registerC2SPacket(SaveTTSSitePacket.TYPE, SaveTTSSitePacket.STREAM_CODEC, SaveTTSSitePacket::handle);
-        registerC2SPacket(SaveSTTSitePacket.TYPE, SaveSTTSitePacket.STREAM_CODEC, SaveSTTSitePacket::handle);
         registerC2SPacket(SaveServerRulesPacket.TYPE, SaveServerRulesPacket.STREAM_CODEC, SaveServerRulesPacket::handle);
-        registerC2SPacket(RequestServerSTTSitePacket.TYPE, RequestServerSTTSitePacket.STREAM_CODEC,
-                RequestServerSTTSitePacket::handle);
     }
 
     public static void sendToClientPlayer(CustomPacketPayload payload, ServerPlayer player) {
@@ -167,7 +173,10 @@ public class NetworkHandler {
         }
     }
 
-
+    /**
+     * 移植期曾被整个删除，但 MaidSnowballTargetTask 仍在调用。
+     * 此处按 HEAD 原样恢复（Fabric 原生 PlayerLookup.tracking，无需 PacketDistributor shim）。
+     */
     public static void sendToPlayersTrackingEntity(Entity entity, CustomPacketPayload toSend) {
         if (entity.level instanceof ServerLevel) {
             for (ServerPlayer target : PlayerLookup.tracking(entity)) {

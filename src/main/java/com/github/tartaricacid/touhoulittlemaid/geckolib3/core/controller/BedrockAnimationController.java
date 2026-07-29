@@ -65,10 +65,12 @@ public class BedrockAnimationController<T extends AnimatableEntity<?>> implement
     private final IntOpenHashSet skipPathSet = new IntOpenHashSet(4);
 
     /**
-     * 实例化基岩版动画控制器 <br> 你可以为一个实体附加多个动画控制器 <br> 比如一个控制器控制实体大小，另一个控制移动，攻击等等
+     * 实例化基岩版动画控制器 <br>
+     * 你可以为一个实体附加多个动画控制器 <br>
+     * 比如一个控制器控制实体大小，另一个控制移动，攻击等等
      *
-     * @param animatableEntity 实体
-     * @param name 动画控制器名称
+     * @param animatableEntity      实体
+     * @param name                  动画控制器名称
      * @param transitionLengthTicks 默认动画过渡时间（tick）
      */
     public BedrockAnimationController(T animatableEntity, String name, float transitionLengthTicks) {
@@ -415,7 +417,8 @@ public class BedrockAnimationController<T extends AnimatableEntity<?>> implement
     }
 
     /**
-     * 在对过渡动画进行混合时假设所有活跃的动画播放器具有相同的过渡时间和起始点，并且同时开始过渡， 实际上也理应如此。
+     * 在对过渡动画进行混合时假设所有活跃的动画播放器具有相同的过渡时间和起始点，并且同时开始过渡，
+     * 实际上也理应如此。
      */
     private static class BlendBoneAnimationQueue implements IBoneAnimationQueue {
         private final BoneTopLevelSnapshot snapshot;

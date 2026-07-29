@@ -104,7 +104,8 @@ public class BlockScarecrow extends HorizontalDirectionalBlock {
         BlockPos clickedPos = context.getClickedPos();
         Level level = context.getLevel();
         BlockPos abovePos = clickedPos.above();
-
+        // SWEEP R10-4：还原 origin 的 canBeReplaced(context)（1.21.11 仍存在，javap 证）——
+        // isAir() 比 origin 更严，高草/积雪等可替换方块上无法放置稻草人
         if (clickedPos.getY() < level.getMaxY() - 1 && level.getBlockState(abovePos).canBeReplaced(context)) {
             Direction horizontalDirection = context.getHorizontalDirection();
             return this.defaultBlockState().setValue(FACING, horizontalDirection).setValue(HALF, DoubleBlockHalf.LOWER);
@@ -145,7 +146,7 @@ public class BlockScarecrow extends HorizontalDirectionalBlock {
         }
     }
 
-
+    // TODO: 1.21.11 — appendHoverText removed from Block in 1.21.5; move to BlockItem
     public void tlm$appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         int range = ServerRuleConfig.get(MiscConfig.SCARECROW_RANGE);
         tooltip.add(Component.translatable("tooltips.touhou_little_maid.scarecrow.desc", range, range).withStyle(ChatFormatting.GRAY));

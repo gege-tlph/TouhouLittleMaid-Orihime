@@ -210,13 +210,15 @@ public abstract class AnimatableEntity<TEntity extends Entity> {
     }
 
     /**
-     * 更新动画之前调用， 如果由于频率限制、renderTick 倒退等原因导致动画不更新，则不会调用
+     * 更新动画之前调用，
+     * 如果由于频率限制、renderTick 倒退等原因导致动画不更新，则不会调用
      */
     protected void preAnimationSetup(float seekTime, boolean shouldTick) {
     }
 
     /**
-     * 更新动画之后调用， 如果由于频率限制、renderTick 倒退等原因导致动画不更新，则不会调用
+     * 更新动画之后调用，
+     * 如果由于频率限制、renderTick 倒退等原因导致动画不更新，则不会调用
      */
     protected void postAnimationSetup(float seekTime, boolean shouldTick) {
     }
@@ -268,7 +270,7 @@ public abstract class AnimatableEntity<TEntity extends Entity> {
         float tlmPartialTick = ((IEntityRenderStatePartialTick) state).tlm$partialTick();
         float realPartialTicks = tlmPartialTick != 1f ? tlmPartialTick : Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);
 
-        boolean shouldSit = entity.isPassenger() && (entity.getVehicle() != null);
+        boolean shouldSit = entity.isPassenger() && (entity.getVehicle() != null/* && entity.getVehicle().shouldRiderSit()*/);
         float limbSwingAmount = 0;
         float limbSwing = 0;
 
@@ -295,7 +297,19 @@ public abstract class AnimatableEntity<TEntity extends Entity> {
         } else {
             headPitch = Mth.lerp(((IEntityRenderStatePartialTick) state).tlm$partialTick(), entity.xRotO, entity.getXRot());
         }
-
+/*
+        if (shouldSit && entity.getVehicle() instanceof LivingEntity) {
+            LivingEntity vehicle = (LivingEntity) entity.getVehicle();
+            lerpBodyRot = Mth.rotLerp(state.tlm$partialTick(), vehicle.yBodyRotO, vehicle.yBodyRot);
+            netHeadYaw = lerpHeadRot - lerpBodyRot;
+            float clampedHeadYaw = Mth.clamp(Mth.wrapDegrees(netHeadYaw), -85, 85);
+            lerpBodyRot = lerpHeadRot - clampedHeadYaw;
+            if (clampedHeadYaw * clampedHeadYaw > 2500f) {
+                lerpBodyRot += clampedHeadYaw * 0.2f;
+            }
+            netHeadYaw = lerpHeadRot - lerpBodyRot;
+        }
+*/
         entityModelData.rawHeadPitch = headPitch;
         entityModelData.headPitch = -entityModelData.rawHeadPitch;
         entityModelData.rawNetHeadYaw = netHeadYaw;
@@ -415,7 +429,7 @@ public abstract class AnimatableEntity<TEntity extends Entity> {
     }
 
     /**
-     * @return 打勾
+     * @return ticked
      */
     protected boolean tickAnimation(MolangContext<?> ctx, @NotNull AnimationEvent<AnimatableEntity<TEntity>> animationEvent) {
         var frameTime = animationEvent.getRenderTicks();
@@ -538,7 +552,9 @@ public abstract class AnimatableEntity<TEntity extends Entity> {
     }
 
     /**
-     * extract EntityState 之后若不会额外修改其属性，即为 immutable； mutable 上下文内不会 tick 动画，避免污染状态（但是会重新求值骨骼关键帧 molang）； 未识别的上下文一律视为 mutable。
+     * extract EntityState 之后若不会额外修改其属性，即为 immutable；
+     * mutable 上下文内不会 tick 动画，避免污染状态（但是会重新求值骨骼关键帧 molang）；
+     * 未识别的上下文一律视为 mutable。
      */
     public boolean determinImmutableContext(RenderContext ctx) {
         return ctx.level() || ctx.offScreen() || ctx.irisShadow();

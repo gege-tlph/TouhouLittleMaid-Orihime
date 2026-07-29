@@ -79,25 +79,26 @@ public class MaidModelDetailsGui extends AbstractModelDetailsGui<EntityMaid, Mai
 
     @Override
     public void tick() {
-        // 某些动画的刻度计数增量
+        // Tick count increment for some animations
         guiEntity.tickCount++;
-        // 对于实体行走更新行走速度
+        // For entity walk
+        // Update walk speed
         float speed = isEnableWalk ? 0.5f : 0;
-
+        // 1.21.11: WalkAnimationState.update 增第三参 positionScale；vanilla 非幼体固定传 1.0F（origin 2 参版即此语义）
         guiEntity.walkAnimation.update(speed, 0.4f, 1.0F);
     }
 
     @Override
     protected void renderExtraEntity(GuiGraphics graphics, float partialTicks) {
         if (guiEntity.isPassenger() && chair != null) {
-
+            // origin: manager.render(chair, 0, -0.95, 0, 0, 1, matrix, bufferIn, 0xf000f0)（partialTicks 固定 1）
             submitExtraEntity(graphics, chair, 0, -0.95F, 0, 1);
         }
     }
 
     private void applyRideButtonLogic(boolean isStateTriggered) {
         if (isStateTriggered && chair != null) {
-
+            // 1.21.11: startRiding(Entity, boolean) 移除 -> (Entity, boolean, boolean)（2 参版原语义 = 第三参 true）
             guiEntity.startRiding(chair, true, true);
         } else {
             guiEntity.removeVehicle();

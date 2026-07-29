@@ -8,10 +8,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import org.jspecify.annotations.Nullable;
 
-
-/**
- * Gecko 椅子模型渲染器，提交渲染状态中已选择并更新的动态模型。
- */
+/** [Codex] Live Gecko chair renderer; the previous compatibility stub never submitted a model. */
 public class GeckoEntityChairRenderer
         extends GeoReplacedEntityRenderer<EntityChair, EntityChairRenderState, GeckoRenderData> {
     public GeckoEntityChairRenderer(EntityRendererProvider.Context context) {

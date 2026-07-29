@@ -70,7 +70,8 @@ public class ItemEntityPlaceholder extends Item {
         if (world == null) {
             return;
         }
-
+        // 1.21.11 客户端不再同步完整配方表 → 单人档从内置服务器枚举（AltarRecipeMaker 同款方案）；
+        // 专用服务器连线时创造栏占位物暂缺，待专服 QA 轮补自定义同步。
         MinecraftServer server = Minecraft.getInstance().getSingleplayerServer();
         if (server == null) {
             ClientAltarRecipeCache.getRecipes().stream()
@@ -80,7 +81,10 @@ public class ItemEntityPlaceholder extends Item {
                             new ItemStack(InitItems.ENTITY_PLACEHOLDER), recipe.recipeString())));
             return;
         }
-
+        // origin iterated getAllRecipesFor(ALTAR_CRAFTING), a per-type view. getRecipes() is the
+        // whole table in a different internal order, so the tab came out in the wrong order.
+        // Descending by recipe id is what reproduces origin's tab order, confirmed in-world:
+        // reborn_maid, spawn_box, spawn_lightning_bolt as displayed.
         server.getRecipeManager().getRecipes().stream()
                 .filter(holder -> holder.value().getType() == InitRecipes.ALTAR_CRAFTING)
                 .map(holder -> holder.value() instanceof AltarRecipe altarRecipe ? altarRecipe : null)
@@ -96,7 +100,7 @@ public class ItemEntityPlaceholder extends Item {
             Identifier id = getRecipeId(context.getItemInHand());
             Level world = context.getLevel();
             if (id != null && world instanceof ServerLevel serverLevel) {
-
+                // 1.21.11: Level.getRecipeManager() 移除 → ServerLevel.recipeAccess()(=RecipeManager)；byKey 现取 ResourceKey<Recipe<?>>
                 Optional<RecipeHolder<?>> recipe = serverLevel.recipeAccess().byKey(ResourceKey.create(Registries.RECIPE, id));
                 if (recipe.isPresent() && recipe.get().value() instanceof AltarRecipe altarRecipe) {
                     altarRecipe.spawnOutputEntity((ServerLevel) world, context.getClickedPos().above(), null);

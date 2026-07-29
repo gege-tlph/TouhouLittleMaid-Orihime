@@ -18,12 +18,13 @@ public final class ApplyGoldenAppleEvent {
         ItemStack stack = event.getStack();
         EntityMaid maid = event.getMaid();
         Level world = event.getWorld();
-
+        //FoodProperties food = stack.getItem().getFoodProperties(stack, maid);
         FoodProperties food = stack.get(DataComponents.FOOD);
         Player player = event.getPlayer();
 
         if (player.isDiscrete() && (food == Foods.GOLDEN_APPLE || food == Foods.ENCHANTED_GOLDEN_APPLE)) {
-
+            // B6b: 1.21.11 LivingEntity.eat(Level,ItemStack) 已移除（javap 确认）→ EntityMaid.tlmEat(Level,ItemStack,FoodProperties)
+            //   （food 已于上方由 stack.get(DataComponents.FOOD) 取得）。注：tlmEat 的功能完整性属 A12 待办，与本编译迁移无关。
             maid.tlmEat(world, stack, food);
             if (food == Foods.ENCHANTED_GOLDEN_APPLE && player instanceof ServerPlayer serverPlayer) {
                 InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.EAT_ENCHANTED_GOLDEN_APPLE);

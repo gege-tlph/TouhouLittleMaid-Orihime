@@ -39,7 +39,7 @@ public class ItemHakureiGohei extends ProjectileWeaponItem {
         super((new Properties())
                 .setId(ResourceKey.create(Registries.ITEM, id))
                 .durability(1200)
-
+                /*.setNoRepair()*/
                 .attributes(ItemAttributeModifiers.builder()
                         .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_ID, 4, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                         .add(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_ID, -2, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
@@ -122,9 +122,12 @@ public class ItemHakureiGohei extends ProjectileWeaponItem {
 
     @Override
     public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-
+        // B5: 1.21.11 Item.hurtEnemy 返回值由 boolean 改为 void（javap 确认）。
+        //   保留御币每击 -2 耐久的原行为，仅去掉 return。
         stack.hurtAndBreak(2, attacker, attacker.getEquipmentSlotForItem(stack));
     }
 
-
+    // B5: 删除 isEnchantable 覆盖 —— 1.21.11 Item.isEnchantable 已移除（附魔性改由
+    //   DataComponents.ENCHANTABLE 组件控制）。原覆盖体为 `return super.isEnchantable(pStack)` 纯直通
+    //   （HEAD 亦如此），删除**行为无损**；御币的可附魔性由其注册 Properties 的组件决定。
 }

@@ -116,13 +116,13 @@ public class TaskTridentAttack implements IRangedAttackTask {
     public void performRangedAttack(EntityMaid shooter, LivingEntity target, float distanceFactor) {
         ItemStack tridentItem = shooter.getMainHandItem().copy();
 
-
+        // 去除忠诚附魔，不然三叉戟返回来是发现主人不是玩家，就翻脸不认人了不给捡了（B4 恢复）
         Holder<Enchantment> loyalty = getEnchantmentHolder(shooter.level.registryAccess(), Enchantments.LOYALTY);
         if (EnchantmentHelper.getItemEnchantmentLevel(loyalty, tridentItem) > 0) {
             EnchantmentHelper.updateEnchantments(tridentItem, mutable -> mutable.set(loyalty, 0));
         }
 
-
+        // TODO：伤害和好感度挂钩
         ThrownTrident thrownTrident = new ThrownTrident(shooter.level, shooter, tridentItem);
         double x = target.getX() - shooter.getX();
         double y = target.getEyeY() - shooter.getEyeY();

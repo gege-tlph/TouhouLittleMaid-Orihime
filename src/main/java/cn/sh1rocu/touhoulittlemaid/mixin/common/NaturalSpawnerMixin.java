@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.At;
 
 @Mixin(NaturalSpawner.class)
 public class NaturalSpawnerMixin {
-
+    // 1.21.11: NaturalSpawner.mobsAt 返回类型 WeightedRandomList -> WeightedList（javap 确认）
     @ModifyReturnValue(method = "mobsAt", at = @At("RETURN"))
     private static WeightedList<MobSpawnSettings.SpawnerData> tlm$mobsAt(
             WeightedList<MobSpawnSettings.SpawnerData> original,

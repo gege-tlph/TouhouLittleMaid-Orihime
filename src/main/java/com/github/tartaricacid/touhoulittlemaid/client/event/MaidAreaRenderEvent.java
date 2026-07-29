@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 public class MaidAreaRenderEvent {
     private static final Cache<Integer, SchedulePos> CACHE = CacheBuilder.newBuilder().expireAfterWrite(30, TimeUnit.SECONDS).build();
 
-    // AfterOpaqueFeatures
+    //AfterOpaqueFeatures
     public static void onRender(WorldExtractionContext context) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) {

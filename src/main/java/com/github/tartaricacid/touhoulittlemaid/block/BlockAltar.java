@@ -71,7 +71,7 @@ public class BlockAltar extends Block implements EntityBlock, IBlock {
     @Environment(EnvType.CLIENT)
     @Override
     public boolean tlm$addDestroyEffects(BlockState state, Level world, BlockPos pos, ParticleEngine manager) {
-
+        // 1.21.11：ParticleEngine.destroy → ClientLevel.addDestroyBlockEffect（origin 语义=以内部储存方块态出粒子）
         if (world instanceof ClientLevel clientLevel) {
             this.getAltar(world, pos).ifPresent(altar -> clientLevel.addDestroyBlockEffect(pos, altar.getStorageState()));
         }
@@ -129,10 +129,12 @@ public class BlockAltar extends Block implements EntityBlock, IBlock {
         return new TileEntityAltar(pos, state);
     }
 
-
+    // 1.21.11: useItemOn 返回 InteractionResult（ItemInteractionResult 已并入 InteractionResult）→ 恢复原交互（P7a/审计 A8：
+    //   此前整块被注释导致祭坛放入/合成/取出完全不可达）。签名对齐已迁移范本 BlockGarageKit.useItemOn。
     @Override
     public InteractionResult useItemOn(ItemStack itemStack, BlockState state, Level worldIn, BlockPos pos, Player player, InteractionHand handIn, BlockHitResult hit) {
-
+        // 1.21.11: InteractionResult 现为 sealed，`SUCCESS` 是子类型 Success → map 会推断成 Optional<Success>，
+        //   与 orElse 的 InteractionResult 不兼容 → 用类型见证 <InteractionResult> 拓宽。
         return this.getAltar(worldIn, pos).filter(altar -> handIn == InteractionHand.MAIN_HAND).<InteractionResult>map(altar -> {
             if (player.isShiftKeyDown() || player.getMainHandItem().isEmpty()) {
                 takeOutItem(worldIn, altar, player);
@@ -143,6 +145,10 @@ public class BlockAltar extends Block implements EntityBlock, IBlock {
             return InteractionResult.SUCCESS;
         }).orElse(super.useItemOn(itemStack, state, worldIn, pos, player, handIn, hit));
     }
+
+    // 1.21.2+：Block.onRemove(...) 已完全移除（javap 确认），且此处原本的掉落逻辑
+    // 已按 vanilla 架构迁至 TileEntityAltar.preRemoveSideEffects(BlockPos, BlockState)
+    // —— 那里 BE 仍存活，可读取自研 ItemStackHandler。此处不再需要任何覆盖。
 
     @Override
     public void tlm$onBlockExploded(BlockState state, Level world, BlockPos pos, Explosion explosion) {
@@ -174,11 +180,13 @@ public class BlockAltar extends Block implements EntityBlock, IBlock {
     }
 
     @Override
-
+    //public SoundType getSoundType(BlockState state, LevelReader world, BlockPos pos, @Nullable Entity entity) {
     public SoundType getSoundType(BlockState state) {
-
+        // TODO
         return super.getSoundType(state);
-
+/*        return this.getAltar()
+                .map(altar -> altar.getStorageState().getSoundType())
+                .orElse(super.getSoundType(state, world, pos, entity));*/
     }
 
 
@@ -238,7 +246,8 @@ public class BlockAltar extends Block implements EntityBlock, IBlock {
         }
         CraftingInput craftingInput = CraftingInput.of(6, 1, arrayList);
         PowerAttachment powerAttachment = playerIn.getAttachedOrCreate(InitDataAttachment.POWER_NUM, () -> new PowerAttachment(0));
-
+        // 1.21.11: Level.recipeAccess() 返回的 RecipeAccess 无 getRecipeFor；合成是服务端权威 → gate ServerLevel
+        // （其 recipeAccess() 协变返回 RecipeManager，有 getRecipeFor）。RecipeHolder.id() 现为 ResourceKey → .identifier()。
         if (world instanceof ServerLevel serverLevel) {
             serverLevel.recipeAccess().getRecipeFor(InitRecipes.ALTAR_CRAFTING, craftingInput, serverLevel)
                     .ifPresent(recipe -> spawnResultEntity(world, playerIn, powerAttachment, recipe.id().identifier(), recipe.value(), arrayList, altar));

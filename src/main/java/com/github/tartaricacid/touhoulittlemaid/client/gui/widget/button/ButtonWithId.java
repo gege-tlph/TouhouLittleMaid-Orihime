@@ -12,7 +12,8 @@ public class ButtonWithId extends Button {
     private final int id;
 
     public ButtonWithId(int id, int x, int y, int width, int height, Component title, Consumer<Integer> onClick) {
-
+/*        super(Button.builder(title, (b) -> {
+        }).pos(x, y).size(width, height));*/
         super(x, y, width, height, title, b -> {
         }, Button.DEFAULT_NARRATION);
         this.id = id;
@@ -25,6 +26,7 @@ public class ButtonWithId extends Button {
         this.onClick.accept(this.id);
     }
 
+    // 1.21.11: Button 现为 abstract，子类须实现 renderContents（默认按钮=sprite+label）
     @Override
     protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderDefaultSprite(graphics);

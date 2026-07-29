@@ -38,11 +38,20 @@ import java.util.List;
 
 import static com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader.MAID_MODELS;
 
-
+/**
+ * Phase 3 渲染节点 2a：对齐 26.1 富字段 shape，基类改为 {@link HumanoidRenderState}（与 26.1 一致）。
+ * <p>基类理由：HumanoidRenderState 传递继承 LivingEntityRenderState → vendored geckolib3 的
+ * {@code AnimatableEntity.updateAnimation} 对 {@code LivingEntityRenderState} 的 cast 仍然成立；
+ * 同时经 ArmedEntityRenderState 免费获得 right/leftHandItemState、attackArm、useItemHand、
+ * equipment 等动画消费方（MaidBaseAnimation 等）所需字段。javap（1.21.11 Mojang mapped）为 API 裁判。
+ * <p>与 26.1 的差异（仅类型可用性驱动，行为不变）：
+ * <ul>
+ *   <li>CameraRenderState 在 1.21.11 位于 {@code net.minecraft.client.renderer.state}（26.1=MC26.1.2 移到了 {@code ...state.level}）。</li>
+ *   <li>headBlock=HEAD 原生 BlockState（P-B）；clear()/extractRenderState 已随 Node 5 HUB 恢复；chatBubble 已随 Node 3 恢复。</li>
+ * </ul>
+ */
 public class EntityMaidRenderState extends HumanoidRenderState {
-    /**
-     * 为普通状态管道无法覆盖的可选渲染器桥保留实时源。
-     */
+    /** Live source retained for optional renderer bridges that vanilla's state pipeline cannot cover. */
     public @Nullable EntityMaid maid;
     public int entityId = -1;
     /**
@@ -85,7 +94,9 @@ public class EntityMaidRenderState extends HumanoidRenderState {
      * 聊天气泡起始位置
      */
     public @Nullable Vec3 bubbleOffset;
-
+    /**
+     * 聊天气泡数据（Node 3 已恢复）
+     */
     public @Nullable ChatBubbleDataCollection chatBubble;
     /**
      * 当前是否被玩家抱起（即骑乘玩家）
@@ -131,7 +142,10 @@ public class EntityMaidRenderState extends HumanoidRenderState {
      * 护甲值，可能用于一些根据护甲值变化的动画或渲染效果
      */
     public int armorValue;
-
+    /**
+     * SWEEP R11-2：origin IMaid.getAtBiomeTemp()（生物群系温度档："COLD"/"OCEAN"/"MEDIUM"/"WARM"）——
+     * armor temp/* 动画消费；RenderState 化后由 extract 每帧填充
+     */
     public String atBiomeTemp = "MEDIUM";
     /**
      * 当前血量
@@ -142,7 +156,9 @@ public class EntityMaidRenderState extends HumanoidRenderState {
      */
     public float maxHealth;
     /**
-     * 实体随机值，用于一些需要随机效果的动画 <p> 默认会取该实体 UUID 的低 64 位，确保同一实体在不同帧的渲染过程中保持一致的随机值
+     * 实体随机值，用于一些需要随机效果的动画
+     * <p>
+     * 默认会取该实体 UUID 的低 64 位，确保同一实体在不同帧的渲染过程中保持一致的随机值
      */
     public long randomNumber;
     /**
@@ -153,13 +169,25 @@ public class EntityMaidRenderState extends HumanoidRenderState {
      * 女仆当前是否穿戴背包
      */
     public boolean hasBackpack;
-
+    /**
+     * 背包数据
+     * TODO: 可能要换成相关 RenderState
+     */
     public @Nullable IMaidBackpack backpack;
     /**
      * 旗帜渲染
      */
     public @Nullable BannerRenderState backBanner;
-
+    /**
+     * 装饰栏方块（渲染在女仆头部）。
+     * <p>HEAD(origin/1.21.1) 行为基准：LayerMaidBipedHead 从 getBackpackShowItem() 取 BlockItem 的
+     * defaultBlockState()，用 BlockRenderDispatcher.renderSingleBlock 渲染裸方块模型。26.1 改用
+     * net.minecraft.client.renderer.block.BlockModelRenderState（MC26.1.2 专有，1.21.11 不存在）——按契约
+     * 26.1 仅架构参考，故此处**忠实还原 HEAD 表示 = BlockState**（非 BlockModelRenderState，非 ItemStackRenderState）。
+     * <p>renderSingleBlock 路径在 1.21.11 完整可用（javap 证：renderSingleBlock(BlockState,PoseStack,MultiBufferSource,int,int)
+     * + Minecraft.renderBuffers().bufferSource()/endBatch 均在）。填充=Node 5 extract（从 showItem）；渲染调用=
+     * 2c BipedHead（原生 renderSingleBlock，非 submit 管线）。
+     */
     public @Nullable BlockState headBlockState;
     /**
      * 装饰栏，物品
@@ -182,7 +210,8 @@ public class EntityMaidRenderState extends HumanoidRenderState {
      */
     public boolean thundering;
 
-
+    // ② 特殊模型保持 baseline 的 RenderMaidEvent 链，普通模型直接走 MAID_MODELS；
+    // ③ headBlock 忠实还原 HEAD 原生 = headBlockState(BlockState)（非 26.1 BlockModelRenderState，无 crop-age，见 P-B）。
     private static final String DEFAULT_MODEL_ID = "touhou_little_maid:hakurei_reimu";
 
     public void clear() {
@@ -277,7 +306,8 @@ public class EntityMaidRenderState extends HumanoidRenderState {
 
     private static void extractModelState(EntityMaid maid, EntityMaidRenderState state) {
         state.modelId = maid.getModelId();
-
+        // origin：预载默认模型数据 → 广播 RenderMaidEvent（玩家名/加密名/普通名/彩蛋 4 个 handler）→
+        // 事件取消则采用事件数据（模型仅非空覆写，保留预载默认），否则按 modelId 查表 + 默认值兜底
         EntityMaidModel defaultModel = MAID_MODELS.getModel(DEFAULT_MODEL_ID).orElse(null);
         MaidModelInfo defaultInfo = MAID_MODELS.getInfo(DEFAULT_MODEL_ID).orElse(null);
         List<IAnimation<EntityMaidRenderState>> defaultAnimations = MAID_MODELS.getAnimation(DEFAULT_MODEL_ID).orElse(null);
@@ -321,7 +351,7 @@ public class EntityMaidRenderState extends HumanoidRenderState {
             return;
         }
 
-
+        // 装饰栏方块 → 渲染在头部（HEAD 原生：defaultBlockState，2c BipedHead 用 renderSingleBlock；无 crop-age，见 P-B）
         if (showItem.getItem() instanceof BlockItem blockItem) {
             state.headBlockState = blockItem.getBlock().defaultBlockState();
             return;

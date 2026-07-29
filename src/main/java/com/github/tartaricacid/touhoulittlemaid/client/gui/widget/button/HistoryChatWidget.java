@@ -70,7 +70,8 @@ public class HistoryChatWidget extends AbstractWidget {
 
     @Override
     protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-
+        // 1.21.11: GuiGraphics.setColor 与 RenderSystem.enableBlend/enableDepthTest 已移除（GUI 管线接管）；
+        // 本控件 alpha 恒为默认 1.0（全仓无 setAlpha 调用方），origin 的 setColor(1,1,1,alpha) 为无效果调用，26.1 同样删除
         if (this.isTool) {
             // 工具消息只渲染文本
             this.renderToolText(graphics, Minecraft.getInstance().font);
@@ -88,7 +89,7 @@ public class HistoryChatWidget extends AbstractWidget {
         float posX = this.getX() / scale + width / 2f;
         float posY = this.getY() / scale;
 
-
+        // 1.21.11: pose() 返回 Matrix3x2fStack（GUI 2D 化）→ pushMatrix/scale(x,y)/popMatrix
         graphics.pose().pushMatrix();
         graphics.pose().scale(scale, scale);
 
@@ -108,7 +109,7 @@ public class HistoryChatWidget extends AbstractWidget {
         if (isLeft) {
             graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, this.getX() + xOffset, this.getHeightMiddle(size), 0F, 16F, size, size, 128, 128);
         } else {
-
+            // 1.21.11: PlayerFaceRenderer.draw(g, Identifier, x, y, size) 5 参重载移除 → 8 参（1.21.1 委托语义 = hatVisible=true, upsideDown=false, color=-1）
             PlayerFaceRenderer.draw(graphics, this.playerSkin, this.getX() + xOffset, this.getHeightMiddle(size), size, true, false, -1);
         }
     }
@@ -117,7 +118,7 @@ public class HistoryChatWidget extends AbstractWidget {
         int heightMiddle = this.getHeightMiddle(14);
         GuiTools.blitNineSliced(graphics, TEXTURE, this.getX(), this.getY(), this.getWidth(), this.getHeight(),
                 8, 4, 100, 16, 0, this.getTextureY());
-
+        // 1.21.11: 旧 7 参 blit（隐含 256×256）→ RenderPipeline 形态（保持 origin 的 256×256 假定）
         if (isLeft) {
             graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, this.getX() - 4, heightMiddle, 100F, 16F, 6, 14, 256, 256);
         } else {
@@ -127,7 +128,7 @@ public class HistoryChatWidget extends AbstractWidget {
 
     public void renderString(GuiGraphics graphics, Font font) {
         Component message = this.getMessage();
-
+        // 1.21.11: GuiGraphics.setColor 已移除（origin 此处为重置全局着色，管线化后无需重置）
         if (isLeft) {
             graphics.drawWordWrap(font, message, this.getX() + 5, this.getY() + 5, this.getWidth() - 10, 0xFF555555);
         } else {

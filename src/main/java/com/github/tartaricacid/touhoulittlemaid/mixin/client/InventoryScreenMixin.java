@@ -13,8 +13,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 /**
- * 原版提取物品栏实体预览时，为渲染器设置对应上下文。
- * 物品栏预览不经过世界实体的即时更新路径，因此需要在此处主动启动 Gecko 更新任务。
+ * Supplies the inventory render context while vanilla extracts an entity preview.
+ * Inventory Gecko tasks are intentionally started here because that context is not
+ * eligible for the immediate world-render update path.
  */
 @Mixin(InventoryScreen.class)
 public class InventoryScreenMixin {

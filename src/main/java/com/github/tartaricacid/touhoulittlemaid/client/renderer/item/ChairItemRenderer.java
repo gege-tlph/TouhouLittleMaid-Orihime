@@ -24,13 +24,11 @@ import org.joml.Vector3fc;
 import java.util.function.Consumer;
 
 /**
- * 椅子物品的特殊模型渲染器，在物品栏、手持和世界展示中保留完整的三维模型。
+ * [Codex] 1.21.11 special-model replacement for origin's chair BEWLR.
  */
 public final class ChairItemRenderer implements SpecialModelRenderer<ChairItemRenderer.State> {
     public static final Identifier ID = IdentifierUtil.modLoc("chair_item");
-    /**
-     * 包围范围取自默认坐垫模型；下边界必须保持为 0，才能与地面变换正确对齐。
-     */
+
     @Override
     public State extractArgument(ItemStack stack) {
         State state = new State();
@@ -40,7 +38,10 @@ public final class ChairItemRenderer implements SpecialModelRenderer<ChairItemRe
         if (level == null) {
             return state;
         }
-
+        // EntityCacheUtil.getChair assigns the negative preview id; the previous inline
+        // ENTITY_CACHE.get bypassed it, so GeckoChairEntity.isPreviewEntity() stayed false,
+        // the never-ticked preview chair froze Gecko's frame clock and the immutable
+        // (dropped-item) path never extracted any render bones. Matches origin/26.1's shape.
         EntityChair chair = EntityCacheUtil.getChair(level, EntitySpawnReason.LOAD);
         chair.setModelId(data.modelId());
         state.entity = Minecraft.getInstance().getEntityRenderDispatcher().extractEntity(chair, 0);
@@ -63,7 +64,27 @@ public final class ChairItemRenderer implements SpecialModelRenderer<ChairItemRe
         poseStack.popPose();
     }
 
-
+    /**
+     * GUI/world extents for the cushion preview, in the space {@link #submit} draws in.
+     *
+     * <p>Measured from the default cushion Bedrock model with a temporary probe
+     * ({@code root().getExtentsForGui}): 24 points, x/z = +-0.4375 (14px wide) and a
+     * 0.1875 (3px) thickness. That derivation reports y in 1.3125..1.5 because a Bedrock
+     * part places its origin 24 units up, while item render space puts the ground at 0,
+     * so the box is rebased to start at y=0.
+     *
+     * <p>minY MUST stay 0: {@link net.minecraft.client.renderer.entity.ItemEntityRenderer}
+     * derives a dropped item's height from {@code -minY + 0.0625}. Feeding it the raw
+     * 1.3125 lifts the dropped cushion more than a block off the ground. The previous
+     * hardcoded box also had minY=0, which is why dropped rendering was correct; it was
+     * only too large in x/y/z (+-1 wide, 2 tall), so the GUI AABB exceeded 16px, the item
+     * was classified oversized-in-GUI and its creative tab icon was drawn in the oversized
+     * pass underneath the tab graphic.
+     *
+     * <p>Not derived at runtime on purpose: extents are memoized once per baked model, and
+     * this renderer submits an entity render rather than the model itself, so the Bedrock
+     * part transform is not the space these coordinates live in.
+     */
     @Override
     public void getExtents(Consumer<Vector3fc> output) {
         output.accept(new Vector3f(-0.4375F, 0, -0.4375F));

@@ -43,6 +43,7 @@ public final class MaidBrain {
                 MemoryModuleType.ATTACK_COOLING_DOWN,
                 InitEntities.TARGET_POS,
                 InitEntities.MAID_EDIBLE_BLOCK_ACTION,
+                InitEntities.MAID_EDIBLE_HOLD_EXPIRY,
                 InitEntities.EMERGENCY_COMBAT_ACTIVE
         );
         ExtraMaidBrainManager.EXTRA_MAID_BRAINS.forEach(extra -> defaultTypes.addAll(extra.getExtraMemoryTypes()));

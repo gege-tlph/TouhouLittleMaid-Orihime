@@ -21,7 +21,7 @@ public class MinecraftSoundInstance extends AbstractTickableSoundInstance implem
 
     @Override
     public void tick() {
-
+        // TODO: 配置项
         this.volume = this.configuredVolume * 100.0f / 100.0f;
         if (this.entity.isRemoved()) {
             this.stop();

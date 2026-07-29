@@ -58,12 +58,12 @@ public class SetTankCountFunction extends LootItemConditionalFunction {
         }
         SingleFluidStorage tank = SingleFluidStorage.withFixedCapacity(TankBackpackData.CAPACITY, () -> {
         });
-
+        // 1.21.11: Registry.get(Identifier) 返 Optional<Reference> → getValue(Identifier) 直返 Fluid（javap 确认）
         FluidVariant fluidStack = FluidVariant.of(BuiltInRegistries.FLUID.getValue(this.fluidId), DataComponentPatch.EMPTY);
         try (Transaction transaction = Transaction.openOuter()) {
             tank.insert(fluidStack, count, transaction);
             transaction.commit();
-
+            // 1.21.11 + Fabric 6.0.x: SingleFluidStorage.writeNbt → writeData(ValueOutput)，merge 回既有 tags（格式兼容）
             TagValueOutput tankOut = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, context.getLevel().registryAccess());
             tank.writeData(tankOut);
             tags.merge(tankOut.buildResult());

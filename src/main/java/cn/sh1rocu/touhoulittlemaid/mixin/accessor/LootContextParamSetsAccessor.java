@@ -9,7 +9,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(LootContextParamSets.class)
 public interface LootContextParamSetsAccessor {
-    // 暴露战利品上下文参数集注册表，供自定义战利品类型注册使用。
+    // 1.21.11: LootContextParamSet 更名为 net.minecraft.util.context.ContextKeySet；
+    // REGISTRY 字段仍在，类型为 BiMap<Identifier, ContextKeySet>（javap 确认）
     @Accessor("REGISTRY")
     static BiMap<Identifier, ContextKeySet> tlm$getRegistry() {
         throw new AssertionError();

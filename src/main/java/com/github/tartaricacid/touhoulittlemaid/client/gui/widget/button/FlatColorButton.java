@@ -48,13 +48,13 @@ public class FlatColorButton extends Button {
 
     public void renderToolTip(GuiGraphics graphics, Screen screen, int pMouseX, int pMouseY) {
         if (this.isHovered && tooltips != null) {
-
+            // 1.21.11: renderComponentTooltip 移除 → setTooltipForNextFrame（延迟到帧末渲染）
             graphics.setTooltipForNextFrame(Screens.getClient(screen).font, tooltips, Optional.empty(), pMouseX, pMouseY);
         }
     }
 
     @Override
-
+    // 1.21.11: AbstractButton.renderWidget 现为 final（调 renderContents）→ 覆写 renderContents
     protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float pPartialTick) {
         Minecraft minecraft = Minecraft.getInstance();
         if (isSelect) {
@@ -68,12 +68,12 @@ public class FlatColorButton extends Button {
             graphics.fillGradient(this.getX() + this.width - 1, this.getY() + 1, this.getX() + this.width, this.getY() + this.height - 1, 0xff_F3EFE0, 0xff_F3EFE0);
             graphics.fillGradient(this.getX(), this.getY() + this.height - 1, this.getX() + this.width, this.getY() + this.height, 0xff_F3EFE0, 0xff_F3EFE0);
         }
-
+        //int i = getFGColor();
         int i = this.active ? 16777215 : 10526880;
         this.renderString(graphics, minecraft.font, i | Mth.ceil(this.alpha * 255.0F) << 24);
     }
 
-
+    // 1.21.11: AbstractWidget.renderString 已移除 → 自有辅助方法（renderContents 调用）
     public void renderString(GuiGraphics graphics, Font font, int pColor) {
         if (this.textScale == 1.0f && this.textOffsetX == 0.0f && this.textOffsetY == 0.0f) {
             graphics.drawCenteredString(font, this.getMessage(), this.getX() + this.width / 2,

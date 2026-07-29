@@ -12,11 +12,12 @@ import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-
-@Mixin(LivingEntityRenderer.class)
 /**
- * 暴露 EntityRenderer 的基础提交路径，使替换后的 Gecko 渲染器仍能提交名牌等原版渲染内容。
+ * origin 用「mixin 继承 EntityRenderer + super.render」桥接出对祖父类渲染（名牌等基础提交）的调用，
+ * 供 GeoReplacedEntityRenderer 在完整替换 LivingEntityRenderer 渲染后补基础层。
+ * 1.21.11 render→submit 三段式：super.submit = EntityRenderer.submit（含 submitNameTag），语义等价。
  */
+@Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererMixin extends EntityRenderer<Entity, EntityRenderState> implements LivingEntityRendererAccessor {
     protected LivingEntityRendererMixin(EntityRendererProvider.Context context) {
         super(context);

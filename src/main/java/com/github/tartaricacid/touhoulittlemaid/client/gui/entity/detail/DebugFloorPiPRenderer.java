@@ -10,7 +10,11 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import org.joml.Vector3f;
 
-
+/**
+ * 模型详情屏调试地板的自定义 PiP 渲染器（经 Fabric SpecialGuiElementRegistry 注册）。
+ * 变换链与 vanilla GuiEntityRenderer 一致（translation → rotation，getTranslateY 同款），
+ * 保证与主实体 PiP 层坐标对齐；最后的 translate(0, 0.5, 0) = origin 地板直渲前的原式偏移。
+ */
 @Environment(EnvType.CLIENT)
 public class DebugFloorPiPRenderer extends PictureInPictureRenderer<DebugFloorRenderState> {
     public DebugFloorPiPRenderer(MultiBufferSource.BufferSource bufferSource) {

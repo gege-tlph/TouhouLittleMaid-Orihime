@@ -103,9 +103,15 @@ public abstract class AbstractMaidContainerGui<T extends AbstractMaidContainer> 
         super(screenContainer, inv, titleIn);
         this.imageHeight = 256;
         this.imageWidth = 256;
+        // 上游缺陷（TartaricAcid/TouhouLittleMaid#1058 / #1059）：此处原先对 menu.getMaid()
+        // 二次解引用。女仆在界面打开与数据包往返之间被魂符收走或回收时 getMaid() 返回 null，
+        // 构造函数当场 NPE —— 而它发生在 init() / render() 的既有 null 守卫（见下方 #416 fixme）
+        // 之前，守卫根本够不着，于是客户端整个断线退回多人游戏菜单，
+        // 两个 issue 的日志都止于 AbstractMaidContainerGui.<init>。
+        // 这里只解引用一次并给出安全降级值，把控制权交还给既有守卫。
         this.maid = menu.getMaid();
-        this.task = menu.getMaid().getTask();
-        this.notHiddenTasks = TaskManager.getNotHiddenTaskList(this.maid);
+        this.task = this.maid == null ? null : this.maid.getTask();
+        this.notHiddenTasks = this.maid == null ? Collections.emptyList() : TaskManager.getNotHiddenTaskList(this.maid);
     }
 
     @Override
@@ -117,7 +123,8 @@ public abstract class AbstractMaidContainerGui<T extends AbstractMaidContainer> 
     @Override
     protected void init() {
         super.init();
-
+        // fixme: https://github.com/TartaricAcid/TouhouLittleMaid/issues/416
+        // 临时修复，应该采用更好的办法！
         if (this.maid == null) {
             return;
         }
@@ -162,7 +169,8 @@ public abstract class AbstractMaidContainerGui<T extends AbstractMaidContainer> 
     @Override
     @SuppressWarnings("all")
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-
+        // fixme: https://github.com/TartaricAcid/TouhouLittleMaid/issues/416
+        // 临时修复，应该采用更好的办法！
         if (this.maid == null) {
             return;
         }
@@ -584,7 +592,7 @@ public abstract class AbstractMaidContainerGui<T extends AbstractMaidContainer> 
 
     @SuppressWarnings("all")
     private void drawBaseInfoGui(GuiGraphics graphics) {
-
+        // origin 此处 translate(0,0,200) 抬高 z；1.21.11 GUI 已 2D 化，层级由提交顺序决定，z 平移无对等物
         {
             graphics.blit(RenderPipelines.GUI_TEXTURED, SIDE, leftPos + 53, topPos + 113, 0, 0, 9, 9, 256, 256);
             graphics.blit(RenderPipelines.GUI_TEXTURED, SIDE, leftPos + 5, topPos + 113, 0, 9, 47, 9, 256, 256);

@@ -102,6 +102,7 @@ public class WirelessIOConfigSlotGui extends Screen {
     }
 
     private void renderBg(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        // 1.21.11: blit 增 RenderPipeline 首参 + 显式贴图尺寸（旧 7 参隐含 256x256）
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, SLOT, leftPos, topPos, 0F, 0F, imageWidth, imageHeight, 256, 256);
     }
 }

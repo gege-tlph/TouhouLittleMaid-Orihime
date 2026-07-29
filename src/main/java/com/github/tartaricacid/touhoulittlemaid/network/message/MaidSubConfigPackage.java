@@ -12,7 +12,8 @@ import net.minecraft.world.entity.Entity;
 
 import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
-
+// B8: 移植期误抄 26.1 版（用 26.1 专有的 entity/data/ConfigData + InitDataAttachment.CONFIG，二者均未创建 → 悬空引用，编译崩）。
+//   HEAD 用 MaidConfigManager.SyncNetwork（当前树存在，EntityMaid 在用）。按方法论还原 HEAD 形态（getResourceLocation→modLoc，context.player() 用当前 Fabric 形态）。
 public record MaidSubConfigPackage(int id, MaidConfigManager.SyncNetwork syncNetwork) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<MaidSubConfigPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("maid_sub_config"));
     public static final StreamCodec<ByteBuf, MaidSubConfigPackage> STREAM_CODEC = new StreamCodec<>() {

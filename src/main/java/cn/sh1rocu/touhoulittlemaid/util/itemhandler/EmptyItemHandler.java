@@ -27,7 +27,7 @@ public class EmptyItemHandler implements IItemHandlerModifiable {
 
     @Override
     public void setStackInSlot(int slot, ItemStack stack) {
-        // 这里没什么可做的
+        // nothing to do here
     }
 
     @Override

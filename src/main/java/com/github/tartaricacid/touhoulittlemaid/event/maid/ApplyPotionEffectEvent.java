@@ -33,7 +33,7 @@ public final class ApplyPotionEffectEvent {
         }
 
         if (player.isDiscrete() && stack.getItem() == Items.MILK_BUCKET) {
-
+            //maid.removeEffectsCuredBy(EffectCures.MILK);
             BuiltInRegistries.MOB_EFFECT.stream().filter(effect -> effect.getCategory() == MobEffectCategory.HARMFUL)
                     .forEach(harmful -> maid.removeEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(harmful)));
             if (!player.isCreative()) {

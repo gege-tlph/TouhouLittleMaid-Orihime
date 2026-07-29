@@ -22,28 +22,16 @@ import java.net.http.HttpRequest;
 public class STTCallback implements ResponseCallback<String> {
     private final Player player;
     private final EntityMaid maid;
-    private final boolean serverProvided;
 
     public STTCallback(Player player, EntityMaid maid) {
-        this(player, maid, false);
-    }
-
-    public STTCallback(Player player, EntityMaid maid, boolean serverProvided) {
         this.player = player;
         this.maid = maid;
-        this.serverProvided = serverProvided;
     }
 
     @Override
     public void onFailure(HttpRequest request, Throwable throwable, int errorCode) {
         TouhouLittleMaid.LOGGER.error("STT request failed: {}, error is {}", request, throwable.getMessage());
         Minecraft.getInstance().execute(() -> {
-            if (serverProvided && errorCode != ErrorCode.MICROPHONE_NOT_FOUND) {
-                player.displayClientMessage(Component.translatable(
-                        "ai.touhou_little_maid.chat.stt.server_connection_failed")
-                        .withStyle(ChatFormatting.RED), false);
-                return;
-            }
             String cause = throwable.getLocalizedMessage();
             MutableComponent errorMessage = ErrorCode.getErrorMessage(ServiceType.STT, errorCode, cause);
             player.displayClientMessage(errorMessage.withStyle(ChatFormatting.RED), false);

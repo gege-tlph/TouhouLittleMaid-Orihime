@@ -3,7 +3,6 @@ package com.github.tartaricacid.touhoulittlemaid.item.bauble;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.ILittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.bauble.IMaidBauble;
-
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -38,7 +37,6 @@ public final class BaubleManager {
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             littleMaid.bindMaidBauble(manager);
         }
-
         BAUBLES = ImmutableMap.copyOf(BAUBLES);
     }
 
@@ -53,6 +51,9 @@ public final class BaubleManager {
         return getBauble(item);
     }
 
+/*    public void bind(DeferredHolder<Item, Item> item, IMaidBauble bauble) {
+        BAUBLES.put(item, bauble);
+    }*/
 
     public void bind(Item item, IMaidBauble bauble) {
         BAUBLES.put(item, bauble);

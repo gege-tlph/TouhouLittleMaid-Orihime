@@ -44,6 +44,7 @@ public abstract class MinecraftMixin {
         RegisterClientReloadListenersEvent.CALLBACK.invoker().post(new RegisterClientReloadListenersEvent(this.resourceManager));
     }
 
+    // 1.21.11：连续挖掘的击打粒子从 ParticleEngine.crack 迁至 ClientLevel.addBreakingBlockEffect（IBlock 签名不变）
     @WrapWithCondition(
             method = "continueAttack",
             at = @At(
@@ -58,6 +59,9 @@ public abstract class MinecraftMixin {
         return true;
     }
 
+    // origin 的 tlm$pickBlock（IPickedResult 客户端拦截）已被 vanilla 收编：1.21.11 取样走
+    // ServerboundPickItemFromEntityPacket → 服务端直接调 entity.getPickResult()，
+    // AbstractEntityFromItem 的覆写天然生效，客户端钩子不再需要。
 
     @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/packs/repository/PackRepository;reload()V"))
     private void tlm$addPacks(GameConfig gameConfig, CallbackInfo ci) {

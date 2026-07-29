@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
 import static com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid.MOD_ID;
 import static com.github.tartaricacid.touhoulittlemaid.client.resource.bedrock.InternalBedrockModelRegistry.TANK_BACKPACK;
 
-
+// origin TankBackpack 的 client 渲染三元组（offset z=-0.25，与其余三个不同，origin 逐字）
 public class TankBackpackRenderData extends MaidBackpackRenderData {
     private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(MOD_ID, "textures/bedrock/entity/backpack/tank_backpack.png");
 

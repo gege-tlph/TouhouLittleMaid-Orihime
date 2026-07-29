@@ -31,7 +31,7 @@ public class DefaultMaidWorkMeal implements IMaidMeal {
 
     @Override
     public void onMaidEat(EntityMaid maid, ItemStack stack, InteractionHand hand) {
-
+        //FoodProperties foodProperties = stack.getFoodProperties(maid);
         FoodProperties foodProperties = stack.get(DataComponents.FOOD);
         if (foodProperties != null) {
             // 调用饰品

@@ -4,298 +4,298 @@ import net.minecraft.world.level.biome.Biome;
 
 public interface IMaidData extends IEntityData {
     /**
-     * 获取女仆工作任务登记名
+     * Get maid's work task register name
      *
-     * @return 字符串
+     * @return String
      */
     String getTask();
 
     /**
-     * 女仆是否戴头盔
+     * Whether the maid wears helmet
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean hasHelmet();
 
     /**
-     * 获取女仆头盔注册名
+     * Get maid's helmet register name
      *
-     * @return 如果女仆没有戴头盔，则返回空字符串
+     * @return If maid not wearing helmet, return an empty string
      */
     String getHelmet();
 
     /**
-     * 女仆是否佩戴胸甲
+     * Whether the maid wears chest plate
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean hasChestPlate();
 
     /**
-     * 获取女仆胸甲的注册名
+     * Get maid's chest plate register name
      *
-     * @return 如果女仆没有佩戴胸甲，则返回空字符串
+     * @return If maid not wearing chest plate, return an empty string
      */
     String getChestPlate();
 
     /**
-     * 女仆是否穿打底裤
+     * Whether the maid wears leggings
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean hasLeggings();
 
     /**
-     * 获取女仆打底裤注册名
+     * Get maid's leggings register name
      *
-     * @return 如果女仆没有穿打底裤，则返回空字符串
+     * @return If maid not wearing leggings, return an empty string
      */
     String getLeggings();
 
     /**
-     * 女仆是否穿靴子
+     * Whether the maid wears boots
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean hasBoots();
 
     /**
-     * 获取女仆靴注册名
+     * Get maid's boots register name
      *
-     * @return 如果女仆没有穿靴子，则返回空字符串
+     * @return If maid not wearing boots, return an empty string
      */
     String getBoots();
 
     /**
-     * 女仆主手是否手持物品
+     * Whether the maid main hand hold item
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean hasItemMainhand();
 
     /**
-     * 获取女仆主手物品的注册名
+     * Get maid main hand item's register name
      *
-     * @return 如果女仆主手没有任何物品，则返回空字符串
+     * @return If the maid main hand doesn't have any items, return an empty string
      */
     String getItemMainhand();
 
     /**
-     * 女仆是否手拿物品
+     * Whether the maid off hand hold item
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean hasItemOffhand();
 
     /**
-     * 获取女仆副手物品的注册名称
+     * Get maid off hand item's register name
      *
-     * @return 如果副手没有任何物品，则返回空字符串
+     * @return If the maid off hand doesn't have any items, return an empty string
      */
     String getItemOffhand();
 
     /**
-     * 女仆是否正在请求物品
+     * Whether the maid is in beg
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean isBegging();
 
     /**
-     * 女仆是否摆动手臂
+     * Whether the maid is swinging arms
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean isSwingingArms();
 
     /**
-     * 女仆是否正在骑乘
+     * Whether the maid is in riding
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean isRiding();
 
     /**
-     * 女仆是否在坐
+     * Whether the maid is in sitting
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean isSitting();
 
     /**
-     * 女仆是否装备背包
+     * Whether the maid wear backpack
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean hasBackpack();
 
     /**
-     * 获得女仆背包等级
+     * Get maid's backpack level
      *
-     * @return 整数
+     * @return int
      */
     int getBackpackLevel();
 
     /**
-     * 女仆是否在水中
+     * Whether the maid is in water
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean inWater();
 
     /**
-     * 女仆是否处于雨中
+     * Whether the maid is in rain
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean inRain();
 
     /**
-     * 获取女仆的生物群落登记名
+     * Get maid's biome register name
      *
-     * @return 字符串
+     * @return String
      */
     Biome getAtBiome();
 
     /**
-     * 女仆是否摆动左臂
+     * Whether the maid is swinging left arms
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean isSwingLeftHand();
 
     /**
-     * 获取女仆当前的手臂摆动进度
+     * Get maid's swinging time
      *
-     * @return 浮点数
+     * @return float
      */
     float getSwingProgress();
 
     /**
-     * 获取女仆当前生命值
+     * Get maid's health
      *
-     * @return 浮点数
+     * @return float
      */
     float getHealth();
 
     /**
-     * 获得女仆的最大生命值
+     * Get maid's max health
      *
-     * @return 浮点数
+     * @return float
      */
     float getMaxHealth();
 
     /**
-     * 获取女仆的总护甲值
+     * Get the total armor value of the maid
      *
-     * @return 双精度浮点数
+     * @return double
      */
     double getArmorValue();
 
     /**
-     * 女仆是否受伤
+     * Whether the maid is on hurt
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean onHurt();
 
     /**
-     * 女仆是否睡觉
+     * Whether the maid is sleep
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean isSleep();
 
     /**
-     * 获得女仆的好感
+     * Get the maid's favorability
      *
-     * @return 整数
+     * @return int
      */
     int getFavorability();
 
     /**
-     * 女仆是否在地面
+     * Whether the maid is on ground
      *
-     * @return 布尔值
+     * @return boolean
      */
     boolean isOnGround();
 
     /**
-     * 女仆是否有佐物
+     * Whether the maid has sasimono
      *
-     * @return 布尔值
+     * @return boolean
      * @deprecated 1.16 no sasimono
      */
     @Deprecated
     boolean hasSasimono();
 
     /**
-     * 女仆是否推车
+     * Whether the maid hold trolley
      *
-     * @return 布尔值
+     * @return boolean
      * @deprecated 1.16 no trolley
      */
     @Deprecated
     boolean isHoldTrolley();
 
     /**
-     * 女仆玛丽莎是否骑着扫帚
+     * Whether the maid riding marisa broom
      *
-     * @return 布尔值
+     * @return boolean
      * @deprecated 1.16 no marisa broom
      */
     @Deprecated
     boolean isRidingMarisaBroom();
 
     /**
-     * 女仆是否持有车辆
+     * Whether the maid hold vehicle
      *
-     * @return 布尔值
+     * @return boolean
      * @deprecated 1.16 no vehicle
      */
     @Deprecated
     boolean isHoldVehicle();
 
     /**
-     * 女仆是否持有便携式音响并播放
+     * Whether the maid hold portable audio and play it
      *
-     * @return 布尔值
+     * @return boolean
      * @deprecated 1.16 no portable audio
      */
     @Deprecated
     boolean isPortableAudioPlay();
 
     /**
-     * 女仆握住车辆时，左手旋转
+     * When the maid hold vehicle, left hand's rotation
      *
-     * @return 浮点数[3]{xRot, yRot, zRot}
+     * @return float[3]{xRot, yRot, zRot}
      * @deprecated 1.16 no vehicle
      */
     @Deprecated
     float[] getLeftHandRotation();
 
     /**
-     * 女仆握住车辆时，右手旋转
+     * When the maid hold vehicle, right hand's rotation
      *
-     * @return 浮点数[3]{xRot, yRot, zRot}
+     * @return float[3]{xRot, yRot, zRot}
      * @deprecated 1.16 no vehicle
      */
     @Deprecated
     float[] getRightHandRotation();
 
     /**
-     * 获取女仆的生物群系温度枚举
+     * Get maid's biome temperature enum
      *
-     * @return 温暖 炎热 海洋 寒冷
+     * @return warm hot ocean cold
      * @deprecated 1.16 no biome temperature enum
      */
     @Deprecated
     String getAtBiomeTemp();
 
     /**
-     * 女仆是否在骑着玩家
+     * Whether the maid is in riding the player
      *
-     * @return 布尔值
+     * @return boolean
      */
     @Deprecated
     boolean isRidingPlayer();

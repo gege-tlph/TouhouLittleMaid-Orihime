@@ -23,7 +23,11 @@ public class DebugMaidManager {
 
     public static void init() {
         DEBUG_TARGETS.addAll(DefaultTargets.getDefaultTargets());
-
+        // B2 已恢复：原 TODO 称「EXTENSIONS not available (26.1 feature)」—— **该理由是假的**。
+        //   三方校验：HEAD 有此循环；26.1 亦有（L26）；`TouhouLittleMaid.EXTENSIONS` 由
+        //   `AnnotatedInstanceUtil.getModExtensions()`（Fabric `little_maid_extension` entrypoint）填充，
+        //   `ILittleMaid.getMaidDebugTargets()` 在 HEAD 与本仓皆存在 → 与 26.1 无关。
+        //   曾致：addon 注册的女仆调试目标**全部丢失**。
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             DEBUG_TARGETS.addAll(littleMaid.getMaidDebugTargets());
         }
@@ -71,7 +75,8 @@ public class DebugMaidManager {
             return List.of();
         }
         return maidId.stream()
-
+                // 1.21.11: ServerPlayer.serverLevel() 已移除（javap 确认），但 ServerPlayer.level()
+                // 已**协变收窄为返回 ServerLevel** → 无需强转、无需 import。语义与 HEAD 的 serverLevel() 相同。
                 .map(uuid -> player.level().getEntity(uuid))
                 .filter(Objects::nonNull)
                 .filter(EntityMaid.class::isInstance)
@@ -82,7 +87,7 @@ public class DebugMaidManager {
      * 设置正在调试的女仆
      *
      * @param player 玩家
-     * @param maid 女仆
+     * @param maid   女仆
      */
     public static void setDebuggingMaid(ServerPlayer player, EntityMaid maid) {
         removeDebuggingMaid(player, maid);
@@ -94,7 +99,7 @@ public class DebugMaidManager {
      * 移除正在调试的女仆
      *
      * @param player 玩家
-     * @param maid 女仆
+     * @param maid   女仆
      */
     public static void removeDebuggingMaid(ServerPlayer player, EntityMaid maid) {
         if (PLAYER_DEBUGGING_MAID.containsKey(player.getUUID())) {
@@ -109,12 +114,13 @@ public class DebugMaidManager {
      * 切换该女仆的调试状态
      *
      * @param player 玩家
-     * @param maid 女仆
+     * @param maid   女仆
      */
     public static void triggerDebuggingMaid(ServerPlayer player, EntityMaid maid) {
         if (PLAYER_DEBUGGING_MAID.containsKey(player.getUUID()) && PLAYER_DEBUGGING_MAID.get(player.getUUID()).contains(maid.getUUID())) {
             removeDebuggingMaid(player, maid);
-
+            // B2 已还原为 HEAD 写法：移植期曾改成 displayClientMessage(...,false) —— **无正当理由的行为变更**。
+            // 三方校验：HEAD 用 sendSystemMessage；26.1 亦用 sendSystemMessage(L115/118)；javap 确认该方法仍在。
             player.sendSystemMessage(Component.translatable("debug.touhou_little_maid.debug_stick.show_path_finder.disable"));
         } else {
             setDebuggingMaid(player, maid);

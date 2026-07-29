@@ -12,6 +12,10 @@
     {
       "id": "kaleidoscope_tavern:bar_counter",
       "required": false
+    },
+    {
+      "id": "#refurbished_furniture:tuckable",
+      "required": false
     }
   ]
 }

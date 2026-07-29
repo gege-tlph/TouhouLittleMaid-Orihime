@@ -20,6 +20,8 @@ public final class AltarRecipeMaker {
     private final RecipeManager recipeManager;
 
     private AltarRecipeMaker() {
+        // 1.21.11：客户端 Level 不再持有 RecipeManager（自定义 RecipeType 不随 vanilla 同步）。
+        // 单人档从内置服务器读取；专用服务器下祭坛 JEI 列表暂缺，待专服 QA 轮补自定义同步。
         MinecraftServer server = Minecraft.getInstance().getSingleplayerServer();
         this.recipeManager = server == null ? null : server.getRecipeManager();
     }
@@ -48,7 +50,7 @@ public final class AltarRecipeMaker {
         JERIUtil.recipeWarpHolder(altarRecipesMap, (recipeId, inputs, output, powerCost, langKey) -> {
             List<List<ItemStack>> inputs1 = inputs.stream()
                     .filter(ingredient -> !ingredient.isEmpty())
-
+                    // 1.21.11：Ingredient.getItems() → items()（Stream<Holder<Item>>）
                     .map(ingredient -> ingredient.items().map(ItemStack::new).toList())
                     .toList();
             recipes.add(new AltarRecipeWrapper(inputs1, output, powerCost, langKey));

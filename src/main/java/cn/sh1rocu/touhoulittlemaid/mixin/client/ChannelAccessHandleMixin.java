@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.function.Consumer;
 
-// 来源：Kilt
+// From kilt
 @Mixin(ChannelAccess.ChannelHandle.class)
 public abstract class ChannelAccessHandleMixin implements ChannelAccessHandleInjection {
     @Shadow
@@ -51,6 +51,10 @@ public abstract class ChannelAccessHandleMixin implements ChannelAccessHandleInj
             if (tlm$pool == Library.Pool.STATIC) {
                 PlaySoundSourceEvent.CALLBACK.invoker().post(new PlaySoundSourceEvent(tlm$soundEngine, tlm$soundInstance, this.channel));
             }
+            // 暂时用不到
+            /* else if (tlm$pool == Library.Pool.STREAMING) {
+                PlayStreamingSourceEvent.CALLBACK.invoker().post(new PlayStreamingSourceEvent(tlm$soundEngine, tlm$soundInstance, this.channel));
+            }*/
         }
     }
 }

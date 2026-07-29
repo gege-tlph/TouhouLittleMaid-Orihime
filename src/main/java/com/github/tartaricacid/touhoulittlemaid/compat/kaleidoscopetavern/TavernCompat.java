@@ -8,7 +8,9 @@ import com.github.tartaricacid.touhoulittlemaid.entity.task.meal.MaidMealManager
 import net.fabricmc.loader.api.FabricLoader;
 
 /**
- * 万花筒酒馆的独立 Fabric 扩展入口点。核心代码只发现标准的little_maid_extension合约，而从不直接命名这个兼容性模块。
+ * Self-contained Fabric extension entrypoint for Kaleidoscope Tavern.
+ * Core code only discovers the standard little_maid_extension contract and
+ * never names this compatibility module directly.
  */
 public final class TavernCompat implements ILittleMaid {
     public static final String MOD_ID = "kaleidoscope_tavern";

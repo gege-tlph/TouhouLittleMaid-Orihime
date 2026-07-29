@@ -54,7 +54,7 @@ public abstract class IMaidBackpack {
 
     @Nullable
     @Environment(EnvType.CLIENT)
-
+    // TODO: 1.21.11 fix - EntityModel now requires EntityRenderState type parameter
     public abstract EntityModel<?> getBackpackModel(EntityModelSet modelSet);
 
     @Nullable

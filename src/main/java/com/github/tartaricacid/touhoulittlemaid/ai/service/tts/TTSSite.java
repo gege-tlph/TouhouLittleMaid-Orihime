@@ -33,14 +33,6 @@ public interface TTSSite extends Site {
             .version(HttpClient.Version.HTTP_1_1)
             .build();
 
-    static Map<String, TTSSite> readSites(Path file) {
-        try {
-            return readSitesStrict(file);
-        } catch (IOException | RuntimeException e) {
-            LOGGER.error("Failed to read sites", e);
-            return Maps.newHashMap();
-        }
-    }
 
     static Map<String, TTSSite> readSitesStrict(Path file) throws IOException {
         Map<String, TTSSite> output = Maps.newHashMap();

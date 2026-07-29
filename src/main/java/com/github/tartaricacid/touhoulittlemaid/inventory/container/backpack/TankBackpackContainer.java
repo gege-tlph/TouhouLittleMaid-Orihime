@@ -71,14 +71,15 @@ public class TankBackpackContainer extends MaidMainContainer {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-
+            //return FluidUtil.getFluidHandler(stack).isPresent();
             return ContainerItemContext.withConstant(stack).find(FluidStorage.ITEM) != null;
         }
 
         @Override
         @Environment(EnvType.CLIENT)
         public Identifier getNoItemIcon() {
-
+            // B5: 1.21.11 Slot.getNoItemIcon() 由 Pair<atlas,sprite> 改为单 Identifier(=sprite)
+            //   （javap 确认；与已迁移的 MaidMainContainer 同款）。atlas LOCATION_BLOCKS 由引擎默认。
             return INPUT_SLOT;
         }
     }
@@ -90,14 +91,14 @@ public class TankBackpackContainer extends MaidMainContainer {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-
+            //return FluidUtil.getFluidHandler(stack).isPresent();
             return ContainerItemContext.withConstant(stack).find(FluidStorage.ITEM) != null;
         }
 
         @Override
         @Environment(EnvType.CLIENT)
         public Identifier getNoItemIcon() {
-
+            // B5: 同上，Pair→单 Identifier
             return OUTPUT_SLOT;
         }
     }

@@ -8,13 +8,23 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.schedule.Activity;
 
-
+/**
+ * P7a runtime verification (2026-07-17): assert {@link EntityMaid#getScheduleDetail()} maps
+ * (MaidSchedule mode, day time) to the correct {@link Activity}, replicating the HEAD
+ * MAID_{DAY,NIGHT,ALL}_SHIFT_SCHEDULES keyframes and staying in lock-step with the datapack
+ * {@code timeline/maid_schedule.json}. This is the automated, observable proof for the fix that
+ * un-stubbed the DAY/NIGHT branches (previously hard-coded to IDLE in the 1.21.11 port).
+ *
+ * DAY:   0 -> WORK, 12000 -> IDLE, 16000 -> REST
+ * NIGHT: 0 -> REST, 8000 -> IDLE, 12000 -> WORK
+ * ALL:   always WORK
+ */
 public class ScheduleGameTest {
     @GameTest(maxTicks = 100)
     public void maidScheduleDetail(GameTestHelper helper) {
         EntityMaid maid = helper.spawn(InitEntities.MAID, new BlockPos(1, 2, 1));
 
-        // DAY 移位
+        // DAY shift
         check(helper, maid, MaidSchedule.DAY, 0, Activity.WORK);
         check(helper, maid, MaidSchedule.DAY, 6000, Activity.WORK);
         check(helper, maid, MaidSchedule.DAY, 11999, Activity.WORK);
@@ -23,7 +33,7 @@ public class ScheduleGameTest {
         check(helper, maid, MaidSchedule.DAY, 16000, Activity.REST);
         check(helper, maid, MaidSchedule.DAY, 23999, Activity.REST);
 
-        // NIGHT 移位
+        // NIGHT shift
         check(helper, maid, MaidSchedule.NIGHT, 0, Activity.REST);
         check(helper, maid, MaidSchedule.NIGHT, 7999, Activity.REST);
         check(helper, maid, MaidSchedule.NIGHT, 8000, Activity.IDLE);
@@ -31,7 +41,7 @@ public class ScheduleGameTest {
         check(helper, maid, MaidSchedule.NIGHT, 12000, Activity.WORK);
         check(helper, maid, MaidSchedule.NIGHT, 23999, Activity.WORK);
 
-        // ALL 天
+        // ALL day
         check(helper, maid, MaidSchedule.ALL, 0, Activity.WORK);
         check(helper, maid, MaidSchedule.ALL, 12000, Activity.WORK);
         check(helper, maid, MaidSchedule.ALL, 18000, Activity.WORK);
@@ -39,6 +49,14 @@ public class ScheduleGameTest {
         helper.succeed();
     }
 
+    // NOTE (2026-07-17): Mechanism ① — the datapack timeline -> EnvironmentAttribute<Activity> that
+    // MaidUpdateActivityFromSchedule samples to drive the brain — was also probed here, but the
+    // EnvironmentAttributeSystem samples on its own time-interpolated clock (with daylight-cycle drift),
+    // so it does not respond deterministically to setDayTime jumps inside a gametest (observed values were
+    // correct across full runs but flaky point-to-point). It loads without error (verified via RCON /reload)
+    // and returned correct activities in passing runs; its live per-tick behavior is best confirmed by
+    // client observation (P6, Jade/TOP activity display). Only the deterministic pure-function query
+    // getScheduleDetail() is asserted automatically here.
 
     private void check(GameTestHelper helper, EntityMaid maid, MaidSchedule schedule, long dayTime, Activity expected) {
         maid.setSchedule(schedule);

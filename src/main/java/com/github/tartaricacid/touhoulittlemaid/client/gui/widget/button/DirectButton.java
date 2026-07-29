@@ -10,7 +10,7 @@ public class DirectButton extends Button {
     private Direction direction = Direction.SOUTH;
 
     public DirectButton(int pX, int pY, int pWidth, int pHeight, Direction direction, OnPress pOnPress) {
-
+        //super(Button.builder(Component.empty(), pOnPress).pos(pX, pY).size(pWidth, pHeight));
         super(pX, pY, pWidth, pHeight, Component.empty(), pOnPress, Button.DEFAULT_NARRATION);
         this.direction = direction;
     }
@@ -26,6 +26,7 @@ public class DirectButton extends Button {
         this.onPress.onPress(this);
     }
 
+    // 1.21.11: Button 现为 abstract，子类须实现 renderContents（默认按钮=sprite+label）
     @Override
     protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderDefaultSprite(graphics);

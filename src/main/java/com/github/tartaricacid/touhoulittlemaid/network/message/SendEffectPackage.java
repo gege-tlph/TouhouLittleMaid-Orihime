@@ -38,7 +38,7 @@ public record SendEffectPackage(int id, Collection<MobEffectInstance> effects) i
         context.client().execute(() -> applyEffects(message));
     }
 
-
+    // B7b: 还原 HEAD 的 @Environment(CLIENT) 内联模式（移植期外提的 proxy 已 P5 排除）。逻辑不变。
     @Environment(EnvType.CLIENT)
     private static void applyEffects(SendEffectPackage message) {
         Minecraft mc = Minecraft.getInstance();

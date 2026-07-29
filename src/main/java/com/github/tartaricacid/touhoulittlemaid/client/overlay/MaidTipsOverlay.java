@@ -2,7 +2,6 @@ package com.github.tartaricacid.touhoulittlemaid.client.overlay;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.ILittleMaid;
-import com.github.tartaricacid.touhoulittlemaid.compat.kubejs.ModKubeJSCompat;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -65,7 +64,6 @@ public class MaidTipsOverlay {
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             littleMaid.addMaidTips(INSTANCE);
         }
-        ModKubeJSCompat.maidTipsOverlayInit(INSTANCE);
 
         TIPS = ImmutableMap.copyOf(TIPS);
         TIPS_CONFIG = ImmutableMap.copyOf(TIPS_CONFIG);

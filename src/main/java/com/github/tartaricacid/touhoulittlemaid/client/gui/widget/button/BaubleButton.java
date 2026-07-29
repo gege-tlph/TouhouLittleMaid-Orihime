@@ -27,6 +27,7 @@ public class BaubleButton extends Button implements ITooltipButton {
     }
 
     @Override
+    // 1.21.11: renderWidget 现为 final → 覆写 renderContents
     protected void renderContents(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         this.renderTexture(guiGraphics, BAUBLE_BUTTON, this.getX(), this.getY(),
                 this.uStart, this.vStart, 0, this.getWidth(), this.getHeight(),
@@ -40,6 +41,7 @@ public class BaubleButton extends Button implements ITooltipButton {
 
     @Override
     public void renderTooltip(GuiGraphics graphics, Minecraft mc, int mouseX, int mouseY) {
+        // 1.21.11: renderTooltip 移除 → setTooltipForNextFrame（Component 重载）
         graphics.setTooltipForNextFrame(mc.font, this.tooltip, mouseX, mouseY);
     }
 
@@ -52,6 +54,7 @@ public class BaubleButton extends Button implements ITooltipButton {
             i = vOffset + yDiff;
         }
 
+        // 1.21.11: RenderSystem.enableDepthTest 移除（GUI pipeline 内置）；blit 增 RenderPipeline 首参
         pGuiGraphics.blit(RenderPipelines.GUI_TEXTURED, pTexture, pX, pY, (float) uOffset, (float) i, pWidth, pHeight, pTextureWidth, pTextureHeight);
     }
 }

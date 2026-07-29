@@ -24,9 +24,7 @@ import javax.annotation.Nullable;
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent.ENTITY_ID_TAG_NAME;
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent.MODEL_ID_TAG_NAME;
 
-/**
- * 仅限客户端的名称解析器保留在ItemGarageKit的环境卫士后面。
- */
+/** Client-only name resolver kept behind ItemGarageKit's environment guard. */
 public final class ItemGarageKitProxy {
     private static final String DEFAULT_ENTITY_ID = "touhou_little_maid:maid";
     private static final String DEFAULT_MODEL_ID = "touhou_little_maid:hakurei_reimu";

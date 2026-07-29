@@ -14,7 +14,7 @@ public final class GeneralConfig {
         MiscConfig.initClient(builder);
         VanillaConfig.init(builder);
         RenderConfig.init(builder);
-        AIConfig.initClient(builder);
+        // AI 那组个人配置已拆到 AiClientConfig（touhou_little_maid-ai.toml），不再进本文件
         CONFIG = builder.build();
         return CONFIG;
     }
@@ -41,12 +41,7 @@ public final class GeneralConfig {
                 RenderConfig.ENABLE_NAME_TAG_TIP,
                 RenderConfig.ENABLE_LEAD_TIP,
                 RenderConfig.ENABLE_SADDLE_TIP,
-                RenderConfig.ENABLE_SHEARS_TIP,
-                AIConfig.STT_ENABLED,
-                AIConfig.STT_TYPE,
-                AIConfig.STT_MICROPHONE,
-                AIConfig.MAID_CAN_CHAT_DISTANCE,
-                AIConfig.STT_PROXY_ADDRESS
+                RenderConfig.ENABLE_SHEARS_TIP
         );
     }
 }

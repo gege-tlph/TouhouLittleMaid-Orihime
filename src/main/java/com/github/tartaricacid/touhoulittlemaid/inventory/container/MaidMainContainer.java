@@ -146,7 +146,13 @@ public abstract class MaidMainContainer extends AbstractMaidContainer {
                 slotChange.onShiftTakeoff(player, stack1);
             }
 
-
+            // 【有意的行为变更 / 1.21.11】原先此处调用 maid.setLastArmorItem / setLastHandItem，
+            // 注释写明是「用来修正护甲值不变化的问题」—— 属 1.21.1 时代的 workaround。
+            // 1.21.11 重写了装备系统（引入 EntityEquipment），lastEquipmentItems 已收为 LivingEntity
+            // 的私有字段，**无任何公开途径可写**（javap 确认：setLastArmorItem/setLastHandItem 均已移除，
+            // 仅剩 private Map<EquipmentSlot, ItemStack> lastEquipmentItems）。
+            // 上游 origin/26.1（同代重写）亦已完全移除这两处调用 —— 判定为原 bug 已由装备系统重写解决。
+            // 若 P7 实测发现护甲值仍不刷新，则需改用 accessor mixin 写入 lastEquipmentItems。
         }
         return stack1;
     }

@@ -3,7 +3,8 @@ package com.github.tartaricacid.touhoulittlemaid.api.task;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.mixin.accessor.CropBlockAccessor;
 import net.minecraft.core.BlockPos;
-
+// TODO: 等待 1.21.11 版本依赖
+// import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -31,7 +32,7 @@ public interface ISpecialCropHandler {
      * 执行收获逻辑
      *
      * @param isDestroyMode 当女仆持有锄头时，此值为 true，表示直接破坏
-     * 否则是类似于右键收获
+     *                      否则是类似于右键收获
      */
     default void harvest(EntityMaid maid, BlockPos cropPos, BlockState cropState, boolean isDestroyMode) {
         if (isDestroyMode) {
@@ -61,7 +62,11 @@ public interface ISpecialCropHandler {
         if (!aboveState.canBeReplaced() || aboveState.liquid()) {
             return false;
         }
-
+        // TODO: 等待 1.21.11 版本依赖
+        // if (seed.getItem() instanceof ItemNameBlockItem blockNamedItem) {
+        //     BlockState plantBlockState = blockNamedItem.getBlock().defaultBlockState();
+        //     return plantBlockState.canSurvive(maid.level, abovePos);
+        // }
         if (seed.getItem() instanceof BlockItem blockItem) {
             BlockState plantBlockState = blockItem.getBlock().defaultBlockState();
             return plantBlockState.canSurvive(maid.level, abovePos);
@@ -73,7 +78,10 @@ public interface ISpecialCropHandler {
      * 执行种植逻辑
      */
     default ItemStack plant(EntityMaid maid, BlockPos basePos, BlockState baseState, ItemStack seed) {
-
+        // TODO: 等待 1.21.11 版本依赖
+        // if (seed.getItem() instanceof ItemNameBlockItem) {
+        //     maid.placeItemBlock(basePos.above(), seed);
+        // }
         if (seed.getItem() instanceof BlockItem) {
             maid.placeItemBlock(basePos.above(), seed);
         }

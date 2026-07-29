@@ -28,7 +28,7 @@ public class PackInfoButton extends FlatColorButton {
     }
 
     @Override
-
+    // 1.21.11: renderWidget 现为 final → 覆写 renderContents
     protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float pPartialTick) {
         Minecraft minecraft = Minecraft.getInstance();
         // 背景色
@@ -80,7 +80,8 @@ public class PackInfoButton extends FlatColorButton {
             }
         }
 
-
+        // 渲染文本
+        //int i = getFGColor();
         int i = this.active ? 16777215 : 10526880;
         this.renderString(graphics, minecraft.font, i | Mth.ceil(this.alpha * 255.0F) << 24);
 

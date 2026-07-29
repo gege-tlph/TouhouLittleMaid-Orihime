@@ -17,9 +17,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-// 来源：Porting_Lib
+// Porting_Lib
 @Mixin(value = LootTable.class, priority = 50_000)
-// 高优先级，确保下面的 WrapMethod 捕获大多数注入
+// high priority to make sure the WrapMethod below catches most injections
 public class LootTableMixin implements ILootTable {
     @Unique
     private Identifier tlm$lootTableId;

@@ -37,7 +37,7 @@ public class SetInitMaidOwnerFunction extends LootItemConditionalFunction {
     @Override
     protected ItemStack run(ItemStack stack, LootContext context) {
         if (stack.is(InitItems.SMART_SLAB_INIT)) {
-
+            // 1.21.11: LootContext.getParamOrNull → getOptionalParameter（javap 确认）
             Entity entity = context.getOptionalParameter(LootContextParams.THIS_ENTITY);
             if (entity instanceof Player player) {
                 UUID uuid = player.getUUID();

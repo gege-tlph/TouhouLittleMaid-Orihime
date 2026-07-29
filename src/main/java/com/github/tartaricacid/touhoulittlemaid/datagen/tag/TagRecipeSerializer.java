@@ -23,6 +23,8 @@ public class TagRecipeSerializer extends FabricTagProvider<RecipeSerializer<?>> 
 
     @Override
     protected void addTags(HolderLookup.@NotNull Provider provider) {
+        // 1.21.11: getOrCreateTagBuilder/reverseLookup 已移除 —— 用 getOrCreateRawBuilder(TagKey) + 序列化器注册 id
+        //   作为可选元素写入（optional，兼容未安装 create 时的容错，与旧 addOptional(reverseLookup(..)) 等价）。
         Identifier serializerId = BuiltInRegistries.RECIPE_SERIALIZER.getKey(ALTAR_RECIPE_SERIALIZER);
         getOrCreateRawBuilder(AUTOMATION_IGNORE).addOptionalElement(serializerId);
     }

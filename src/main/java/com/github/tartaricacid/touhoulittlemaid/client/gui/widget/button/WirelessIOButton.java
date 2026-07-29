@@ -18,7 +18,7 @@ public class WirelessIOButton extends TouhouStateSwitchButton {
     }
 
     @Override
-
+    // 1.21.11: onClick(double,double) → onClick(MouseButtonEvent, boolean)
     public void onClick(MouseButtonEvent event, boolean doubleClick) {
         this.isStateTriggered = !this.isStateTriggered;
         onClick.accept(event.x(), event.y());

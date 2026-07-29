@@ -44,7 +44,8 @@ public class ItemSmartSlab extends AbstractStoreMaidItem {
     private final Type type;
 
     public ItemSmartSlab(Identifier id, Type type) {
-
+        // 1.21.11: Item.getDescriptionId() 现 final → Properties.overrideDescription（javap 确认）。
+        //   3 个变体（smart_slab_init/empty/has_maid）HEAD 覆盖统一为 smart_slab → 保留统一键，行为等价。
         super((new Properties()).setId(ResourceKey.create(Registries.ITEM, id)).stacksTo(1).rarity(Rarity.RARE).overrideDescription("item.touhou_little_maid.smart_slab"));
         this.type = type;
     }
@@ -75,7 +76,7 @@ public class ItemSmartSlab extends AbstractStoreMaidItem {
             return super.useOn(context);
         }
         if (clickedFace == Direction.UP && !PlaceHelper.notSuitableForPlaceMaid(worldIn, clickedPos)) {
-
+            // B5: EntityType.create(Level) → create(Level, EntitySpawnReason)
             EntityMaid maid = InitEntities.MAID.create(worldIn, net.minecraft.world.entity.EntitySpawnReason.SPAWN_ITEM_USE);
             if (maid == null) {
                 return super.useOn(context);
@@ -115,8 +116,9 @@ public class ItemSmartSlab extends AbstractStoreMaidItem {
             }
             maid.tame(player);
             if (worldIn instanceof ServerLevel) {
+                // 1.21.11: Level.getCurrentDifficultyAt 已移除，仅 ServerLevel 有（javap 确认）。worldIn 已由上面 instanceof 判定为 ServerLevel。
                 maid.finalizeSpawn((ServerLevel) worldIn, ((ServerLevel) worldIn).getCurrentDifficultyAt(context.getClickedPos()), EntitySpawnReason.SPAWN_ITEM_USE, null);
-
+                // 1.21.11: Entity.moveTo(BlockPos,float,float) -> snapTo(BlockPos,float,float)
                 maid.snapTo(context.getClickedPos().above(), 0, 0);
                 worldIn.addFreshEntity(maid);
             }
@@ -163,7 +165,7 @@ public class ItemSmartSlab extends AbstractStoreMaidItem {
 
     public enum Type {
         /**
-         * 板式
+         * Slab Type
          */
         INIT, EMPTY, HAS_MAID,
     }

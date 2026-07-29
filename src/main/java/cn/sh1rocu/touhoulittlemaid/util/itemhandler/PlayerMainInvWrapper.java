@@ -8,6 +8,8 @@ public class PlayerMainInvWrapper extends RangedWrapper {
     private final Inventory inventoryPlayer;
 
     public PlayerMainInvWrapper(Inventory inv) {
+        // 1.21.11 Inventory#getContainerSize also exposes equipment mappings;
+        // this wrapper represents only the 36 non-equipment inventory slots.
         super(new InvWrapper(inv), 0, inv.getNonEquipmentItems().size());
         inventoryPlayer = inv;
     }
@@ -16,7 +18,7 @@ public class PlayerMainInvWrapper extends RangedWrapper {
     public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
         ItemStack rest = super.insertItem(slot, stack, simulate);
         if (rest.getCount() != stack.getCount()) {
-        // 槽位中的物品堆发生变化时，触发对应的物品栏动画。
+            // the stack in the slot changed, animate it
             ItemStack inSlot = getStackInSlot(slot);
             if (!inSlot.isEmpty()) {
                 if (getInventoryPlayer().player.level().isClientSide()) {

@@ -53,6 +53,11 @@ public class ClientSetupEvent {
                 Identifier.fromNamespaceAndPath("touhou_little_maid", "broom_tips"), BroomTipsOverlay.INSTANCE::render);
         HudElementRegistry.attachElementAfter(VanillaHudElements.HOTBAR,
                 Identifier.fromNamespaceAndPath("touhou_little_maid", "show_power"), ShowPowerOverlay.INSTANCE::render);
+        // 追踪标记：必须是 HUD 层，世界内的三种画法都会被光影管线吃掉或反过来破坏画面，
+        // 详见 TrackerMarkerOverlay 的类注释
+        HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR,
+                Identifier.fromNamespaceAndPath("touhou_little_maid", "tracker_marker"),
+                com.github.tartaricacid.touhoulittlemaid.client.overlay.TrackerMarkerOverlay.INSTANCE::render);
     }
 
     public static void resisterKeyMappings() {

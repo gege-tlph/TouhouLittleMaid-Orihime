@@ -99,6 +99,7 @@ public class BlockMaidBeacon extends BaseEntityBlock {
     }
 
     @Override
+    // 1.21.11: BlockBehaviour.updateShape 签名重排 + 增 ScheduledTickAccess/RandomSource（javap 确认）
     public BlockState updateShape(BlockState stateIn, LevelReader worldIn, ScheduledTickAccess scheduledTickAccess, BlockPos currentPos, Direction facing, BlockPos facingPos, BlockState facingState, RandomSource randomSource) {
         if (facing.getAxis() == Direction.Axis.Y) {
             Position position = stateIn.getValue(POSITION);
@@ -132,9 +133,11 @@ public class BlockMaidBeacon extends BaseEntityBlock {
         return super.playerWillDestroy(worldIn, pos, state, player);
     }
 
+    // 1.21.2+：Block.onRemove 已移除；掉落逻辑已迁至 TileEntityMaidBeacon.preRemoveSideEffects
 
     @Override
-
+    //public ItemStack getCloneItemStack(@NotNull BlockState state, @NotNull HitResult target, @NotNull LevelReader world, @NotNull BlockPos pos, @NotNull Player player) {
+    // 1.21.11: getCloneItemStack 增 boolean includeData 形参（javap 确认）
     public ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state, boolean includeData) {
         return new ItemStack(InitItems.MAID_BEACON);
     }
@@ -169,7 +172,7 @@ public class BlockMaidBeacon extends BaseEntityBlock {
     }
 
     @Override
-    public BlockState rotate(BlockState state, /* LevelAccessor世界，BlockPos位置， */ Rotation direction) {
+    public BlockState rotate(BlockState state, /*LevelAccessor world, BlockPos pos,*/ Rotation direction) {
         switch (direction) {
             case CLOCKWISE_90:
             case COUNTERCLOCKWISE_90:
@@ -195,7 +198,7 @@ public class BlockMaidBeacon extends BaseEntityBlock {
     }
 
     public enum Position implements StringRepresentable {
-        // 灯塔州
+        // Beacon State
         UP_N_S, UP_W_E, DOWN;
 
         @Override

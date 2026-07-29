@@ -110,7 +110,7 @@ public class BlockWChess extends BlockJoy implements IBoardGameBlock, IBlock {
 
                 if (level instanceof ServerLevel serverLevel && serverLevel.getEntity(sitId) instanceof EntitySit sit
                         && sit.getFirstPassenger() instanceof EntityMaid maid && maid.isOwnedBy(player)) {
-
+                    // TODO: 暂时不加段位系统
                     maid.getFavorabilityManager().apply(Type.WCHESS_WIN);
                     maid.getGameRecordManager().markStatue(false);
                     InitTrigger.MAID_EVENT.trigger(player, TriggerType.WIN_WCHESS);

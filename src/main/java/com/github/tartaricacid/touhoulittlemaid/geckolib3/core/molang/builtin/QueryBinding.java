@@ -58,7 +58,9 @@ public class QueryBinding extends ContextBinding {
         var("head_x_rotation", ctx -> ctx.data().netHeadYaw);
         var("head_y_rotation", ctx -> ctx.data().headPitch);
         var("moon_phase", ctx ->  ctx.mc().gameRenderer.getMainCamera().attributeProbe().getValue(EnvironmentAttributes.MOON_PHASE, ctx.animationEvent().getPartialTick()));
-
+        //   → time_of_day molang 变量延后（纯客户端动画，服务端不求值 molang）。恢复：用新 clock/timeline API 重算归一化时间。
+        // var("time_of_day", ctx -> ctx.level().dimensionType().defaultClock().map(clock ->
+        //         MolangUtils.normalizeTime(ctx.level().clockManager().getTotalTicks(clock))).orElseGet(() -> 0f));
         var("time_of_day", ctx -> 0f);
         var("time_stamp", ctx -> ctx.level().getGameTime());
         var("delta_time", ctx -> ctx.animatableEntity().getStateTracker().getRenderTickDelta() / 20);

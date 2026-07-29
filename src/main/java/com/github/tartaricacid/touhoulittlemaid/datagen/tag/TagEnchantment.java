@@ -10,6 +10,8 @@ import net.minecraft.world.item.enchantment.Enchantment;
 
 import java.util.concurrent.CompletableFuture;
 
+// 1.21.11: FabricTagProvider.EnchantmentTagProvider 内部类已移除 → 改用通用 FabricTagProvider<Enchantment>
+//   （registry = Registries.ENCHANTMENT）。builder(tag).add(ResourceKey<Enchantment>) 写入 tag 元素。
 public class TagEnchantment extends FabricTagProvider<Enchantment> {
     public TagEnchantment(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> completableFuture) {
         super(output, Registries.ENCHANTMENT, completableFuture);

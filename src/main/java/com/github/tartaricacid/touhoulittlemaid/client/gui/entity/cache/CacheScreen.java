@@ -33,7 +33,12 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
     protected final int totalCount;
     protected final StopWatch stopWatch;
 
-
+    /**
+     * 1.21.11：GUI 绘制延迟到 render 提交结束后统一执行，且 Screenshot.takeScreenshot 改为 GPU 异步回读，
+     * origin 的“同帧内绘制→立即截图，每帧 5 个”流程不再可行。改为每帧处理一个模型：
+     * 帧 N 提交绿幕+实体绘制，帧 N+1 开始时（主 RenderTarget 仍持有帧 N 完整画面）入队回读，
+     * 回调中注册图标贴图后再处理下一个。观察行为（全部模型生成绿幕抠像图标）与 origin 一致，仅耗时变长。
+     */
     private E processingInfo = null;
     private boolean captureScheduled = false;
 
@@ -75,7 +80,7 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
             return;
         }
 
-
+        // 1.21.11：origin 的 pushPose/translate(0,0,200)/popPose 仅调 z 层级，2D 化后由提交顺序决定（绿幕填充在前、实体在后），按迁移规范丢弃
         doCacheIcon(graphics);
 
         int finishSize = totalCount - modelInfos.size();

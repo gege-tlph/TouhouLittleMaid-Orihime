@@ -38,7 +38,9 @@ import static com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid.LOGGER;
 
 public final class ServerCustomPackLoader {
     public static final Gson GSON = new GsonBuilder()
-
+            // 1.21.11: vanilla 的 ResourceLocation.Serializer(Gson TypeAdapter) 已移除（javap 确认
+            // Identifier 无 Serializer 嵌套类）。IdentifierAdapter 与其行为逐字等价：
+            // parse(json.getAsString()) / new JsonPrimitive(src.toString()) → JSON 格式不变。
             .registerTypeAdapter(Identifier.class, new IdentifierAdapter())
             .create();
     public static final ServerMaidModels SERVER_MAID_MODELS = ServerMaidModels.getInstance();

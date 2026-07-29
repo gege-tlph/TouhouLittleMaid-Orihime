@@ -33,7 +33,7 @@ public final class MaidBaseAnimation {
         INNER_ANIMATION.put(Identifier.parse("touhou_little_maid:animation/maid/default/sit/skirt_rotation.js"), getSitSkirtRotation());
         INNER_ANIMATION.put(Identifier.parse("touhou_little_maid:animation/maid/default/sit/skirt_rotation_swing.js"), getSitSkirtRotationSwing());
         INNER_ANIMATION.put(Identifier.parse("touhou_little_maid:animation/maid/default/status/backpack.js"), getStatusBackpack());
-
+        // SWEEP R11-1：还原 origin 的 3 个注册（music_shake 在 decorate() 默认列表中——缺注册=默认女仆解析缺 id）
         INNER_ANIMATION.put(Identifier.parse("touhou_little_maid:animation/maid/default/head/music_shake.js"), getHeadMusicShake());
         INNER_ANIMATION.put(Identifier.parse("touhou_little_maid:animation/maid/default/status/backpack_level.js"), getStatusBackpackLevel());
         INNER_ANIMATION.put(Identifier.parse("touhou_little_maid:animation/maid/default/status/sasimono.js"), getStatusSasimono());
@@ -341,19 +341,26 @@ public final class MaidBaseAnimation {
         };
     }
 
-
+    /**
+     * SWEEP R11-1：origin 的 music_shake 由 @Deprecated isPortableAudioPlay()（恒 false）守卫 = 观察行为 no-op；
+     * 忠实还原 = 注册同名 no-op（保证 decorate() 默认列表 id 可解析）。
+     */
     public static IAnimation<EntityMaidRenderState> getHeadMusicShake() {
         return (state, models) -> {
         };
     }
 
-
+    // SWEEP R11-1：origin 即空体 no-op，照抄
     public static IAnimation<EntityMaidRenderState> getStatusBackpackLevel() {
         return (state, models) -> {
         };
     }
 
-
+    /**
+     * SWEEP R11-1：origin 读 IMaid.hasSasimono()（@Deprecated 恒 false，EntityMaid 不覆写）
+     * = 恒定 sasimonoShow 隐藏 / sasimonoHidden 显示——忠实还原该确定性行为
+     * （不注册时两骨骼保持模型初始可见性 = 与 origin 不同）。
+     */
     public static IAnimation<EntityMaidRenderState> getStatusSasimono() {
         return (state, models) -> {
             BedrockPart sasimonoShow = models.get("sasimonoShow");

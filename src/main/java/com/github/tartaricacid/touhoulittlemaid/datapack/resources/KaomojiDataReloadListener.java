@@ -25,7 +25,9 @@ public class KaomojiDataReloadListener implements ResourceManagerReloadListener,
 
     @Override
     public void onResourceManagerReload(ResourceManager resourceManager) {
-
+        // SWEEP R13-1：原「KaomojiData excluded」TODO 系假断言——KaomojiData 早已编译；
+        // 未加载 = 颜文字气泡取空数据 → 入世实测「空气泡」。还原 origin 逻辑。
+        // 先清除旧数据
         KaomojiData.clear();
         // 再逐层读取新数据，进行合并加载
         resourceManager.listPacks().forEach(packResources -> {

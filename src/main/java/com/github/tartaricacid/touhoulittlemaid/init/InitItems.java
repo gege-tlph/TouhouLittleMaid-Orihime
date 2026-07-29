@@ -84,7 +84,8 @@ public final class InitItems {
     public static Item SNACK_CABINET = register("snack_cabinet", ItemSnackCabinet::new);
     public static Item MONSTER_LIST = register("monster_list", ItemMonsterList::new);
 
-
+    // B5: 1.21.11 SpawnEggItem(EntityType,int,int,Properties) → SpawnEggItem(Properties)；
+    //   实体类型改由 Properties.spawnEgg(EntityType) 绑定；颜色改由实体/纹理驱动，已移除（javap 确认）。
     public static Item MAID_SPAWN_EGG = register("maid_spawn_egg", id -> new SpawnEggItem(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, id)).spawnEgg(EntityMaid.TYPE)));
     public static Item FAIRY_SPAWN_EGG = register("fairy_spawn_egg", ItemFairySpawnEgg::new);
 

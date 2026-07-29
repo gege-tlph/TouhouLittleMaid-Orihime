@@ -4,7 +4,7 @@ public interface IBlendTransition {
     float get(float tick);
 
     /**
-     * 返回过渡持续的游戏刻数。
+     * Tick
      */
     float length();
 

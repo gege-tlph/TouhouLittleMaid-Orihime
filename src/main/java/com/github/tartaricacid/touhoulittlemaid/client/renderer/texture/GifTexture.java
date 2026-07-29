@@ -15,7 +15,19 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * 可按游戏刻更新的 GIF 纹理。首帧通过 {@link TextureContents} 上传，后续帧由 {@link #tick()} 切换。
+ * 1.21.9+ 迁移说明：
+ * <ul>
+ *   <li>{@code Tickable} 并非被移除，而是**更名为 {@link TickableTexture}**
+ *       （{@code TextureManager.tick()} 仍遍历 {@code Set<TickableTexture>} 逐个 tick）。
+ *       此前的 TODO 误判为「接口不存在」并注释掉了 implements，导致 {@code tick()} 不再覆盖任何东西、
+ *       永不被调用 —— GIF 动画因此已经静默失效。现已恢复。</li>
+ *   <li>加载改为 {@code loadContents -> TextureContents}，首帧由引擎上传。</li>
+ *   <li>逐帧切换改用 {@code RenderSystem.getDevice().createCommandEncoder().writeToTexture(...)}
+ *       （旧的 {@code TextureUtil.prepareImage(getId(),…)} + {@code NativeImage.upload(…)} 已随
+ *       {@code AbstractTexture.getId()} 一同移除）。</li>
+ *   <li>{@code setPixelRGBA} → {@code setPixelABGR}：旧名是误称，其入参本就是 ABGR 打包值，
+ *       与本类 {@code (a<<24)|(b<<16)|(g<<8)|r} 的打包顺序一致，故为精确对应。</li>
+ * </ul>
  */
 public class GifTexture extends SizeTexture implements TickableTexture {
     private final Identifier texturePath;
@@ -44,7 +56,7 @@ public class GifTexture extends SizeTexture implements TickableTexture {
             this.width = frameSize.width;
             this.height = frameSize.height;
 
-            // 将每一帧转换为 NativeImage，并记录以游戏刻为单位的持续时间。
+            // 让图片学习原版序列帧竖向排列
             for (int i = 0; i < totalFrames; i++) {
                 NativeImage nativeImage = new NativeImage(this.width, this.height, true);
                 BufferedImage image = decoder.getFrame(i);

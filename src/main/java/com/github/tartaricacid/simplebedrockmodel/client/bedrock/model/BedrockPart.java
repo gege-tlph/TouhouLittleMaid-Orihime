@@ -14,8 +14,8 @@ import org.joml.Vector3f;
 import javax.annotation.Nullable;
 
 /**
- * 扩展 {@link ModelPart} 以支持自发光、镜像等基岩版模型特性。
- * 所需成员通过 {@code touhou_little_maid.accesswidener} 开放访问。
+ * Extends ModelPart to support Bedrock Edition model features (illumination, mirroring, etc.)
+ * Access opened via touhou_little_maid.accesswidener
  */
 public class BedrockPart extends ModelPart {
     private static final int MAX_LIGHT_TEXTURE = Mth.square(15);
@@ -42,7 +42,9 @@ public class BedrockPart extends ModelPart {
         this.offsetZ = 0;
     }
 
-
+    // 1.21.11 关键修复：模型渲染管线走标准 ModelPart.render（Model.renderToBuffer→root().render()），
+    // 而基岩模型几何仅由 renderBedrock 发射（此前是孤儿方法，无任何调用点）→ 所有基岩模型（女仆/方块/实体）不可见。
+    // 覆写 render 使其调用 renderBedrock，将基岩几何接入 1.21.11 渲染管线。
     @Override
     public void render(PoseStack poseStack, VertexConsumer consumer, int lightmap, int overlay, int color) {
         this.renderBedrock(poseStack, consumer, lightmap, overlay, color);
@@ -87,9 +89,7 @@ public class BedrockPart extends ModelPart {
         }
     }
 
-    /**
-     * 返回欧拉旋转后的部分局部平移位置。
-     */
+    /** Returns the part-local translated position after its Euler rotation. */
     public Vector3f getTranslateAndRotateVector3f() {
         Quaternionf rotation = new Quaternionf();
         if (this.xRot != 0.0F || this.yRot != 0.0F || this.zRot != 0.0F) {

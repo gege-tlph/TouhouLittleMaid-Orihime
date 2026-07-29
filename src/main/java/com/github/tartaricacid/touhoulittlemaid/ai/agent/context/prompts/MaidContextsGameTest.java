@@ -39,6 +39,14 @@ public class MaidContextsGameTest {
         assertContextValue(helper, maid, "response_policy", "protect_owner");
         assertContextValue(helper, maid, "emergency_state", "inactive");
         assertContextValue(helper, maid, "threat_source", "none");
+        // 桌上食物的两个真值是分开的：开关答「能不能」，冷却答「现在为什么不」。
+        // 合成一个会让模型把冷却期说成功能被关掉了。
+        assertContextValue(helper, maid, "table_food", "allowed");
+        assertContextValue(helper, maid, "table_food_cooldown", "ready");
+        maid.getConfigManager().setTableFoodAllowed(false);
+        assertContextValue(helper, maid, "table_food", "disallowed");
+        assertContextValue(helper, maid, "table_food_cooldown", "ready");
+        maid.getConfigManager().setTableFoodAllowed(true);
 
         assertActiveActivity(helper, maid, Activity.WORK, "work");
         assertActiveActivity(helper, maid, Activity.IDLE, "idle");

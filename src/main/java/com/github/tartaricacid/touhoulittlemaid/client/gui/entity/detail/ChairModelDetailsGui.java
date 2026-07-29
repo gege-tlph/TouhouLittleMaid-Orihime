@@ -48,7 +48,7 @@ public class ChairModelDetailsGui extends AbstractModelDetailsGui<EntityChair, C
     @Override
     protected void renderExtraEntity(GuiGraphics graphics, float partialTicks) {
         if (showPassenger) {
-
+            // origin: manager.render(maid, 0, -0.375 + mountedYOffset, 0, 0, 1, matrix, bufferIn, 0xf000f0)（partialTicks 固定 1）
             submitExtraEntity(graphics, maid, 0, (float) (-0.375 + modelInfo.getMountedYOffset()), 0, 1);
         }
     }
@@ -56,7 +56,7 @@ public class ChairModelDetailsGui extends AbstractModelDetailsGui<EntityChair, C
     private void applyShowPassengerLogic(boolean isStateTriggered) {
         this.showPassenger = isStateTriggered;
         if (isStateTriggered && maid != null) {
-
+            // 1.21.11: startRiding(Entity, boolean) 移除 -> (Entity, boolean, boolean)（2 参版原语义 = 第三参 true）
             maid.startRiding(guiEntity, true, true);
         } else {
             guiEntity.ejectPassengers();

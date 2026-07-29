@@ -27,6 +27,9 @@ public class MaidUpdateActivityFromSchedule extends Behavior<EntityMaid> {
 
         // 让女仆在切换日程表时能够改变自己的活动范围
         if (gameTime - brain.lastScheduleUpdate > 20L) {
+            // Preserve the 1.21.1 schedule's direct day-time lookup. In
+            // particular, this must react to /time set jumps instead of
+            // waiting for the next timeline boundary.
             Activity activity = maid.getScheduleDetail();
             if (this.cacheActivity == null) {
                 this.cacheActivity = activity;
@@ -94,6 +97,9 @@ public class MaidUpdateActivityFromSchedule extends Behavior<EntityMaid> {
                 }
             }
         } else {
+            // 1.21.11 removed Schedule#getActivityAt. Reproduce the old Brain
+            // method with EntityMaid's equivalent keyframe lookup rather than
+            // delegating to the datapack timeline cache.
             if (gameTime - brain.lastScheduleUpdate > 20L) {
                 brain.lastScheduleUpdate = gameTime;
                 Activity activity = maid.getScheduleDetail();

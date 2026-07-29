@@ -39,28 +39,33 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Molang 语言解析器。
+ * Parser for the Molang language.
  *
- * <p>将词元流转换为表达式流。</p>
+ * <p>The parser converts token streams to expression
+ * streams</p>
  *
- * <p>这是一个流式解析器：只有继续调用 {@link #next()}，它才会继续消费词法分析器的输入。</p>
+ * <p>Note that this is a stream-based parser, this means
+ * that it will not consume the entire lexer if it doesn't
+ * continue having next() calls</p>
  *
  * @since 3.0.0
  */
-public interface MolangParser extends Closeable {
+public /* sealed */ interface MolangParser /* permits MolangParserImpl */ extends Closeable {
 
     /**
-     * 返回正在使用的内部词法分析器。
+     * Returns the internal lexer being used.
      *
-     * @return 该解析器的词法分析器。
+     * @return The lexer for this parser.
      * @since 3.0.0
      */
     @NotNull MolangLexer lexer();
 
     /**
-     * 返回当前游标，用于报告解析错误所在的行与列。
+     * Returns the cursor for this parser, the cursor maintains
+     * track of the current line and column, it is used for
+     * error reporting.
      *
-     * @return 当前游标
+     * @return The cursor.
      * @since 3.0.0
      */
     default @NotNull Cursor cursor() {
@@ -69,34 +74,39 @@ public interface MolangParser extends Closeable {
     }
 
     /**
-     * 返回最近一次调用 {@link #next()} 得到的表达式。
+     * Returns the last emitted expression (the last expression value
+     * returned when calling {@link MolangParser#next()})
      *
-     * <p>调用此方法前必须至少成功调用一次 {@link #next()}。</p>
+     * <p>Requires the user to call {@link MolangParser#next()}
+     * at least once first.</p>
      *
-     * @return 最近解析的表达式
-     * @throws IllegalStateException 尚未解析任何表达式时抛出
+     * @return The last emitted expression
+     * @throws IllegalStateException If there is no current expression
      * @since 3.0.0
      */
     @Nullable Expression current();
 
     /**
-     * 解析下一个表达式。
+     * Parses the next expression.
      *
-     * <p>如果到达文件末尾，此方法将返回 {@code null}；如果出现错误，则抛出 {@link ParseException}。</p>
+     * <p>This method returns {@code null} if it reaches
+     * the end of file and throws a {@link ParseException}
+     * if there is an error.</p>
      *
-     * @return 解析后的表达式
-     * @throws IOException 如果读取或解析失败
+     * @return The parsed expression
+     * @throws IOException If reading or parsing fails
      * @since 3.0.0
      */
     @Nullable Expression next() throws IOException;
 
     /**
-     * 解析全部表达式，直到遇到 {@link TokenKind#EOF}。
+     * Parses all the tokens until it finds a {@link TokenKind#EOF}.
      *
-     * <p>调用完成后输入已耗尽，后续调用 {@link #next()} 将返回 {@code null}。</p>
+     * <p>After this method is called, the parser should be
+     * done and all next expressions will be null</p>
      *
-     * @return 解析得到的全部表达式
-     * @throws IOException 如果读取或解析失败
+     * @return All the read expressions
+     * @throws IOException If reading or parsing fails
      * @since 3.0.0
      */
     default @NotNull List<Expression> parseAll() throws IOException {
@@ -109,20 +119,21 @@ public interface MolangParser extends Closeable {
     }
 
     /**
-     * 关闭此解析器和内部 {@link MolangLexer}。
+     * Closes this parser and the internal {@link MolangLexer}.
      *
-     * @throws IOException 如果关闭失败
+     * @throws IOException If closing fails
      * @since 3.0.0
      */
     @Override
     void close() throws IOException;
 
     /**
-     * 创建从指定词法分析器读取词元的解析器。
+     * Creates a new parser that will read the tokens from
+     * the given lexer.
      *
-     * @param lexer 词法分析器
-     * @return 创建的解析器
-     * @throws IOException 如果解析器初始化失败。
+     * @param lexer The lexer
+     * @return The created parser
+     * @throws IOException If parser initialization fails.
      * @since 3.0.0
      */
     static @NotNull MolangParser parser(final @NotNull MolangLexer lexer, @NotNull ObjectBinding binding) throws IOException {
@@ -130,11 +141,12 @@ public interface MolangParser extends Closeable {
     }
 
     /**
-     * 创建从指定字符流读取内容的解析器。
+     * Creates a new parser that will read the tokens from
+     * the given reader.
      *
-     * @param reader 读取器
-     * @return 创建的解析器
-     * @throws IOException 如果解析器初始化失败。
+     * @param reader The reader
+     * @return The created parser
+     * @throws IOException If parser initialization fails.
      * @since 3.0.0
      */
     static @NotNull MolangParser parser(final @NotNull Reader reader, @NotNull ObjectBinding binding) throws IOException {
@@ -143,11 +155,12 @@ public interface MolangParser extends Closeable {
 
 
     /**
-     * 创建读取指定字符串的解析器。
+     * Creates a new parser that will read the tokens from
+     * the given string.
      *
-     * @param string 字符串
-     * @return 创建的解析器
-     * @throws IOException 如果解析器初始化失败。
+     * @param string The string
+     * @return The created parser
+     * @throws IOException If parser initialization fails.
      * @since 3.0.0
      */
     static @NotNull MolangParser parser(final @NotNull String string, @NotNull ObjectBinding binding) throws IOException {
@@ -155,11 +168,11 @@ public interface MolangParser extends Closeable {
     }
 
     /**
-     * 解析指定字符流中的全部表达式。
+     * Parses all the expressions from the given reader.
      *
-     * @param reader 输入字符流
-     * @return 解析得到的全部表达式
-     * @throws IOException 如果读取或解析失败。
+     * @param reader The reader.
+     * @return The emitted expressions.
+     * @throws IOException If reading or parsing fails.
      * @since 3.0.0
      */
     static @NotNull List<Expression> parseAll(final @NotNull Reader reader, @NotNull ObjectBinding binding) throws IOException {
@@ -169,11 +182,11 @@ public interface MolangParser extends Closeable {
     }
 
     /**
-     * 解析指定字符串。
+     * Parses the provided string.
      *
-     * @param string 输入字符串
-     * @return 解析得到的全部表达式
-     * @throws IOException 如果读取或解析失败。
+     * @param string The string.
+     * @return The emitted expressions.
+     * @throws IOException If reading or parsing fails.
      * @since 3.0.0
      */
     static @NotNull List<Expression> parseAll(final @NotNull String string, @NotNull ObjectBinding binding) throws IOException {

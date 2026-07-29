@@ -89,16 +89,16 @@ public abstract class AbstractModelGui<T extends LivingEntity, E extends IModelI
      *
      * @param middleX 屏幕参考中点
      * @param middleY 屏幕参考中点
-     * @param mouseX 鼠标 x 坐标
-     * @param mouseY 鼠标 Y 坐标
+     * @param mouseX  鼠标 x 坐标
+     * @param mouseY  鼠标 Y 坐标
      */
     protected abstract void drawLeftEntity(GuiGraphics graphics, int middleX, int middleY, float mouseX, float mouseY);
 
     /**
      * 绘制右侧示例实体
      *
-     * @param posX 实体所在的 x 坐标
-     * @param posY 实体所在的 y 坐标
+     * @param posX      实体所在的 x 坐标
+     * @param posY      实体所在的 y 坐标
      * @param modelItem 该实体应该对应的模型数据
      */
     protected abstract void drawRightEntity(GuiGraphics graphics, int posX, int posY, E modelItem);
@@ -106,7 +106,7 @@ public abstract class AbstractModelGui<T extends LivingEntity, E extends IModelI
     /**
      * 打开详情界面
      *
-     * @param entity 实体
+     * @param entity    实体
      * @param modelInfo 该实体应该对应的模型数据
      */
     protected abstract void openDetailsGui(T entity, E modelInfo);
@@ -114,7 +114,7 @@ public abstract class AbstractModelGui<T extends LivingEntity, E extends IModelI
     /**
      * 发包通知模型更改
      *
-     * @param entity 实体
+     * @param entity    实体
      * @param modelInfo 该实体应该对应的模型数据
      */
     protected abstract void notifyModelChange(T entity, E modelInfo);
@@ -264,7 +264,7 @@ public abstract class AbstractModelGui<T extends LivingEntity, E extends IModelI
     }
 
     /**
-     * 判断左右任意一个 Shift 键是否按下。
+     * 1.21.11：Screen.hasShiftDown() 已移除，等价实现（底层同为 GLFW 键态轮询，左右 Shift 均判定）
      */
     private static boolean tlmHasShiftDown() {
         var window = Minecraft.getInstance().getWindow();
@@ -345,7 +345,11 @@ public abstract class AbstractModelGui<T extends LivingEntity, E extends IModelI
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        // 1.21.11: renderWithTooltipAndSubtitles（final）已在 render() 前强制调用一次 renderBackground
+        //（blur + 暗色底图，恰为 origin 此处 renderBlurredBackground + renderBackground 的组合视觉）；
+        // 屏内再显式调用会触发 "Can only blur once per frame" 崩溃，故两行调用移除
 
+        // 1.21.11: GUI pose 为 Matrix3x2fStack（2D），origin 的 translate(0,0,-100) 仅位移 z，2D 下无对应量，按迁移规范丢弃 z
 
         // 中心点
         int middleX = this.width / 2 + 50;
@@ -399,7 +403,8 @@ public abstract class AbstractModelGui<T extends LivingEntity, E extends IModelI
             CustomModelPack<E> pack = modelPackList.get(guiNumber.tabToPackIndex(index, getPageIndex()));
             Identifier icon = pack.getIcon();
             if (icon != null) {
-
+                // 1.21.11: getTexture(id, default) 重载已移除；origin 语义 = byPath.getOrDefault（不触发注册加载），
+                // 用 AW 开放的 byPath 字段忠实复现（1.21.11 的 getTexture(id) 会自动注册 SimpleTexture，行为不等价）
                 AbstractTexture iconTexture = Minecraft.getInstance().getTextureManager().byPath.getOrDefault(icon, EMPTY_ICON_TEXTURE);
                 if (EMPTY_ICON_TEXTURE.equals(iconTexture)) {
                     icon = EMPTY_ICON;
@@ -411,6 +416,7 @@ public abstract class AbstractModelGui<T extends LivingEntity, E extends IModelI
                     graphics.blit(RenderPipelines.GUI_TEXTURED, icon, middleX - 92 + 28 * index, middleY - 98,
                             0F, 0F, 16, 16, 16, 16);
                 } else {
+                    // 1.21.11: RenderSystem.setShader/setShaderTexture 移除（管线接管，贴图由 blit 参数指定）
                     int time = getTickTime() / pack.getIconDelay();
                     int iconIndex = time % pack.getIconAspectRatio();
                     graphics.blit(RenderPipelines.GUI_TEXTURED, icon, middleX - 92 + 28 * index, middleY - 98,
@@ -539,7 +545,9 @@ public abstract class AbstractModelGui<T extends LivingEntity, E extends IModelI
     }
 
     /**
-     * 绘制模型对应的文本提示<br> 用遍历方式绘制文本提示，因为绝大多数情况下是空循环体（可能就涉及几个简单的 int 运算）<br> 应该不会存在性能问题<br>
+     * 绘制模型对应的文本提示<br>
+     * 用遍历方式绘制文本提示，因为绝大多数情况下是空循环体（可能就涉及几个简单的 int 运算）<br>
+     * 应该不会存在性能问题<br>
      */
     private void drawTooltips(GuiGraphics graphics, int mouseX, int mouseY, int middleX, int middleY) {
         // 使用过滤后的列表
@@ -697,7 +705,8 @@ public abstract class AbstractModelGui<T extends LivingEntity, E extends IModelI
             this.searchText = text;
             this.setRowIndex(0);
             this.init();
-
+            // [Codex] 1.21.11 keeps Screen focus on the EditBox instance that fired the
+            // responder. init() replaces it, so transfer focus to the replacement.
             if (this.isSearchMode && this.searchBox != null) {
                 this.setFocused(this.searchBox);
             }
@@ -729,7 +738,7 @@ public abstract class AbstractModelGui<T extends LivingEntity, E extends IModelI
     /**
      * 判断当前模型信息是否包含关键词。不区分大小写。
      *
-     * @param model 模型
+     * @param model   模型
      * @param keyword 关键词
      */
     private boolean filterKeyWord(E model, String keyword) {

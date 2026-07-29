@@ -20,7 +20,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.OptionalDouble;
 
 public class CompassRenderEvent {
-    // AfterOpaqueFeatures
+    //AfterOpaqueFeatures
     public static void onRender(WorldExtractionContext context) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {

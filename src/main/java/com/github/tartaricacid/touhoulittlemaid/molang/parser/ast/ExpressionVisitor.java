@@ -28,36 +28,39 @@ import com.github.tartaricacid.touhoulittlemaid.molang.runtime.Function;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * {@link Expression} 访问器，用于在不修改表达式类型的情况下实现求值、格式化等操作。
+ * An {@link Expression} visitor. Provides a way to add
+ * functionalities to the expression interface and all
+ * of its implementations.
  *
- * <p>基本用法：</p>
+ * <p>See the following example on visiting an expression:</p>
  * <pre>{@code
  *      Expression expr = ...;
  *      String str = expr.visit(new ToStringVisitor());
  * }</pre>
  *
- * <p>调用方应使用 {@link Expression#visit(ExpressionVisitor)} 进行双分派，
- * 不要直接调用 {@link #visit(Expression)}，否则具体表达式类型的重载不会生效。</p>
+ * <p>Please note that users MUST use {@link Expression#visit(ExpressionVisitor)}
+ * and NOT ExpressionVisitor's {@link ExpressionVisitor#visit(Expression)}, because
+ * it will not work as intended.</p>
  *
- * @param <R> 访问结果类型
+ * @param <R> The visit result type
  * @since 3.0.0
  */
 public interface ExpressionVisitor<R> {
 
     /**
-     * 访问未提供专用重载的表达式。
+     * Evaluate for the given unknown expression.
      *
-     * @param expression 要访问的表达式
-     * @return 访问结果
+     * @param expression The expression.
+     * @return The result.
      * @since 3.0.0
      */
     R visit(final @NotNull Expression expression);
 
     /**
-     * 访问双精度数值表达式。
+     * Evaluate for double expression.
      *
-     * @param expression 要访问的表达式
-     * @return 访问结果
+     * @param expression The expression.
+     * @return The result.
      * @since 3.0.0
      */
     default R visitDouble(final @NotNull DoubleExpression expression) {
@@ -65,10 +68,10 @@ public interface ExpressionVisitor<R> {
     }
 
     /**
-     * 评估字符串表达式。
+     * Evaluate for string expression.
      *
-     * @param expression 要访问的表达式
-     * @return 访问结果
+     * @param expression The expression.
+     * @return The result.
      * @since 3.0.0
      */
     default R visitString(final @NotNull StringExpression expression) {
@@ -76,10 +79,10 @@ public interface ExpressionVisitor<R> {
     }
 
     /**
-     * 评估标识符表达式。
+     * Evaluate for identifier expression.
      *
-     * @param expression 要访问的表达式
-     * @return 访问结果
+     * @param expression The expression.
+     * @return The result.
      * @since 3.0.0
      */
     default R visitIdentifier(final @NotNull IdentifierExpression expression) {
@@ -99,10 +102,10 @@ public interface ExpressionVisitor<R> {
     }
 
     /**
-     * 评估三元条件表达式。
+     * Evaluate for ternary conditional expression.
      *
-     * @param expression 要访问的表达式
-     * @return 访问结果
+     * @param expression The expression.
+     * @return The result.
      * @since 3.0.0
      */
     default R visitTernaryConditional(final @NotNull TernaryConditionalExpression expression) {
@@ -110,10 +113,10 @@ public interface ExpressionVisitor<R> {
     }
 
     /**
-     * 评估一元表达式。
+     * Evaluate for unary expression.
      *
-     * @param expression 要访问的表达式
-     * @return 访问结果
+     * @param expression The expression.
+     * @return The result.
      * @since 3.0.0
      */
     default R visitUnary(final @NotNull UnaryExpression expression) {
@@ -121,10 +124,10 @@ public interface ExpressionVisitor<R> {
     }
 
     /**
-     * 评估执行范围表达式。
+     * Evaluate for execution scope expression.
      *
-     * @param expression 要访问的表达式
-     * @return 访问结果
+     * @param expression The expression.
+     * @return The result.
      * @since 3.0.0
      */
     default R visitExecutionScope(final @NotNull ExecutionScopeExpression expression) {
@@ -136,10 +139,10 @@ public interface ExpressionVisitor<R> {
     }
 
     /**
-     * 评估二进制表达式。
+     * Evaluate for binary expression.
      *
-     * @param expression 要访问的表达式
-     * @return 访问结果
+     * @param expression The expression.
+     * @return The result.
      * @since 3.0.0
      */
     default R visitBinary(final @NotNull BinaryExpression expression) {
@@ -147,10 +150,10 @@ public interface ExpressionVisitor<R> {
     }
 
     /**
-     * 评估调用表达式。
+     * Evaluate for call expression.
      *
-     * @param expression 要访问的表达式
-     * @return 访问结果
+     * @param expression The expression.
+     * @return The result.
      * @since 3.0.0
      */
     default R visitCall(final @NotNull CallExpression expression) {
@@ -158,10 +161,10 @@ public interface ExpressionVisitor<R> {
     }
 
     /**
-     * 评估语句表达式。
+     * Evaluate for statement expression.
      *
-     * @param expression 的表达。
-     * @return 结果。
+     * @param expression The expression.
+     * @return The result.
      * @since 3.0.0
      */
     default R visitStatement(final @NotNull StatementExpression expression) {

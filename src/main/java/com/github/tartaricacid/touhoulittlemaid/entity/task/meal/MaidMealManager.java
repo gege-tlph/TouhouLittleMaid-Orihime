@@ -41,7 +41,8 @@ public class MaidMealManager {
     }
 
     /**
-     * 防止匹配堆栈被周期性工作餐行为消耗。治疗膳食故意不受影响。
+     * Prevents matching stacks from being consumed by the periodic work-meal
+     * behavior. Healing meals are deliberately unaffected.
      */
     public void addWorkMealExclusion(Predicate<ItemStack> exclusion) {
         WORK_MEAL_EXCLUSIONS.add(exclusion);

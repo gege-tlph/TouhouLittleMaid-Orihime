@@ -25,6 +25,12 @@ public record TTSSystemAudioToClientPackage(String siteName, String chatText, TT
             FriendlyByteBuf buf = new FriendlyByteBuf(byteBuf);
             String siteName = buf.readUtf();
             TTSSite ttsSite = AvailableSites.getTTSSite(siteName);
+            // 客户端站点表可能是空的或缺这一项：解析失败会断开连接，报清楚是哪个站点，
+            // 别让它退化成一条什么都不说的 NullPointerException
+            if (ttsSite == null) {
+                throw new IllegalArgumentException("Unknown TTS site: " + siteName
+                        + ", the client site registry has no entry for it");
+            }
             if (ttsSite.client() instanceof TTSSystemServices services) {
                 Pair<String, TTSConfig> pair = services.readFromNetwork(buf);
                 return new TTSSystemAudioToClientPackage(siteName, pair.getLeft(), pair.getRight(), services);

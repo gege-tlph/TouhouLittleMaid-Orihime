@@ -3,7 +3,8 @@ package com.github.tartaricacid.touhoulittlemaid.entity.task;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.ILittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IMaidTask;
-
+// TODO: 等待 1.21.11 版本依赖
+// import com.github.tartaricacid.touhoulittlemaid.compat.gun.common.GunCommonUtil;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -37,6 +38,9 @@ public final class TaskManager {
         manager.add(new TaskDanmakuAttack());
         manager.add(new TaskTridentAttack());
 
+        // 枪械类模组兼容，因为 task 注册比较早，需要在此处处理
+        // TODO: 等待 1.21.11 版本依赖
+        // GunCommonUtil.initAndAddTask(manager);
 
         manager.add(new TaskNormalFarm());
         manager.add(new TaskSugarCane());
@@ -56,7 +60,6 @@ public final class TaskManager {
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             littleMaid.addMaidTask(manager);
         }
-
         TASK_MAP = ImmutableMap.copyOf(TASK_MAP);
         TASK_INDEX = ImmutableList.copyOf(TASK_INDEX);
     }

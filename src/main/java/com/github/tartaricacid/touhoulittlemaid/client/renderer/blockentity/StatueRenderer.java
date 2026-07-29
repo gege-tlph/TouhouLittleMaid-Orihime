@@ -5,6 +5,7 @@ import com.github.tartaricacid.touhoulittlemaid.api.client.render.MaidRenderStat
 import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.SimpleBedrockModel;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.blockentity.state.StatueRenderState;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.bedrock.InternalBedrockModelRegistry;
+import com.github.tartaricacid.touhoulittlemaid.compat.ysm.YsmCompat;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
 import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityStatue;
@@ -63,7 +64,7 @@ public class StatueRenderer implements BlockEntityRenderer<TileEntityStatue, Sta
                                    ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         BlockEntityRenderer.super.extractRenderState(te, state, partialTick, cameraPos, breakProgress);
         state.isCoreBlock = te.isCoreBlock();
-
+        // [Codex] This Fabric port persists facing in the BE; BlockStatue has no FACING property.
         state.facing = te.getFacing();
         state.size = te.getSize().getScale();
         state.statueSize = te.getSize();
@@ -109,7 +110,12 @@ public class StatueRenderer implements BlockEntityRenderer<TileEntityStatue, Sta
         if (entity instanceof EntityMaid maid) {
             clearMaidDataResidue(maid, true);
             maid.renderState = MaidRenderState.STATUE;
-            maid.tickCount = 0;
+            // YSM 模型靠 tickCount 推进动画，冻结为 0 会让雕像上的 YSM 女仆定格（HEAD 同款分支）
+            if (YsmCompat.isInstalled() && maid.isYsmModel()) {
+                maid.tickCount = (int) level.getGameTime();
+            } else {
+                maid.tickCount = 0;
+            }
         }
 
         state.entityRenderState = this.dispatcher.extractEntity(entity, partialTick);

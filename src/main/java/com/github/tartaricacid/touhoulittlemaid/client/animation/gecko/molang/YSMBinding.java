@@ -153,10 +153,10 @@ public class YSMBinding extends ContextBinding {
 
         playerVar("block_reach", ctx -> ctx.entity().getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE));
         playerVar("entity_reach", ctx -> ctx.entity().getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE));
-        playerVar("swim_speed", ctx -> 1);
+        playerVar("swim_speed", ctx -> 1 /*ctx.entity().getAttributeValue(NeoForgeMod.SWIM_SPEED)*/);
         playerVar("entity_gravity", ctx -> ctx.entity().getAttributeValue(Attributes.GRAVITY));
         playerVar("step_height_addition", ctx -> ctx.entity().getAttributeValue(Attributes.STEP_HEIGHT) - 0.6);
-        playerVar("nametag_distance", ctx -> 64);
+        playerVar("nametag_distance", ctx -> 64 /*ctx.entity().getAttributeValue(NeoForgeMod.NAMETAG_DISTANCE)*/);
 
         clientPlayerVar("elytra_rot_x", ctx -> Math.toDegrees(ctx.entity().elytraAnimationState.getRotX(ctx.animationEvent().getRequestedPartialTick())));
         clientPlayerVar("elytra_rot_y", ctx -> Math.toDegrees(ctx.entity().elytraAnimationState.getRotY(ctx.animationEvent().getRequestedPartialTick())));
@@ -250,7 +250,7 @@ public class YSMBinding extends ContextBinding {
     }
 
     private static boolean inShieldBlockCooldown(IContext<Player> context) {
-
+        // TODO: 女仆会用盾吗？
         return false;
     }
 

@@ -1,16 +1,12 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message.config;
 
-import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.SiteConfigStorage;
-import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializableSite;
-import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializerRegister;
-import com.github.tartaricacid.touhoulittlemaid.ai.service.ServiceType;
-import com.github.tartaricacid.touhoulittlemaid.ai.service.Site;
-import com.github.tartaricacid.touhoulittlemaid.ai.service.stt.STTSite;
 import com.github.tartaricacid.touhoulittlemaid.client.download.ClientPackDownloadManager;
+import com.github.tartaricacid.touhoulittlemaid.config.AiServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.network.client.config.ServerRulesClientCache;
 import com.github.tartaricacid.touhoulittlemaid.util.GameModeUtil;
-import com.google.common.collect.Maps;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.netty.buffer.ByteBuf;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -21,19 +17,18 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.Map;
 
 import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
-public record SyncServerRulesPacket(String runtimeRulesJson, boolean integratedServer, boolean initialSync,
-                                    boolean canEdit, String editableRulesJson,
-                                    Map<String, STTSite> serverSttSites) implements CustomPacketPayload {
+/**
+ * 曾经还带一个 {@code initialSync} 布尔，用来让客户端识别「同一连接上再次收到首包 = 代理换了后端」。
+ * 那个判定唯一的用途是作废下发到客户端的 STT 凭据；「服务器提供 STT」撤除后没有凭据可作废，
+ * 该字段随之失去全部读取方，一并删除——留着的协议字段迟早会被当成还有意义的东西。
+ */
+public record SyncServerRulesPacket(String runtimeRulesJson, boolean integratedServer,
+                                    boolean canEdit, String editableRulesJson) implements CustomPacketPayload {
     private static final int MAX_JSON_LENGTH = 1_048_576;
-    private static final int MAX_SITE_COUNT = 16;
-    private static final int MAX_SITE_ID_LENGTH = 64;
     public static final Type<SyncServerRulesPacket> TYPE = new Type<>(modLoc("sync_server_rules"));
     public static final StreamCodec<ByteBuf, SyncServerRulesPacket> STREAM_CODEC = new StreamCodec<>() {
         @Override
@@ -41,24 +36,10 @@ public record SyncServerRulesPacket(String runtimeRulesJson, boolean integratedS
             FriendlyByteBuf buf = new FriendlyByteBuf(byteBuf);
             String runtimeRulesJson = buf.readUtf(MAX_JSON_LENGTH);
             boolean integratedServer = buf.readBoolean();
-            boolean initialSync = buf.readBoolean();
             boolean canEdit = buf.readBoolean();
             String editableRulesJson = buf.readUtf(MAX_JSON_LENGTH);
-            int size = buf.readVarInt();
-            if (size < 0 || size > MAX_SITE_COUNT) {
-                throw new IllegalArgumentException("Invalid editable STT site count: " + size);
-            }
-            Map<String, STTSite> sites = Maps.newLinkedHashMap();
-            for (int i = 0; i < size; i++) {
-                String id = buf.readUtf(MAX_SITE_ID_LENGTH);
-                String apiType = buf.readUtf(MAX_SITE_ID_LENGTH);
-                STTSite site = readSite(apiType, buf);
-                if (site != null) {
-                    sites.put(id, site);
-                }
-            }
-            return new SyncServerRulesPacket(runtimeRulesJson, integratedServer, initialSync,
-                    canEdit, editableRulesJson, sites);
+            return new SyncServerRulesPacket(runtimeRulesJson, integratedServer,
+                    canEdit, editableRulesJson);
         }
 
         @Override
@@ -66,18 +47,8 @@ public record SyncServerRulesPacket(String runtimeRulesJson, boolean integratedS
             FriendlyByteBuf buf = new FriendlyByteBuf(byteBuf);
             buf.writeUtf(message.runtimeRulesJson, MAX_JSON_LENGTH);
             buf.writeBoolean(message.integratedServer);
-            buf.writeBoolean(message.initialSync);
             buf.writeBoolean(message.canEdit);
             buf.writeUtf(message.editableRulesJson, MAX_JSON_LENGTH);
-            if (message.serverSttSites.size() > MAX_SITE_COUNT) {
-                throw new IllegalArgumentException("Too many editable STT sites");
-            }
-            buf.writeVarInt(message.serverSttSites.size());
-            message.serverSttSites.forEach((id, site) -> {
-                buf.writeUtf(id, MAX_SITE_ID_LENGTH);
-                buf.writeUtf(site.getApiType(), MAX_SITE_ID_LENGTH);
-                writeSite(site, buf);
-            });
         }
     };
 
@@ -89,39 +60,34 @@ public record SyncServerRulesPacket(String runtimeRulesJson, boolean integratedS
     @Environment(EnvType.CLIENT)
     public static void handle(SyncServerRulesPacket message, ClientPlayNetworking.Context context) {
         context.client().execute(() -> {
+            // 合流快照喂两个店：各自只认领自己的键，互不干扰
             if (ServerRuleConfig.applyRuntimeJson(message.runtimeRulesJson())) {
                 ClientPackDownloadManager.downloadClientPack();
             }
+            AiServerRuleConfig.applyRuntimeJson(message.runtimeRulesJson());
             ServerRulesClientCache.update(message);
         });
     }
 
     public static void sendTo(ServerPlayer player) {
-        sendTo(player, false);
-    }
-
-    public static void sendInitialTo(ServerPlayer player) {
-        sendTo(player, true);
-    }
-
-    private static void sendTo(ServerPlayer player, boolean initialSync) {
         boolean canEdit = GameModeUtil.canEditSite(player);
         ServerPlayNetworking.send(player, new SyncServerRulesPacket(
-                ServerRuleConfig.runtimeSnapshotJson(),
+                mergeJson(ServerRuleConfig.runtimeSnapshotJson(), AiServerRuleConfig.runtimeSnapshotJson()),
                 !player.level().getServer().isDedicatedServer(),
-                initialSync,
                 canEdit,
-                canEdit ? ServerRuleConfig.snapshotJson() : "{}",
-                canEdit ? editableSttSites() : Collections.emptyMap()
+                canEdit ? mergeJson(ServerRuleConfig.snapshotJson(), AiServerRuleConfig.snapshotJson()) : "{}"
         ));
     }
 
-    private static Map<String, STTSite> editableSttSites() {
-        try {
-            return SiteConfigStorage.readSTT();
-        } catch (IllegalStateException exception) {
-            return Collections.emptyMap();
-        }
+    /**
+     * 世界规则与 AI 规则（§17 v2 拆到实例级的 {@code AiServerRuleConfig}）在网络上仍是**一张**
+     * 扁平 kv 快照——客户端缓存、Session 与全部 GUI 因此零改动。键名两店不重叠（各自的 values 表）。
+     */
+    private static String mergeJson(String first, String second) {
+        JsonObject merged = JsonParser.parseString(first).getAsJsonObject();
+        JsonObject extra = JsonParser.parseString(second).getAsJsonObject();
+        extra.entrySet().forEach(entry -> merged.add(entry.getKey(), entry.getValue()));
+        return merged.toString();
     }
 
     public static void syncToEditors(MinecraftServer server) {
@@ -138,17 +104,4 @@ public record SyncServerRulesPacket(String runtimeRulesJson, boolean integratedS
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static void writeSite(STTSite site, FriendlyByteBuf buf) {
-        ((SerializableSite<STTSite>) site.serializer()).writeToNetwork(site, buf);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static @Nullable STTSite readSite(String apiType, FriendlyByteBuf buf) {
-        SerializableSite<? extends Site> serializer = SerializerRegister.getSerializer(ServiceType.STT, apiType);
-        if (serializer == null) {
-            return null;
-        }
-        return ((SerializableSite<STTSite>) serializer).fromNetwork(buf);
-    }
 }

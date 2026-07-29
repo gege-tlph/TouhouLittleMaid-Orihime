@@ -1,12 +1,9 @@
 package com.github.tartaricacid.touhoulittlemaid.compat.cloth;
 
-import com.github.tartaricacid.touhoulittlemaid.ai.service.stt.STTSite;
 import com.github.tartaricacid.touhoulittlemaid.api.event.client.AddClothConfigEvent;
-import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.editor.STTSiteEditorScreen;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.settings.AIChatSettingsHubScreen;
 import com.github.tartaricacid.touhoulittlemaid.config.GeneralConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
-import com.github.tartaricacid.touhoulittlemaid.config.ServerSTTApiType;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ChairConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ExperimentalConfig;
@@ -16,13 +13,13 @@ import com.github.tartaricacid.touhoulittlemaid.config.subconfig.RenderConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.VanillaConfig;
 import com.github.tartaricacid.touhoulittlemaid.init.registry.CompatRegistry;
 import com.github.tartaricacid.touhoulittlemaid.network.client.config.ServerRulesClientCache;
-import com.github.tartaricacid.touhoulittlemaid.network.message.ai.SaveSTTSitePacket;
-import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
+import com.github.tartaricacid.touhoulittlemaid.network.message.ai.OpenAIConfigPacket;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
+import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -104,12 +101,13 @@ public final class MenuIntegration {
         tips.add(localBoolean(entries, "render.enable_shears_tip", RenderConfig.ENABLE_SHEARS_TIP));
         category.addEntry(tips.build());
 
-        SubCategoryBuilder voice = sub(entries, "personal.voice_input");
-        voice.add(new ActionButtonListEntry(
-                Component.translatable(CATEGORY + "personal.voice_input"),
-                Component.translatable(CATEGORY + "open_voice_input"),
-                MenuIntegration::openVoiceInputSettings));
-        category.addEntry(voice.build());
+        // 唯一入口，且**对所有身份可见可点**：personal 这一栏是无条件添加的，
+        // 而 server_rules 整栏由 canEdit() 门控——入口留在那边就只有管理员看得见。
+        // 直接挂在栏目根上：一个只装着一颗按钮的折叠组是纯噪音。
+        category.addEntry(new ActionButtonListEntry(
+                Component.translatable(CATEGORY + "ai_settings"),
+                Component.translatable(CATEGORY + "open_ai_settings"),
+                MenuIntegration::openAiSettings));
     }
 
     private static void addServerRules(ConfigBuilder root, ConfigEntryBuilder entries,
@@ -186,60 +184,31 @@ public final class MenuIntegration {
         chair.add(serverBoolean(entries, "chair.chair_can_destroyed_by_anyone", ChairConfig.CHAIR_CAN_DESTROYED_BY_ANYONE, session));
         category.addEntry(chair.build());
 
-        addAISettings(category, entries, session);
-
         SubCategoryBuilder experimental = sub(entries, "server.experimental");
         experimental.add(serverBoolean(entries, "experimental.smooth_follow", ExperimentalConfig.SMOOTH_FOLLOW, session));
         category.addEntry(experimental.build());
     }
 
-    private static void addAISettings(ConfigCategory category, ConfigEntryBuilder entries,
-                                      ServerRulesClientCache.Session session) {
-        SubCategoryBuilder llm = entries.startSubCategory(tr("global_ai.llm")).setExpanded(false);
-        llm.add(serverBoolean(entries, "global_ai.llm_enable", AIConfig.LLM_ENABLED, session));
-        llm.add(serverBoolean(entries, "global_ai.auto_gen_setting_enabled", AIConfig.AUTO_GEN_SETTING_ENABLED, session));
-        llm.add(serverString(entries, "global_ai.llm_proxy_address", AIConfig.LLM_PROXY_ADDRESS, session));
-        llm.add(serverInt(entries, "global_ai.maid_history_compress_token_limit",
-                AIConfig.MAID_HISTORY_COMPRESS_TOKEN_LIMIT, 8, 1024, session));
-        llm.add(serverInt(entries, "global_ai.max_tokens_per_player",
-                AIConfig.MAX_TOKENS_PER_PLAYER, 1, Integer.MAX_VALUE, session));
-        category.addEntry(llm.build());
-
-        SubCategoryBuilder tts = entries.startSubCategory(tr("global_ai.tts")).setExpanded(false);
-        tts.add(serverBoolean(entries, "global_ai.tts_enable", AIConfig.TTS_ENABLED, session));
-        tts.add(serverString(entries, "global_ai.tts_language", AIConfig.TTS_LANGUAGE, session));
-        tts.add(serverString(entries, "global_ai.tts_proxy_address", AIConfig.TTS_PROXY_ADDRESS, session));
-        category.addEntry(tts.build());
-
-        SubCategoryBuilder stt = entries.startSubCategory(
-                Component.translatable(CATEGORY + "server_stt.section")).setExpanded(false);
-        stt.add(entries.startBooleanToggle(
-                        Component.translatable(CATEGORY + "server_stt.provide").withStyle(ChatFormatting.RED),
-                        session.getBoolean(ServerConfig.PROVIDE_SERVER_STT))
-                .setDefaultValue(ServerConfig.PROVIDE_SERVER_STT.getDefault())
-                .setTooltip(Component.translatable(CATEGORY + "server_stt.provide.tooltip"))
-                .setSaveConsumer(value -> session.set(ServerConfig.PROVIDE_SERVER_STT, value)).build());
-        stt.add(entries.startBooleanToggle(Component.translatable(CATEGORY + "server_stt.proxy_compat"),
-                        session.getBoolean(ServerConfig.PROXY_SERVER_COMPATIBILITY))
-                .setDefaultValue(ServerConfig.PROXY_SERVER_COMPATIBILITY.getDefault())
-                .setTooltip(Component.translatable(CATEGORY + "server_stt.proxy_compat.tooltip"))
-                .setSaveConsumer(value -> session.set(ServerConfig.PROXY_SERVER_COMPATIBILITY, value)).build());
-        AbstractConfigListEntry<ServerSTTApiType> provider = entries.startEnumSelector(
-                        Component.translatable(CATEGORY + "server_stt.provider"),
-                        ServerSTTApiType.class, session.getServerSttType())
-                .setDefaultValue(ServerConfig.SERVER_STT_TYPE.getDefault())
-                .setEnumNameProvider(value -> Component.translatable(
-                        "ai.touhou_little_maid.chat.site.%s.name".formatted(((ServerSTTApiType) value).siteId())))
-                .setSaveConsumer(value -> session.set(ServerConfig.SERVER_STT_TYPE, value)).build();
-        stt.add(provider);
-        stt.add(new ActionButtonListEntry(
-                Component.translatable(CATEGORY + "server_stt.configuration"),
-                Component.translatable(CATEGORY + "server_stt.configure"),
-                Component.translatable(ServerRulesClientCache.isIntegratedServer()
-                        ? CATEGORY + "server_stt.site_apply.integrated"
-                        : CATEGORY + "server_stt.site_apply.dedicated"),
-                () -> openServerSTTEditor(provider.getValue())));
-        category.addEntry(stt.build());
+    /**
+     * AI 那一组已从本菜单撤走，只留「个人设置」栏里的一颗跳转按钮（唯一入口）。
+     *
+     * <p><b>撤走的理由不是「这里放不下」，是「同一件事被劈成了两个入口」</b>：
+     * 总开关、代理、token 上限在这里，站点与密钥在 mod 自己的屏里，
+     * 管理员想让一个 LLM 跑起来必须去两个地方，而这两个地方连名字都不像是一回事。
+     * 现在全部收拢到「AI 与语音设置」，Cloth 只当入口。</p>
+     *
+     * <p>在世界里必须走 {@link OpenAIConfigPacket} 这条与 T 屏齿轮相同的链路——
+     * 权限判定与站点数据都在服务端，客户端自己开屏就只能开出「语音输入」那一栏
+     * （单人档房主也会被错当成无权限，这正是曾经的实况）。
+     * 不在世界里（标题屏进的 modmenu）才回落到纯本机的语音输入设置。</p>
+     */
+    private static void openAiSettings() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level != null && ClientPlayNetworking.canSend(OpenAIConfigPacket.TYPE)) {
+            OpenAIConfigPacket.sendToServer();
+            return;
+        }
+        minecraft.setScreen(AIChatSettingsHubScreen.openSTTConfig(minecraft.screen));
     }
 
     private static void addServerMaintenance(ConfigBuilder root, ConfigEntryBuilder entries,
@@ -253,26 +222,7 @@ public final class MenuIntegration {
                 ServerConfig.MAID_BACKUP_MAX_COUNT, 1, 64, session));
     }
 
-    private static void openVoiceInputSettings() {
-        Minecraft minecraft = Minecraft.getInstance();
-        Screen parent = minecraft.screen;
-        minecraft.setScreen(AIChatSettingsHubScreen.openSTTConfig(parent));
-    }
 
-    private static void openServerSTTEditor(ServerSTTApiType type) {
-        Minecraft minecraft = Minecraft.getInstance();
-        STTSite site = ServerRulesClientCache.serverSttSites().get(type.siteId());
-        if (site == null) {
-            if (minecraft.player != null) {
-                minecraft.player.displayClientMessage(
-                        Component.translatable(CATEGORY + "server_stt.site_unavailable").withStyle(ChatFormatting.RED), false);
-            }
-            return;
-        }
-        Screen parent = minecraft.screen;
-        minecraft.setScreen(new STTSiteEditorScreen(parent, site,
-                updated -> ClientPlayNetworking.send(SaveSTTSitePacket.update(updated))));
-    }
 
     private static SubCategoryBuilder sub(ConfigEntryBuilder entries, String key) {
         return entries.startSubCategory(Component.translatable(CATEGORY + key)).setExpanded(false);

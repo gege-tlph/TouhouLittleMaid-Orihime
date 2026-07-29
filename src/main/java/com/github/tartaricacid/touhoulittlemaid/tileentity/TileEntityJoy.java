@@ -71,7 +71,11 @@ public abstract class TileEntityJoy extends BlockEntity implements IBlockEntityP
         this.sitId = sitId;
     }
 
-
+    /**
+     * SWEEP R10-1：origin {@code BlockJoy.onRemove} 在方块被移除时 discard 坐在上面的 EntitySit
+     * （1.21.11 Block.onRemove 已删）——按 TileEntityMaidBeacon 同款架构迁到 BE 的
+     * {@code preRemoveSideEffects}（LevelChunk 在 BE 尚存活时调用）。
+     */
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         super.preRemoveSideEffects(pos, state);

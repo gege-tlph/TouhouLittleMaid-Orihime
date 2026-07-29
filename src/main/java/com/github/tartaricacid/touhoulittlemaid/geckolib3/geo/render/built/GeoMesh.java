@@ -9,7 +9,7 @@ import org.joml.Vector3f;
 
 public class GeoMesh {
     /**
-     * 下、上、北、南、西、东
+     * Down, Up, North, South, West, East
      */
     public static final int FACE_COUNT = 6;
 
@@ -253,8 +253,12 @@ public class GeoMesh {
         }
 
         /**
-         * Bedrock/Blockbench 使用零面积 {@code uv_size} 表示该面不可见。
-         * 若仍提交此面，片元精度误差可能在目标纹素与相邻不透明纹素之间闪烁，形成点状亮线，因此直接跳过。
+         * Bedrock/Blockbench uses a zero-area uv_size as the "this face is invisible"
+         * convention. Emitting such a face makes every fragment sample the single UV
+         * point; per-fragment float rounding then flickers between that texel and its
+         * opaque neighbours, which shows up as dotted bright lines on thin cubes
+         * (hair plate edges, eyebrow slivers). Treat the face as absent, matching how
+         * Bedrock itself renders it.
          */
         private static FaceUv skipZeroArea(FaceUv face) {
             if (face == null) {

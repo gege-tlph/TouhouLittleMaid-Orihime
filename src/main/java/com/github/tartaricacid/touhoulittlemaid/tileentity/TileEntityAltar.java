@@ -58,8 +58,13 @@ public class TileEntityAltar extends BlockEntity implements IBlockEntityPersiste
     }
 
     /**
-     * 祭坛方块实体不实现 Container，原版移除流程不会自动掉落 ItemStackHandler 中的物品，
-     * 因此要在方块实体仍可访问时显式弹出已存放的物品。
+     * 1.21.2+ 方块移除重设计：{@code Block.onRemove(state, Level, pos, newState, isMoving)} 已完全移除。
+     * 容器掉落改由 {@link net.minecraft.world.level.block.entity.BlockEntity#preRemoveSideEffects} 负责
+     * （由 LevelChunk 在 BE 尚存活时调用；而 {@code Block.affectNeighborsAfterRemoval} 只管邻居更新）。
+     * <p>
+     * 其默认实现仅对 {@code implements Container} 的 BE 自动掉落；本类是
+     * {@code extends BlockEntity} + 自研 {@code ItemStackHandler}，**不会**被自动处理，
+     * 故在此显式恢复 HEAD 中原本位于 {@code BlockAltar.onRemove} 的掉落逻辑。
      */
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {

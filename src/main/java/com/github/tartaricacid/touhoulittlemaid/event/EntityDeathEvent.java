@@ -27,7 +27,8 @@ public class EntityDeathEvent {
     public static void onPlayerCloned() {
         ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> {
             boolean wasDeath = !alive;
-
+            // 1.21.11 GameRules migration (same family as destroyVanishingCursedItems / SWEEP R9-4);
+            // COPY_FROM fires server-side, so the level is always a ServerLevel.
             boolean isKeep = newPlayer.level instanceof ServerLevel serverLevel
                     && serverLevel.getGameRules().get(GameRules.KEEP_INVENTORY);
 

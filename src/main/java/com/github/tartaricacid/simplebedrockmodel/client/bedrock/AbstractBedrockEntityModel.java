@@ -20,7 +20,10 @@ public abstract class AbstractBedrockEntityModel<T extends EntityRenderState> ex
     protected AABB renderBoundingBox;
 
     private AbstractBedrockEntityModel(BedrockPart root, Pair<HashMap<String, BedrockPart>, AABB> result) {
-
+        // Keep the 1.21.1 Fabric behavior: Bedrock entity packs contain
+        // zero-thickness planes (notably maid-fairy wings), so their back
+        // faces must remain visible. origin/26.1 changed this to entityCutout,
+        // but that is an architecture reference rather than our behavior base.
         super(root, RenderTypes::entityCutoutNoCull);
         if (result != null) {
             modelMap.putAll(result.getLeft());
@@ -30,7 +33,9 @@ public abstract class AbstractBedrockEntityModel<T extends EntityRenderState> ex
         }
     }
 
-
+    // 1.21.11 关键修复：几何须加载进「传给 super() 的同一个 root」。此前 loadFromStream/POJO 内部各自 new BedrockPart()
+    // （root B）加载几何，却把另一个空 BedrockPart（root A）传给 super → Model.root() 为空 → 渲染 cubes=0/children=0（不可见）。
+    // Java 21 无 statements-before-super，故经中间构造器把同一 root 串起来：先 load 进 root，再 super(root)。
     public AbstractBedrockEntityModel(InputStream stream) {
         this(new BedrockPart(), stream);
     }

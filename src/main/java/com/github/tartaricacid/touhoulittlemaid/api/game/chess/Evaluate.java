@@ -21,7 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 package com.github.tartaricacid.touhoulittlemaid.api.game.chess;
 
-// 这部分移植自 Borland C++ 5.0 中的 Owl Chess Sample
+// This part is ported from Owl Chess Sample in Borland C++ 5.0
 @SuppressWarnings("all")
 public class Evaluate {
     public static final int PIECE_KING = Position.PIECE_KING;
@@ -185,7 +185,7 @@ public class Evaluate {
     }
 
     public static void preEval(Position pos) {
-        // 1. 计算双方的简单材料
+        // 1. Calculate Simple Materials for Both Sides
         int vlWhite = 0, vlBlack = 0, sqWhiteKing = 0, sqBlackKing = 0;
         for (int sq = 0; sq < 128; sq++) {
             int pc = pos.squares[sq];
@@ -205,7 +205,7 @@ public class Evaluate {
             }
         }
         boolean inEndgame = Math.min(vlWhite, vlBlack) <= 6 && Math.abs(vlWhite - vlBlack) >= 2;
-
+        // 2. Calculate Attacking Values for Each Squares (Both Sides)
         short[] whiteAttack = new short[128], blackAttack = new short[128];
         for (int sq = 0; sq < 128; sq++) {
             whiteAttack[sq] = blackAttack[SQUARE_FLIP(sq)] = (short)
@@ -222,7 +222,7 @@ public class Evaluate {
                 whiteAttack[sq] += importance;
             }
         }
-        // 3.计算每个方格的控制表
+        // 3. Calculate Control Table for Each Squares
         short[] whiteRookControl = new short[128], whiteBishopControl = new short[128];
         short[] blackRookControl = new short[128], blackBishopControl = new short[128];
         for (int sq = 0; sq < 128; sq++) {
@@ -233,7 +233,7 @@ public class Evaluate {
                 blackBishopControl[sq] = (short) calcBishopControl(pos, sq, blackAttack);
             }
         }
-        // 4. 计算每个方格和每个棋子类型的棋子值表
+        // 4. Calculate Piece Value Table for Each Squares and Each Piece-Types
         for (int sq = 0; sq < 128; sq++) {
             if (!IN_BOARD(sq)) {
                 continue;
@@ -241,9 +241,9 @@ public class Evaluate {
             int edgePenalty = EDGE_PENALTY[sq];
             if (inEndgame) {
                 if (vlWhite < vlBlack) {
-                    // 4.1.在残局中，失败的国王应该靠近中心并远离底部
+                    // 4.1. In Endgames, the Losing King should be Close to Center and Distant to Bottom
                     pos.vlWhitePiecePos[PIECE_KING][sq] = (short) losingKingValue(sq);
-                    // 4.2.在残局中，获胜的国王应该靠近失败的国王，远离边界
+                    // 4.2. In Endgames, the Winning King should be Close to the Losing King and Distant to Border
                     pos.vlBlackPiecePos[PIECE_KING][sq] = (short) winningKingValue(sq, sqWhiteKing);
                 } else {
                     // 4.1. ...
@@ -251,13 +251,13 @@ public class Evaluate {
                     // 4.2. ...
                     pos.vlWhitePiecePos[PIECE_KING][sq] = (short) winningKingValue(sq, sqBlackKing);
                 }
-                // 4.3.在残局中，其他棋子与其位置无关
+                // 4.3. In Endgames, Other Pieces are independent to their Positions
                 for (int i = PIECE_QUEEN; i <= PIECE_KNIGHT; i++) {
                     pos.vlWhitePiecePos[i][sq] = pos.vlBlackPiecePos[i][sq] =
                             (short) (PIECE_VALUE[i] * 100);
                 }
             } else {
-                // 4.4.在中局或残局中国王应该靠近中心
+                // 4.4. King should be Close to Center in Midgames or Endgames
                 if (vlWhite + vlBlack <= 32) {
                     pos.vlWhitePiecePos[PIECE_KING][sq] =
                             pos.vlBlackPiecePos[PIECE_KING][sq] = (short) -edgePenalty;
@@ -265,7 +265,7 @@ public class Evaluate {
                     pos.vlWhitePiecePos[PIECE_KING][sq] =
                             pos.vlBlackPiecePos[PIECE_KING][sq] = 0;
                 }
-                // 4.5.后、车、主教应该偏向于他们的控制值
+                // 4.5. Queen, Rook, Bishop should Favor their Control Values
                 pos.vlWhitePiecePos[PIECE_QUEEN][sq] = (short)
                         (PIECE_VALUE[PIECE_QUEEN] * 100 + (whiteRookControl[sq] + whiteBishopControl[sq]) / 8);
                 pos.vlBlackPiecePos[PIECE_QUEEN][sq] = (short)
@@ -278,7 +278,7 @@ public class Evaluate {
                         (PIECE_VALUE[PIECE_BISHOP] * 100 + whiteBishopControl[sq] / 2);
                 pos.vlBlackPiecePos[PIECE_BISHOP][sq] = (short)
                         (PIECE_VALUE[PIECE_BISHOP] * 100 + blackBishopControl[sq] / 2);
-                // 4.6.骑士应该偏爱其攻击值
+                // 4.6. Knight should Favor its Attack Value
                 int whiteKnightAttack = 0, blackKnightAttack = 0;
                 for (int i = 0; i < 8; i++) {
                     int sqDst = sq + Position.KNIGHT_DELTA[i];
@@ -292,18 +292,21 @@ public class Evaluate {
                 pos.vlBlackPiecePos[PIECE_KNIGHT][sq] = (short)
                         (PIECE_VALUE[PIECE_KNIGHT] * 100 + blackKnightAttack / 4 - edgePenalty * 3 / 2);
             }
-            // 4.7.典当应优先考虑其头寸价值
+            // 4.7. Pawn should Favor its Position Value
             pos.vlWhitePiecePos[PIECE_PAWN][sq] = pos.vlBlackPiecePos[PIECE_PAWN][SQUARE_FLIP(sq)] =
                     (short) (PIECE_VALUE[PIECE_PAWN] * 100 + PAWN_VALUE[sq] / 2 - 6);
         }
-        /*
-         * 5. 计算典当结构的件值表
+        /* 5. Calculate Piece Value Table for Pawn Structure
          *
-         * 自：x P x - P = brForward，x = brLeftCover/brRightCover ^ x P x - P = brSelf，x = brSide | x P x - P = brSelf(最后), x = brChain
+         * Self:
+         *   x P x - P = brForward,    x = brLeftCover/brRightCover
+         * ^ x P x - P = brSelf,       x = brSide
+         * | x P x - P = brSelf(Last), x = brChain
          *
-         * 对手：
+         * Opponent:
          *   . . .
-         * ^. x 。 - x = brOppPass，或 BehindOppPass 如果前面有一个 Pawn | o o o - o = ~brSelf/brSide（最后）
+         * ^ . x . - x = brOppPass, or BehindOppPass if a Pawn in Front
+         * | o o o - o = ~brSelf/brSide(Last)
          */
         for (int sd = 0; sd < 2; sd++) {
             int brSelf = 0, brSide = 0, brBehindOppPass = 0;
@@ -322,11 +325,11 @@ public class Evaluate {
                 for (int x = Position.FILE_LEFT; x <= Position.FILE_RIGHT; x++) {
                     int sq = Position.COORD_XY(x, y);
                     int brSquare = 1 << x;
-                    // 5.1.平行和受保护棋子的奖励
+                    // 5.1. Bonus for Parallel and Protected Pawns
                     int value = ((brSide & brSquare) != 0 ? 3 : 0) + ((brChain & brSquare) != 0 ? 2 : 0);
-                    // 5.2.可以保护其他棋子的棋子的奖励
+                    // 5.2. Bonus for the Pawn which can Protect Other Pawns
                     value += ((brLeftCover & brSquare) != 0 ? 2 : 0) + ((brRightCover & brSquare) != 0 ? 2 : 0);
-
+                    // 5.3. Bonus for Self (Penalty for Moving)
                     value += ((brSelf & brSquare) != 0 ? 1 : 0);
                     if (sd == 0) {
                         pos.vlWhitePiecePos[PIECE_PAWN][sq] += value;
@@ -334,7 +337,7 @@ public class Evaluate {
                         pos.vlBlackPiecePos[PIECE_PAWN][sq] += value;
                     }
                     if (vlWhite + vlBlack <= 32) {
-                        // 5.4.传递典当的奖励
+                        // 5.4. Bonus for Passed Pawn
                         if ((brOppPass & brSquare) != 0) {
                             if (sd == 0) {
                                 pos.vlBlackPiecePos[PIECE_PAWN][sq] += PASS_PAWN[i];
@@ -342,7 +345,7 @@ public class Evaluate {
                                 pos.vlWhitePiecePos[PIECE_PAWN][sq] += PASS_PAWN[i];
                             }
                         }
-
+                        // 5.5. Bonus for Rook (Both Sides) Behind Pawn
                         if ((brBehindOppPass & brSquare) != 0) {
                             pos.vlWhitePiecePos[PIECE_ROOK][sq] += 8;
                             pos.vlBlackPiecePos[PIECE_ROOK][sq] += 8;
@@ -356,7 +359,7 @@ public class Evaluate {
                 }
             }
         }
-        // 6. 计算用主教阻挡中心棋子的惩罚
+        // 6. Calculate Penalty for Blocking Center Pawns with a Bishop
         for (int sq = 0x67; sq <= 0x68; sq++) {
             if (pos.squares[sq] == 8 + PIECE_PAWN) {
                 pos.vlWhitePiecePos[PIECE_BISHOP][sq - 16] -= 10;
@@ -367,7 +370,7 @@ public class Evaluate {
                 pos.vlBlackPiecePos[PIECE_BISHOP][sq + 16] -= 10;
             }
         }
-        // 7.更新“pos”中的“vlWhite”和“vlBlack”
+        // 7. Update "vlWhite" and "vlBlack" in "pos"
         pos.vlWhite = pos.vlBlack = 0;
         for (int sq = 0; sq < 128; sq++) {
             int pc = pos.squares[sq];
@@ -382,14 +385,14 @@ public class Evaluate {
     }
 
     public static int evaluate(Position pos, int vlAlpha, int vlBeta) {
-
+        // 1. Material (with Position) Value
         int vl = pos.material();
         if (vl + LAZY_MARGIN <= vlAlpha) {
             return vl + LAZY_MARGIN;
         } else if (vl - LAZY_MARGIN >= vlBeta) {
             return vl - LAZY_MARGIN;
         }
-        // 2. 典当结构价值
+        // 2. Pawn Structure Value
         for (int sd = 0; sd < 2; sd++) {
             int brSingle = 0, brDouble = 0;
             int[] brs = (sd == 0 ? pos.brWhitePawn : pos.brBlackPawn);

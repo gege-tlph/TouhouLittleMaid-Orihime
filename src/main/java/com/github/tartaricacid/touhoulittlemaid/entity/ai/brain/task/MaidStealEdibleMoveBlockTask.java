@@ -37,6 +37,18 @@ public class MaidStealEdibleMoveBlockTask extends MaidMoveToBlockTask {
      */
     @VisibleForDebug
     public static boolean DEBUG = false;
+    /**
+     * 偷吃/摆盘最多持有 {@link InitEntities#TARGET_POS} 的时长。
+     *
+     * <p>偷吃两个 Behavior 注册在优先级 8，而工作行为在 5~6 且同样要求 {@code TARGET_POS} 为空——
+     * 一旦偷吃先拿到该内存，工作行为连判据都不会被调用，无法在工作侧抢占。这里给持有加上时限：
+     * 超时即释放，让工作行为在下一 tick 按优先级正常取得目标。</p>
+     *
+     * <p>水平搜索范围只有 {@value #HORIZONTAL_SEARCH_RANGE} 格，正常走到食物远快于该时限，
+     * 所以它只会截断「走不到 / 被卡住」这类本就该放弃的持有，不会打断正常偷吃。
+     * 与智能应战参数同属待实机手感冻结的暂定值。</p>
+     */
+    private static final int MAX_TARGET_HOLD_TICKS = 200;
 
     private final MemoryModuleType<MaidEdibleBlockAction> action;
 
@@ -74,6 +86,7 @@ public class MaidStealEdibleMoveBlockTask extends MaidMoveToBlockTask {
                         this.placedStack = stack;
                         maid.getBrain().setMemory(this.action, MaidEdibleBlockAction.TRY_PLACE);
                         this.searchForDestination(worldIn, maid);
+                        armTargetHold(worldIn, maid);
                         return;
                     }
                 }
@@ -86,14 +99,27 @@ public class MaidStealEdibleMoveBlockTask extends MaidMoveToBlockTask {
             maid.getBrain().setMemory(this.action, MaidEdibleBlockAction.TRY_STEAL);
         }
 
-        // 摆盘和偷吃是两套玩家可感知的行为。关闭偷吃时仍允许上面的
+        // 摆盘和偷吃是两套玩家可感知的行为。关闭偷吃或仍处于偷吃冷却时，仍允许上面的
         // 背包食物扫描与摆盘，只跳过对世界中现成食物的搜索。
-        if (!maid.getConfigManager().isTableFoodAllowed()) {
+        if (!MaidStealEdibleUseTask.canSteal(maid)) {
             return;
         }
 
         // 尝试搜索目标位置
         this.searchForDestination(worldIn, maid);
+        armTargetHold(worldIn, maid);
+    }
+
+    /**
+     * 搜索成功时给本次持有打上到期时刻；搜索失败则什么也不做。
+     *
+     * <p>每次取得目标都重新计时，因此不存在「上一轮遗留的到期时刻立刻掐掉这一轮」的问题。</p>
+     */
+    private static void armTargetHold(ServerLevel worldIn, EntityMaid maid) {
+        if (maid.getBrain().hasMemoryValue(InitEntities.TARGET_POS)) {
+            maid.getBrain().setMemory(InitEntities.MAID_EDIBLE_HOLD_EXPIRY,
+                    worldIn.getGameTime() + MAX_TARGET_HOLD_TICKS);
+        }
     }
 
     @Override

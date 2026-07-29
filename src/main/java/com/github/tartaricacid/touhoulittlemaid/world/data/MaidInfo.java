@@ -18,9 +18,7 @@ public record MaidInfo(String dimension, BlockPos chunkPos, UUID ownerId, UUID e
         dimension = normalizeDimension(dimension);
     }
 
-    /**
-     * 兼容早期版本使用 {@code ResourceKey#toString()} 写入的维度字符串。
-     */
+    /** Repairs dimension strings written by the early 1.21.11 port via ResourceKey#toString(). */
     private static String normalizeDimension(String dimension) {
         if (dimension.startsWith(RESOURCE_KEY_PREFIX) && dimension.endsWith("]")) {
             int separator = dimension.lastIndexOf(RESOURCE_KEY_SEPARATOR);

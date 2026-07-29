@@ -45,7 +45,9 @@ public class MaidTemptGoal extends Goal {
             --this.calmDown;
             return false;
         } else {
-
+            // B5: 1.21.11 移除了 Level.getNearestEntity(Class,TargetingConditions,...) → 用 getEntitiesOfClass
+            //   + 最近距离筛选 忠实复刻（保留 targetingConditions；其 test 现需 ServerLevel 首参，javap 确认）。
+            //   AI Goal 仅服务端 tick，故 ServerLevel 守卫下等价原行为。
             if (this.mob.level() instanceof ServerLevel serverLevel) {
                 List<EntityMaid> nearby = serverLevel.getEntitiesOfClass(EntityMaid.class,
                         this.mob.getBoundingBox().inflate(10),
@@ -58,7 +60,7 @@ public class MaidTemptGoal extends Goal {
         }
     }
 
-
+    // B5: 1.21.11 TargetingConditions.Selector.test 新增 ServerLevel 参数（javap 确认；此处忽略，与 Brain SAM 同型）
     private boolean shouldFollow(LivingEntity livingEntity, ServerLevel level) {
         return this.items.test(livingEntity.getMainHandItem()) || this.items.test(livingEntity.getOffhandItem());
     }

@@ -15,15 +15,18 @@ import java.util.List;
 
 public final class TipsHelper {
     private static final Identifier BUTTON = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "textures/gui/maid_gui_button.png");
-
+    // 1.21.9+ GUI 重写后 drawString 需显式 alpha，故补 0xFF（颜色值与 HEAD 的 0xFFFF55 相同）
     private static final int TEXT_COLOR = 0xFF_FF_FF_55;
 
     public static void renderTips(GuiGraphics graphics, Button button, Component text) {
-
+        // 空文本检查前置：HEAD 在 pushPose 之后才 return，会漏掉 popPose（原有缺陷）。
+        // 新的 nextStratum() 无需配对，前置后该缺陷自然消失。
         if (text.equals(Component.empty())) {
             return;
         }
-
+        // 1.21.9+ Blaze3D 重写：GuiGraphics.pose() 现在返回 2D 的 Matrix3x2fStack，没有 z 轴，
+        // 故 pushPose()+translate(0,0,450)+popPose() 这种「抬高 z 以置顶」的手法已不可用。
+        // 新的深度分层原语是 nextStratum()（vanilla AbstractContainerScreen 亦如此用）。
         graphics.nextStratum();
 
         int xOffset = button.getX() + button.getWidth() - 8;
@@ -91,7 +94,13 @@ public final class TipsHelper {
         }
     }
 
-
+    /**
+     * 1.21.9+：blit 首参改为 RenderPipeline，且纹理尺寸须显式给出
+     * （旧的 7 参便捷重载隐含 256x256）。RenderSystem.enableDepthTest() 已移除 ——
+     * 深度状态现由 RenderPipeline 声明式描述，故原先每次 blit 前的手动调用一并删除。
+     * 结构参考 origin/26.1，但其 GuiGraphicsExtractor / graphics.text() 是 MC 26.1.2 专有，
+     * 1.21.11 不存在，故沿用 HEAD 的 GuiGraphics / drawString。
+     */
     private static void blitButton(GuiGraphics graphics, int x, int y, int u, int v, int w, int h) {
         graphics.blit(RenderPipelines.GUI_TEXTURED, BUTTON, x, y, (float) u, (float) v, w, h, 256, 256);
     }

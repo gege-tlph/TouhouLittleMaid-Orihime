@@ -46,7 +46,7 @@ public class AltarRecipeCategory implements IRecipeCategory<AltarRecipeWrapper> 
         Font font = Minecraft.getInstance().font;
         String result = I18n.get("jei.touhou_little_maid.altar_craft.result", I18n.get(recipe.getLangKey()));
 
-
+        // 1.21.11：GUI pose = Matrix3x2fStack（2D）——pushPose/popPose → pushMatrix/popMatrix，scale 去 z
         graphics.pose().pushMatrix();
         graphics.pose().scale(0.8f, 0.8f);
         powerDraw.draw(graphics, 90, 50);
@@ -86,7 +86,7 @@ public class AltarRecipeCategory implements IRecipeCategory<AltarRecipeWrapper> 
         return TITLE;
     }
 
-
+    // JEI 27：getBackground 已删除，类别尺寸改由 getWidth/getHeight 提供（沿用 origin 160x125 空白背景尺寸）
     @Override
     public int getWidth() {
         return bgDraw.getWidth();

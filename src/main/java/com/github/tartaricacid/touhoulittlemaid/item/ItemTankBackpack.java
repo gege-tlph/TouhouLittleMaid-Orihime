@@ -40,7 +40,7 @@ public class ItemTankBackpack extends ItemMaidBackpack {
             tags = new CompoundTag();
             backpack.set(InitDataComponent.TANK_BACKPACK_TAG, tags);
         }
-
+        // 1.21.11 + Fabric 6.0.x: SingleFluidStorage.writeNbt(CompoundTag,Provider) → writeData(ValueOutput)，merge 回既有 tags（"variant"+"amount"，格式兼容）
         TagValueOutput tankOut = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, provider);
         data.getTank().writeData(tankOut);
         tags.merge(tankOut.buildResult());
@@ -60,7 +60,7 @@ public class ItemTankBackpack extends ItemMaidBackpack {
     public void appendHoverText(ItemStack stack, Item.TooltipContext worldIn, TooltipDisplay tooltipDisplay, Consumer<Component> tooltip, TooltipFlag flagIn){
         CompoundTag nbt = stack.get(TANK_BACKPACK_TAG);
         if (nbt != null) {
-
+            //CompoundTag compound = nbt.getCompoundOrEmpty("Fluid");
             CompoundTag compound = nbt.getCompoundOrEmpty("variant");
             if (compound.isEmpty() || worldIn == null) {
                 return;
@@ -72,7 +72,7 @@ public class ItemTankBackpack extends ItemMaidBackpack {
 
 
             MutableComponent fluidInfo;
-
+            //Optional<FluidStack> fluid = FluidStack.read(registries, compound);
             Optional<FluidVariant> fluid = FluidVariant.CODEC.parse(registries.createSerializationContext(NbtOps.INSTANCE), compound).result();
             if (fluid.isEmpty()) {
                 return;

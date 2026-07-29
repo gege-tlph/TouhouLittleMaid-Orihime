@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(SweetBerryBushBlock.class)
 public class SweetBerryBushBlockMixin {
+    // 1.21.11: entityInside 增加 InsideBlockEffectApplier + boolean 两参 → method 描述符与 handler 签名同步
     @Inject(
             method = "entityInside(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/entity/InsideBlockEffectApplier;Z)V",
             at = @At("HEAD"), cancellable = true

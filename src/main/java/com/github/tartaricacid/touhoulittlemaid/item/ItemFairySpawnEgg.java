@@ -19,7 +19,7 @@ import java.util.Optional;
 
 public class ItemFairySpawnEgg extends SpawnEggItem {
     public ItemFairySpawnEgg(Identifier id) {
-
+        // B5: SpawnEggItem 构造器改为仅 Properties；实体类型经 Properties.spawnEgg 绑定
         super(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, id)).spawnEgg(EntityFairy.TYPE));
     }
 
@@ -31,7 +31,7 @@ public class ItemFairySpawnEgg extends SpawnEggItem {
         if (!(parentMob instanceof EntityFairy)) {
             return Optional.empty();
         }
-
+        // B5: EntityType.create(Level) → create(Level, EntitySpawnReason)
         EntityFairy fairy = EntityFairy.TYPE.create(level, net.minecraft.world.entity.EntitySpawnReason.SPAWN_ITEM_USE);
         if (fairy == null) {
             return Optional.empty();
@@ -41,7 +41,7 @@ public class ItemFairySpawnEgg extends SpawnEggItem {
         if (!fairy.isBaby()) {
             return Optional.empty();
         }
-
+        // 1.21.11: Entity.moveTo(...) -> snapTo(...)
         fairy.snapTo(pos.x(), pos.y(), pos.z(), 0.0F, 0.0F);
         level.addFreshEntityWithPassengers(fairy);
         fairy.setCustomName(stack.get(DataComponents.CUSTOM_NAME));

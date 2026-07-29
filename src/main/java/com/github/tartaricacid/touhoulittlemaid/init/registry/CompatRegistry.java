@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.init.registry;
 
 import com.github.tartaricacid.touhoulittlemaid.compat.patchouli.PatchouliCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.refurbishedfurniture.RefurbishedFurnitureCompat;
 import net.fabricmc.loader.api.FabricLoader;
 
 public final class CompatRegistry {
@@ -13,6 +14,7 @@ public final class CompatRegistry {
 
     public static void onEnqueue() {
         checkModLoad(PATCHOULI, PatchouliCompat::init);
+        checkModLoad(RefurbishedFurnitureCompat.MOD_ID, RefurbishedFurnitureCompat::init);
     }
 
     private static void checkModLoad(String modId, Runnable runnable) {

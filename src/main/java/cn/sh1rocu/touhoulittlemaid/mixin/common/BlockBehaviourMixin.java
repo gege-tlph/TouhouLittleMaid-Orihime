@@ -15,7 +15,8 @@ import org.spongepowered.asm.mixin.injection.At;
 
 @Mixin(BlockBehaviour.class)
 public class BlockBehaviourMixin {
-
+    // 1.21.11: onExplosionHit 第二参 Level→ServerLevel；Block.wasExploded(Level,...)→wasExploded(ServerLevel,...)。
+    // IBlock 的自定义爆炸处理（tlm$onBlockExploded）仍经此重定向。
     @WrapOperation(
             method = "onExplosionHit",
             at = @At(
@@ -31,7 +32,9 @@ public class BlockBehaviourMixin {
         }
     }
 
-
+    // Keep the block entity alive until the TLM explosion callback runs. The
+    // 1.21.11 owner changed from Level to ServerLevel, but setBlock(AIR) is
+    // still inside BlockBehaviour.onExplosionHit immediately before wasExploded.
     @WrapOperation(
             method = "onExplosionHit",
             at = @At(

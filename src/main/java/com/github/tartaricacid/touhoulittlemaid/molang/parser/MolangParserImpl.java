@@ -46,7 +46,8 @@ final class MolangParserImpl implements MolangParser {
     private final MolangLexer lexer;
     private final ObjectBinding binding;
 
-
+    // the last parsed expression, returned by next()
+    // we have to use Object and a flag since null is a valid value too
     private @Nullable Object current = UNSET_FLAG;
 
     MolangParserImpl(final @NotNull MolangLexer lexer, @NotNull ObjectBinding binding) {
@@ -54,7 +55,12 @@ final class MolangParserImpl implements MolangParser {
         this.binding = requireNonNull(binding, "binding");
     }
 
-    // 解析单个表达式。单个表达式不需要解析左侧表达式，例如文字、语句、标识符、包装表达式和执行范围
+    //
+    // Parses a single expression.
+    // Single expressions don't require a left-hand expression
+    // to be parsed, e.g. literals, statements, identifiers,
+    // wrapped expressions and execution scopes
+    //
     @NotNull
     Expression parseSingle(final @NotNull MolangLexer lexer) throws IOException {
         Token token = lexer.current();
@@ -73,7 +79,7 @@ final class MolangParserImpl implements MolangParser {
                 return DoubleExpression.ZERO;
             case LPAREN:
                 lexer.next();
-                // 包裹表达式：（表达式）
+                // wrapped expression: (expression)
                 Expression expression = parseCompoundExpression(lexer, 0);
                 token = lexer.current();
                 if (token.kind() != TokenKind.RPAREN) {
@@ -91,7 +97,7 @@ final class MolangParserImpl implements MolangParser {
                         lexer.next();
                         break;
                     } else if (token.kind() == TokenKind.EOF) {
-                        // 已经到达终点了，但还没有结束，是吗？
+                        // end reached but not closed yet, huh?
                         throw new ParseException(
                                 "Found the end before the execution scope closing token",
                                 lexer.cursor()
@@ -166,10 +172,10 @@ final class MolangParserImpl implements MolangParser {
         while (true) {
             final Expression compoundExpr = parseCompound(lexer, expr, lastPrecedence);
 
-            // 当前词元
+            // current token
             final Token current = lexer.current();
             if (current.kind() == TokenKind.EOF || current.kind() == TokenKind.SEMICOLON) {
-                // 找到eof，停止解析，返回expr
+                // found eof, stop parsing, return expr
                 return compoundExpr;
             } else if (compoundExpr == expr) {
                 return expr;
@@ -191,15 +197,15 @@ final class MolangParserImpl implements MolangParser {
             case RPAREN:
             case EOF:
                 return left;
-            case LPAREN: { // CALL EXPRESSION: "左("
+            case LPAREN: { // CALL EXPRESSION: "left("
                 if (left instanceof IdentifierExpression) {
                     lexer.next();
                     final List<Expression> arguments = new ArrayList<>();
 
-                    // 开始阅读论据
+                    // start reading the arguments
                     while (true) {
                         arguments.add(parseCompoundExpression(lexer, 0));
-                        // 更新当前角色
+                        // update current character
                         current = lexer.current();
                         if (current.kind() == TokenKind.EOF) {
                             throw new ParseException("Found EOF before closing RPAREN", null);
@@ -242,7 +248,7 @@ final class MolangParserImpl implements MolangParser {
                 final Expression trueValue = parseCompoundExpression(lexer, PRECEDENCE_QUES);
 
                 if (lexer.current().kind() == TokenKind.COLON) {
-                    // 那么它是一个三元表达式，因为有一个“：”，表示下一个表达式
+                    // then it's a ternary expression, since there is a ':', indicating the next expression
                     lexer.next();
                     return new TernaryConditionalExpression(left, trueValue, parseCompoundExpression(lexer, PRECEDENCE_QUES));
                 } else {
@@ -261,10 +267,11 @@ final class MolangParserImpl implements MolangParser {
             }
         }
 
-        // 检查二进制表达式
+        // check for binary expressions
         final BinaryExpression.Op op;
 
-        // @formatter：关闭我希望这是java 17
+        // @formatter:off
+        // I wish this was java 17
         switch (current.kind()) {
             case AMPAMP: op = BinaryExpression.Op.AND; break;
             case BARBAR: op = BinaryExpression.Op.OR; break;
@@ -283,7 +290,7 @@ final class MolangParserImpl implements MolangParser {
             case ARROW: op = BinaryExpression.Op.ARROW; break;
             default: return left;
         }
-        // @格式化程序：打开
+        // @formatter:on
 
         final int precedence = op.precedence();
         if (lastPrecedence >= precedence) {
@@ -314,23 +321,26 @@ final class MolangParserImpl implements MolangParser {
         return expr;
     }
 
-    // 解析表达式，直到找到意外标记、分号或文件结束标记。
+    //
+    // Parses an expression until it finds an unexpected token,
+    // a semicolon, or an end-of-file token.
+    //
     private @Nullable Expression next0() throws IOException {
         Token token = lexer.next();
 
         if (token.kind() == TokenKind.EOF) {
-            // 已到达文件末尾！
+            // reached end-of-file!
             return null;
         }
 
         if (token.kind() == TokenKind.ERROR) {
-            // 标记化错误！
+            // tokenization error!
             throw new ParseException("Found an invalid token (error): " + token.value(), cursor());
         }
 
         final Expression expression = parseCompoundExpression(lexer, -10);
 
-        // 检查当前标记，应该是分号或 eof
+        // check current token, should be a semicolon or an eof
         token = lexer.current();
         if (token.kind() != TokenKind.EOF && token.kind() != TokenKind.SEMICOLON) {
             throw new ParseException("Expected a semicolon, but was " + token, lexer.cursor());

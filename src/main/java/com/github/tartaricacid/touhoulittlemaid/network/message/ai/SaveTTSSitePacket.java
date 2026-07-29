@@ -2,9 +2,9 @@ package com.github.tartaricacid.touhoulittlemaid.network.message.ai;
 
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.AvailableSites;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.SiteConfigStorage;
+import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.SiteRuntimeActivation;
+import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializableSite;
 import com.github.tartaricacid.touhoulittlemaid.command.subcommand.AIChatCommand;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import java.util.Map;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializableSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializerRegister;
@@ -101,21 +101,28 @@ public record SaveTTSSitePacket(Action action, @Nullable String siteId, boolean 
         if (!SiteConfigStorage.writeTTS(sites)) {
             return;
         }
-        if (player.level().getServer().isDedicatedServer()) {
-            SyncAISitesPacket.syncToSiteEditors(player.level().getServer());
-            player.displayClientMessage(Component.translatable("config.touhou_little_maid.ai_sites.save.reload_required")
-                    .withStyle(ChatFormatting.YELLOW), false);
-        } else {
-            AIChatCommand.reload(player.level().getServer());
-        }
+        SiteRuntimeActivation.activate(player);
     }
 
+    /**
+     * 更新一个已有站点。**密钥哨兵在这里被换回服务端现有的值。**
+     *
+     * <p>客户端拿到的密钥永远是哨兵（明文不下行），所以管理员只改地址、根本没碰密钥框时，
+     * 回传的还是哨兵——不填回去就等于把密钥清空了。这正是「只改一个 URL 却让服务失效」
+     * 那类回归的成因，故填回动作必须紧贴写盘，不能散在调用方。</p>
+     */
     private static boolean updateSite(Map<String, TTSSite> sites, @Nullable TTSSite site) {
         if (site == null || StringUtils.isBlank(site.id())) {
             return false;
         }
-        sites.put(site.id(), site);
+        sites.put(site.id(), restoreSecrets(site, sites.get(site.id())));
         return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static TTSSite restoreSecrets(TTSSite incoming, @Nullable TTSSite existing) {
+        SerializableSite<TTSSite> serializer = (SerializableSite<TTSSite>) incoming.serializer();
+        return serializer == null ? incoming : serializer.restoreKeptSecrets(incoming, existing);
     }
 
     private static boolean toggleSite(Map<String, TTSSite> sites, @Nullable String siteId, boolean enabled) {

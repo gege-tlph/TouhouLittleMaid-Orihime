@@ -28,7 +28,7 @@ public record ItemBreakPackage(int id, ItemStack item) implements CustomPacketPa
         context.client().execute(() -> breakItem(message));
     }
 
-
+    // B7b: 还原 HEAD 的 @Environment(CLIENT) 内联模式（移植期外提的 proxy 已 P5 排除）。逻辑不变。
     @Environment(EnvType.CLIENT)
     private static void breakItem(ItemBreakPackage message) {
         Minecraft mc = Minecraft.getInstance();

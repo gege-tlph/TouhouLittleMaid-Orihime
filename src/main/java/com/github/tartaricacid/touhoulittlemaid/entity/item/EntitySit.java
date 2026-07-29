@@ -31,6 +31,7 @@ public class EntitySit extends Entity {
             .sized(0.5f, 0.1f)
             .clientTrackingRange(10)
             .ridingOffset(-0.25F)
+            // 1.21.11: build(String) 已移除，改为 build(ResourceKey)（与仓库内 EntityFairy/EntityBox 等一致）
             .build(ResourceKey.create(Registries.ENTITY_TYPE,
                     Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "sit")));
     private static final EntityDataAccessor<String> SIT_TYPE = SynchedEntityData.defineId(EntitySit.class, EntityDataSerializers.STRING);
@@ -53,6 +54,9 @@ public class EntitySit extends Entity {
         builder.define(SIT_TYPE, "");
     }
 
+    // 1.21.11: Entity.read/addAdditionalSaveData 改收 ValueInput/ValueOutput（基类为 abstract）。
+    // NbtUtils.readBlockPos/writeBlockPos 已移除 —— 旧实现本就是 int[]{x,y,z}，
+    // 故用 getIntArray/putIntArray 等价替换，**存档格式不变**。
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         input.getString("SitJoyType").ifPresent(this::setJoyType);
@@ -95,7 +99,7 @@ public class EntitySit extends Entity {
             if (this.isIdleSchedule(maid)) {
                 return;
             }
-            // 工作日程中，仅允许支持当前娱乐类型的任务继续乘坐。
+            // 如果是工作状态，看看这个工作是否允许你坐在上面
             if (this.isWorkSchedule(maid) && task.canSitInJoy(maid, joyType)) {
                 return;
             }
@@ -137,6 +141,8 @@ public class EntitySit extends Entity {
         return true;
     }
 
+    // 1.21.11: Entity.hurt(DamageSource,float) 拆分为 abstract hurtServer(ServerLevel,...) / hurtClient(...)
+    // 语义不变：坐骑实体不可受伤
     @Override
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
         return false;

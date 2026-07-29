@@ -36,7 +36,7 @@ public class MaidFindSitTask extends MaidCheckRateTask {
             this.sitEntity = entity;
             BehaviorUtils.setWalkAndLookTargetMemories(maid, this.sitEntity, this.speedModifier, 0);
         }, () -> {
-            // 聊天气泡反馈通过聊天气泡子系统恢复；任务行为不受影响。
+            // Chat-bubble feedback is restored with the chat-bubble subsystem; task behaviour is unaffected.
         });
 
         if (sitEntity != null && sitEntity.isAlive() && sitEntity.closerThan(maid, 2)) {
@@ -51,7 +51,7 @@ public class MaidFindSitTask extends MaidCheckRateTask {
         if (!entity.isAlive() || !maid.isWithinHome(entity.blockPosition()) || !entity.getPassengers().isEmpty()) {
             return false;
         }
-
+        // [Codex] High-fidelity origin behaviour: both chairs and empty boats are valid seats.
         return entity instanceof EntityChair || entity instanceof Boat;
     }
 

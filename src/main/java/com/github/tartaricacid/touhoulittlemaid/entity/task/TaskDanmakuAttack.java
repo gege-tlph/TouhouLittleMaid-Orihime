@@ -4,6 +4,7 @@ import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IRangedAttackTask;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
+// TODO: datagen excluded - restore when datagen is re-enabled
 import com.github.tartaricacid.touhoulittlemaid.datagen.EnchantmentKeys;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidAttackStrafingTask;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidRangedWalkToTarget;
@@ -38,6 +39,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
+// TODO: datagen excluded - restore when datagen is re-enabled
 import static com.github.tartaricacid.touhoulittlemaid.datagen.EnchantmentKeys.getEnchantmentLevel;
 
 public class TaskDanmakuAttack implements IRangedAttackTask {

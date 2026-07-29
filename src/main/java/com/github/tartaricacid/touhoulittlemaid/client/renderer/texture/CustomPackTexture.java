@@ -11,7 +11,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * 通过 {@link ResourceAccessor} 读取自定义模型包中的纹理，支持目录与压缩包等不同资源来源。
+ * Phase 3 Batch 3b keystone：基于 {@link ResourceAccessor} 的自定义资源包纹理。
+ * 与同包已迁移的 FilePackTexture 同构（SizeTexture + loadContents(ResourceManager)），
+ * 仅数据源改为 accessor.open(String) 而非 Files.newInputStream。
  */
 public class CustomPackTexture extends SizeTexture {
     private final ResourceAccessor accessor;

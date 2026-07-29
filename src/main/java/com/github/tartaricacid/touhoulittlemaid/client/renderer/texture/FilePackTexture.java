@@ -30,7 +30,9 @@ public class FilePackTexture extends SizeTexture {
         return textureFile.isFile();
     }
 
-
+    // 1.21.9+：load(ResourceManager) -> loadContents(ResourceManager) : TextureContents。
+    // 线程调度与 GPU 上传均由 ReloadableTexture 负责，故 RenderSystem.isOnRenderThreadOrInit /
+    // recordRenderCall / TextureUtil.prepareImage / NativeImage.upload 全部移除。
     @Override
     public TextureContents loadContents(ResourceManager manager) throws IOException {
         File textureFile = rootPath.resolve("assets").resolve(texturePath.getNamespace()).resolve(texturePath.getPath()).toFile();

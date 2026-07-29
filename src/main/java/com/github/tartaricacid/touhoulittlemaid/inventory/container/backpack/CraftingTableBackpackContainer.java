@@ -65,6 +65,7 @@ public class CraftingTableBackpackContainer extends MaidMainContainer {
             ItemStack stack2 = slot.getItem();
             stack1 = stack2.copy();
             if (index == resultSlot.index) {
+                // 1.21.11 onCraftedBy already invokes onCraftedPostProcess.
                 this.access.execute((level, blockPos) -> stack2.getItem().onCraftedBy(stack2, player));
                 if (!this.moveItemStackTo(stack2, 0, PLAYER_INVENTORY_SIZE, true)) {
                     return ItemStack.EMPTY;
@@ -119,6 +120,8 @@ public class CraftingTableBackpackContainer extends MaidMainContainer {
             Optional<RecipeHolder<CraftingRecipe>> optional = level.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftInput, level);
             if (optional.isPresent()) {
                 RecipeHolder<CraftingRecipe> recipe = optional.get();
+                // The boolean overload retains vanilla limited-crafting and
+                // recipe-book gating in 1.21.11.
                 if (result.setRecipeUsed(serverPlayer, recipe)) {
                     ItemStack stack2 = recipe.value().assemble(craftInput, level.registryAccess());
                     if (stack2.isItemEnabled(level.enabledFeatures())) {

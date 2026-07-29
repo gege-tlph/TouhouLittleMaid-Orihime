@@ -227,7 +227,7 @@ public class MaidModelInfo implements IModelInfo {
         }
         if (isGeckoModel) {
             if (animation == null || animation.isEmpty()) {
-                // 将默认动画标识符保留为数据，以便此共享 POJO 保持客户端加载程序独立。
+                // Keep the default animation identifier as data so this shared POJO stays client-loader independent.
                 animation = Collections.singletonList(Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "animation/maid.animation.json"));
             } else {
                 animation = animation.stream().filter(res -> res.getPath().endsWith(GECKO_ANIMATION)).collect(Collectors.toList());

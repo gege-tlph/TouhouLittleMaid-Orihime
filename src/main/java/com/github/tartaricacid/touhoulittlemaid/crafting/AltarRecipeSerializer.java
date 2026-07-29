@@ -38,6 +38,7 @@ public class AltarRecipeSerializer implements RecipeSerializer<AltarRecipe> {
         if (ingredientList.size() > 6) {
             return DataResult.error(() -> "Too many ingredients for shapeless recipe. The maximum is: 6");
         }
+        // 1.21.11: Ingredient.EMPTY 移除 → createWithCapacity + addAll
         NonNullList<Ingredient> nonNullList = NonNullList.createWithCapacity(ingredientList.size());
         nonNullList.addAll(ingredientList);
         return DataResult.success(nonNullList);
@@ -46,6 +47,7 @@ public class AltarRecipeSerializer implements RecipeSerializer<AltarRecipe> {
     private AltarRecipe fromNetwork(RegistryFriendlyByteBuf byteBuf) {
         String group = byteBuf.readUtf();
         CraftingBookCategory category = byteBuf.readEnum(CraftingBookCategory.class);
+        // 1.21.11: Ingredient.EMPTY 移除 → createWithCapacity + 逐个 decode
         int size = byteBuf.readVarInt();
         NonNullList<Ingredient> ingredients = NonNullList.createWithCapacity(size);
         for (int i = 0; i < size; i++) {
@@ -53,6 +55,7 @@ public class AltarRecipeSerializer implements RecipeSerializer<AltarRecipe> {
         }
         float power = byteBuf.readFloat();
         ItemStack result = ItemStack.STREAM_CODEC.decode(byteBuf);
+        // 1.21.11: readResourceLocation 移除 → Identifier.STREAM_CODEC
         Identifier entityType = Identifier.STREAM_CODEC.decode(byteBuf);
         String langKey = byteBuf.readUtf();
         return new AltarRecipe(group, category, ingredients, power, result, entityType, langKey);
@@ -67,6 +70,7 @@ public class AltarRecipeSerializer implements RecipeSerializer<AltarRecipe> {
         }
         friendlyByteBuf.writeFloat(altarRecipe.getPower());
         ItemStack.STREAM_CODEC.encode(friendlyByteBuf, altarRecipe.getResult());
+        // 1.21.11: writeResourceLocation 移除 → Identifier.STREAM_CODEC
         Identifier.STREAM_CODEC.encode(friendlyByteBuf, altarRecipe.getEntityType());
         friendlyByteBuf.writeUtf(altarRecipe.getLangKey());
     }

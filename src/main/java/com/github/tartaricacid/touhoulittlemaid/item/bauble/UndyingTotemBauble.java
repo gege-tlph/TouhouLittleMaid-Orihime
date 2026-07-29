@@ -21,6 +21,7 @@ public class UndyingTotemBauble implements IMaidBauble {
             maid.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 900, 1));
             maid.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 100, 1));
             maid.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 800, 0));
+            // 1.21.11: EntityEvent.TALISMAN_ACTIVATE 具名常量移除，但事件字节仍为 35（vanilla checkTotemDeathProtection 亦用 broadcastEntityEvent(this,(byte)35) 触发图腾粒子）
             maid.level.broadcastEntityEvent(maid, (byte) 35);
             if (maid.getOwner() instanceof ServerPlayer serverPlayer) {
                 InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.USE_UNDEAD_BAUBLE);

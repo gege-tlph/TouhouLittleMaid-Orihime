@@ -89,6 +89,11 @@ public class STTSiliconflowSite implements STTSite {
         this.url = url;
     }
 
+    @Override
+    public boolean hasUsableCredentials() {
+        return StringUtils.isNotBlank(secretKey);
+    }
+
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
     }

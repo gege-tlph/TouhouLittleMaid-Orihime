@@ -18,7 +18,9 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * 随着后续版本的更新，一些新的动画会加入，并且采用硬编码进行修改 <p> 这里就是适用于女仆的新动画调用的地方
+ * 随着后续版本的更新，一些新的动画会加入，并且采用硬编码进行修改
+ * <p>
+ * 这里就是适用于女仆的新动画调用的地方
  */
 public final class HardcodedAnimationManger {
     private static final List<ICustomAnimation<? extends LivingEntity>> ANIMATIONS = Lists.newLinkedList();
@@ -26,6 +28,10 @@ public final class HardcodedAnimationManger {
     public static void init() {
         HardcodedAnimationManger manager = new HardcodedAnimationManger();
 
+        // origin 在此注册 SwimAnimation / TridentAnimation（ICustomAnimation 形态）。
+        // 1.21.11 RenderState 体系下二者已迁移为 IAnimation<EntityMaidRenderState>，
+        // 等价注入点 = client/animation/special/HardcodedAnimation（经 MaidPackLoaderEvent.LEGACY
+        // 在装载期塞入每个 legacy 模型的动画列表，与 26.1 一致）——接线见 B2-2 批次 E 报告。
 
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             littleMaid.addHardcodeAnimation(manager);

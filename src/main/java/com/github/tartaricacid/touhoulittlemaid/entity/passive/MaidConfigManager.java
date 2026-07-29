@@ -54,7 +54,8 @@ public class MaidConfigManager {
         output.putBoolean(PICKUP_TAG, isPickup());
         output.putBoolean(HOME_TAG, isHomeModeEnable());
         output.putBoolean(RIDEABLE_TAG, isRideable());
-
+        // 逐字节对齐 origin/1.21.1：8 个开关嵌套在 "MaidSubConfig" 子 compound（此前被移植期扁平化到 maid 根
+        //   → 跨版本升级世界丢档，见 CLIENT_AUDIT §I.A/S1）。child() 语义 == HEAD 的 new CompoundTag()+put(TAG,子)。
         ValueOutput maidSubConfig = output.child(MAID_SUB_CONFIG_TAG);
         maidSubConfig.putBoolean(BACKPACK_SHOW_TAG, isShowBackpack());
         maidSubConfig.putBoolean(BACK_ITEM_SHOW_TAG, isShowBackItem());

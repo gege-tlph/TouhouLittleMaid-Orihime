@@ -91,6 +91,10 @@ public class MaidAIChatSerializable {
         return tag;
     }
 
+    // 1.21.11 entity-save 路径（ValueOutput/ValueInput）。写出与 writeToTag/readFromTag 完全相同的
+    // "MaidAIChat" 子 compound（child + 8 个 putString），逐字节同格式。
+    // ⚠️ writeToTag/readFromTag(CompoundTag) 仍服务于网络同步（SyncMaidAIDataPacket，payload 是 CompoundTag）；
+    //    两条路径必须保持字段一致 —— 新增字段时两处都要改。
     public void addAdditionalSaveData(ValueOutput output) {
         ValueOutput data = output.child("MaidAIChat");
         data.putString("LLMSite", llmSite);

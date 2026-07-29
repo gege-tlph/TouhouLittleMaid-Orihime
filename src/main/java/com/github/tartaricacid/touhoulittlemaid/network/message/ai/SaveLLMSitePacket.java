@@ -2,9 +2,8 @@ package com.github.tartaricacid.touhoulittlemaid.network.message.ai;
 
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.AvailableSites;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.SiteConfigStorage;
+import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.SiteRuntimeActivation;
 import com.github.tartaricacid.touhoulittlemaid.command.subcommand.AIChatCommand;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import java.util.Map;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializableSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializerRegister;
@@ -101,6 +100,16 @@ public record SaveLLMSitePacket(Action action, @Nullable String siteId, boolean 
         } catch (IllegalStateException exception) {
             return;
         }
+        // 磁盘上被严格读取跳过的未知站点不在 sites 里，但那个 id **是被占用的**——
+        // 只看 sites 判重会让新建的内置站点顶掉别人的扩展配置，装回扩展也回不去
+        if (message.action == Action.CREATE && message.site != null
+                && SiteConfigStorage.foreignLLMIds().contains(message.site.id())) {
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                            "ai.touhou_little_maid.chat.settings.hub.site_id_reserved_by_extension",
+                            message.site.id())
+                    .withStyle(net.minecraft.ChatFormatting.RED), false);
+            return;
+        }
         boolean changed = switch (message.action) {
             case CREATE -> createSite(sites, message.site);
             case UPDATE -> updateSite(sites, message.site);
@@ -114,29 +123,36 @@ public record SaveLLMSitePacket(Action action, @Nullable String siteId, boolean 
         if (!SiteConfigStorage.writeLLM(sites)) {
             return;
         }
-        if (player.level().getServer().isDedicatedServer()) {
-            SyncAISitesPacket.syncToSiteEditors(player.level().getServer());
-            player.displayClientMessage(Component.translatable("config.touhou_little_maid.ai_sites.save.reload_required")
-                    .withStyle(ChatFormatting.YELLOW), false);
-        } else {
-            AIChatCommand.reload(player.level().getServer());
-        }
+        SiteRuntimeActivation.activate(player);
     }
 
     private static boolean createSite(Map<String, LLMSite> sites, @Nullable LLMSite site) {
         if (site == null || StringUtils.isBlank(site.id()) || sites.containsKey(site.id())) {
             return false;
         }
-        sites.put(site.id(), site);
+        sites.put(site.id(), restoreSecrets(site, null));
         return true;
     }
 
+    /**
+     * 更新一个已有站点。**密钥哨兵在这里被换回服务端现有的值。**
+     *
+     * <p>客户端拿到的密钥永远是哨兵（明文不下行），所以管理员只改地址、根本没碰密钥框时，
+     * 回传的还是哨兵——不填回去就等于把密钥清空了。这正是「只改一个 URL 却让 LLM 失效」
+     * 那类回归的成因，故填回动作必须紧贴写盘，不能散在调用方。</p>
+     */
     private static boolean updateSite(Map<String, LLMSite> sites, @Nullable LLMSite site) {
         if (site == null || StringUtils.isBlank(site.id())) {
             return false;
         }
-        sites.put(site.id(), site);
+        sites.put(site.id(), restoreSecrets(site, sites.get(site.id())));
         return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static LLMSite restoreSecrets(LLMSite incoming, @Nullable LLMSite existing) {
+        SerializableSite<LLMSite> serializer = (SerializableSite<LLMSite>) incoming.serializer();
+        return serializer == null ? incoming : serializer.restoreKeptSecrets(incoming, existing);
     }
 
     private static boolean deleteSite(Map<String, LLMSite> sites, @Nullable String siteId) {

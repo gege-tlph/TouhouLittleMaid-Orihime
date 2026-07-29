@@ -39,7 +39,7 @@ public class ItemPhoto extends AbstractStoreMaidItem {
             return super.useOn(context);
         }
         if (clickedFace == Direction.UP && !PlaceHelper.notSuitableForPlaceMaid(worldIn, clickedPos)) {
-
+            // B5: 1.21.11 EntityType.create(Level) → create(Level, EntitySpawnReason)
             EntityMaid maid = InitEntities.MAID.create(worldIn, net.minecraft.world.entity.EntitySpawnReason.SPAWN_ITEM_USE);
             if (maid == null) {
                 return super.useOn(context);

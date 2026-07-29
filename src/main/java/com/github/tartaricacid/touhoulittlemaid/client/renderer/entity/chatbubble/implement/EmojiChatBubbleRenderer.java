@@ -24,7 +24,10 @@ public class EmojiChatBubbleRenderer implements IChatBubbleRenderer {
             this.emoji = emojiRes.location();
             this.width = emojiRes.width();
             this.height = emojiRes.height();
-
+            // 如果是 gif 表情的话，需要手动注册
+            // SWEEP R13-3：原 FIXME 删除了 GIF 注册 → 抽到 GIF 表情时贴图从未注册 = 空气泡
+            // （入世实测「有的显示有的只剩气泡框」的根因；GifTexture 本树已编译）。还原 origin；
+            // 1.21.11 RenderSystem.recordRenderCall 已删 → 用 Minecraft.execute 调度到客户端主线程（=渲染线程）
             if (emojiRes.isGif()) {
                 this.registerGifImage();
             }

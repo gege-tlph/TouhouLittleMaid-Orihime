@@ -179,9 +179,9 @@ public class TaskBowAttack implements IRangedAttackTask {
         AbstractArrow arrowEntity = ProjectileUtil.getMobArrow(maid, arrowStack, chargeTime, mainHandItem);
 
         if (mainHandItem.getItem() instanceof BowItem bowItem) {
-
+            //arrowEntity = bowItem.customArrow(arrowEntity, arrowStack, mainHandItem);
         }
-
+        // 无限附魔不存在或者小于 0 时（B4 恢复：EnchantmentKeys un-excluded）
         if (getEnchantmentLevel(access, Enchantments.INFINITY, mainHandItem) <= 0) {
             arrowStack.shrink(1);
             handler.setStackInSlot(slot, arrowStack);
@@ -196,7 +196,8 @@ public class TaskBowAttack implements IRangedAttackTask {
             attackValue = attackDamage.getBaseValue();
         }
         float multiplier = (float) (attackValue / 2.0f);
-
+        // B5: 1.21.11 移除了 AbstractArrow.getBaseDamage()（setBaseDamage 保留）→ 无法再读取当前基础伤害。
+        //   按 26.1 做法从原版箭矢基础伤害 2.0 重算（原逻辑即「基础×好感度倍率」，2.0 是 vanilla 箭基础值）。
         arrowEntity.setBaseDamage(Math.max(1.0, 2.0 * multiplier));
 
         return arrowEntity;

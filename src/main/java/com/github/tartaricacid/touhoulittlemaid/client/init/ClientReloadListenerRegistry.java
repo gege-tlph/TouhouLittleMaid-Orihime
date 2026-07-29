@@ -10,9 +10,7 @@ import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 
-/**
- * 注册所有客户端资源重新加载侦听器。
- */
+/** Registers all client resource reload listeners. */
 @Environment(EnvType.CLIENT)
 public final class ClientReloadListenerRegistry {
     private static final Identifier BEDROCK_MODEL = IdentifierUtil.modLoc("bedrock_model");

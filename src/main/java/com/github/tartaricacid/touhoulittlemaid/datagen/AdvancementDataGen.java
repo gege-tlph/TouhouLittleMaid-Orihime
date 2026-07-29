@@ -36,6 +36,7 @@ public class AdvancementDataGen extends FabricAdvancementProvider {
     }
 
     private static void genMainAdvancement(HolderLookup.Provider provider, Consumer<AdvancementHolder> consumer) {
+        // 1.21.11: EntityPredicate/ItemPredicate.Builder.of(...) 现需 HolderGetter → 透传 HolderLookup.Provider。
         BaseAdvancement.generate(provider, consumer);
         MaidBaseAdvancement.generate(provider, consumer);
         FavorabilityAdvancement.generate(consumer);

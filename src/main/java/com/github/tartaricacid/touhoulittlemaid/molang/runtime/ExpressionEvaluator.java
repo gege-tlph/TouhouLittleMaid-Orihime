@@ -31,17 +31,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 用于解释表达式并返回单个结果（通常为双精度浮点数）的 {@link ExpressionVisitor}。
+ * An {@link ExpressionVisitor} implementation that evaluates
+ * (interprets) the expressions it visits and returns a single
+ * value, commonly, a double value.
  *
  * @since 3.0.0
  */
 @SuppressWarnings("rawtypes")
-public interface ExpressionEvaluator<TEntity> extends ExecutionContext<TEntity>, ExpressionVisitor<Object> {
+public /* sealed */ interface ExpressionEvaluator<TEntity> /* permits ExpressionEvaluatorImpl */ extends ExecutionContext<TEntity>, ExpressionVisitor<Object> {
     /**
-     * 为指定实体创建新的 {@link ExpressionEvaluator}。
+     * Creates a new {@link ExpressionEvaluator} instance with
+     * the given bindings.
      *
-     * @param entity 实体对象
-     * @return 新建的表达式求值器
+     * @param entity The entity object
+     * @return The created expression evaluator.
      * @since 3.0.0
      */
     static @NotNull <TEntity> ExpressionEvaluator<TEntity> evaluator(final @Nullable TEntity entity) {
@@ -49,9 +52,10 @@ public interface ExpressionEvaluator<TEntity> extends ExecutionContext<TEntity>,
     }
 
     /**
-     * 创建不绑定实体的 {@link ExpressionEvaluator}。
+     * Creates a new {@link ExpressionEvaluator} instance
+     * without bindings.
      *
-     * @return 新建的表达式求值器
+     * @return The created expression evaluator.
      * @since 3.0.0
      */
     static @NotNull ExpressionEvaluator evaluator() {
@@ -64,34 +68,38 @@ public interface ExpressionEvaluator<TEntity> extends ExecutionContext<TEntity>,
     }
 
     /**
-     * 创建一个新的子表达式求值器。
+     * Creates a new, child, expression evaluator.
      *
-     * <p>子求值器继承父求值器的全部绑定，也可以添加自己的绑定。</p>
+     * <p>Child evaluators have all the bindings of
+     * their parents and may have extra bindings.</p>
      *
-     * <p>子求值器拥有独立的运行栈。</p>
+     * <p>Child evaluators have their own stack.</p>
      *
-     * @return 子表达式求值器。
+     * @return The child expression evaluator.
      * @since 3.0.0
      */
     @NotNull ExpressionEvaluator<TEntity> createChild();
 
     /**
-     * 创建一个新的子表达式求值器。
+     * Creates a new, child, expression evaluator.
      *
-     * <p>子求值器继承父求值器的全部绑定，也可以添加自己的绑定。</p>
+     * <p>Child evaluators have all the bindings of
+     * their parents and may have extra bindings.</p>
      *
-     * <p>子求值器拥有独立的运行栈。</p>
+     * <p>Child evaluators have their own stack.</p>
      *
-     * @param entity 子求值器使用的新实体对象
-     * @return 子表达式求值器。
+     * @param entity The new entity value
+     * @return The child expression evaluator.
      * @since 3.0.0
      */
     @NotNull <TNewEntity> ExpressionEvaluator<TNewEntity> createChild(final @Nullable TNewEntity entity);
 
     /**
-     * 取出最近一次 {@code return} 表达式设置的返回值。
+     * Pops the return value, set by the last "return"
+     * expression.
      *
-     * @return 返回值；若尚未执行 {@code return} 表达式则为 {@code null}
+     * @return The return value, null if no "return"
+     * expression is found.
      * @since 3.0.0
      */
     @Nullable Object popReturnValue();

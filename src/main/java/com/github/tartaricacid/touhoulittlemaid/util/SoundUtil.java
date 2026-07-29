@@ -21,7 +21,7 @@ public final class SoundUtil {
         BlockPos pos = maid.blockPosition();
         long dayTime = world.getDayTime();
         Biome biome = world.getBiome(pos).value();
-
+        // B5: 1.21.11 Biome.getPrecipitationAt/coldEnoughToSnow 新增 int seaLevel 参数（javap 确认）
         int seaLevel = world.getSeaLevel();
 
         // 差不多早上 6:00 - 9:00
@@ -64,7 +64,8 @@ public final class SoundUtil {
     }
 
     private static boolean shouldSnowGolemBurn(Biome biome, BlockPos pos, int seaLevel) {
-        // 调用原版位置温度计算，保留随高度变化的温度修正。
+        // 1.21.11 made this positional temperature helper private. Invoke the
+        // vanilla method so altitude adjustment remains identical to 1.21.1.
         return ((BiomeAccessor) (Object) biome).touhouLittleMaid$invokeGetTemperature(pos, seaLevel) > 1.0F;
     }
 }

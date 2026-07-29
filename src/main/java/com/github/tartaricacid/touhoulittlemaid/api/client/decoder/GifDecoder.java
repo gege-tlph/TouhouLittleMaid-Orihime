@@ -39,68 +39,68 @@ import java.util.ArrayList;
 public class GifDecoder {
 
     /**
-     * 文件读取状态：无错误。
+     * File read status: No errors.
      */
     public static final int STATUS_OK = 0;
 
     /**
-     * 文件读取状态：解码文件时出错（可能部分解码）
+     * File read status: Error decoding file (may be partially decoded)
      */
     public static final int STATUS_FORMAT_ERROR = 1;
 
     /**
-     * 文件读取状态：无法开源。
+     * File read status: Unable to open source.
      */
     public static final int STATUS_OPEN_ERROR = 2;
 
     protected BufferedInputStream in;
     protected int status;
 
-    protected int width; // 全图像宽度
-    protected int height; // 完整图像高度
-    protected boolean gctFlag; // 使用的全局颜色表
-    protected int gctSize; // 全局颜色表的大小
-    protected int loopCount = 1; // 迭代； 0 = 永远重复
+    protected int width; // full image width
+    protected int height; // full image height
+    protected boolean gctFlag; // global color table used
+    protected int gctSize; // size of global color table
+    protected int loopCount = 1; // iterations; 0 = repeat forever
 
-    protected int[] gct; // 全局颜色表
-    protected int[] lct; // 局部颜色表
-    protected int[] act; // 活动颜色表
+    protected int[] gct; // global color table
+    protected int[] lct; // local color table
+    protected int[] act; // active color table
 
-    protected int bgIndex; // 背景颜色索引
-    protected int bgColor; // 背景颜色
-    protected int lastBgColor; // 之前的背景颜色
-    protected int pixelAspect; // 像素长宽比
+    protected int bgIndex; // background color index
+    protected int bgColor; // background color
+    protected int lastBgColor; // previous bg color
+    protected int pixelAspect; // pixel aspect ratio
 
-    protected boolean lctFlag; // 局部颜色表标志
-    protected boolean interlace; // 交错标志
-    protected int lctSize; // 局部颜色表大小
+    protected boolean lctFlag; // local color table flag
+    protected boolean interlace; // interlace flag
+    protected int lctSize; // local color table size
 
-    protected int ix, iy, iw, ih; // 当前图像矩形
-    protected Rectangle lastRect; // 最后一个图像矩形
-    protected BufferedImage image; // 当前帧
-    protected BufferedImage lastImage; // 前一帧
+    protected int ix, iy, iw, ih; // current image rectangle
+    protected Rectangle lastRect; // last image rect
+    protected BufferedImage image; // current frame
+    protected BufferedImage lastImage; // previous frame
 
-    protected byte[] block = new byte[256]; // 当前数据块
-    protected int blockSize = 0; // 块大小
+    protected byte[] block = new byte[256]; // current data block
+    protected int blockSize = 0; // block size
 
-    // 最后的图形控制扩展信息
+    // last graphic control extension info
     protected int dispose = 0;
-
+    // 0=no action; 1=leave in place; 2=restore to bg; 3=restore to prev
     protected int lastDispose = 0;
-    protected boolean transparency = false; // 使用透明颜色
-    protected int delay = 0; // 延迟（以毫秒为单位）
-    protected int transIndex; // 透明色指数
+    protected boolean transparency = false; // use transparent color
+    protected int delay = 0; // delay in milliseconds
+    protected int transIndex; // transparent color index
 
     protected static final int MaxStackSize = 4096;
-    // 最大解码器像素堆栈大小
+    // max decoder pixel stack size
 
-    // LZW 解码器工作数组
+    // LZW decoder working arrays
     protected short[] prefix;
     protected byte[] suffix;
     protected byte[] pixelStack;
     protected byte[] pixels;
 
-    protected ArrayList frames; // 从当前文件读取的帧
+    protected ArrayList frames; // frames read from current file
     protected int frameCount;
 
     static class GifFrame {
@@ -114,13 +114,13 @@ public class GifDecoder {
     }
 
     /**
-     * 获取指定帧的显示持续时间。
+     * Gets display duration for specified frame.
      *
-     * @param n 帧的 int 索引
-     * @return 延迟（以毫秒为单位）
+     * @param n int index of frame
+     * @return delay in milliseconds
      */
     public int getDelay(int n) {
-
+        //
         delay = -1;
         if ((n >= 0) && (n < frameCount)) {
             delay = ((GifFrame) frames.get(n)).delay;
@@ -129,44 +129,46 @@ public class GifDecoder {
     }
 
     /**
-     * 获取从文件中读取的帧数。
+     * Gets the number of frames read from file.
      *
-     * @return 帧数
+     * @return frame count
      */
     public int getFrameCount() {
         return frameCount;
     }
 
     /**
-     * 获取读取的第一张（或唯一一张）图像。
+     * Gets the first (or only) image read.
      *
-     * @return BufferedImage 包含第一帧，如果没有则为 null。
+     * @return BufferedImage containing first frame, or null if none.
      */
     public BufferedImage getImage() {
         return getFrame(0);
     }
 
     /**
-     * 获取“Netscape”迭代计数（如果有）。计数为 0 表示无限重复。
+     * Gets the "Netscape" iteration count, if any.
+     * A count of 0 means repeat indefinitiely.
      *
-     * @return 如果指定了迭代计数，则为 1。
+     * @return iteration count if one was specified, else 1.
      */
     public int getLoopCount() {
         return loopCount;
     }
 
     /**
-     * 从当前数据（以及由其处理代码指定的先前帧）创建新的帧图像。
+     * Creates new frame image from current data (and previous
+     * frames as specified by their disposition codes).
      */
     protected void setPixels() {
-        // 将目标图像的像素公开为 int 数组
+        // expose destination image's pixels as int array
         int[] dest =
                 ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
 
-        // 根据最后一张图片的处理代码填写起始图片内容
+        // fill in starting image contents based on last image's dispose code
         if (lastDispose > 0) {
             if (lastDispose == 3) {
-                // 使用最后一张之前的图像
+                // use image before last
                 int n = frameCount - 2;
                 if (n > 0) {
                     lastImage = getFrame(n - 1);
@@ -179,26 +181,26 @@ public class GifDecoder {
                 int[] prev =
                         ((DataBufferInt) lastImage.getRaster().getDataBuffer()).getData();
                 System.arraycopy(prev, 0, dest, 0, width * height);
-                // 复制像素
+                // copy pixels
 
                 if (lastDispose == 2) {
-                    // 用背景颜色填充最后一个图像的矩形区域
+                    // fill last image rect area with background color
                     Graphics2D g = image.createGraphics();
                     Color c = null;
                     if (transparency) {
-                        c = new Color(0, 0, 0, 0);    // 假设背景是透明的
+                        c = new Color(0, 0, 0, 0);    // assume background is transparent
                     } else {
-                        c = new Color(lastBgColor); // 使用给定的背景颜色
+                        c = new Color(lastBgColor); // use given background color
                     }
                     g.setColor(c);
-                    g.setComposite(AlphaComposite.Src); // 替换区域
+                    g.setComposite(AlphaComposite.Src); // replace area
                     g.fill(lastRect);
                     g.dispose();
                 }
             }
         }
 
-        // 将每个源行复制到目标中的适当位置
+        // copy each source line to the appropriate place in the destination
         int pass = 1;
         int inc = 8;
         int iline = 0;
@@ -226,14 +228,14 @@ public class GifDecoder {
             line += iy;
             if (line < height) {
                 int k = line * width;
-                int dx = k + ix; // 目的地行的开头
-                int dlim = dx + iw; // 目标行结束
+                int dx = k + ix; // start of line in dest
+                int dlim = dx + iw; // end of dest line
                 if ((k + width) < dlim) {
-                    dlim = k + width; // 过去目标边缘
+                    dlim = k + width; // past dest edge
                 }
-                int sx = i * iw; // 源代码中的行首
+                int sx = i * iw; // start of line in source
                 while (dx < dlim) {
-                    // 映射颜色并插入到目的地
+                    // map color and insert in destination
                     int index = ((int) pixels[sx++]) & 0xff;
                     int c = act[index];
                     if (c != 0) {
@@ -246,9 +248,9 @@ public class GifDecoder {
     }
 
     /**
-     * 获取第n帧的图像内容。
+     * Gets the image contents of frame n.
      *
-     * @return BufferedImage 帧的表示，如果 n 无效则为 null。
+     * @return BufferedImage representation of frame, or null if n is invalid.
      */
     public BufferedImage getFrame(int n) {
         BufferedImage im = null;
@@ -259,19 +261,19 @@ public class GifDecoder {
     }
 
     /**
-     * 获取图像大小。
+     * Gets image size.
      *
-     * @return GIF 图像尺寸
+     * @return GIF image dimensions
      */
     public Dimension getFrameSize() {
         return new Dimension(width, height);
     }
 
     /**
-     * 从流中读取 GIF 图像
+     * Reads GIF image from stream
      *
-     * @param is BufferedInputStream 包含 GIF 文件。
-     * @return 读取状态代码（0 = 无错误）
+     * @param is BufferedInputStream containing GIF file.
+     * @return read status code (0 = no errors)
      */
     public int read(BufferedInputStream is) {
         init();
@@ -295,10 +297,10 @@ public class GifDecoder {
     }
 
     /**
-     * 从流中读取 GIF 图像
+     * Reads GIF image from stream
      *
-     * @param is InputStream 包含 GIF 文件。
-     * @return 读取状态代码（0 = 无错误）
+     * @param is InputStream containing GIF file.
+     * @return read status code (0 = no errors)
      */
     public int read(InputStream is) {
         init();
@@ -324,10 +326,11 @@ public class GifDecoder {
     }
 
     /**
-     * 从指定文件/URL源读取GIF文件（如果名称包含“：/”或“文件：”，则假定为URL）
+     * Reads GIF file from specified file/URL source
+     * (URL assumed if name contains ":/" or "file:")
      *
-     * @param name 包含源的字符串
-     * @return 读取状态代码（0 = 无错误）
+     * @param name String containing source
+     * @return read status code (0 = no errors)
      */
     public int read(String name) {
         status = STATUS_OK;
@@ -349,7 +352,8 @@ public class GifDecoder {
     }
 
     /**
-     * 将 LZW 图像数据解码为像素数组。改编自约翰·克里斯蒂的ImageMagick。
+     * Decodes LZW image data into pixel array.
+     * Adapted from John Cristy's ImageMagick.
      */
     protected void decodeImageData() {
         int NullCode = -1;
@@ -373,13 +377,13 @@ public class GifDecoder {
                 pi;
 
         if ((pixels == null) || (pixels.length < npix)) {
-            pixels = new byte[npix]; // 分配新的像素数组
+            pixels = new byte[npix]; // allocate new pixel array
         }
         if (prefix == null) prefix = new short[MaxStackSize];
         if (suffix == null) suffix = new byte[MaxStackSize];
         if (pixelStack == null) pixelStack = new byte[MaxStackSize + 1];
 
-        // 初始化GIF数据流解码器。
+        //  Initialize GIF data stream decoder.
 
         data_size = read();
         clear = 1 << data_size;
@@ -393,16 +397,16 @@ public class GifDecoder {
             suffix[code] = (byte) code;
         }
 
-        // 解码 GIF 像素流。
+        //  Decode GIF pixel stream.
 
         datum = bits = count = first = top = pi = bi = 0;
 
         for (i = 0; i < npix; ) {
             if (top == 0) {
                 if (bits < code_size) {
-                    // 加载字节，直到有足够的位用于代码。
+                    //  Load bytes until there are enough bits for a code.
                     if (count == 0) {
-                        // 读取一个新的数据块。
+                        // Read a new data block.
                         count = readBlock();
                         if (count <= 0)
                             break;
@@ -415,18 +419,18 @@ public class GifDecoder {
                     continue;
                 }
 
-                // 获取下一个代码。
+                //  Get the next code.
 
                 code = datum & code_mask;
                 datum >>= code_size;
                 bits -= code_size;
 
-                // 解释一下代码
+                //  Interpret the code
 
                 if ((code > available) || (code == end_of_information))
                     break;
                 if (code == clear) {
-                    // 重置解码器。
+                    //  Reset decoder.
                     code_size = data_size + 1;
                     code_mask = (1 << code_size) - 1;
                     available = clear + 2;
@@ -450,7 +454,7 @@ public class GifDecoder {
                 }
                 first = ((int) suffix[code]) & 0xff;
 
-                // 将新字符串添加到字符串表中，
+                //  Add a new string to the string table,
 
                 if (available >= MaxStackSize) {
                     pixelStack[top++] = (byte) first;
@@ -468,7 +472,7 @@ public class GifDecoder {
                 old_code = in_code;
             }
 
-            // 从像素堆栈中弹出一个像素。
+            //  Pop a pixel off the pixel stack.
 
             top--;
             pixels[pi++] = pixelStack[top];
@@ -476,20 +480,20 @@ public class GifDecoder {
         }
 
         for (i = pi; i < npix; i++) {
-            pixels[i] = 0; // 清除缺失像素
+            pixels[i] = 0; // clear missing pixels
         }
 
     }
 
     /**
-     * 如果在读取/解码过程中遇到错误，则返回 true
+     * Returns true if an error was encountered during reading/decoding
      */
     protected boolean err() {
         return status != STATUS_OK;
     }
 
     /**
-     * 初始化或重新初始化阅读器
+     * Initializes or re-initializes reader
      */
     protected void init() {
         status = STATUS_OK;
@@ -500,7 +504,7 @@ public class GifDecoder {
     }
 
     /**
-     * 从输入流中读取单个字节。
+     * Reads a single byte from the input stream.
      */
     protected int read() {
         int curByte = 0;
@@ -513,9 +517,9 @@ public class GifDecoder {
     }
 
     /**
-     * 从输入读取下一个可变长度块。
+     * Reads next variable length block from input.
      *
-     * @return “缓冲区”中存储的字节数
+     * @return number of bytes stored in "buffer"
      */
     protected int readBlock() {
         blockSize = read();
@@ -540,10 +544,10 @@ public class GifDecoder {
     }
 
     /**
-     * 将颜色表读取为 256 个 RGB 整数值
+     * Reads color table as 256 RGB integer values
      *
-     * @param ncolors int 要读取的颜色数
-     * @return 包含 256 种颜色的 int 数组（包含完整 alpha 的 ARGB）
+     * @param ncolors int number of colors to read
+     * @return int array containing 256 colors (packed ARGB with full alpha)
      */
     protected int[] readColorTable(int ncolors) {
         int nbytes = 3 * ncolors;
@@ -557,7 +561,7 @@ public class GifDecoder {
         if (n < nbytes) {
             status = STATUS_FORMAT_ERROR;
         } else {
-            tab = new int[256]; // 避免边界检查的最大尺寸
+            tab = new int[256]; // max size to avoid bounds checks
             int i = 0;
             int j = 0;
             while (i < ncolors) {
@@ -571,27 +575,27 @@ public class GifDecoder {
     }
 
     /**
-     * 主文件解析器。  读取 GIF 内容块。
+     * Main file parser.  Reads GIF content blocks.
      */
     protected void readContents() {
-        // 读取 GIF 文件内容块
+        // read GIF file content blocks
         boolean done = false;
         while (!(done || err())) {
             int code = read();
             switch (code) {
 
-                case 0x2C: // 图像分离器
+                case 0x2C: // image separator
                     readImage();
                     break;
 
-                case 0x21: // 延伸
+                case 0x21: // extension
                     code = read();
                     switch (code) {
-                        case 0xf9: // 图形控制扩展
+                        case 0xf9: // graphics control extension
                             readGraphicControlExt();
                             break;
 
-                        case 0xff: // 应用扩展
+                        case 0xff: // application extension
                             readBlock();
                             String app = "";
                             for (int i = 0; i < 11; i++) {
@@ -600,19 +604,19 @@ public class GifDecoder {
                             if (app.equals("NETSCAPE2.0")) {
                                 readNetscapeExt();
                             } else
-                                skip(); // 不在乎
+                                skip(); // don't care
                             break;
 
-                        default: // 无趣的扩展
+                        default: // uninteresting extension
                             skip();
                     }
                     break;
 
-                case 0x3b: // 终结者
+                case 0x3b: // terminator
                     done = true;
                     break;
 
-                case 0x00: // 坏字节，但继续看看会发生什么
+                case 0x00: // bad byte, but keep going and see what happens
                     break;
 
                 default:
@@ -622,23 +626,23 @@ public class GifDecoder {
     }
 
     /**
-     * 读取图形控制扩展值
+     * Reads Graphics Control Extension values
      */
     protected void readGraphicControlExt() {
-        read(); // 块大小
-        int packed = read(); // 打包字段
-        dispose = (packed & 0x1c) >> 2; // 处置方法
+        read(); // block size
+        int packed = read(); // packed fields
+        dispose = (packed & 0x1c) >> 2; // disposal method
         if (dispose == 0) {
-            dispose = 1; // 如果可以的话，选择保留旧图像
+            dispose = 1; // elect to keep old image if discretionary
         }
         transparency = (packed & 1) != 0;
-        delay = readShort() * 10; // 延迟（以毫秒为单位）
-        transIndex = read(); // 透明色指数
-        read(); // 块终止符
+        delay = readShort() * 10; // delay in milliseconds
+        transIndex = read(); // transparent color index
+        read(); // block terminator
     }
 
     /**
-     * 读取GIF文件头信息。
+     * Reads GIF file header information.
      */
     protected void readHeader() {
         String id = "";
@@ -658,53 +662,55 @@ public class GifDecoder {
     }
 
     /**
-     * 读取下一帧图像
+     * Reads next frame image
      */
     protected void readImage() {
-        ix = readShort(); // （子）图像位置和大小
+        ix = readShort(); // (sub)image position & size
         iy = readShort();
         iw = readShort();
         ih = readShort();
 
         int packed = read();
-        lctFlag = (packed & 0x80) != 0; // 1 - 本地颜色表标志
-        interlace = (packed & 0x40) != 0; // 2 - 交错标志 3 - 排序标志 4-5 - 保留
-        lctSize = 2 << (packed & 7); // 6-8 - 局部颜色表大小
+        lctFlag = (packed & 0x80) != 0; // 1 - local color table flag
+        interlace = (packed & 0x40) != 0; // 2 - interlace flag
+        // 3 - sort flag
+        // 4-5 - reserved
+        lctSize = 2 << (packed & 7); // 6-8 - local color table size
 
         if (lctFlag) {
-            lct = readColorTable(lctSize); // 读表
-            act = lct; // 激活本地表
+            lct = readColorTable(lctSize); // read table
+            act = lct; // make local table active
         } else {
-            act = gct; // 使全局表处于活动状态
+            act = gct; // make global table active
             if (bgIndex == transIndex)
                 bgColor = 0;
         }
         int save = 0;
         if (transparency) {
             save = act[transIndex];
-            act[transIndex] = 0; // 如果指定则设置透明颜色
+            act[transIndex] = 0; // set transparent color if specified
         }
 
         if (act == null) {
-            status = STATUS_FORMAT_ERROR; // 没有定义颜色表
+            status = STATUS_FORMAT_ERROR; // no color table defined
         }
 
         if (err()) return;
 
-        decodeImageData(); // 解码像素数据
+        decodeImageData(); // decode pixel data
         skip();
 
         if (err()) return;
 
         frameCount++;
 
-        // 创建新图像以接收帧数据
+        // create new image to receive frame data
         image =
                 new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
 
-        setPixels(); // 将像素数据传输到图像
+        setPixels(); // transfer pixel data to image
 
-        frames.add(new GifFrame(image, delay)); // 将图像添加到帧列表
+        frames.add(new GifFrame(image, delay)); // add image to frame list
 
         if (transparency) {
             act[transIndex] = save;
@@ -714,31 +720,33 @@ public class GifDecoder {
     }
 
     /**
-     * 读取逻辑屏幕描述符
+     * Reads Logical Screen Descriptor
      */
     protected void readLSD() {
 
-        // 逻辑屏幕尺寸
+        // logical screen size
         width = readShort();
         height = readShort();
 
-        // 打包字段
+        // packed fields
         int packed = read();
-        gctFlag = (packed & 0x80) != 0; // 1：全局颜色表标志 2-4：颜色分辨率 5：GCT 排序标志
-        gctSize = 2 << (packed & 7); // 6-8：GCT尺寸
+        gctFlag = (packed & 0x80) != 0; // 1   : global color table flag
+        // 2-4 : color resolution
+        // 5   : gct sort flag
+        gctSize = 2 << (packed & 7); // 6-8 : gct size
 
-        bgIndex = read(); // 背景颜色索引
-        pixelAspect = read(); // 像素长宽比
+        bgIndex = read(); // background color index
+        pixelAspect = read(); // pixel aspect ratio
     }
 
     /**
-     * 读取 Netscape 扩展以获取迭代计数
+     * Reads Netscape extenstion to obtain iteration count
      */
     protected void readNetscapeExt() {
         do {
             readBlock();
             if (block[0] == 1) {
-                // 循环计数子块
+                // loop count sub-block
                 int b1 = ((int) block[1]) & 0xff;
                 int b2 = ((int) block[2]) & 0xff;
                 loopCount = (b2 << 8) | b1;
@@ -747,15 +755,15 @@ public class GifDecoder {
     }
 
     /**
-     * 首先读取下一个 16 位值 LSB
+     * Reads next 16-bit value, LSB first
      */
     protected int readShort() {
-        // 首先读取 16 位值 LSB
+        // read 16-bit value, LSB first
         return read() | (read() << 8);
     }
 
     /**
-     * 重置帧状态以读取下一个图像。
+     * Resets frame state for reading next image.
      */
     protected void resetFrame() {
         lastDispose = dispose;
@@ -769,7 +777,8 @@ public class GifDecoder {
     }
 
     /**
-     * 跳过可变长度块直到并包括下一个零长度块。
+     * Skips variable length blocks up to and including
+     * next zero length block.
      */
     protected void skip() {
         do {

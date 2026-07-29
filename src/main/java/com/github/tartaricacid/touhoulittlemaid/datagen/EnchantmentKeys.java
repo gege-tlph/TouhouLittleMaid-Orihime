@@ -26,7 +26,8 @@ public class EnchantmentKeys {
         return ResourceKey.create(Registries.ENCHANTMENT, getResourceLocation(name));
     }
 
-
+    // B4_DATAGEN_RESTORE 已恢复（Phase 2 datagen 解冻）：Enchantment.Builder API 在 1.21.11 未变（definition/
+    //   dynamicCost/constantCost/build 签名一致），仅 ResourceKey.location() → identifier()。bootstrap 只在 runData 跑。
     public static void bootstrap(BootstrapContext<Enchantment> context) {
         HolderGetter<DamageType> damageTypes = context.lookup(Registries.DAMAGE_TYPE);
         HolderGetter<Enchantment> enchantments = context.lookup(Registries.ENCHANTMENT);
@@ -79,7 +80,9 @@ public class EnchantmentKeys {
     }
 
     public static Holder<Enchantment> getEnchantmentHolder(RegistryAccess access, ResourceKey<Enchantment> enchantmentResourceKey) {
-
+        // B4: 1.21.11 运行时 API 迁移（javap 确认）：
+        //   RegistryAccess.registryOrThrow(key) → lookupOrThrow(key)（返回 Registry<E>）
+        //   Registry.getHolderOrThrow(key) → getOrThrow(key)（继承自 HolderGetter，返回 Holder.Reference）
         return access.lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(enchantmentResourceKey);
     }
 }

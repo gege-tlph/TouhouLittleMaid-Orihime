@@ -69,7 +69,7 @@ public class MaidRideFindWaterTask extends MaidCheckRateTask {
         BlockPos centrePos = maid.getBrainSearchPos();
         BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
         for (int y = this.verticalSearchStart; y <= this.verticalSearchRange; y = y > 0 ? -y : 1 - y) {
-
+            // FIXME: 应该从一片水域的正中央开始
             for (int i = 0; i < searchRange; ++i) {
                 for (int x = 0; x <= i; x = x > 0 ? -x : 1 - x) {
                     for (int z = x < i && x > -i ? i : 0; z <= i; z = z > 0 ? -z : 1 - z) {

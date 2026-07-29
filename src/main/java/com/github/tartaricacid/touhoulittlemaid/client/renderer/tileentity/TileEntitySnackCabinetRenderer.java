@@ -89,5 +89,12 @@ public class TileEntitySnackCabinetRenderer implements BlockEntityRenderer<TileE
         return true;
     }
 
-
+//    // TODO
+//    @Override
+//    public AABB getRenderBoundingBox(TileEntitySnackCabinet be) {
+//        return RenderHelper.getAABB(
+//                be.getBlockPos().offset(0, 0, 0),
+//                be.getBlockPos().offset(1, 2, 1)
+//        );
+//    }
 }

@@ -17,7 +17,6 @@ import static com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBu
 import static com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData.TYPE_2;
 import static com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid.getChatBubbleKey;
 
-
 public class ChatBubbleManager {
     private final EntityMaid maid;
 

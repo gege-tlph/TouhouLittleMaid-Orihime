@@ -30,7 +30,8 @@ public abstract class PlayerMixin extends LivingEntity {
         EventHooks.firePlayerTickPost((Player) (Object) this);
     }
 
-
+    // 1.21.11: hurt 现为 final void；玩家服务端伤害入口 Player.hurtServer（javap 确认 Player 覆盖之）。
+    // HEAD 在 hurt HEAD 触发 LivingAttackEvent，现移至 hurtServer HEAD（服务端等价点）。
     @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
     public void tlm$attackEvent(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         LivingAttackEvent event = new LivingAttackEvent(this, source, amount);

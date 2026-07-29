@@ -24,7 +24,7 @@ public class MaidClimbTask extends Behavior<EntityMaid> {
         // 将女仆定格在楼梯中心，取消掉 x、z 轴的动量，避免爬楼梯过程中摔死
         BlockPos currentPosition = maid.blockPosition().mutable();
         Vec3 centerPos = Vec3.atCenterOf(currentPosition);
-
+        // 1.21.11: Entity.moveTo(...) -> snapTo(...)（纯改名；注意 PathNavigation.moveTo 仍存在，勿混）
         maid.snapTo(centerPos.x, currentPosition.getY(), centerPos.z);
         maid.setDeltaMovement(0, maid.getDeltaMovement().y(), 0);
     }
@@ -78,7 +78,7 @@ public class MaidClimbTask extends Behavior<EntityMaid> {
         // 而且速度太慢的话，爬楼梯时间过长，路径就被掐断了，
         // 就又会重新规划路线……这样控制比较麻烦，而且也还有其他的东西在干扰……
         // 最好的是一次路径控制完，这样的效果是最好的
-        if (maidFeetPos.getY() <= beGoNode.y && up && CommonHooks.isLadder(feetBlock, level, maidFeetPos, maid)) {
+        if (maidFeetPos.getY() <= beGoNode.y && up && CommonHooks.isLadder(feetBlock, level, maidFeetPos, maid) /*feetBlock.isLadder(level, maidFeetPos, maid)*/) {
             double yMotion0 = 1;
             double yMotion = 0.25;
             maid.setDeltaMovement(0, yMotion0, 0);
@@ -124,7 +124,7 @@ public class MaidClimbTask extends Behavior<EntityMaid> {
                 double y = maid.getDeltaMovement().y();
                 maid.setDeltaMovement(0.2, 1, 0.2);
                 maid.setDeltaMovement(x1 * 0.3, y + 0.012, z1 * 0.3);
-
+                // TODO：将身体转向下一个节点
                 maid.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(pointNext.asVec3()));
             }
         }

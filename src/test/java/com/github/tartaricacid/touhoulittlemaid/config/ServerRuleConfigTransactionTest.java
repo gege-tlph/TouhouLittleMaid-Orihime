@@ -38,16 +38,20 @@ class ServerRuleConfigTransactionTest {
     }
 
     @Test
-    void malformedUnknownEnumAndExtremePayloadsDoNotChangeFileOrSnapshots() throws Exception {
+    void malformedAndExtremePayloadsDoNotChangeFileOrSnapshots() throws Exception {
         String diskBefore = sha256(worldConfig);
         String fileBefore = ServerRuleConfig.snapshotJson();
         String activeBefore = ServerRuleConfig.runtimeSnapshotJson();
-        String enumKey = ServerRuleConfig.key(ServerConfig.SERVER_STT_TYPE);
+        // 原先这里还有一条「未知枚举值」样本，用的是唯一的枚举型世界规则 SERVER_STT_TYPE。
+        // 「服务器提供 STT」撤除后世界规则里不再有任何枚举，该样本随之删除，不另找替身：
+        // 它覆盖的「值不在允许集合内 → 整份拒绝」，已由下面两条越界整数覆盖。
+        //
+        // 试过用布尔规则喂字符串当替身，结果测试红：Gson 的 getAsBoolean() 对字符串是强制转换
+        // （"not_a_boolean" → false），根本不抛异常。这条路走不通，别再试。
         String intKey = ServerRuleConfig.key(MaidConfig.MAID_WORK_RANGE);
 
         for (String payload : new String[]{
                 "", "{", "[]", "{}", "{\"unknown.field\":1}",
-                "{\"" + enumKey + "\":\"not_a_provider\"}",
                 "{\"" + intKey + "\":2147483647}",
                 "{\"" + intKey + "\":-2147483648}",
                 "{\"" + intKey + "\":NaN}"

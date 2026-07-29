@@ -26,14 +26,14 @@ public class ItemHandlerHelper {
         if (inventory == null || stack.isEmpty())
             return stack;
 
-        // 不可堆叠的物品直接尝试放入空槽位。
+        // not stackable -> just insert into a new slot
         if (!stack.isStackable()) {
             return insertItem(inventory, stack, simulate);
         }
 
         int sizeInventory = inventory.getSlots();
 
-        // 优先合并到物品栏中已有的同类物品堆。
+        // go through the inventory and try to fill up already existing items
         for (int i = 0; i < sizeInventory; i++) {
             ItemStack slot = inventory.getStackInSlot(i);
             if (ItemStack.isSameItemSameComponents(slot, stack)) {
@@ -45,9 +45,9 @@ public class ItemHandlerHelper {
             }
         }
 
-        // 将剩余物品放入空槽位。
+        // insert remainder into empty slots
         if (!stack.isEmpty()) {
-            // 查找空槽位。
+            // find empty slot
             for (int i = 0; i < sizeInventory; i++) {
                 if (inventory.getStackInSlot(i).isEmpty()) {
                     stack = inventory.insertItem(i, stack, simulate);
@@ -71,24 +71,24 @@ public class ItemHandlerHelper {
         IItemHandler inventory = new PlayerMainInvWrapper(player.getInventory());
         Level level = player.level();
 
-        // 尝试将物品交给玩家。
+        // try adding it into the inventory
         ItemStack remainder = stack;
-        // 优先放入指定槽位。
+        // insert into preferred slot first
         if (preferredSlot >= 0 && preferredSlot < inventory.getSlots()) {
             remainder = inventory.insertItem(preferredSlot, stack, false);
         }
-        // 剩余部分再放入普通物品栏槽位。
+        // then into the inventory in general
         if (!remainder.isEmpty()) {
             remainder = insertItemStacked(inventory, remainder, false);
         }
 
-        // 只要有物品成功进入物品栏，就播放拾取音效。
+        // play sound if something got picked up
         if (remainder.isEmpty() || remainder.getCount() != stack.getCount()) {
             level.playSound(null, player.getX(), player.getY() + 0.5, player.getZ(),
                     SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((level.random.nextFloat() - level.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
         }
 
-        // 服务端将无法放入物品栏的剩余物品生成到玩家附近。
+        // drop remaining itemstack into the level
         if (!remainder.isEmpty() && !level.isClientSide()) {
             ItemEntity entityitem = new ItemEntity(level, player.getX(), player.getY() + 0.5, player.getZ(), remainder);
             entityitem.setPickUpDelay(40);

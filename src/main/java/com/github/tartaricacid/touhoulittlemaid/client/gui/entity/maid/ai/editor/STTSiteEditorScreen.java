@@ -5,7 +5,6 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.stt.STTSite;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.FormField;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.layout.FieldDescriptor;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.layout.STTSiteFormLayout;
-import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.settings.AIChatSettingsSTTSiteScreen;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.FlatColorButton;
 import com.google.common.collect.Lists;
 import net.minecraft.client.gui.GuiGraphics;
@@ -46,10 +45,10 @@ public class STTSiteEditorScreen extends Screen {
     private long tipTimestamp = -1;
     private Component statusMessage = Component.empty();
 
-    public STTSiteEditorScreen(AIChatSettingsSTTSiteScreen parent, STTSite sourceSite) {
-        this(parent, sourceSite, parent::saveLocalSTTSite);
-    }
-
+    /**
+     * 唯一入口是「来源与麦克风」页每行的齿轮：返回/保存都回那一屏（parent），
+     * 保存动作由调用方注入——站点数据是本地文件，屏本身不该知道落盘细节。
+     */
     public STTSiteEditorScreen(Screen parent, STTSite sourceSite, Consumer<STTSite> saveConsumer) {
         super(Component.literal("STT Site Editor"));
         this.parent = parent;
@@ -130,6 +129,7 @@ public class STTSiteEditorScreen extends Screen {
         // 文本框
         for (FormField field : this.fields) {
             this.renderInputField(graphics, field.box, mouseX, mouseY, partialTick);
+            this.renderSecretPlaceholder(graphics, field);
         }
 
         for (Renderable renderable : ((ScreenAccessor) this).tlm$getRenderables()) {
@@ -157,6 +157,21 @@ public class STTSiteEditorScreen extends Screen {
         graphics.drawString(this.font, box.getMessage(), x + 2, y - 12, 0xFF777777, false);
         graphics.fill(x, y, x + width, y + height, 0xAA111111);
         box.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    /**
+     * 密钥框空着的时候，用灰字说明它到底是「已配置」还是「未配置」。
+     *
+     * <p>本地站点的密钥其实是可回显的（它从不离开本机），但这一屏与服务端编辑器共用
+     * {@link FormField}，统一处理成本更低；本地站点走到这里时 {@code secretAlreadySet} 恒为假，
+     * 显示的就是「未配置」或真实内容，行为不变。</p>
+     */
+    private void renderSecretPlaceholder(GuiGraphics graphics, FormField field) {
+        if (!field.secret || field.box == null || !field.box.getValue().isEmpty()) {
+            return;
+        }
+        graphics.drawString(this.font, field.secretPlaceholder(),
+                field.box.getX(), field.box.getY(), 0xFF808080, false);
     }
 
     @Override

@@ -83,7 +83,9 @@ public final class SchedulePos {
     }
 
     public void save(ValueOutput output) {
-
+        // 逐字节对齐 origin/1.21.1：嵌套在 "MaidSchedulePos" 子 compound（此前被移植期扁平化到 maid 根 →
+        //   跨版本升级世界重置 home/work/idle/sleep + 污染实体根命名，见 CLIENT_AUDIT §I.A/S2）。
+        //   位置用 int-array [x,y,z] == HEAD 的 NbtUtils.writeBlockPos（逐字节等价）。
         ValueOutput data = output.child("MaidSchedulePos");
         data.putIntArray("Work", new int[]{this.workPos.getX(), this.workPos.getY(), this.workPos.getZ()});
         data.putIntArray("Idle", new int[]{this.idlePos.getX(), this.idlePos.getY(), this.idlePos.getZ()});
@@ -149,7 +151,7 @@ public final class SchedulePos {
         this.idlePos = this.workPos;
         this.sleepPos = this.workPos;
         this.configured = false;
-
+        // B8 修复: ResourceKey.location() → identifier()（javap 确认）。移植期误用 .toString()（="ResourceKey[...]"，Identifier.parse 拒绝→崩溃）。还原 HEAD 语义。
         this.dimension = maid.level.dimension().identifier();
         this.setHomeTo(maid);
     }
@@ -159,7 +161,8 @@ public final class SchedulePos {
             this.workPos = pos;
             this.idlePos = pos;
             this.sleepPos = pos;
-
+            // 1.21.11: ResourceKey.location() -> identifier(). Do not parse
+            // ResourceKey#toString(): it is the diagnostic "ResourceKey[...]" form.
             this.dimension = maid.level.dimension().identifier();
         }
         this.setHomeTo(maid);

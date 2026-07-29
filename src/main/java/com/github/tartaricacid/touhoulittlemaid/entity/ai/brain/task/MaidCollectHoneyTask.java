@@ -101,7 +101,7 @@ public class MaidCollectHoneyTask extends MaidCheckRateTask {
     }
 
     private boolean collectHoneyComb(ServerLevel level, EntityMaid maid, CombinedInvWrapper maidAvailableInv, BlockState hiveBlockState, BlockPos hivePos) {
-
+        //boolean hasShears = maid.getMainHandItem().canPerformAction(ItemAbilities.SHEARS_HARVEST);
         boolean hasShears = maid.getMainHandItem().is(ConventionalItemTags.SHEAR_TOOLS) || maid.getMainHandItem().getItem() instanceof ShearsItem;
         if (hasShears) {
             ItemStack honeyComb = new ItemStack(Items.HONEYCOMB, 3);

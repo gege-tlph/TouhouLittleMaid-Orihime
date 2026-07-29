@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.editor;
 
 import cn.sh1rocu.touhoulittlemaid.mixin.accessor.ScreenAccessor;
+import com.github.tartaricacid.touhoulittlemaid.ai.service.Site;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.LLMSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.LLMOpenAISite;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.settings.AIChatSettingsHubScreen;
@@ -11,6 +12,7 @@ import com.github.tartaricacid.touhoulittlemaid.util.Rectangle;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import com.github.tartaricacid.touhoulittlemaid.network.message.ai.CheckSiteConfigPackage;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Renderable;
@@ -57,6 +59,10 @@ public class LLMSiteEditorScreen extends Screen {
     private EditBox siteIdInput;
     private EditBox urlInput;
     private EditBox secretInput;
+    /** 服务端说密钥已配好，但没把明文发下来 */
+    private boolean secretAlreadySet;
+    /** 管理员点过「清除」，与「没碰这个框」必须区分 */
+    private boolean secretCleared;
 
     /**
      * 模型列表框
@@ -99,7 +105,12 @@ public class LLMSiteEditorScreen extends Screen {
         // 输入框数值读取，这样在改变窗口时，数值不会丢失
         String siteIdValue = this.getEditBoxInitValue(this.siteIdInput, this.sourceSite.id());
         String urlValue = this.getEditBoxInitValue(this.urlInput, this.sourceSite.url());
-        String secretValue = this.getEditBoxInitValue(this.secretInput, this.sourceSite instanceof LLMOpenAISite site ? site.secretKey() : StringUtils.EMPTY);
+        // 服务端下行的密钥是哨兵而不是明文，框里必须从空开始——既不能显示那串内部标记，
+        // 也不能用星号占位（个数会泄漏长度，还会让人以为能就地编辑）。
+        String incomingSecret = this.sourceSite instanceof LLMOpenAISite site ? site.secretKey() : StringUtils.EMPTY;
+        this.secretAlreadySet = Site.SECRET_KEPT.equals(incomingSecret);
+        String secretValue = this.getEditBoxInitValue(this.secretInput,
+                this.secretAlreadySet ? StringUtils.EMPTY : incomingSecret);
 
         this.clearWidgets();
         this.startX = (this.width - BASE_WIDTH) / 2;
@@ -112,7 +123,7 @@ public class LLMSiteEditorScreen extends Screen {
         this.siteIdInput = this.addInput(left, this.startY + 30, 124, SITE_ID_NAME, siteIdValue);
         this.siteIdInput.active = this.createMode;
 
-        // 网址
+        // URL
         this.urlInput = this.addInput(left + 132, this.startY + 30, contentWidth - 132, URL_NAME, urlValue);
 
         // 秘钥，隐藏显示
@@ -127,6 +138,17 @@ public class LLMSiteEditorScreen extends Screen {
         // 底部按钮
         int bottomY = this.startY + BASE_HEIGHT - 24;
 
+        // 「清除」必须是一个显式动作：框里留空表示「不改」，两者不能用同一种操作表达，
+        // 否则管理员永远删不掉一个已配好的密钥。
+        if (this.secretAlreadySet && !this.secretCleared) {
+            this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 78, this.startY + 65, 66, 18,
+                    Component.translatable("ai.touhou_little_maid.chat.settings.hub.secret_clear"), b -> {
+                this.secretCleared = true;
+                this.secretInput.setValue(StringUtils.EMPTY);
+                this.init();
+            }));
+        }
+
         this.addRenderableWidget(new FlatColorButton(left, bottomY, 96, 20, ADD_MODEL_NAME, b -> {
             this.modelRows.add(new ModelRow(StringUtils.EMPTY, false));
             int visibleCount = this.getVisibleModelCount();
@@ -134,6 +156,13 @@ public class LLMSiteEditorScreen extends Screen {
             this.init();
         }));
 
+        // 「检查配置」而不是「测试连接」：它检查地址与密钥填没填、主机连不连得上，
+        // **不验证密钥是否正确**。叫成后者就是一个说谎的标签，而它仍然有用——
+        // 把「地址/网络不通」与「密钥不对」分开，这两种故障的处置完全不同。
+        this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 302, bottomY, 96, 20,
+                Component.translatable("ai.touhou_little_maid.chat.settings.hub.check_config"),
+                b -> ClientPlayNetworking.send(new CheckSiteConfigPackage(
+                        CheckSiteConfigPackage.LLM, this.sourceSite.id()))));
         this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 200, bottomY, 90, 20, SAVE_NAME, b -> this.saveSite()));
         this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 102, bottomY, 90, 20, GUI_BACK, b -> this.onClose()));
     }
@@ -168,6 +197,7 @@ public class LLMSiteEditorScreen extends Screen {
         this.renderInputField(graphics, this.siteIdInput, mouseX, mouseY, partialTick);
         this.renderInputField(graphics, this.urlInput, mouseX, mouseY, partialTick);
         this.renderInputField(graphics, this.secretInput, mouseX, mouseY, partialTick);
+        this.renderSecretPlaceholder(graphics);
 
         this.renderModelArea(graphics, mouseX, mouseY, partialTick);
 
@@ -181,6 +211,21 @@ public class LLMSiteEditorScreen extends Screen {
             int y = this.startY + BASE_HEIGHT - 35;
             graphics.drawCenteredString(this.font, this.statusMessage, x, y, 0xFFFF7777);
         }
+    }
+
+    /**
+     * 密钥框空着时用灰字说明它是「已配置」还是「未配置」。
+     *
+     * <p>下行只有哨兵、框里一律是空的，不给这行字管理员就分不出服务端到底有没有密钥。</p>
+     */
+    private void renderSecretPlaceholder(GuiGraphics graphics) {
+        if (this.secretInput == null || !this.secretInput.getValue().isEmpty()) {
+            return;
+        }
+        String key = this.secretCleared ? "secret_cleared" : (this.secretAlreadySet ? "secret_configured" : "secret_unset");
+        graphics.drawString(this.font,
+                Component.translatable("ai.touhou_little_maid.chat.settings.hub." + key),
+                this.secretInput.getX(), this.secretInput.getY(), 0xFF808080, false);
     }
 
     private void renderInputField(GuiGraphics graphics, EditBox box, int mouseX, int mouseY, float partialTick) {
@@ -316,8 +361,13 @@ public class LLMSiteEditorScreen extends Screen {
             return null;
         }
 
-        // 秘钥可以为空（部分本地模型没有秘钥）
+        // 秘钥可以为空（部分本地模型没有秘钥）。
+        // 但「已配置且没动过」必须回传哨兵，否则服务端会把它当成一次清空——
+        // 那正是「只改了 URL 却让 LLM 失效」那条回归。
         String secretKey = this.secretInput.getValue();
+        if (this.secretAlreadySet && !this.secretCleared && secretKey.isEmpty()) {
+            secretKey = Site.SECRET_KEPT;
+        }
 
         // 普通 OpenAI 模型
         List<LLMOpenAISite.ModelEntry> models = Lists.newArrayList();

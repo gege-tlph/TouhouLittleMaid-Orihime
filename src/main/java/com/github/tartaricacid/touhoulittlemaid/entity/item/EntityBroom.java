@@ -47,7 +47,7 @@ import java.util.UUID;
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent.OWNER_UUID_TAG_NAME;
 
 public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity, HasCustomInventoryScreen {
-
+    // 1.21.11: EntityType.Builder.build(String) 已移除 -> build(ResourceKey)
     public static final EntityType<EntityBroom> TYPE = EntityType.Builder.<EntityBroom>of(EntityBroom::new, MobCategory.MISC)
             .sized(1.375F, 0.5625F)
             .clientTrackingRange(10)
@@ -55,7 +55,8 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
             .build(ResourceKey.create(Registries.ENTITY_TYPE,
                     Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "broom")));
 
-
+    // B8 修复(CRITICAL): 移植期 OWNER_ID = null → defineSynchedData 的 builder.define(null,...) **每次扫帚构造 NPE**。
+    //   EntityDataSerializers.OPTIONAL_UUID 已移除（javap 确认）→ OPTIONAL_LIVING_ENTITY_REFERENCE（owner 改 EntityReference，同 TamableAnimal 1.21.11）。
     private static final EntityDataAccessor<Optional<EntityReference<LivingEntity>>> OWNER_ID =
             SynchedEntityData.defineId(EntityBroom.class, EntityDataSerializers.OPTIONAL_LIVING_ENTITY_REFERENCE);
 
@@ -78,7 +79,8 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
         builder.define(OWNER_ID, Optional.empty());
     }
 
-
+    // B8 修复(CRITICAL): 移植期整段注释 → 扫帚 owner UUID 从不持久化。1.21.11 改 ValueInput/ValueOutput；
+    //   用 UUIDUtil.CODEC（int-array 编码，与 HEAD putUUID 逐字节兼容）。
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
@@ -250,7 +252,8 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
     }
 
     /**
-     * 当玩家骑在扫帚上时，让扫帚本体不可被选中 防止其碰撞箱影响正常交互
+     * 当玩家骑在扫帚上时，让扫帚本体不可被选中
+     * 防止其碰撞箱影响正常交互
      */
     @Override
     public boolean isPickable() {
@@ -302,14 +305,15 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
         this.entityData.set(OWNER_ID, uuid == null ? Optional.empty() : Optional.of(EntityReference.of(uuid)));
     }
 
-
+    // B8 修复: 原 EntityReference.of(this) 返回**扫帚自身**引用（非 owner）= bug。EntityReference.of(UUID) 工厂是 public（仅构造器 private，TODO 误判）。
     @Override
     public EntityReference<LivingEntity> getOwnerReference() {
         return this.entityData.get(OWNER_ID).orElse(null);
     }
 
     /**
-     * 从实体当前包围盒派生扫帚的物理碰撞范围，确保乘客变化后尺寸仍保持同步。
+     * 1.21.11 makes Entity.makeBoundingBox() final, so derive the physical box
+     * from the live vanilla box instead of caching it in that former override.
      */
     public AABB getPhysicalBoundingBox(AABB baseBoundingBox) {
         if (this.getPassengers().size() > 1) {

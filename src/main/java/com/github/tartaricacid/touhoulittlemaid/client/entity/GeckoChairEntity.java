@@ -27,7 +27,13 @@ public class GeckoChairEntity extends AnimatableEntity<EntityChair> {
     }
 
     /**
-     * 设置椅子模型信息，并同步模型 ID，以便 Gecko 容器找到正确的模型与控制器。
+     * Mirrors {@code GeckoMaidEntity.setMaidInfo}. Without the setModelId call the entity's
+     * modelId stays null, so checkGeckoContainerUpdateInner never looks the container up,
+     * isModelPresent() stays false and createUpdateTask returns the nop task: the gecko chair
+     * then submits nothing at all, in the item icon, in hand and placed in the world alike.
+     * origin/1.21.1 has no modelId field — it overrides getModelLocation() to read chairInfo
+     * directly — so this is the 26.1-style container lookup this port adopted, wired up for
+     * chairs the same way it already is for maids.
      */
     public void setChair(ChairModelInfo chairInfo) {
         waitForAsyncUpdate();
@@ -40,8 +46,13 @@ public class GeckoChairEntity extends AnimatableEntity<EntityChair> {
     }
 
     /**
-     * 缓存中的预览椅子使用负实体 ID，也不会参与世界刻更新。
-     * 将其标记为预览实体后，Gecko 会改用客户端全局时间推进动画并刷新模型骨骼。
+     * Item previews use the EntityCacheUtil chairs, which carry negative ids and are never
+     * ticked, so entity.tickCount stays 0 forever. Gecko's frame time then never advances,
+     * the per-frame tick flags never reset, and the immutable (in-level) update path never
+     * re-extracts mainModelState — its render bone list stays empty and the dropped item
+     * submits zero vertices. Reporting these entities as previews switches the animation
+     * clock to the global client tick, the same escape hatch GeckoMaidEntity uses via
+     * MaidRenderState for its GUI/statue/garage-kit previews.
      */
     @Override
     public boolean isPreviewEntity() {

@@ -9,7 +9,13 @@ import net.minecraft.world.item.TridentItem;
 
 import java.util.HashMap;
 
-
+/**
+ * origin/1.21.1 行为基准：实体驱动（mob.isUsingItem/getUsedItemHand/getMainHandItem instanceof TridentItem，
+ * tick = getTicksUsingItem() + partialTick）。RenderState 化后各值由 HUB 经
+ * HumanoidMobRenderer.extractHumanoidRenderState 填充（ticksUsingItem = getTicksUsingItem(partialTick)，
+ * 已含插值，与 origin 等价）；物品判定保持 origin 的 instanceof TridentItem（26.1 改用
+ * ConventionalItemTags.TRIDENT_TOOLS 属行为漂移，且该常量在本版 Fabric API 不存在）。
+ */
 public class TridentAnimation implements IAnimation<EntityMaidRenderState> {
     @Override
     public void setupAnimation(EntityMaidRenderState state, HashMap<String, BedrockPart> models) {

@@ -15,7 +15,7 @@ public class WirelessIOSlotButton extends TouhouStateSwitchButton {
     }
 
     @Override
-
+    // 1.21.11: onClick(double,double) → onClick(MouseButtonEvent, boolean)
     public void onClick(MouseButtonEvent event, boolean doubleClick) {
         this.isStateTriggered = !this.isStateTriggered;
         this.config.set(this.index, this.isStateTriggered);

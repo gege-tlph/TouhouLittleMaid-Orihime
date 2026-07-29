@@ -20,10 +20,6 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.Optional;
 
-/**
- * 女仆打雪仗行为。雪球不记录原版攻击者，避免误伤其他生物后产生仇恨；
- * 发射初期仍单独排除创建该雪球的女仆，防止雪球撞上自己。
- */
 public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
     private static final float CHANCE_STOPPING = 1 / 32F;
     private final int attackCooldown;
@@ -105,7 +101,8 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
     }
 
     private void performRangedAttack(EntityMaid shooter, LivingEntity target) {
-        // 使用不带原版 owner 的雪球，避免误伤其他生物后把仇恨归到女仆身上。
+        // 发射的是无 shooter 雪球，避免打中其他生物惹来攻击
+        // 1.21.11: Snowball(Level,double,double,double) → 追加 ItemStack 形参（26.1 确认，用原版雪球物品）
         Snowball snowball = new MaidPlaySnowball(shooter);
         double x = target.getX() - shooter.getX();
         double y = target.getBoundingBox().minY + target.getBbHeight() / 3.0F - snowball.position().y;
@@ -116,7 +113,11 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
         shooter.level().addFreshEntity(snowball);
     }
 
-
+    /**
+     * Keeps the snowball ownerless (the origin behavior that avoids attributing
+     * aggression to the maid), but applies vanilla's launch-clearance idea only
+     * to the maid that created this snow-play projectile.
+     */
     private static final class MaidPlaySnowball extends Snowball {
         private final EntityMaid shooter;
         private boolean leftShooter;

@@ -27,7 +27,7 @@ public record OpenChairGuiPackage(int id) implements CustomPacketPayload {
     }
 
     public static void handle(OpenChairGuiPackage message, ClientPlayNetworking.Context context) {
-
+        // [Codex] Resolve and open the model screen only on the render/client thread.
         context.client().execute(() -> OpenChairGuiPackageProxy.handle(message));
     }
 }

@@ -274,5 +274,13 @@ public class TileEntityGomokuRenderer implements BlockEntityRenderer<TileEntityG
         return true;
     }
 
-
+    // TODO
+//    @Override
+//    public AABB getRenderBoundingBox(TileEntityGomoku blockEntity) {
+//        BlockPos pos = blockEntity.getBlockPos();
+//        return RenderHelper.getAABB(
+//                pos.offset(-3, 0, -3),
+//                pos.offset(3, 1, 3)
+//        );
+//    }
 }

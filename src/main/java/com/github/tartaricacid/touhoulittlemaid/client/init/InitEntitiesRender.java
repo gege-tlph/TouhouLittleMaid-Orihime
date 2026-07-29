@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.client.init;
 
 import com.github.tartaricacid.touhoulittlemaid.client.model.DebugFloorModel;
+// import com.github.tartaricacid.touhoulittlemaid.client.model.NewEntityFairyModel;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.*;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.blockentity.GarageKitRenderer;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.blockentity.StatueRenderer;
@@ -21,7 +22,7 @@ import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.world.entity.EntityType;
 
 /**
- * 集中注册本模组的实体、方块实体渲染器和模型层。
+ * 实体与方块实体渲染器的注册入口。
  */
 @Environment(EnvType.CLIENT)
 public final class InitEntitiesRender {
@@ -37,16 +38,21 @@ public final class InitEntitiesRender {
         EntityRendererRegistry.register(EntityTombstone.TYPE, EntityTombstoneRenderer::new);
         EntityRendererRegistry.register(EntitySit.TYPE, EntitySitRenderer::new);
         EntityRendererRegistry.register(EntityBroom.TYPE, EntityBroomRender::new);
-        // 鱼钩渲染器必须始终注册，否则加载包含既有鱼钩的世界时会缺少 renderer provider。
+        // [Codex] F14: 依据 1.21.11 vanilla FishingHookRenderer 迁移 render-state/线宽 API；
+        // 未注册渲染器会令 EntityRenderDispatcher 在读取已有鱼钩的存档时解引用 null。
         EntityRendererRegistry.register(MaidFishingHook.TYPE, MaidFishingHookRenderer::new);
 
+        // [Codex] Chair gameplay: restore the placed-chair renderer registration.
         EntityRendererRegistry.register(EntityChair.TYPE, EntityChairRenderer::new);
-        // 这些 provider 覆盖原版注册；每个替换渲染器仍由独立客户端配置开关控制。
+        // 注册进 vanilla EntityRenderers.PROVIDERS（map put），mod init 晚于原版静态注册 → 覆盖生效；
+        // 岩浆怪已拆分为独立的 REPLACE_MAGMA_CUBE_MODEL 开关（上游与史莱姆共用一个开关）。
         EntityRendererRegistry.register(EntityType.SLIME, EntityYukkuriSlimeRender::new);
         EntityRendererRegistry.register(EntityType.MAGMA_CUBE, EntityMarisaYukkuriSlimeRender::new);
         EntityRendererRegistry.register(EntityType.EXPERIENCE_ORB, ReplaceExperienceOrbRenderer::new);
 
         BlockEntityRenderers.register(TileEntityAltar.TYPE, TileEntityAltarRenderer::new);
+        // （本树 util 缺，26.1 有）+ entity-in-BE 渲染 + IEntityRenderStatePartialTick cast
+        // [Codex] Restored the placed statue/garage-kit entity previews through render states.
         BlockEntityRenderers.register(TileEntityStatue.TYPE, StatueRenderer::new);
         BlockEntityRenderers.register(TileEntityGarageKit.TYPE, GarageKitRenderer::new);
         BlockEntityRenderers.register(TileEntityGomoku.TYPE, TileEntityGomokuRenderer::new);
@@ -62,7 +68,13 @@ public final class InitEntitiesRender {
     }
 
     public static void onRegisterLayers() {
-        // 模型详情界面会无条件 bake 此层，遗漏注册会在打开预览时抛出异常。
+        // origin/1.21.1 InitEntitiesRender:60 registers this unconditionally, and its details
+        // screen bakes the same layer. AbstractModelDetailsGui's constructor calls
+        // bakeLayer(DebugFloorModel.LAYER), which throws IllegalArgumentException when the layer
+        // is absent, so Shift + clicking a model in the selection GUI crashed the client. The
+        // stated reason for deferring ("DebugFloorModel 仍延后") was already false: the class is
+        // present and its exclusion was lifted long ago.
         EntityModelLayerRegistry.registerModelLayer(DebugFloorModel.LAYER, DebugFloorModel::createBodyLayer);
+        // 被 bedrock 模型 new_maid_fairy 取代）→ 不再注册
     }
 }

@@ -47,15 +47,16 @@ public class TaskFeedOwner implements IFeedTask {
     public boolean isFood(ItemStack stack, Player owner) {
         if (stack.getItem() == Items.MILK_BUCKET) {
             for (MobEffectInstance effect : owner.getActiveEffects()) {
-                if (isHarmfulEffect(effect) && effect.getDuration() > 60) {
+                if (isHarmfulEffect(effect) && effect.getDuration() > 60 /*&& effect.getCures().contains(EffectCures.MILK)*/) {
                     return true;
                 }
             }
             return false;
         }
-
+        //if (stack.getItem().getFoodProperties(stack, owner) != null) {
         if (stack.get(DataComponents.FOOD) != null) {
-
+            // 1.21.11: FoodProperties.effects()/PossibleEffect 已移除 → 食用效果移至 Consumable 组件的 onConsumeEffects()（javap + 26.1 确认）。
+            //   语义保持：食物无消费效果 = 无有害效果（返回 true）；否则收集所有 ApplyStatusEffects 效果，判定是否均非有害。
             Consumable consumable = stack.get(DataComponents.CONSUMABLE);
             if (consumable == null) {
                 return true;
@@ -77,7 +78,8 @@ public class TaskFeedOwner implements IFeedTask {
             return Priority.HIGH;
         }
 
-
+        // 蜂蜜瓶可以清除中毒效果，所以当玩家拥有中毒效果时，应当优先使用
+        //if (stack.is(Items.HONEY_BOTTLE) && owner.getActiveEffects().stream().anyMatch(effect -> effect.getCures().contains(EffectCures.HONEY))) {
         if (stack.is(Items.HONEY_BOTTLE) && owner.hasEffect(MobEffects.POISON)) {
             return Priority.HIGH;
         }
@@ -90,13 +92,13 @@ public class TaskFeedOwner implements IFeedTask {
             }
         }
 
-
+        //if (stack.getItem().getFoodProperties(stack, owner) != null) {
         if (stack.get(DataComponents.FOOD) != null) {
             FoodData foodData = owner.getFoodData();
             if (!foodData.needsFood()) {
                 return Priority.LOWEST;
             }
-
+            //FoodProperties food = stack.getItem().getFoodProperties(stack, owner);
             FoodProperties food = stack.get(DataComponents.FOOD);
             int heal = 0;
             if (food != null) {
@@ -116,7 +118,7 @@ public class TaskFeedOwner implements IFeedTask {
     @Override
     public ItemStack feed(ItemStack stack, Player owner) {
         if (stack.getUseAnimation() == ItemUseAnimation.DRINK) {
-
+            // 1.21.11: ItemStack.getDrinkingSound() 移除 → 饮用音效移至 Consumable 组件的 sound()
             Consumable consumable = stack.get(DataComponents.CONSUMABLE);
             SoundEvent drinkSound = consumable != null ? consumable.sound().value() : SoundEvents.GENERIC_DRINK.value();
             owner.level.playSound(null, owner, drinkSound, SoundSource.NEUTRAL,

@@ -15,7 +15,8 @@ import org.lwjgl.glfw.GLFW;
 @Environment(EnvType.CLIENT)
 public class DismountBroomKey {
     public static final KeyMapping DISMOUNT_KEY = new KeyMapping("key.touhou_little_maid.dismount.desc",
-// KeyConflictContext.IN_GAME,KeyModifier.NONE,
+//            KeyConflictContext.IN_GAME,
+//            KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_C,
             TouhouLittleMaidClient.KEY_CATEGORY);
@@ -38,7 +39,7 @@ public class DismountBroomKey {
 
     private static boolean keyIsMatch(int key, int scanCode, int action, int mods) {
         return DISMOUNT_KEY.matches(new KeyEvent(key, scanCode, mods))
-;
+                /*&& DISMOUNT_KEY.getKeyModifier().equals(KeyModifier.getActiveModifier())*/;
     }
 
     private static boolean isInGame() {

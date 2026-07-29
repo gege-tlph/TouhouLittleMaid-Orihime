@@ -40,9 +40,8 @@ import java.util.function.Consumer;
 
 import static com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil.clearMaidDataResidue;
 
-
 /**
- * 车库套件物品的三维特殊模型渲染器。
+ * [Codex] 1.21.11 special-model replacement for origin's garage-kit BEWLR.
  */
 public final class GarageKitItemRenderer implements SpecialModelRenderer<GarageKitItemRenderer.State> {
     public static final Identifier ID = IdentifierUtil.modLoc("garage_kit_item");
@@ -92,7 +91,9 @@ public final class GarageKitItemRenderer implements SpecialModelRenderer<GarageK
         poseStack.scale(0.5F, 0.5F, 0.5F);
         poseStack.translate(1, 1.5, 1);
         poseStack.mulPose(Axis.ZN.rotationDegrees(180));
-
+        // NoCull matches origin's TileEntityItemStackGarageKitRenderer; the third int of the
+        // 8-arg submitModel overload is the OUTLINE color (see PicnicBasketItemRenderer) —
+        // passing -1 painted a white outline over the base on the dropped-item form.
         collector.submitModel(baseModel, Unit.INSTANCE, poseStack, RenderTypes.entityCutoutNoCull(TEXTURE),
                 light, overlay, outlineColor, null);
         poseStack.popPose();

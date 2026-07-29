@@ -31,6 +31,16 @@ loom {
             vmArg "-Dfabric-api.gametest.report-file=${projectDir}/build/gametest/report.xml"
             runDir "build/gametest"
         }
+        // 独立 runDir 的第二个客户端：同一 runDir 不能同时跑两个客户端——
+        // 正在运行的实例锁住 run/.fabric/processedMods/*.jar，另一个重映射时删不掉，直接启动失败。
+        clientDedicated {
+            client()
+            name = "Minecraft Client (Dedicated Test)"
+            runDir "run-dedicated-client"
+            // dev 客户端默认每次启动随机生成 Player### 用户名，UUID 随之改变，
+            // 于是 ops.json 里上一轮授予的 OP 全部失效。钉死用户名，OP 才能跨重启保留。
+            programArgs "--username", "TlmTester"
+        }
     }
 }
 repositories {

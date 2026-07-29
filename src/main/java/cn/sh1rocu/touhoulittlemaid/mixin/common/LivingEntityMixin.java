@@ -34,7 +34,7 @@ public abstract class LivingEntityMixin extends Entity {
     @Shadow
     public abstract void setLastHurtByPlayer(UUID player, int timeToRemember);
 
-
+    // 1.21.11: 字段类型 Player→EntityReference<Player>，lastHurtByPlayerTime→lastHurtByPlayerMemoryTime
     @Shadow
     @Nullable
     protected EntityReference<Player> lastHurtByPlayer;
@@ -51,7 +51,9 @@ public abstract class LivingEntityMixin extends Entity {
         return EventHooks.onItemUseFinish((LivingEntity) (Object) this, this.getUseItem().copy(), this.getUseItemRemainingTicks(), original.call(instance, level, livingEntity));
     }
 
-
+    // 女仆攻击完成后，给受伤实体设置最近的玩家伤害归属，便于经验/掉落计算。
+    // 1.21.11: HEAD 原注入 hurt 里的 DamageSource.getEntity() 处；hurt 现为 final，归属结算移到
+    // resolvePlayerResponsibleForDamage（javap 确认；同 origin/26.1）→ 注入其 HEAD。
     @Inject(method = "resolvePlayerResponsibleForDamage", at = @At("HEAD"))
     private void tlm$hurt(DamageSource source, CallbackInfoReturnable<Player> cir) {
         Entity attacker = source.getEntity();
@@ -65,7 +67,8 @@ public abstract class LivingEntityMixin extends Entity {
         }
     }
 
-
+    // 1.21.11: hurt 现为 final void；服务端伤害入口为 hurtServer。HEAD 在 hurt HEAD 触发 LivingAttackEvent，
+    // 现移至 hurtServer HEAD（服务端等价点，返回 boolean → 匹配 CallbackInfoReturnable<Boolean>）。
     @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
     public void tlm$attackEvent(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         LivingEntity self = (LivingEntity) (Object) this;

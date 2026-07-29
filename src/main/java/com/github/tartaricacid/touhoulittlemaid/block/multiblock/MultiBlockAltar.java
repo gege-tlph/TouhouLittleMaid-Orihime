@@ -2,7 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.block.multiblock;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.block.IMultiBlock;
-
+// TODO: datagen excluded - restore when datagen is re-enabled
 import com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagBlock;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBlocks;
 import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityAltar;
@@ -30,7 +30,7 @@ public class MultiBlockAltar implements IMultiBlock {
 
     @Override
     public boolean isCoreBlock(BlockState blockState) {
-
+        // B4 恢复：祭坛核心方块 = 鸟居（TagBlock un-excluded）
         return blockState.is(TagBlock.ALTAR_TORII);
     }
 
@@ -40,7 +40,8 @@ public class MultiBlockAltar implements IMultiBlock {
         for (StructureTemplate.StructureBlockInfo blockInfo : palette.blocks()) {
             BlockState worldState = world.getBlockState(posStart.offset(blockInfo.pos()));
             BlockState infoState = blockInfo.state();
-
+            // B4 恢复：祭坛结构匹配（TagBlock un-excluded）
+            // 橡木部分 -> 御柱
             if (infoState.is(Blocks.OAK_LOG)) {
                 if (!worldState.is(TagBlock.ALTAR_PILLAR)) {
                     return false;

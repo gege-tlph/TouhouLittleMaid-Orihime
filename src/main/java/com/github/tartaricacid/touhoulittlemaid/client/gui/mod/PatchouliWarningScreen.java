@@ -39,6 +39,8 @@ public class PatchouliWarningScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
+        // 1.21.11: renderBackground 已由 renderWithTooltipAndSubtitles 前置强制调用，屏内重复调用会二次 blur 崩溃
+        // 1.21.11: MultiLineLabel.renderCentered 移除 → visitLines(TextAlignment.CENTER, ...) + graphics.textRenderer()
         this.message.visitLines(net.minecraft.client.gui.TextAlignment.CENTER, this.width / 2, 80, 9, graphics.textRenderer());
         super.render(graphics, pMouseX, pMouseY, pPartialTick);
     }

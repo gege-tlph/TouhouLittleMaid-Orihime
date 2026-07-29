@@ -40,7 +40,8 @@ public record SetAttackListPackage(int entityId,
     private static void writeList(SetAttackListPackage message, Player sender) {
         Entity entity = sender.level.getEntity(message.entityId);
         if (entity instanceof EntityMaid maid && maid.isOwnedBy(sender)) {
-
+            // B8: 还原 HEAD——移植期误改为 entity.data.AttackListData + InitDataAttachment.ATTACK_LIST + setAttached（均错/不存在）。
+            //   规范：entity.data.inner.AttackListData + InitTaskData.ATTACK_LIST + setAndSyncData（TaskData 机制）。
             maid.setAndSyncData(InitTaskData.ATTACK_LIST, new AttackListData(message.attackGroups));
         }
     }

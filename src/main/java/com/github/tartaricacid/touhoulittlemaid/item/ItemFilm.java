@@ -43,7 +43,7 @@ public class ItemFilm extends AbstractStoreMaidItem {
     public static ItemStack maidToFilm(EntityMaid maid) {
         ItemStack film = InitItems.FILM.getDefaultInstance();
         maid.setHomeModeEnable(false);
-
+        // 1.21.11: Entity.saveWithoutId(CompoundTag) -> saveWithoutId(ValueOutput)
         TagValueOutput valueOutput = TagValueOutput.createWithContext(
                 ProblemReporter.DISCARDING, maid.registryAccess());
         maid.saveWithoutId(valueOutput);
@@ -64,7 +64,7 @@ public class ItemFilm extends AbstractStoreMaidItem {
             return;
         }
         CompoundTag data = compoundData.copyTag();
-
+        // 1.21.11: CompoundTag.getString(k) 返回 Optional<String> -> getStringOr(k, "")
         Identifier entityId = Identifier.tryParse(data.getStringOr(ID_TAG, ""));
         Identifier maidId = BuiltInRegistries.ENTITY_TYPE.getKey(InitEntities.MAID);
 
@@ -74,7 +74,10 @@ public class ItemFilm extends AbstractStoreMaidItem {
             var event = new MaidAndItemTransformEvent.ToMaid(maid, film, data);
             MaidAndItemTransformEvent.TO_MAID.invoker().onToMaid(event);
 
-
+            // 1.21.11: readAdditionalSaveData(CompoundTag) -> (ValueInput)。
+            // 保持 HEAD 的 readAdditionalSaveData（非 load）：load 还会读回 Pos/Motion/UUID，
+            // 而此处紧接着显式 setPos，且复用旧 UUID 有重复实体风险。
+            // （26.1 在此改用了 load，属其行为变更，不采纳。）
             maid.readAdditionalSaveData(TagValueInput.create(
                     ProblemReporter.DISCARDING, worldIn.registryAccess(), data));
             maid.setPos(pos.getX(), pos.getY(), pos.getZ());

@@ -10,6 +10,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -23,6 +24,8 @@ import java.util.List;
 public final class ConfigFileMigration {
     private static final Logger LOGGER = LogManager.getLogger(ConfigFileMigration.class);
     public static final String GLOBAL_FILE_NAME = TouhouLittleMaid.MOD_ID + "-global.toml";
+    public static final String AI_FILE_NAME = TouhouLittleMaid.MOD_ID + "-ai.toml";
+    public static final String AI_SERVER_FILE_NAME = TouhouLittleMaid.MOD_ID + "-ai-server.toml";
     public static final String SERVER_FILE_NAME = TouhouLittleMaid.MOD_ID + "-server.toml";
     private static final String PROVISIONAL_CLIENT_FILE_NAME = TouhouLittleMaid.MOD_ID + "-client.toml";
     private static final String LEGACY_FILE_NAME = TouhouLittleMaid.MOD_ID + "-common.toml";
@@ -74,6 +77,107 @@ public final class ConfigFileMigration {
             }
         } catch (RuntimeException | IOException exception) {
             LOGGER.error("Failed to create global player config {}", global, exception);
+        }
+    }
+
+    /**
+     * 2026-07-28 拆分：个人 AI 配置（ai 节五项）从 -global.toml 迁往专属的 -ai.toml。
+     *
+     * <p><b>必须在两个 spec 注册之前调用</b>：注册加载那一刻 -global.toml 会被 correct 剥掉
+     * 已不在 spec 里的 ai 节，旧值就没了。逐键在候选链（global → 更老的 client → common）里
+     * 取第一处命中，而不是整文件二选一——「global 是新建的、AI 值还留在更老文件里」的升级路径
+     * 会栽在整文件选择上。</p>
+     */
+    public static void migrateAiFileIfNeeded(List<ModConfigSpec.ConfigValue<?>> aiValues,
+                                             ModConfigSpec aiSpec) {
+        migrateAiFileIfNeeded(FabricLoader.getInstance().getConfigDir(), aiValues, aiSpec);
+    }
+
+    static void migrateAiFileIfNeeded(Path configDir,
+                                      List<ModConfigSpec.ConfigValue<?>> aiValues,
+                                      ModConfigSpec aiSpec) {
+        Path aiFile = configDir.resolve(AI_FILE_NAME);
+        if (Files.exists(aiFile)) {
+            return;
+        }
+        try {
+            CommentedConfig target = emptyConfig();
+            aiSpec.correct(target);
+
+            List<CommentedConfig> sources = new ArrayList<>();
+            for (Path candidate : new Path[]{
+                    configDir.resolve(GLOBAL_FILE_NAME),
+                    configDir.resolve(PROVISIONAL_CLIENT_FILE_NAME),
+                    configDir.resolve(LEGACY_FILE_NAME)}) {
+                if (Files.isRegularFile(candidate)) {
+                    sources.add(read(candidate));
+                }
+            }
+            int migrated = 0;
+            for (ModConfigSpec.ConfigValue<?> value : aiValues) {
+                List<String> path = value.getPath();
+                for (CommentedConfig source : sources) {
+                    if (source.contains(path)) {
+                        target.set(path, copyValue(source.getRaw(path)));
+                        migrated++;
+                        break;
+                    }
+                }
+            }
+            writeAtomically(target, aiFile);
+            LOGGER.info("Created AI player config {} ({} values migrated)", aiFile, migrated);
+        } catch (RuntimeException | IOException exception) {
+            LOGGER.error("Failed to create AI player config {}", aiFile, exception);
+        }
+    }
+
+    /**
+     * §17 v2 拆分：AI 规则（11 条）从每存档的世界规则文件迁往**实例级**的 -ai-server.toml。
+     *
+     * <p>逐键取第一处命中，源链 = <b>本次启动的存档</b>的世界文件 → 实例模板 -server.toml →
+     * 更老的 client/common。多存档时以升级后第一个进入的存档为准（AI 规则太新，
+     * 不同存档配不同值的情形近零）；其余存档里的旧 AI 键随各自下次被写盘时剥除。
+     * 一次性：实例文件已存在就绝不再动。</p>
+     */
+    public static void migrateAiServerFileIfNeeded(Path configDir, @Nullable Path worldServerFile,
+                                                   List<ModConfigSpec.ConfigValue<?>> aiValues,
+                                                   ModConfigSpec aiSpec) {
+        Path aiFile = configDir.resolve(AI_SERVER_FILE_NAME);
+        if (Files.exists(aiFile)) {
+            return;
+        }
+        try {
+            CommentedConfig target = emptyConfig();
+            aiSpec.correct(target);
+
+            List<CommentedConfig> sources = new ArrayList<>();
+            List<Path> candidates = new ArrayList<>();
+            if (worldServerFile != null) {
+                candidates.add(worldServerFile);
+            }
+            candidates.add(configDir.resolve(SERVER_FILE_NAME));
+            candidates.add(configDir.resolve(PROVISIONAL_CLIENT_FILE_NAME));
+            candidates.add(configDir.resolve(LEGACY_FILE_NAME));
+            for (Path candidate : candidates) {
+                if (Files.isRegularFile(candidate)) {
+                    sources.add(read(candidate));
+                }
+            }
+            int migrated = 0;
+            for (ModConfigSpec.ConfigValue<?> value : aiValues) {
+                List<String> path = value.getPath();
+                for (CommentedConfig source : sources) {
+                    if (source.contains(path)) {
+                        target.set(path, copyValue(source.getRaw(path)));
+                        migrated++;
+                        break;
+                    }
+                }
+            }
+            writeAtomically(target, aiFile);
+            LOGGER.info("Created AI rule config {} ({} values migrated)", aiFile, migrated);
+        } catch (RuntimeException | IOException exception) {
+            LOGGER.error("Failed to create AI rule config {}", aiFile, exception);
         }
     }
 

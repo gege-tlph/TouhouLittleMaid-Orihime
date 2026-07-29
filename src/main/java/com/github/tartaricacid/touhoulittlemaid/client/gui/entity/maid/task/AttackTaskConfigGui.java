@@ -111,7 +111,7 @@ public class AttackTaskConfigGui extends MaidTaskConfigGui<TaskConfigContainer> 
                 return;
             }
             Identifier id = attackGroupsKey.get(index);
-
+            // 1.21.11: Registry.get(Identifier) 返回 Optional<Reference<T>> → getValue 保留 1.21.1 defaulted 语义
             EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(id);
             Component name = type.getDescription();
             int yOffset = startTop + 31 + 13 * i;
@@ -142,7 +142,7 @@ public class AttackTaskConfigGui extends MaidTaskConfigGui<TaskConfigContainer> 
     }
 
     @Override
-
+    // 1.21.11: resize(Minecraft, int, int) → resize(int, int)
     public void resize(int width, int height) {
         String value = this.inputField.getValue();
         super.resize(width, height);
@@ -161,11 +161,12 @@ public class AttackTaskConfigGui extends MaidTaskConfigGui<TaskConfigContainer> 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTicks, int x, int y) {
         super.renderBg(graphics, partialTicks, x, y);
+        // 1.21.11: blit 增 RenderPipeline 首参 + 显式贴图尺寸（旧 7 参隐含 256x256）
         graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos + 80, topPos + 28, 0F, 0F, imageWidth, 137, 256, 256);
     }
 
     @Override
-
+    // 1.21.11: keyPressed(int,int,int) → keyPressed(KeyEvent)
     public boolean keyPressed(KeyEvent event) {
         if (event.key() == GLFW.GLFW_KEY_ESCAPE && Screens.getClient(this).player != null) {
             Screens.getClient(this).player.closeContainer();

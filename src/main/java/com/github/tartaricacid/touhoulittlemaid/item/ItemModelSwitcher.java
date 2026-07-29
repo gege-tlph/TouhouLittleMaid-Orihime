@@ -49,6 +49,7 @@ public class ItemModelSwitcher extends BlockItem {
     public static void itemStackToTileEntity(HolderLookup.Provider provider, ItemStack stack, TileEntityModelSwitcher switcher) {
         CompoundTag tag = stack.get(STORAGE_DATA_TAG);
         if (tag != null && tag.getCompound(NEO_FORGE_DATA_TAG).isPresent()) {
+            // 1.21.11: loadAdditional(CompoundTag, Provider) → loadAdditional(ValueInput)；桥接 CompoundTag→ValueInput
             switcher.loadAdditional(TagValueInput.create(ProblemReporter.DISCARDING, provider, tag));
         }
     }
@@ -63,6 +64,7 @@ public class ItemModelSwitcher extends BlockItem {
             } else {
                 forgeData = new CompoundTag();
             }
+            // 1.21.11: NbtUtils.createUUID 移除 → int-array（与 TileEntityModelSwitcher 的 putIntArray(UUIDUtil.uuidToIntArray) 一致）
             forgeData.putIntArray(TileEntityModelSwitcher.ENTITY_UUID, UUIDUtil.uuidToIntArray(maid.getUUID()));
             tag.put(NEO_FORGE_DATA_TAG, forgeData);
             stack.set(STORAGE_DATA_TAG, tag);

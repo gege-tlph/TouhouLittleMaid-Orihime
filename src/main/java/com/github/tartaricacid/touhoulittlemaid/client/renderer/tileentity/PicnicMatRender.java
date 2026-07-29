@@ -128,5 +128,17 @@ public class PicnicMatRender implements BlockEntityRenderer<TileEntityPicnicMat,
         return true;
     }
 
-
+    // TODO
+//    @Override
+//    public AABB getRenderBoundingBox(TileEntityPicnicMat blockEntity) {
+//        BlockState blockState = blockEntity.getBlockState();
+//        BlockPos pos = blockEntity.getBlockPos();
+//        if (blockState.getValue(BlockPicnicMat.PART).isCenter()) {
+//            return RenderHelper.getAABB(
+//                    pos.offset(-3, 0, -3),
+//                    pos.offset(3, 1, 3)
+//            );
+//        }
+//        return new AABB(pos);
+//    }
 }

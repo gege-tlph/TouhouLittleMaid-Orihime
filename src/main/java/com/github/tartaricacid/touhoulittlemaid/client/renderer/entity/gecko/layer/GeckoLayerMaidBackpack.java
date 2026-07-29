@@ -21,7 +21,7 @@ public class GeckoLayerMaidBackpack implements GeoLayerRenderer<EntityMaidRender
         if (state.backpack == null || !state.showBackpack) {
             return;
         }
-        data.modelState.visitLocatorGroup(GeoLocatorType.BACKPACK, poseStack, locator -> {
+        data.locators().visitLocatorGroup(GeoLocatorType.BACKPACK, poseStack, locator -> {
             locator.translate(0, 1, 0.25);
             locator.mulPose(Axis.ZP.rotationDegrees(180));
 

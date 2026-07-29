@@ -39,10 +39,12 @@ public class CodedAnimationController<T extends AnimatableEntity<?>> implements 
     private boolean pause;
 
     /**
-     * 实例化硬编码动画控制器，每个控制器同一时间只能播放一个动画 <br> 你可以为一个实体附加多个动画控制器 <br> 比如一个控制器控制实体大小，另一个控制移动，攻击等等
+     * 实例化硬编码动画控制器，每个控制器同一时间只能播放一个动画 <br>
+     * 你可以为一个实体附加多个动画控制器 <br>
+     * 比如一个控制器控制实体大小，另一个控制移动，攻击等等
      *
-     * @param animatableEntity 实体
-     * @param name 动画控制器名称
+     * @param animatableEntity      实体
+     * @param name                  动画控制器名称
      * @param transitionLengthTicks 动画过渡时间（tick）
      */
     public CodedAnimationController(T animatableEntity, String name, float transitionLengthTicks,
@@ -211,7 +213,7 @@ public class CodedAnimationController<T extends AnimatableEntity<?>> implements 
     @Override
     @Deprecated
     public boolean blendRotation() {
-
+        // TODO: 仅临时缓解，未完全修复过渡动画混合问题。
         return blendRotation && animationPlayer.getState() == AnimationState.RUNNING;
     }
 

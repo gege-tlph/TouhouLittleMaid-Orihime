@@ -28,7 +28,8 @@ public class ScheduleButton<T extends AbstractMaidContainer> extends Button {
     private MaidSchedule mode;
 
     public ScheduleButton(int x, int y, AbstractMaidContainerGui<T> gui) {
-
+/*        super(Button.builder(Component.empty(), (b) -> {
+        }).pos(x, y).size(61, 13));*/
         super(x, y, 61, 13, Component.empty(), button -> {
         }, Button.DEFAULT_NARRATION);
         this.maid = gui.getMaid();
@@ -36,7 +37,7 @@ public class ScheduleButton<T extends AbstractMaidContainer> extends Button {
     }
 
     @Override
-
+    // 1.21.11: onPress() → onPress(InputWithModifiers)
     public void onPress(InputWithModifiers input) {
         int index = mode.ordinal() + 1;
         int length = MaidSchedule.values().length;
@@ -45,7 +46,7 @@ public class ScheduleButton<T extends AbstractMaidContainer> extends Button {
     }
 
     @Override
-
+    // 1.21.11: renderWidget 现为 final → 覆写 renderContents；RenderSystem.enableDepthTest 移除（管线接管）；blit 增 RenderPipeline 首参
     public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         graphics.blit(RenderPipelines.GUI_TEXTURED, BUTTON, this.getX(), this.getY(), 82F, 43 + 14 * mode.ordinal(), this.width, this.height, 256, 256);
     }

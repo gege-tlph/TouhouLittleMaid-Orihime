@@ -33,16 +33,16 @@ import static java.util.Objects.requireNonNull;
 
 final class MolangLexerImpl implements MolangLexer {
 
-    // 源读取器
+    // the source reader
     private final Reader reader;
 
-    // 当前索引
+    // the current index
     private final Cursor cursor = new Cursor();
 
-    // 下一个要检查的字符
+    // the next character to be checked
     private int next;
 
-    // 当前令牌
+    // the current token
     private Token lastToken = null;
     private Token token = null;
 
@@ -78,18 +78,18 @@ final class MolangLexerImpl implements MolangLexer {
     private @NotNull Token next0() throws IOException {
         int c = next;
         if (c == -1) {
-            // 达到 EOF
+            // EOF reached
             return new Token(TokenKind.EOF, null, cursor.index(), cursor.index() + 1);
         }
 
-
+        // skip whitespace (including tabs and newlines)
         while (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
             c = read();
         }
 
-        // 末尾是否有额外的空格、行等？
+        // additional spaces, lines, etc. at the end?
         if (c == -1) {
-            // 达到 EOF
+            // EOF reached
             return new Token(TokenKind.EOF, null, cursor.index(), cursor.index() + 1);
         }
 
@@ -104,7 +104,7 @@ final class MolangLexerImpl implements MolangLexer {
             if (!isLastIdentifier) {
                 builder.appendCodePoint(c);
 
-                // 第一个字符是数字，继续阅读数字
+                // first char is a digit, continue reading number
                 while (Characters.isDigit(c = read())) {
                     builder.appendCodePoint(c);
                 }
@@ -121,7 +121,7 @@ final class MolangLexerImpl implements MolangLexer {
 
             return new Token(TokenKind.FLOAT, builder.toString(), start, cursor.index());
         } else if (Characters.isValidForWordStart(c)) {
-            // 可以是标识符或关键字
+            // may be an identifier or a keyword
             StringBuilder builder = new StringBuilder();
             do {
                 builder.appendCodePoint(c);
@@ -129,46 +129,52 @@ final class MolangLexerImpl implements MolangLexer {
             String word = builder.toString().toLowerCase();
             TokenKind kind;
             switch (word) {
-                // @格式化程序：关闭
+                //@formatter:off
                 case "break": kind = TokenKind.BREAK; break;
                 case "continue": kind = TokenKind.CONTINUE; break;
                 case "return": kind = TokenKind.RETURN; break;
                 case "true": kind = TokenKind.TRUE; break;
                 case "false": kind = TokenKind.FALSE; break;
                 default: kind = TokenKind.IDENTIFIER; break;
-                // @格式化程序：打开
+                //@formatter:on
             }
 
             return new Token(
                     kind,
-                    // 关键字没有值
+                    // keywords do not have values
                     kind == TokenKind.IDENTIFIER ? word : null,
                     start,
                     cursor.index()
             );
-        } else if (c == '\'') { // 单引号表示字符串开始
+        } else if (c == '\'') { // single quote means string start
             StringBuilder value = new StringBuilder(16);
             while (true) {
                 c = read();
                 if (c == -1) {
-                    // 到底是什么？你没有关闭字符串
+                    // the heck? you didn't close the string
                     return new Token(TokenKind.ERROR, "Found end-of-file before closing quote", start, cursor.index());
                 } else if (c == '\'') {
-                    // 字符串已关闭！
+                    // string was closed!
                     break;
                 } else {
-
+                    // TODO: should we allow escaping quotes? should we disallow line breaks?
+                    // not end of file nor quote, this is inside the string literal
                     value.appendCodePoint(c);
                 }
             }
-            // 这里，“c”应该是一个引号，所以跳过它并把它交给下一个人
+            // Here, "c" should be a quote, so skip it and give it to the next person
             read();
             return new Token(TokenKind.STRING, value.toString(), start, cursor.index());
         } else {
-            // 这里我们确信“c”是 NOT: - EOF - 单引号 (') - A-Za-z_ - 0-9 所以它必须是像 ?, *, +, - 这样的符号
+            // here we are sure that "c" is NOT:
+            // - EOF
+            // - Single Quote (')
+            // - A-Za-z_
+            // - 0-9
+            // so it must be some sign like ?, *, +, -
             TokenKind tokenKind;
-            String value = null;
-            int c1 = -2; // 仅当“c”可能有延续时才设置，例如“==”、“!=”、“??”
+            String value = null; // only set of token kind = ERROR, value is error message
+            int c1 = -2; // only set if "c" may have a continuation, for example "==", "!=", "??"
             switch (c) {
                 case '!': {
                     c1 = read();
@@ -252,7 +258,7 @@ final class MolangLexerImpl implements MolangLexer {
                     }
                     break;
                 }
-                // @格式化程序：关闭
+                //@formatter:off
                 case '/': tokenKind = TokenKind.SLASH; break;
                 case '*': tokenKind = TokenKind.STAR; break;
                 case '+': tokenKind = TokenKind.PLUS; break;
@@ -266,9 +272,9 @@ final class MolangLexerImpl implements MolangLexer {
                 case '[': tokenKind = TokenKind.LBRACKET; break;
                 case ']': tokenKind = TokenKind.RBRACKET; break;
                 case ';': tokenKind = TokenKind.SEMICOLON; break;
-                // @格式化程序：打开
+                //@formatter:on
                 default: {
-                    // “c”是我们不知道的东西！
+                    // "c" is something we don't know about!
                     tokenKind = TokenKind.ERROR;
                     value = "Unexpected token '" + ((char) c) + "': invalid token";
                     break;
@@ -276,7 +282,8 @@ final class MolangLexerImpl implements MolangLexer {
             }
 
             if (c1 == -2) {
-
+                // if token kind was known and the token didn't
+                // check for an extra character
                 read();
             }
 

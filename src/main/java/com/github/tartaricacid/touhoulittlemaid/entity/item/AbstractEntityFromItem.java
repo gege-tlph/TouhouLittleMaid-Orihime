@@ -150,6 +150,9 @@ public abstract class AbstractEntityFromItem extends LivingEntity implements IPi
         return false;
     }
 
+    // These LivingEntity subclasses are item-backed props, not equipment
+    // holders. Keep generic commands and equipment APIs from mutating the
+    // backing EntityEquipment introduced after the 1.21.1 baseline.
     @Override
     public ItemStack getItemBySlot(EquipmentSlot slot) {
         return ItemStack.EMPTY;

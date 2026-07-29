@@ -24,6 +24,20 @@ public class Bone {
     @SerializedName("rotation")
     private float[] rotation = new float[]{0, 0, 0};
 
+/*
+    @SerializedName("bind_pose_rotation")
+    private float[] bindPoseRotation;
+    @SerializedName("locators")
+    private Map<String, LocatorValue> locators;
+    @SerializedName("neverRender")
+    private Boolean neverRender;
+    @SerializedName("poly_mesh")
+    private PolyMesh polyMesh;
+    @SerializedName("render_group_id")
+    private Long renderGroupID;
+    @SerializedName("texture_meshes")
+    private TextureMesh[] textureMeshes;
+*/
 
     public Cube[] getCubes() {
         return cubes;
@@ -97,5 +111,53 @@ public class Bone {
         this.rotation = value;
     }
 
+/*
+    public float[] getBindPoseRotation() {
+        return bindPoseRotation;
+    }
 
+    public void setBindPoseRotation(float[] value) {
+        this.bindPoseRotation = value;
+    }
+
+    public Map<String, LocatorValue> getLocators() {
+        return locators;
+    }
+
+    public void setLocators(Map<String, LocatorValue> value) {
+        this.locators = value;
+    }
+
+    public Boolean getNeverRender() {
+        return neverRender;
+    }
+
+    public void setNeverRender(Boolean value) {
+        this.neverRender = value;
+    }
+
+    public PolyMesh getPolyMesh() {
+        return polyMesh;
+    }
+
+    public void setPolyMesh(PolyMesh value) {
+        this.polyMesh = value;
+    }
+
+    public Long getRenderGroupID() {
+        return renderGroupID;
+    }
+
+    public void setRenderGroupID(Long value) {
+        this.renderGroupID = value;
+    }
+
+    public TextureMesh[] getTextureMeshes() {
+        return textureMeshes;
+    }
+
+    public void setTextureMeshes(TextureMesh[] value) {
+        this.textureMeshes = value;
+    }
+*/
 }

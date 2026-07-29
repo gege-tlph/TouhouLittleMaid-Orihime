@@ -121,7 +121,9 @@ public class BaubleContainer extends MaidMainContainer {
                 slotChange.onShiftTakeoff(player, stack1);
             }
 
-            // 槽位变更已经同步到实体装备，不能再次写回，否则会重复物品。
+            // 1.21.1 updated only the removed last-equipment cache here. The
+            // slot mutation above already drives EntityEquipment in 1.21.11;
+            // writing stack1 back with setItemSlot would duplicate the item.
         }
         return stack1;
     }

@@ -253,7 +253,8 @@ public class HistoryAIChatScreen extends Screen {
                 }
             }
 
-
+            // 自身发送给 LLM 的历史记录，不显示在聊天记录中
+            // if (message.role() == Role.TOOL) {}
         });
     }
 
