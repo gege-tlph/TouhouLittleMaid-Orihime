@@ -8,8 +8,7 @@
 > [上游发行版](https://github.com/TartaricAcid/TouhouLittleMaid/releases)。
 
 [Touhou Little Maid](https://github.com/TartaricAcid/TouhouLittleMaid)（东方小女仆）是以东方 Project
-为主题的女仆模组：你可以召唤女仆陪伴、让她们种地打鱼做饭、整理仓库、跟着你战斗，也可以给她们换模型、
-换背包、装扮和聊天。玩法资料请参阅
+为主题的女仆模组：你可以召唤女仆陪伴、让她们种地打鱼做饭、整理仓库、跟着你战斗、装扮和聊天。玩法资料请参阅
 [Touhou Little Maid Wiki](http://page.cfpa.team/TouhouLittleMaid/)。
 
 English: An unofficial Fabric 1.21.11 port of Touhou Little Maid, continuing from the Orihime 1.21.1
@@ -18,22 +17,60 @@ Fabric port.
 ## 关于本分支
 
 上游本体面向 Minecraft 1.21.1，Orihime 把它移植到了 1.21.1 的 Fabric。本分支在此基础上
-迁移到 **Minecraft 1.21.11** 并继续维护——女仆的全部玩法链路（日程、睡眠、工作、进食、钓鱼、
-背包、无线物品传输、战斗、AI 聊天与语音）都已在新版本上跑通。
+迁移到 **Minecraft 1.21.11** 上游功能和本分支已经没有差异。
 
-除了版本更新，本分支还做了几件玩家能直接感受到的事：
+除了版本更新，本分支还做了：
 
 - **换用 Yes Steve Model 的女仆也能正常穿戴。** 背包、手持物品、主副手、头饰、背旗都会跟着
   模型的骨骼动。
 - **女仆的追踪标记不会被光影吃掉。** 开着 Iris / Sodium 时也能稳定看到。
-- **AI 聊天的密钥留在服务端。** 服主配好之后玩家不必也不能看到密钥；改完点保存立即生效，
-  不需要再敲任何命令。每只女仆可以单独选用不同的服务，也可以直接跟随世界默认。
 - **兼容 MrCrayfish's Furniture Mod: Refurbished。** 它的抽屉、柜子、板条箱等储物家具可以接入
   女仆的无线物品传输，桌子会被识别成放食物的台面。
 
-## 本分支修掉的上游缺陷
+AI 聊天与配置系统上的改动较多，单列一节说明。
 
-以下都是从上游继承下来、任何版本的使用者都会遇到的问题，本分支已修复：
+## 本分支新增的玩法
+
+上游没有、本分支加的功能：
+
+### 威胁响应
+
+以前女仆只有在执行「战斗」任务时才会打架，平时被打了也只会站着挨揍。现在每只女仆有一个
+**威胁响应**，开关在她的配置界面里切换：
+
+| 档位 | 行为 |
+|---|---|
+| **关闭** | 原版行为 |
+| **自卫** | 女仆空闲状态下被攻击时会还手 |
+| **护主** | 你被攻击时她会主动参战 |
+
+应战是**临时状态**，不会覆盖现在的工作安排
+配套的几件事：
+
+- **通过AI能力或者规则下达，她可以攻击和平生物。** 平时不会主动攻击和平中立和有主生物。
+- **手上拿着什么都能近战**，响应威胁时女仆空手也会进行攻击。
+
+### 配置界面重写
+
+全局配置界面重写，AI 相关的设置完全解耦、收进 AI 配置界面，各自归位；OP 现在可以直接
+在全局配置菜单里改单人存档或服务器的配置文件，不必再去翻文件。
+
+AI 配置界面也重写了，好用得多：站点可以就地「检查配置」告诉你是连不上还是没填对，
+音色能直接试听，密钥全程留在服务端，改完保存立即生效。
+
+命令也按同样的边界分开。`/tlm config` 是本分支新增的——上游只有 `/tlm ai_chat`，改了配置
+文件没有任何命令能让它生效，只能重进世界或重启服务器：
+
+| 命令 | 作用 |
+|---|---|
+| `/tlm config reload` | 重载世界规则|
+| `/tlm ai_chat reload` | 重载 AI 的站点与技能 |
+| `/tlm ai_chat status` | 打印 AI 服务状态 |
+| `/tlm ai_chat sites` | 列出服务端配置的LMM/TTS |
+
+## 本分支已修复的上游缺陷
+
+以下都是从上游继承下来、本分支已修复：
 
 - **炉子背包会把东西挪位置，甚至烧掉燃料。** 取出中间的物品后，剩下的会被挤到前面去；
   如果输入格空着，放进去的燃料会被当成原料烧成别的东西。另外，烧制进度以前每次重进世界都会归零。
@@ -44,6 +81,12 @@ Fabric port.
 - **女仆会截走玩家扔出的忠诚三叉戟。** 附了忠诚的三叉戟在飞回你手上的途中会被女仆捡走。
 - **女仆刚好消失时打开她的界面会让客户端崩溃。**
 - **灭火剂灭不了灵魂火。**
+- **聊久了之后，女仆只会闲聊、不再执行指令。** 你说「跟着我」「坐下」，她答应得很好听，
+  然后什么也不做。现在动作的判断和执行走一条不带聊天记录的独立通道，而且在她开口**之前**
+  完成——先做，再说，不会再答应一件没做的事。
+- **选了别的语音语种，女仆说一两轮就变回聊天语言。** 得清空聊天记录才能恢复。现在要朗读的
+  文本由一次单独的、不看聊天记录的请求产出，不再受历史影响。
+- **用云端语音识别时，网络一慢整个客户端就冻住。** 卡到识别结果回来为止。
 
 ## 兼容性
 
@@ -51,9 +94,9 @@ Fabric port.
 |---|---|
 | Minecraft | 1.21.11 |
 | Java | 21 |
-| Fabric Loader | 0.19.3 或更高版本 |
-| Fabric API | 0.141.4+1.21.11 或更高的 1.21.11 版本 |
-| Forge Config API Port | 21.11.1（**必装**，缺少则无法启动） |
+| Fabric Loader | 0.18.5 或更高版本 |
+| Fabric API | 0.141.1+1.21.11 或更高的 1.21.11 版本 |
+| Forge Config API Port | 21.11.0+（**必装**） |
 | 安装位置 | 客户端与服务端 |
 
 ## 安装
@@ -73,7 +116,7 @@ Fabric port.
 
 ## 可选模组兼容
 
-装了才生效，不装不影响运行。
+不影响运行
 
 ### 需要从本组织获取
 
@@ -82,17 +125,15 @@ Fabric port.
 
 | 模组 | 用途 | 下载 |
 |---|---|---|
-| **OpenYSM-Updated** | 给女仆换用自定义模型与动画，挂件跟随骨骼 | [gege-tlph/OpenYSM-Updated](https://github.com/gege-tlph/OpenYSM-Updated/releases) |
-| **Patchouli** | 游戏内手册《记忆中的幻想乡》 | [gege-tlph/Patchouli](https://github.com/gege-tlph/Patchouli/releases) |
-| **Maid Restaurant**（附属模组） | 厨师女仆烹饪、服务女仆取餐送到桌位 | [gege-tlph/MaidRestaurant](https://github.com/gege-tlph/MaidRestaurant/releases) |
+| **OpenYSM-Updated** | 自己实现的车万女仆的兼容 | [gege-tlph/OpenYSM-Updated](https://github.com/gege-tlph/OpenYSM-Updated/releases) |
+| **Patchouli** | 帕秋莉手册 | [gege-tlph/Patchouli](https://github.com/gege-tlph/Patchouli/releases) |
+| **Maid Restaurant**（附属模组） | 女仆厨房 | [gege-tlph/MaidRestaurant](https://github.com/gege-tlph/MaidRestaurant/releases) |
 
 > [!NOTE]
 > OpenYSM 上游虽有 1.21.11 版本，但其中的女仆兼容模块在 Fabric 上是空实现，装了也不会生效。
-> 本组织的分支把它做成了真的实现，**要让女仆用上自定义模型必须用这个分支**。
+> 本组织的分支把它做成了真的实现，**要让女仆用自定义模型必须用这个分支**。
 
 ### 其余可选兼容
-
-从各自的官方渠道安装即可：
 
 | 模组 | 兼容内容 |
 |---|---|
@@ -107,6 +148,35 @@ Fabric port.
 | Carry On | 搬运女仆时的模型与姿势 |
 | PatPat | 摸头效果 |
 | Inventory Profiles Next | 女仆背包界面排序 |
+
+## 暂时没有兼容的模组
+
+上游版本里有一批第三方兼容，本分支暂时没有。绝大多数是**那一侧还没有可以对接的 Minecraft
+1.21.11 Fabric 目标**，不是我们不想做：
+
+| 模组 | 情况 |
+|---|---|
+| EMI | Fabric 版最新到 1.21.1 |
+| Accessories | Fabric 版最新到 1.21.10 |
+| Immersive Melodies | Fabric 版最新到 1.21.1 |
+| Simple Hats | Fabric 版最新到 1.21.1 |
+| Ponder | Fabric 版最新到 1.20.1 |
+| Improved Mobs | Fabric 版最新到 1.21.1 |
+| Just More Cakes | Fabric 版最新到 1.21.1 |
+| TACZ | 本体只有 Forge；Fabric 移植版最新到 1.21.1 |
+| KubeJS | 上游已放弃该兼容 |
+| Iron Chests | 没有 Fabric 版 |
+| Aquaculture | 没有 Fabric 版（官方只发 NeoForge） |
+| Superb Warfare | 没有 Fabric 版 |
+| SlashBlade | 没有 Fabric 版 |
+| The One Probe | 没有 Fabric 版 |
+| Sophisticated Backpacks · Traveler's Backpack · ExtraContainer | 这三个的兼容都是经 **Accessories** 的槽位接口做的。Traveler's Backpack 自己有 1.21.11 版本，但 Accessories 停在 1.21.10 |
+| ProxLib | 暂不考虑兼容 |
+| Embeddium | Fabric 上由 Sodium / Iris 取代，这两个都已兼容 |
+
+**这不是永久决定。** 等它们出了 1.21.11 的 Fabric 版本，需要的话我们会把兼容重新接上；
+如果某个模组确实需要而作者没有跟进，我们也会像对 Yes Steve Model 和 Patchouli 那样，
+自己移植一份维护版本再对接。
 
 ## 已知问题
 
