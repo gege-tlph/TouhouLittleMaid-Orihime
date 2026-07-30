@@ -4,6 +4,7 @@ import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.ErrorCode;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.ResponseCallback;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.ServiceType;
+import com.github.tartaricacid.touhoulittlemaid.client.ClientLocalChat;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.network.message.SendUserChatPackage;
 import net.fabricmc.api.EnvType;
@@ -34,7 +35,7 @@ public class STTCallback implements ResponseCallback<String> {
         Minecraft.getInstance().execute(() -> {
             String cause = throwable.getLocalizedMessage();
             MutableComponent errorMessage = ErrorCode.getErrorMessage(ServiceType.STT, errorCode, cause);
-            player.displayClientMessage(errorMessage.withStyle(ChatFormatting.RED), false);
+            ClientLocalChat.show(errorMessage.withStyle(ChatFormatting.RED));
         });
     }
 
@@ -46,10 +47,10 @@ public class STTCallback implements ResponseCallback<String> {
                 ClientPlayNetworking.send(new SendUserChatPackage(maid.getId(), chatText, clientInfo));
                 String name = player.getScoreboardName();
                 String format = String.format("<%s> %s", name, chatText);
-                player.displayClientMessage(Component.literal(format).withStyle(ChatFormatting.GRAY), false);
+                ClientLocalChat.show(Component.literal(format).withStyle(ChatFormatting.GRAY));
             } else {
                 MutableComponent component = Component.translatable("ai.touhou_little_maid.chat.stt.content_is_empty");
-                player.displayClientMessage(component.withStyle(ChatFormatting.GRAY), false);
+                ClientLocalChat.show(component.withStyle(ChatFormatting.GRAY));
             }
         });
     }

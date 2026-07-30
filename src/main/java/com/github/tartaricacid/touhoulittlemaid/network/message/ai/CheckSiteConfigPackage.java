@@ -7,10 +7,7 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.SiteSecretPresence;
 import com.github.tartaricacid.touhoulittlemaid.util.GameModeUtil;
 import io.netty.buffer.ByteBuf;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.MinecraftServer;
@@ -21,6 +18,8 @@ import org.jetbrains.annotations.Nullable;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
 
@@ -43,6 +42,14 @@ public record CheckSiteConfigPackage(String service, String siteId) implements C
 
     private static final int TIMEOUT_MS = 4000;
     private static final int MAX_ID_LENGTH = 64;
+
+    /**
+     * 回执配色。**必须带 alpha**：1.21.11 的 {@code Font} 不再把 alpha=0 补成不透明，
+     * 照抄 {@code ChatFormatting} 那种裸 RGB 值会把字画成全透明。
+     */
+    private static final int COLOR_FAILURE = 0xFFFF5555;
+    private static final int COLOR_WARNING = 0xFFFFFF55;
+    private static final int COLOR_OK = 0xFF55FF55;
 
     public static final Type<CheckSiteConfigPackage> TYPE = new Type<>(modLoc("check_site_config"));
     public static final StreamCodec<ByteBuf, CheckSiteConfigPackage> STREAM_CODEC = new StreamCodec<>() {
@@ -109,22 +116,22 @@ public record CheckSiteConfigPackage(String service, String siteId) implements C
             default -> null;
         };
         if (site == null) {
-            reply(player, "missing", ChatFormatting.RED, message.siteId);
+            reply(player, "missing", COLOR_FAILURE, message.siteId);
             return;
         }
         if (StringUtils.isBlank(site.url())) {
-            reply(player, "no_url", ChatFormatting.RED, message.siteId);
+            reply(player, "no_url", COLOR_FAILURE, message.siteId);
             return;
         }
         if (!hasSecret(site)) {
-            reply(player, "no_secret", ChatFormatting.YELLOW, message.siteId);
+            reply(player, "no_secret", COLOR_WARNING, message.siteId);
             return;
         }
 
         // 闸放在三个早退判定之后：那几条都不开线程，没必要占额度
         java.util.UUID owner = player.getUUID();
         if (!tryAcquire(owner, System.currentTimeMillis())) {
-            reply(player, "busy", ChatFormatting.YELLOW, message.siteId);
+            reply(player, "busy", COLOR_WARNING, message.siteId);
             return;
         }
 
@@ -136,9 +143,9 @@ public record CheckSiteConfigPackage(String service, String siteId) implements C
             server.execute(() -> {
                 release(owner);
                 if (failure == null) {
-                    reply(player, "reachable", ChatFormatting.GREEN, id);
+                    reply(player, "reachable", COLOR_OK, id);
                 } else {
-                    reply(player, "unreachable", ChatFormatting.RED, id, failure);
+                    reply(player, "unreachable", COLOR_FAILURE, id, failure);
                 }
             });
         }, "tlm-site-config-check");
@@ -173,9 +180,16 @@ public record CheckSiteConfigPackage(String service, String siteId) implements C
         return SiteSecretPresence.hasAnySecret(site);
     }
 
-    private static void reply(ServerPlayer player, String key, ChatFormatting color, Object... args) {
-        MutableComponent text = Component.translatable(
-                "ai.touhou_little_maid.chat.site_check." + key, args).withStyle(color);
-        player.displayClientMessage(text, false);
+    /**
+     * 回执发回**发起检查的那个界面**，不再打进聊天栏。
+     *
+     * <p>这个按钮只存在于站点编辑屏上，点它的时候那个屏必然开着，而**聊天栏在界面底下看不见**——
+     * 原先的 {@code displayClientMessage} 等于把回执写到一个当时读不到的地方，管理员点完按钮
+     * 屏幕上什么也没有。屏已关掉时由客户端自行回落到聊天栏，见 {@code SiteCheckResultDisplay}。</p>
+     */
+    private static void reply(ServerPlayer player, String key, int argb, Object... args) {
+        List<String> stringArgs = Arrays.stream(args).map(String::valueOf).toList();
+        ServerPlayNetworking.send(player,
+                new SiteCheckResultPackage("ai.touhou_little_maid.chat.site_check." + key, stringArgs, argb));
     }
 }

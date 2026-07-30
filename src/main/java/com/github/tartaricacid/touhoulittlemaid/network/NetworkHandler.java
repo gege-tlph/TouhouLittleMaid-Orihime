@@ -74,6 +74,7 @@ public class NetworkHandler {
         ClientPlayNetworking.registerGlobalReceiver(SyncMaidAIDataPacket.TYPE, SyncMaidAIDataPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncServerRulesPacket.TYPE, SyncServerRulesPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(VoicePreviewResultPackage.TYPE, VoicePreviewResultPackage::handle);
+        ClientPlayNetworking.registerGlobalReceiver(SiteCheckResultPackage.TYPE, SiteCheckResultPackage::handle);
     }
 
     public static void registerS2CPackets() {
@@ -113,6 +114,7 @@ public class NetworkHandler {
         registerS2CPacket(SyncMaidAIDataPacket.TYPE, SyncMaidAIDataPacket.STREAM_CODEC);
         registerS2CPacket(SyncServerRulesPacket.TYPE, SyncServerRulesPacket.STREAM_CODEC);
         registerS2CPacket(VoicePreviewResultPackage.TYPE, VoicePreviewResultPackage.STREAM_CODEC);
+        registerS2CPacket(SiteCheckResultPackage.TYPE, SiteCheckResultPackage.STREAM_CODEC);
 
 
     }

@@ -37,5 +37,12 @@
   "patchouli.touhou_little_maid.book.entries.overview.multiblocks_altar.name": "Ara de Massis Multis",
   "patchouli.touhou_little_maid.book.entries.overview.power_point.name": "Punctum de Potentiis",
   "patchouli.touhou_little_maid.book.entries.overview.what_is_touhou.name": "Toho Inceptum",
-  "patchouli.touhou_little_maid.book.entries.overview.what_is_touhou.pages.0.text": "Toho Inceptum ludus series Iaponiae dozinis Solo ZYNE, qui est in Iugo Sianharum Alis, de pampinis est."
+  "patchouli.touhou_little_maid.book.entries.overview.what_is_touhou.pages.0.text": "Toho Inceptum ludus series Iaponiae dozinis Solo ZYNE, qui est in Iugo Sianharum Alis, de pampinis est.",
+  "ai.touhou_little_maid.chat.settings.hub.check_config": "Proba",
+  "ai.touhou_little_maid.chat.settings.hub.check_pass": "Confirmatum",
+  "ai.touhou_little_maid.chat.settings.hub.check_error": "Error",
+  "ai.touhou_little_maid.chat.settings.hub.check_unreachable": "Non conexum",
+  "ai.touhou_little_maid.chat.settings.hub.check_busy": "Exspecta",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_hint": "Pronuntiator systematis ab ipso systemate operandi praebetur nec quicquam configurandum habet.",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_language_hint": "Nota bene: vox et lingua omnino a systemate operandi statuuntur. Lingua synthesis in tabula colloquii constituta huic loco non applicatur."
 }

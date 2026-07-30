@@ -25,7 +25,7 @@ import static com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai
 import static net.minecraft.network.chat.CommonComponents.GUI_BACK;
 
 public class STTSiteEditorScreen extends Screen {
-    private static final int BASE_WIDTH = 400;
+    private static final int BASE_WIDTH = SiteEditorLayout.PANEL_WIDTH;
     private static final int BASE_HEIGHT = 230;
     private static final int FIELD_ROW_HEIGHT = 35;
 
@@ -101,8 +101,10 @@ public class STTSiteEditorScreen extends Screen {
         }
 
         int bottomY = this.startY + BASE_HEIGHT - 24;
-        this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 200, bottomY, 90, 20, SAVE_NAME, b -> this.saveSite()));
-        this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 102, bottomY, 90, 20, GUI_BACK, b -> this.onClose()));
+        this.addRenderableWidget(new FlatColorButton(this.startX + SiteEditorLayout.SAVE_X, bottomY,
+                SiteEditorLayout.SAVE_WIDTH, 20, SAVE_NAME, b -> this.saveSite()));
+        this.addRenderableWidget(new FlatColorButton(this.startX + SiteEditorLayout.BACK_X, bottomY,
+                SiteEditorLayout.BACK_WIDTH, 20, GUI_BACK, b -> this.onClose()));
     }
 
     private void createFieldWidget(FormField field, int left, int y, int width) {

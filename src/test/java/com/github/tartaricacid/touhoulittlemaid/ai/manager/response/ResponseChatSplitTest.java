@@ -68,4 +68,20 @@ class ResponseChatSplitTest {
                 "两参构造出来的响应没有原始整串，退化成只保留对话文本即可，不得抛异常");
         assertEquals("主人好呀。", response.getTtsText());
     }
+
+    /**
+     * <b>旧存档的 {@code chat---tts} 整串仍然必须能被剥开。</b>
+     *
+     * <p>现役对话路径已不再产生两段回复（待合成文本改由独立的翻译请求产出），但 v0.8.5 及更早的
+     * 存档里，助手历史存的就是这种整串，{@code MaidAIChatManager#withoutTtsHalf} 靠拆分在回放时
+     * 剥掉旧的 TTS 半段。那些女仆的 NBT 无法靠「以后不再写脏数据」自愈，
+     * <b>所以拆分逻辑不是死代码，删掉会让旧档的日文半段重新灌进上下文。</b></p>
+     */
+    @Test
+    void legacySavesWithBothHalvesInOneStringStillSplit() {
+        assertEquals("主人好呀。", new ResponseChat("主人好呀。---主人こんにちは").getChatText(),
+                "旧档历史里的行内整串必须仍能剥出对话半段");
+        assertEquals("主人好呀。", new ResponseChat("主人好呀。\n---\n主人こんにちは").getChatText(),
+                "旧档里也存在带换行的整串");
+    }
 }

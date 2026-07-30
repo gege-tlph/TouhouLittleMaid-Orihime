@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.command.subcommand;
 
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.ai.agent.context.ContextCategory;
 import com.github.tartaricacid.touhoulittlemaid.ai.agent.context.GameContextRegister;
 import com.github.tartaricacid.touhoulittlemaid.ai.agent.skill.SkillInstance;
@@ -63,6 +64,12 @@ public class AIChatCommand {
         root.then(tool.executes(AIChatCommand::showTools));
         root.then(context.executes(AIChatCommand::showContexts));
         root.then(tokens);
+
+        // 开发环境专用的对话驱动器：自动化载体不能点击与按键，而「多轮后才出现」的缺陷
+        // 需要精确控制轮数与语种。发布产物里不注册，见 AiChatDevCommand 的类注释。
+        if (TouhouLittleMaid.DEBUG) {
+            root.then(AiChatDevCommand.get());
+        }
 
         return root;
     }

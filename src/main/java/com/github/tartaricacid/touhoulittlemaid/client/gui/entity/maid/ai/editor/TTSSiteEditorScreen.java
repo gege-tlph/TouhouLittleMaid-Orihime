@@ -36,10 +36,12 @@ import static net.minecraft.network.chat.CommonComponents.GUI_BACK;
  * TTS 站点编辑器：固定字段区 + 可滚动模型列表。
  * 表单字段定义委托给 {@link TTSSiteFormLayout} 的各子类。
  */
-public class TTSSiteEditorScreen extends Screen {
+public class TTSSiteEditorScreen extends Screen implements SiteCheckResultDisplay {
     private static final int LABEL_COLOR = 0xFF777777;
-    private static final int BASE_WIDTH = 400;
+    private static final int BASE_WIDTH = SiteEditorLayout.PANEL_WIDTH;
     private static final int BASE_HEIGHT = 230;
+    /** 与 {@link LLMSiteEditorScreen} 同理：留够时间让人移上去读悬停里的完整原因。**暂定值** */
+    private static final long CHECK_RESULT_MS = 8000;
     private static final int FIELD_ROW_HEIGHT = 35;
     private static final int MODEL_ROW_HEIGHT = 22;
 
@@ -72,6 +74,16 @@ public class TTSSiteEditorScreen extends Screen {
      */
     private long tipTimestamp = -1;
     private Component statusMessage = Component.empty();
+
+    /**
+     * 「检查配置」的服务端回执：按钮自己临时变成状态灯。存字段而不是直接写按钮，
+     * 是因为 {@link #init()} 会重建全部控件，存字段才能让状态活过重建。
+     */
+    private Component checkVerdict;
+    private Component checkDetail;
+    private int checkResultColor = 0xFFFFFFFF;
+    private long checkResultTimestamp = -1;
+    private FlatColorButton checkButton;
 
     public TTSSiteEditorScreen(AIChatSettingsTTSSiteScreen parent, TTSSite sourceSite) {
         super(Component.literal("TTS Site Editor"));
@@ -116,8 +128,8 @@ public class TTSSiteEditorScreen extends Screen {
         this.startX = (this.width - BASE_WIDTH) / 2;
         this.startY = (this.height - BASE_HEIGHT) / 2;
 
-        int left = this.startX + 12;
-        int contentWidth = BASE_WIDTH - 24;
+        int left = this.startX + SiteEditorLayout.MARGIN;
+        int contentWidth = SiteEditorLayout.CONTENT_WIDTH;
         int bottomY = this.startY + BASE_HEIGHT - 24;
 
         // 固定字段区（不滚动）
@@ -152,7 +164,8 @@ public class TTSSiteEditorScreen extends Screen {
             this.modelArea = new Rectangle(left, modelTop, contentWidth, modelBottom - modelTop);
             this.createModelRows(left, contentWidth);
 
-            this.addRenderableWidget(new FlatColorButton(left, bottomY, 96, 20, ADD_MODEL_NAME, b -> {
+            this.addRenderableWidget(new FlatColorButton(this.startX + SiteEditorLayout.ADD_MODEL_X, bottomY,
+                    SiteEditorLayout.ADD_MODEL_WIDTH, 20, ADD_MODEL_NAME, b -> {
                 this.modelRows.add(new ModelRow(StringUtils.EMPTY, StringUtils.EMPTY));
                 int visibleCount = this.getVisibleModelCount();
                 this.modelScrollOffset = Math.max(0, this.modelRows.size() - visibleCount);
@@ -164,12 +177,22 @@ public class TTSSiteEditorScreen extends Screen {
         // 「检查配置」而不是「测试连接」：它检查地址与密钥填没填、主机连不连得上，
         // **不验证密钥是否正确**。叫成后者就是一个说谎的标签，而它仍然有用——
         // 把「地址/网络不通」与「密钥不对」分开，这两种故障的处置完全不同。
-        this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 302, bottomY, 96, 20,
-                Component.translatable("ai.touhou_little_maid.chat.settings.hub.check_config"),
-                b -> ClientPlayNetworking.send(new CheckSiteConfigPackage(
-                        CheckSiteConfigPackage.TTS, this.siteId))));
-        this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 200, bottomY, 90, 20, SAVE_NAME, b -> this.saveSite()));
-        this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 102, bottomY, 90, 20, GUI_BACK, b -> this.onClose()));
+        // 没有可配置项的站点（系统朗读器）不显示这两颗：检查必然停在「还没填地址」，
+        // 保存写回的是一份逐字相同的副本。只能骗人的按钮不该出现，见 TTSSiteFormLayout#isConfigurable
+        if (this.layout.isConfigurable()) {
+            this.checkButton = this.addRenderableWidget(new FlatColorButton(
+                    this.startX + SiteEditorLayout.CHECK_CONFIG_X, bottomY,
+                    SiteEditorLayout.CHECK_CONFIG_WIDTH, 20, CHECK_CONFIG_NAME,
+                    b -> ClientPlayNetworking.send(new CheckSiteConfigPackage(
+                            CheckSiteConfigPackage.TTS, this.siteId))));
+            this.applyCheckVerdict();
+            this.addRenderableWidget(new FlatColorButton(this.startX + SiteEditorLayout.SAVE_X, bottomY,
+                    SiteEditorLayout.SAVE_WIDTH, 20, SAVE_NAME, b -> this.saveSite()));
+        } else {
+            this.checkButton = null;
+        }
+        this.addRenderableWidget(new FlatColorButton(this.startX + SiteEditorLayout.BACK_X, bottomY,
+                SiteEditorLayout.BACK_WIDTH, 20, GUI_BACK, b -> this.onClose()));
     }
 
     private void createFieldWidget(FormField field, int left, int y, int width) {
@@ -237,11 +260,16 @@ public class TTSSiteEditorScreen extends Screen {
         graphics.drawCenteredString(this.font, ttsEditorTitle(this.siteDisplayName),
                 this.startX + BASE_WIDTH / 2, this.startY + 4, 0xFFF3EFE0);
 
+        // 判词到期即还原，靠每帧这一次调用，不另设计时器
+        this.applyCheckVerdict();
+
         // 固定字段
         for (FormField field : this.fields) {
             this.renderInputField(graphics, field.box, mouseX, mouseY, partialTick);
             this.renderSecretPlaceholder(graphics, field);
         }
+
+        this.renderHints(graphics);
 
         // 模型区
         if (this.modelArea != null) {
@@ -257,6 +285,61 @@ public class TTSSiteEditorScreen extends Screen {
             int x = this.startX + BASE_WIDTH - 155;
             int y = this.startY + BASE_HEIGHT - 35;
             graphics.drawCenteredString(this.font, this.statusMessage, x, y, 0xFFADADAD);
+        }
+
+        if (this.checkButton != null) {
+            this.checkButton.renderToolTip(graphics, this, mouseX, mouseY);
+        }
+    }
+
+    /**
+     * 画站点级说明，位置就是字段区的开头。
+     *
+     * <p>系统站点一个字段都没有，空白页无法告诉管理员「本来就没有可配置项」；更要紧的是它必须写明
+     * <b>聊天界面里的合成语种对这个站点不生效</b>——那个设置看得见、点得动、存得下，而
+     * {@code TTSSystemClient} 把 {@code TTSConfig} 整个丢掉了。<b>一个能设置却不起作用的选项，
+     * 比没有这个选项更糟</b>，所以这不是装饰性文案。</p>
+     */
+    private void renderHints(GuiGraphics graphics) {
+        List<Component> hints = this.layout.hints();
+        if (hints.isEmpty()) {
+            return;
+        }
+        int left = this.startX + SiteEditorLayout.MARGIN;
+        int y = this.startY + 32;
+        for (Component hint : hints) {
+            for (FormattedCharSequence line : this.font.split(hint, SiteEditorLayout.CONTENT_WIDTH)) {
+                graphics.drawString(this.font, line, left, y, LABEL_COLOR, false);
+                y += 11;
+            }
+            y += 4;
+        }
+    }
+
+    @Override
+    public void showSiteCheckResult(Component verdict, Component detail, int argb) {
+        this.checkVerdict = verdict;
+        this.checkDetail = detail;
+        this.checkResultColor = argb;
+        this.checkResultTimestamp = System.currentTimeMillis();
+        this.applyCheckVerdict();
+    }
+
+    /** 与 {@link LLMSiteEditorScreen#applyCheckVerdict} 同法：判词贴按钮，到期即还原 */
+    private void applyCheckVerdict() {
+        if (this.checkButton == null) {
+            return;
+        }
+        boolean live = this.checkVerdict != null
+                && System.currentTimeMillis() - this.checkResultTimestamp < CHECK_RESULT_MS;
+        if (live) {
+            this.checkButton.setMessage(this.checkVerdict);
+            this.checkButton.setMessageColor(this.checkResultColor);
+            this.checkButton.setTooltips(List.of(this.checkDetail));
+        } else {
+            this.checkButton.setMessage(CHECK_CONFIG_NAME);
+            this.checkButton.setMessageColor(0);
+            this.checkButton.clearTooltips();
         }
     }
 

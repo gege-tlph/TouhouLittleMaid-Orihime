@@ -910,5 +910,12 @@
   "patchouli.touhou_little_maid.book.entries.overview.vanilla_change.pages.0.text": "슬라임 모델을 윳쿠리로 수정했습니다.",
   "patchouli.touhou_little_maid.book.entries.overview.vanilla_change.pages.1.text": "또한 경험치 구슬, 경험치 병, 그리고 불사의 토템의 텍스트를 변경했습니다. $(br2)이 모든 변경 사항은 설정 파일에서 끌 수 있습니다.",
   "patchouli.touhou_little_maid.book.entries.overview.favorability.name": "호감도",
-  "patchouli.touhou_little_maid.book.entries.overview.favorability.pages.0.text": "높은 호감도는 메이드의 체력과 공격력을 증가시킵니다.$(br2)메이드의 호감도 증가:$(li)메이드가 자유행동 스케줄일 때, 키보드, 컴퓨터, 책장 또는 오목을 오락으로 삼음.$(li)메이드가 잠을 잠.$(br2)메이드의 호감도 감소:$(li)메이드의 사망."
+  "patchouli.touhou_little_maid.book.entries.overview.favorability.pages.0.text": "높은 호감도는 메이드의 체력과 공격력을 증가시킵니다.$(br2)메이드의 호감도 증가:$(li)메이드가 자유행동 스케줄일 때, 키보드, 컴퓨터, 책장 또는 오목을 오락으로 삼음.$(li)메이드가 잠을 잠.$(br2)메이드의 호감도 감소:$(li)메이드의 사망.",
+  "ai.touhou_little_maid.chat.settings.hub.check_config": "확인",
+  "ai.touhou_little_maid.chat.settings.hub.check_pass": "성공",
+  "ai.touhou_little_maid.chat.settings.hub.check_error": "오류",
+  "ai.touhou_little_maid.chat.settings.hub.check_unreachable": "연결불가",
+  "ai.touhou_little_maid.chat.settings.hub.check_busy": "확인중",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_hint": "시스템 내레이터는 운영체제에서 제공하며 별도의 설정이 없습니다.",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_language_hint": "참고: 음성과 언어는 전적으로 운영체제가 결정합니다. 채팅 화면에서 설정한 합성 언어는 이 사이트에는 적용되지 않습니다."
 }

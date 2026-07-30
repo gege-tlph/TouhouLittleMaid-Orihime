@@ -960,5 +960,12 @@
   "patchouli.touhou_little_maid.book.entries.overview.make_custom_chatbubble_text.pages.2.text": "然葉葉之首行必有類名，以明文顯之時。$(br2)可用之類名如：$(br)日務屬：$(li)work：工時$(li)idle：歇閒時$(li)sleep：眠時",
   "patchouli.touhou_little_maid.book.entries.overview.make_custom_chatbubble_text.pages.3.text": "他屬：$(li)morning：晨$(li)night：晚$(li)rain：雨$(li)snow：雪$(li)cold：寒$(li)hot：熱$(li)hurt：傷$(li)beg：祈",
   "patchouli.touhou_little_maid.book.entries.overview.make_custom_chatbubble_text.pages.4.text": "工式屬：$(li)示於定之工時，如attack、farm之屬。$(br2)右擊丫鬟以入所完。$(br)潛則除全。$(br)白擊則複製於書與筆。",
-  "patchouli.touhou_little_maid.book.entries.overview.make_custom_chatbubble_text.pages.5.text": "啟詳註則示名於工示易葉之文示。"
+  "patchouli.touhou_little_maid.book.entries.overview.make_custom_chatbubble_text.pages.5.text": "啟詳註則示名於工示易葉之文示。",
+  "ai.touhou_little_maid.chat.settings.hub.check_config": "檢驗",
+  "ai.touhou_little_maid.chat.settings.hub.check_pass": "驗訖",
+  "ai.touhou_little_maid.chat.settings.hub.check_error": "有誤",
+  "ai.touhou_little_maid.chat.settings.hub.check_unreachable": "不通",
+  "ai.touhou_little_maid.chat.settings.hub.check_busy": "少待",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_hint": "系統朗讀者，由作業系統自帶，無可設之項也。",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_language_hint": "注：聲與語，皆由作業系統定之。聊天畫面所設合成之語，不施於此站。"
 }

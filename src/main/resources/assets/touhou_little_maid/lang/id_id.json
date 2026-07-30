@@ -828,5 +828,12 @@
   "patchouli.touhou_little_maid.book.entries.other.shrine.name": "Kuil",
   "patchouli.touhou_little_maid.book.entries.other.broom.name": "Sapu",
   "patchouli.touhou_little_maid.book.entries.overview.make_custom_model.pages.1.link_text": "Buka Tautan",
-  "patchouli.touhou_little_maid.book.entries.overview.download_custom_model.pages.2.link_text": "Tautan Discord"
+  "patchouli.touhou_little_maid.book.entries.overview.download_custom_model.pages.2.link_text": "Tautan Discord",
+  "ai.touhou_little_maid.chat.settings.hub.check_config": "Periksa",
+  "ai.touhou_little_maid.chat.settings.hub.check_pass": "Berhasil",
+  "ai.touhou_little_maid.chat.settings.hub.check_error": "Galat",
+  "ai.touhou_little_maid.chat.settings.hub.check_unreachable": "Terputus",
+  "ai.touhou_little_maid.chat.settings.hub.check_busy": "Tunggu",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_hint": "Narator sistem disediakan oleh sistem operasi Anda dan tidak memiliki pengaturan apa pun.",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_language_hint": "Catatan: suara dan bahasa sepenuhnya ditentukan oleh sistem operasi. Bahasa sintesis yang diatur di layar obrolan tidak berlaku untuk situs ini."
 }

@@ -10,6 +10,8 @@ public interface Translations {
     MutableComponent SECRET_ID_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.secret_id");
     MutableComponent SECRET_KEY_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.secret_key");
     MutableComponent ADD_MODEL_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.add_model");
+    /** 「检查配置」按钮的常态标签；收到回执时会被短判词临时顶替，超时后还原成它 */
+    MutableComponent CHECK_CONFIG_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.check_config");
     MutableComponent MODEL_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.model");
     MutableComponent MODELS_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.models");
     MutableComponent VOICES_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.voices");

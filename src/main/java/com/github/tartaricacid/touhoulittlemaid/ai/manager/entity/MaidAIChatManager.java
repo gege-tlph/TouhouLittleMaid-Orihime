@@ -1,11 +1,14 @@
 package com.github.tartaricacid.touhoulittlemaid.ai.manager.entity;
 
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.entity.summary.HistorySummaryManager;
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.setting.papi.PapiReplacer;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.setting.papi.StringConstant;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.DefaultLLMSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.LLMClient;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.LLMMessage;
+import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.response.FunctionToolCall;
+import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.response.ToolCall;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.LLMSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.LLMOpenAISite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSClient;
@@ -80,11 +83,44 @@ public final class MaidAIChatManager extends MaidAIChatData {
             return;
         }
 
-        if (this.historySummaryManager.tryCompressBeforeChat(() -> this.tryToChat(message, clientInfo, site))) {
+        if (this.historySummaryManager.tryCompressBeforeChat(() -> this.decideThenChat(message, clientInfo, site))) {
             return;
         }
 
-        this.tryToChat(message, clientInfo, site);
+        this.decideThenChat(message, clientInfo, site);
+    }
+
+    /**
+     * <b>先做，后说。</b>
+     *
+     * <p>原先的顺序是「回话 → 判定 → 执行」，于是女仆有机会承诺一件还没发生的事：
+     * 实测她回过「好的主人，酒狐跟着你走啦~」而工具一次都没调。<b>说了没做，比说做不到糟得多</b>——
+     * 它一次就摧毁玩家的信任，而后者只是让人失望。</p>
+     *
+     * <p>现在的顺序：</p>
+     * <pre>
+     * 玩家说话 → 判定（无历史、约一百多 token）
+     *    ├─ 不是指令 → 直接说话（闲聊零额外延迟，与从前完全一样）
+     *    └─ 是指令   → 先执行 → 结果写进历史 → 再说话（她讲的是已经发生的事）
+     * </pre>
+     *
+     * <p>历史为空时跳过判定：实测弱档位模型在空历史下本来就调得动工具，多问一次纯属浪费。</p>
+     *
+     * <p>等待气泡在这里就建好并一路传下去——判定与执行对玩家不可见，
+     * 若等到说话那一步才建，玩家会先看到两三秒空白，以为没反应。</p>
+     */
+    private void decideThenChat(String message, ChatClientInfo clientInfo, LLMSite site) {
+        long bubbleId = this.maid.getChatBubbleManager()
+                .addThinkingText("ai.touhou_little_maid.chat.chat_bubble_waiting");
+        // 布尔参数表示「动作是否已由旁路做完」——做完了主对话就只说不动
+        Runnable narrate = () -> this.tryToChat(message, clientInfo, site, bubbleId, false);
+        Runnable narrateAfterAction = () -> this.tryToChat(message, clientInfo, site, bubbleId, true);
+
+        if (this.getHistory().size() == 0) {
+            narrate.run();
+            return;
+        }
+        this.requestToolDispatch(message, narrate, narrateAfterAction);
     }
 
     private void sendDeepSeekTip(Player player) {
@@ -105,19 +141,22 @@ public final class MaidAIChatManager extends MaidAIChatData {
                 && StringUtils.isBlank(openAISite.secretKey());
     }
 
-    private void tryToChat(String message, ChatClientInfo clientInfo, @NotNull LLMSite site) {
+    private void tryToChat(String message, ChatClientInfo clientInfo, @NotNull LLMSite site,
+                           long bubbleId, boolean actionAlreadyDone) {
         this.chatLanguage = clientInfo.language();
         LLMClient chatClient = site.client();
         List<LLMMessage> messages = this.getMessages(this, clientInfo.language());
         if (messages.isEmpty()) {
+            this.maid.getChatBubbleManager().removeChatBubble(bubbleId);
             this.onSettingIsEmpty(clientInfo, chatClient);
         } else {
             HistoryMessagesCheck.checkMessages(messages);
-            this.normalChat(message, messages, chatClient);
+            this.normalChat(message, messages, chatClient, bubbleId, actionAlreadyDone);
         }
     }
 
-    private void normalChat(String message, List<LLMMessage> messages, LLMClient chatClient) {
+    private void normalChat(String message, List<LLMMessage> messages, LLMClient chatClient,
+                            long bubbleId, boolean actionAlreadyDone) {
         // 先插入临时的 context
         String messageWithContext = UserPromptContexts.addContext(this.maid, message);
 
@@ -127,7 +166,11 @@ public final class MaidAIChatManager extends MaidAIChatData {
         this.maid.getAiChatManager().addUserHistory(message);
 
         // 通信
-        LLMCallback callback = new LLMCallback(this, messages);
+        // subagents=true + withExistingBubble：气泡在 decideThenChat 就建好了，这里接管而不是再建一个
+        LLMCallback callback = new LLMCallback(this, messages, true)
+                .withExistingBubble(bubbleId)
+                .withActionAlreadyDone(actionAlreadyDone)
+                .withRawUserMessage(message);
         chatClient.chat(callback);
     }
 
@@ -165,14 +208,86 @@ public final class MaidAIChatManager extends MaidAIChatData {
     }
 
     /**
-     * 本次回复是否需要模型额外产出一段独立的 TTS 文本。
+     * 第一轮没调工具时，用一条**不带历史**的微型请求判定这句是不是动作指令。
      *
-     * <p>只有「TTS 确实会被调用」且「合成语言与聊天语言不同」时才需要。同语言时第二段是第一段的
-     * 逐字副本，TTS 关闭或站点不可用时第二段生成完就被丢弃——两种情况下索取它都只是在多付一倍
-     * 输出 token，还平白给正文里的 {@code ---} 一个被当成分隔符的机会。</p>
+     * <p>成因与逐轮实测见 {@link StringConstant#TOOL_DISPATCH_DECISION}。
+     * 只在历史非空时才走：空历史下弱档位模型本来就调得动，那时多问一次纯属浪费。</p>
+     */
+    public void requestToolDispatch(String rawMessage, Runnable narrate, Runnable narrateAfterAction) {
+        @Nullable LLMSite llmSite = this.getLLMSite();
+        if (llmSite == null || !llmSite.enabled()) {
+            narrate.run();
+            return;
+        }
+        // 带上状态快照：判定只看玩家那句话时，「坐下」在她已经坐着的情况下照样被判成动作，
+        // 于是白白多走一次执行去做无意义的空操作（实测多花 3 次请求约 3 秒）。
+        // <context> 是一条 **user 消息**而不是 assistant 回合，因此不会重新引入那个抑制——
+        // 抑制来自助手回合的示范，不是来自上下文的存在。
+        String messageWithContext = UserPromptContexts.addContext(this.maid, rawMessage);
+        List<LLMMessage> messages = Lists.newArrayList(
+                LLMMessage.systemChat(this.maid, StringConstant.TOOL_DISPATCH_DECISION),
+                LLMMessage.userChat(this.maid, messageWithContext));
+        llmSite.client().chat(new ToolDispatchCallback(this, messages, rawMessage, narrate, narrateAfterAction));
+    }
+
+    /**
+     * 判定为动作之后，用一条**不带历史**的请求把工具真正调出来。
      *
-     * <p>这组条件必须与 {@link LLMCallback#onSuccess} 里决定是否真的去合成的那组保持一致，
-     * 一旦分叉就会出现「要了第二段却不用」或「用第二段却没要」。</p>
+     * <p>消息只有两条：执行指令与玩家原话。<b>不得加历史或人设</b>——空历史正是弱档位模型
+     * 仍会调用工具的那个条件，加回去这个修复就当场失效。契约测试钉着这一点。</p>
+     */
+    public void requestToolExecution(String rawMessage, Runnable narrate) {
+        @Nullable LLMSite llmSite = this.getLLMSite();
+        if (llmSite == null || !llmSite.enabled()) {
+            narrate.run();
+            return;
+        }
+        List<LLMMessage> messages = Lists.newArrayList(
+                LLMMessage.systemChat(this.maid, StringConstant.TOOL_DISPATCH_EXECUTION),
+                LLMMessage.userChat(this.maid, rawMessage));
+        llmSite.client().chat(new ToolExecutionCallback(this, messages, narrate));
+    }
+
+    /**
+     * 发起一次**不带历史**的翻译请求，把已写好的回复翻成合成语言。
+     *
+     * <p>这是「第二段」的新来源。原先它由主对话在同一条回复里用 {@code ---} 分出，而那在多轮下
+     * 确定性失效——逐轮实测见 {@link StringConstant#TTS_TRANSLATION}。</p>
+     *
+     * <p>拿不到可用的 LLM 站点时降级成用对话文本合成，但**必须留声**：这条路走过一次，
+     * 玩家听到的就是错误的语言，静默的话没人能从日志里看出发生过什么。</p>
+     */
+    public void requestTtsTranslation(TTSSite ttsSite, String chatText, long waitingChatBubbleId) {
+        @Nullable LLMSite llmSite = this.getLLMSite();
+        if (llmSite == null || !llmSite.enabled()) {
+            TouhouLittleMaid.LOGGER.warn(
+                    "No usable LLM site to translate the TTS text for maid {}. Falling back to synthesizing "
+                            + "the chat text, so TTS will speak {} instead of {}.",
+                    this.maid.getId(), this.getChatLanguage(), this.getTTSLanguage());
+            this.tts(ttsSite, chatText, chatText, waitingChatBubbleId);
+            return;
+        }
+        // 只有两条消息：翻译指令与待翻译文本。没有历史、没有人设、没有工具——没有可照抄的范例
+        List<LLMMessage> messages = Lists.newArrayList(
+                LLMMessage.systemChat(this.maid, PapiReplacer.ttsTranslationPrompt(this.maid)),
+                LLMMessage.userChat(this.maid, chatText));
+        TtsTranslationCallback callback = new TtsTranslationCallback(this, messages, ttsSite, chatText,
+                waitingChatBubbleId);
+        llmSite.client().chat(callback);
+    }
+
+    /**
+     * 本次回复是否需要一段独立的待合成文本。
+     *
+     * <p>只有「TTS 确实会被调用」且「合成语言与聊天语言不同」时才需要。同语言时译文与原文相同，
+     * TTS 关闭或站点不可用时译文生成完就被丢弃——两种情况下发那次翻译请求都是纯浪费。</p>
+     *
+     * <p><b>语义已变</b>：它以前决定「要不要在主对话里索取第二段」，现在决定
+     * 「要不要发一次独立的翻译请求」（{@link #requestTtsTranslation}）。主对话的格式要求
+     * 已恒定为单段，理由见 {@code PapiReplacer#outputFormat}。</p>
+     *
+     * <p>这个判据必须与 {@link LLMCallback#onSuccess} 里那个保持同一个，
+     * 一旦分叉就会出现「翻了却不用」或「该翻却没翻」。</p>
      */
     public boolean needsSeparateTtsText(String chatLanguage) {
         if (StringUtils.equals(chatLanguage, this.getTTSLanguage())) {
@@ -223,6 +338,7 @@ public final class MaidAIChatManager extends MaidAIChatData {
         chatList.add(LLMMessage.systemChat(maid, PapiReplacer.trailingRequirements(maid, language)));
         return chatList;
     }
+
 
     /**
      * 回放历史时剥掉旧版残留的 TTS 半段。

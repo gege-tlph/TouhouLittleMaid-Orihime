@@ -163,6 +163,38 @@ public class AIChatScreen extends Screen {
                 .setTooltips("ai.touhou_little_maid.chat.button.language.tip"));
     }
 
+    /**
+     * 合成语种按钮在系统站点上是个**无效开关**，必须在它自己身上说出来。
+     *
+     * <p>{@code TTSSystemClient.play} 把 {@code TTSConfig}（含语种与音色）整个丢掉，
+     * 原版朗读器接口也不接受这两个参数——语音完全由操作系统决定。而这个按钮看得见、点得动、
+     * 存得下：<b>一个能设置却不起作用的选项，比没有这个选项更糟</b>。站点编辑屏那两行说明只有
+     * 打开编辑屏的人看得到，而绝大多数玩家是在这里改语种的，所以这一处才是要紧的。</p>
+     *
+     * <p>不禁用按钮：玩家可能正准备换到别的站点，那时这个设置又有效了。</p>
+     */
+    private void refreshLanguageTooltip() {
+        if (this.effectiveTtsSiteIsSystem()) {
+            this.langButton.setTooltips(List.of(
+                    Component.translatable("ai.touhou_little_maid.chat.button.language.tip"),
+                    Component.translatable("ai.touhou_little_maid.chat.settings.hub.system_tts_language_hint")
+                            .withStyle(ChatFormatting.YELLOW)));
+        } else {
+            this.langButton.setTooltips("ai.touhou_little_maid.chat.button.language.tip");
+        }
+    }
+
+    /** 与 {@link #resolvedDefaultTtsSiteId()} 同一套镜像解析：跟随默认时要看默认解析成了谁 */
+    private boolean effectiveTtsSiteIsSystem() {
+        if (MaidAIChatSerializable.isNoTTSSite(this.manager.ttsSite)) {
+            return false;
+        }
+        String siteId = StringUtils.isBlank(this.manager.ttsSite)
+                ? this.resolvedDefaultTtsSiteId()
+                : this.manager.ttsSite;
+        return TTSSystemSite.API_TYPE.equals(siteId);
+    }
+
     private void togglePopup(PopupType type) {
         if (this.openPopup == type) {
             // 类型相同，说明是二次点击，关闭
@@ -181,6 +213,7 @@ public class AIChatScreen extends Screen {
         this.llmButton.active = !ClientAvailableSitesSync.getClientLLMSites().isEmpty();
         this.ttsButton.active = !this.getPopupEntries(PopupType.TTS).isEmpty();
         this.langButton.active = !SupportLanguage.SUPPORTED_LANGUAGES.isEmpty();
+        this.refreshLanguageTooltip();
 
         if (this.openPopup == null) {
             this.popupGeometry = null;

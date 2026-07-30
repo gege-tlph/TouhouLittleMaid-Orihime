@@ -30,11 +30,16 @@ import java.util.List;
 import static com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.Translations.*;
 import static net.minecraft.network.chat.CommonComponents.GUI_BACK;
 
-public class LLMSiteEditorScreen extends Screen {
+public class LLMSiteEditorScreen extends Screen implements SiteCheckResultDisplay {
     private static final int LABEL_COLOR = 0xFF777777;
 
-    private static final int BASE_WIDTH = 400;
+    private static final int BASE_WIDTH = SiteEditorLayout.PANEL_WIDTH;
     private static final int BASE_HEIGHT = 230;
+    /**
+     * 判词占住按钮的时长。比保存校验那 2 秒长：判词只有一个词，完整原因在悬停提示里，
+     * 得留够时间让人把鼠标移上去读。**暂定值**，觉得别扭就调。
+     */
+    private static final long CHECK_RESULT_MS = 8000;
 
     private final AIChatSettingsLLMSiteScreen parent;
     private final LLMSite sourceSite;
@@ -76,6 +81,18 @@ public class LLMSiteEditorScreen extends Screen {
     private long tipTimestamp = -1;
     private Component statusMessage = Component.empty();
 
+    /**
+     * 「检查配置」的服务端回执：按钮自己临时变成状态灯，版面里不塞整句话。
+     *
+     * <p>状态存在字段里而不是直接写进按钮，是因为 {@link #init()} 会重建全部控件
+     * （缩放窗口、增删模型行都会触发）。存字段才能让状态活过重建。</p>
+     */
+    private @Nullable Component checkVerdict;
+    private @Nullable Component checkDetail;
+    private int checkResultColor = 0xFFFFFFFF;
+    private long checkResultTimestamp = -1;
+    private @Nullable FlatColorButton checkButton;
+
     public LLMSiteEditorScreen(AIChatSettingsLLMSiteScreen parent, LLMSite sourceSite, boolean createMode, boolean supportsReasoning) {
         super(Component.literal("LLM OpenAI Site Editor"));
 
@@ -116,8 +133,8 @@ public class LLMSiteEditorScreen extends Screen {
         this.startX = (this.width - BASE_WIDTH) / 2;
         this.startY = (this.height - BASE_HEIGHT) / 2;
 
-        int left = this.startX + 12;
-        int contentWidth = BASE_WIDTH - 24;
+        int left = this.startX + SiteEditorLayout.MARGIN;
+        int contentWidth = SiteEditorLayout.CONTENT_WIDTH;
 
         // 站点 ID，仅在新建模式下可修改
         this.siteIdInput = this.addInput(left, this.startY + 30, 124, SITE_ID_NAME, siteIdValue);
@@ -126,8 +143,11 @@ public class LLMSiteEditorScreen extends Screen {
         // URL
         this.urlInput = this.addInput(left + 132, this.startY + 30, contentWidth - 132, URL_NAME, urlValue);
 
-        // 秘钥，隐藏显示
-        this.secretInput = this.addInput(left, this.startY + 65, contentWidth, SECRET_KEY_NAME, secretValue);
+        // 秘钥，隐藏显示。要显示「清除」时必须让出它的位置：输入框比按钮先注册，
+        // 铺满整行会把重叠带里的点击抢走，按钮下半截按不动。
+        boolean showsClear = this.secretAlreadySet && !this.secretCleared;
+        int secretWidth = showsClear ? SiteEditorLayout.SECRET_WIDTH_WITH_CLEAR : contentWidth;
+        this.secretInput = this.addInput(left, this.startY + 65, secretWidth, SECRET_KEY_NAME, secretValue);
         // 将秘钥输入框的字符显示为 ·，但末尾两个字符正常显示
         this.secretInput.addFormatter((text, pos) -> FormattedCharSequence.forward("·".repeat(text.length()), Style.EMPTY));
 
@@ -140,8 +160,10 @@ public class LLMSiteEditorScreen extends Screen {
 
         // 「清除」必须是一个显式动作：框里留空表示「不改」，两者不能用同一种操作表达，
         // 否则管理员永远删不掉一个已配好的密钥。
-        if (this.secretAlreadySet && !this.secretCleared) {
-            this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 78, this.startY + 65, 66, 18,
+        if (showsClear) {
+            // y/高度对齐密钥框的可见底衬（renderInputField 画在 startY+67，高 19）
+            this.addRenderableWidget(new FlatColorButton(this.startX + SiteEditorLayout.SECRET_CLEAR_X,
+                    this.startY + 67, SiteEditorLayout.SECRET_CLEAR_WIDTH, 19,
                     Component.translatable("ai.touhou_little_maid.chat.settings.hub.secret_clear"), b -> {
                 this.secretCleared = true;
                 this.secretInput.setValue(StringUtils.EMPTY);
@@ -149,7 +171,8 @@ public class LLMSiteEditorScreen extends Screen {
             }));
         }
 
-        this.addRenderableWidget(new FlatColorButton(left, bottomY, 96, 20, ADD_MODEL_NAME, b -> {
+        this.addRenderableWidget(new FlatColorButton(this.startX + SiteEditorLayout.ADD_MODEL_X, bottomY,
+                SiteEditorLayout.ADD_MODEL_WIDTH, 20, ADD_MODEL_NAME, b -> {
             this.modelRows.add(new ModelRow(StringUtils.EMPTY, false));
             int visibleCount = this.getVisibleModelCount();
             this.modelScrollOffset = Math.max(0, this.modelRows.size() - visibleCount);
@@ -159,12 +182,16 @@ public class LLMSiteEditorScreen extends Screen {
         // 「检查配置」而不是「测试连接」：它检查地址与密钥填没填、主机连不连得上，
         // **不验证密钥是否正确**。叫成后者就是一个说谎的标签，而它仍然有用——
         // 把「地址/网络不通」与「密钥不对」分开，这两种故障的处置完全不同。
-        this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 302, bottomY, 96, 20,
-                Component.translatable("ai.touhou_little_maid.chat.settings.hub.check_config"),
+        this.checkButton = this.addRenderableWidget(new FlatColorButton(
+                this.startX + SiteEditorLayout.CHECK_CONFIG_X, bottomY,
+                SiteEditorLayout.CHECK_CONFIG_WIDTH, 20, CHECK_CONFIG_NAME,
                 b -> ClientPlayNetworking.send(new CheckSiteConfigPackage(
                         CheckSiteConfigPackage.LLM, this.sourceSite.id()))));
-        this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 200, bottomY, 90, 20, SAVE_NAME, b -> this.saveSite()));
-        this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 102, bottomY, 90, 20, GUI_BACK, b -> this.onClose()));
+        this.applyCheckVerdict();
+        this.addRenderableWidget(new FlatColorButton(this.startX + SiteEditorLayout.SAVE_X, bottomY,
+                SiteEditorLayout.SAVE_WIDTH, 20, SAVE_NAME, b -> this.saveSite()));
+        this.addRenderableWidget(new FlatColorButton(this.startX + SiteEditorLayout.BACK_X, bottomY,
+                SiteEditorLayout.BACK_WIDTH, 20, GUI_BACK, b -> this.onClose()));
     }
 
     private String getEditBoxInitValue(@Nullable EditBox editBox, String initValue) {
@@ -194,6 +221,9 @@ public class LLMSiteEditorScreen extends Screen {
         graphics.drawCenteredString(this.font, llmEditorTitle(this.siteDisplayName),
                 this.startX + BASE_WIDTH / 2, this.startY + 4, 0xFFF3EFE0);
 
+        // 判词到期即还原，靠每帧这一次调用，不另设计时器
+        this.applyCheckVerdict();
+
         this.renderInputField(graphics, this.siteIdInput, mouseX, mouseY, partialTick);
         this.renderInputField(graphics, this.urlInput, mouseX, mouseY, partialTick);
         this.renderInputField(graphics, this.secretInput, mouseX, mouseY, partialTick);
@@ -210,6 +240,41 @@ public class LLMSiteEditorScreen extends Screen {
             int x = this.startX + BASE_WIDTH - 155;
             int y = this.startY + BASE_HEIGHT - 35;
             graphics.drawCenteredString(this.font, this.statusMessage, x, y, 0xFFFF7777);
+        }
+
+        if (this.checkButton != null) {
+            this.checkButton.renderToolTip(graphics, this, mouseX, mouseY);
+        }
+    }
+
+    @Override
+    public void showSiteCheckResult(Component verdict, Component detail, int argb) {
+        this.checkVerdict = verdict;
+        this.checkDetail = detail;
+        this.checkResultColor = argb;
+        this.checkResultTimestamp = System.currentTimeMillis();
+        this.applyCheckVerdict();
+    }
+
+    /**
+     * 把当前判词贴到按钮上；已过期或从未检查过则还原成常态标签。
+     *
+     * <p>每帧调一次（外加 {@link #init()} 重建后一次），因此还原不需要额外的计时器。</p>
+     */
+    private void applyCheckVerdict() {
+        if (this.checkButton == null) {
+            return;
+        }
+        boolean live = this.checkVerdict != null
+                && System.currentTimeMillis() - this.checkResultTimestamp < CHECK_RESULT_MS;
+        if (live) {
+            this.checkButton.setMessage(this.checkVerdict);
+            this.checkButton.setMessageColor(this.checkResultColor);
+            this.checkButton.setTooltips(List.of(this.checkDetail));
+        } else {
+            this.checkButton.setMessage(CHECK_CONFIG_NAME);
+            this.checkButton.setMessageColor(0);
+            this.checkButton.clearTooltips();
         }
     }
 

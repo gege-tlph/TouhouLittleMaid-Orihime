@@ -178,7 +178,8 @@ public final class VoicePreviewClient {
         if (origin == Origin.CHAT) {
             var player = Minecraft.getInstance().player;
             if (player != null) {
-                player.displayClientMessage(((MutableComponent) reason).withStyle(ChatFormatting.RED), false);
+                com.github.tartaricacid.touhoulittlemaid.client.ClientLocalChat.show(
+                        ((MutableComponent) reason).withStyle(ChatFormatting.RED));
                 return;
             }
         }

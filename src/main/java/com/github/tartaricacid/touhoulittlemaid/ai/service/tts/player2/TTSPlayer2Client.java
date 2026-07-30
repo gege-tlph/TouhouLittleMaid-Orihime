@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.ai.service.tts.player2;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
+import com.github.tartaricacid.touhoulittlemaid.client.ClientLocalChat;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSResponse;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.ErrorCode;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.ServiceType;
@@ -69,7 +70,7 @@ public class TTSPlayer2Client implements TTSClient, TTSSystemServices {
                     if (throwable != null) {
                         String cause = throwable.getLocalizedMessage();
                         MutableComponent errorMessage = ErrorCode.getErrorMessage(ServiceType.TTS, ErrorCode.REQUEST_SENDING_ERROR, cause);
-                        player.displayClientMessage(errorMessage.withStyle(ChatFormatting.RED), false);
+                        ClientLocalChat.show(errorMessage.withStyle(ChatFormatting.RED));
                         TouhouLittleMaid.LOGGER.error("TTS request failed: {}", request, throwable);
                         return;
                     }
@@ -77,7 +78,7 @@ public class TTSPlayer2Client implements TTSClient, TTSSystemServices {
                         String string = new String(response.body(), StandardCharsets.UTF_8);
                         String cause = String.format("HTTP Error Code: %d, Response %s", response.statusCode(), string);
                         MutableComponent errorMessage = ErrorCode.getErrorMessage(ServiceType.TTS, ErrorCode.REQUEST_RECEIVED_ERROR, cause);
-                        player.displayClientMessage(errorMessage.withStyle(ChatFormatting.RED), false);
+                        ClientLocalChat.show(errorMessage.withStyle(ChatFormatting.RED));
                         TouhouLittleMaid.LOGGER.error("TTS request failed: {}, error is {}", request, cause);
                     }
                 }));

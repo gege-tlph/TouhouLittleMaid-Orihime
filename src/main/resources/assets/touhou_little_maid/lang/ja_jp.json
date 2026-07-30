@@ -804,5 +804,12 @@
   "patchouli.touhou_little_maid.book.entries.overview.vanilla_change.pages.0.text": "スライムのモデルをゆっくりに変更しました。",
   "patchouli.touhou_little_maid.book.entries.overview.vanilla_change.pages.1.text": "また、経験値オーブ、エンチャントの瓶、不死のトーテムのテクスチャも変更しました。 $(br2)これらはすべて設定ファイルでオフにできます。",
   "patchouli.touhou_little_maid.book.entries.overview.favorability.name": "好感度",
-  "patchouli.touhou_little_maid.book.entries.overview.favorability.pages.0.text": "好感度はメイドの体力と攻撃力を高めることができます。$(br2)メイドの好感度を向上させる:$(li)メイドが暇なときにキーボード、コンピューター、本棚、五目並べで遊ぶ。$(li)メイドが睡眠を取る。$(br2))メイドの好感度低下:$(li)メイドの死亡。"
+  "patchouli.touhou_little_maid.book.entries.overview.favorability.pages.0.text": "好感度はメイドの体力と攻撃力を高めることができます。$(br2)メイドの好感度を向上させる:$(li)メイドが暇なときにキーボード、コンピューター、本棚、五目並べで遊ぶ。$(li)メイドが睡眠を取る。$(br2))メイドの好感度低下:$(li)メイドの死亡。",
+  "ai.touhou_little_maid.chat.settings.hub.check_config": "確認",
+  "ai.touhou_little_maid.chat.settings.hub.check_pass": "成功",
+  "ai.touhou_little_maid.chat.settings.hub.check_error": "エラー",
+  "ai.touhou_little_maid.chat.settings.hub.check_unreachable": "未接続",
+  "ai.touhou_little_maid.chat.settings.hub.check_busy": "確認中",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_hint": "システムの読み上げはOSが提供するため、設定項目はありません。",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_language_hint": "注意：音声と言語はOSによって完全に決定されます。チャット画面で設定した合成言語は、このサイトには適用されません。"
 }

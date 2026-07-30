@@ -327,5 +327,12 @@
   "patchouli.touhou_little_maid.book.entries.maid.mute_bauble.pages.0.text": "Dopo aver equipaggiato questo accessorio, la maid diventerà molto sileziosa.",
   "patchouli.touhou_little_maid.book.entries.maid.substitute_jizo.name": "Jizo Della Sostituzione",
   "patchouli.touhou_little_maid.book.entries.other.extinguisher.name": "Estintore",
-  "patchouli.touhou_little_maid.book.entries.other.maid_bed.name": "Letto da Maid"
+  "patchouli.touhou_little_maid.book.entries.other.maid_bed.name": "Letto da Maid",
+  "ai.touhou_little_maid.chat.settings.hub.check_config": "Verifica",
+  "ai.touhou_little_maid.chat.settings.hub.check_pass": "Riuscito",
+  "ai.touhou_little_maid.chat.settings.hub.check_error": "Errore",
+  "ai.touhou_little_maid.chat.settings.hub.check_unreachable": "Offline",
+  "ai.touhou_little_maid.chat.settings.hub.check_busy": "Attendere",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_hint": "Il narratore di sistema è fornito dal sistema operativo e non richiede alcuna configurazione.",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_language_hint": "Nota: voce e lingua sono decise interamente dal sistema operativo. La lingua di sintesi impostata nella schermata di chat non si applica a questo sito."
 }

@@ -82,6 +82,48 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
      */
     public boolean needAddTools = true;
 
+    /**
+     * 这条回调允许挂哪些工具。默认全部——{@code needAddTools} 只能全有或全无，
+     * 而有的旁路只该拿到工具的一个子集。
+     *
+     * <p>动作执行那条旁路就是例子：它对玩家不可见，只该动手。挂上 {@code use_skill}
+     * 之后模型可以在那条路径上起一个知识库子 agent，而子 agent 会拿着本回调的
+     * {@code waitingChatBubbleId}（此处为 0）去碰聊天气泡——正是「孤儿气泡」那一类问题。</p>
+     */
+    public boolean allowsTool(String toolId) {
+        // 动作已由旁路做完时摘掉动作类工具，避免主对话把同一个开关再拨一次
+        return !this.actionAlreadyDone || !ToolDispatchCallback.ACTION_TOOLS.contains(toolId);
+    }
+
+    /**
+     * 玩家这一轮说的原话（不含 {@code <context>} 包装）。
+     *
+     * <p>只有主对话会填它；动作判定要拿它去问一条不带历史的请求，而那条请求不该带上
+     * {@code <context>}——它判的是「这句话是不是指令」，与当时天气无关。</p>
+     */
+    protected String rawUserMessage = StringUtils.EMPTY;
+
+    /**
+     * 本轮的动作是否已经由旁路做完了。
+     *
+     * <p>做完之后主对话只需要「说」，不需要再「动」——实测它会把同一个 {@code switch_sit}
+     * 再调一遍（工具返回 already standing），白花两次请求。</p>
+     *
+     * <p>只摘掉动作类工具而不是全部：玩家可能说「跟着我，顺便看看你背包里有什么」，
+     * 查询那一半仍然要留着。</p>
+     */
+    protected boolean actionAlreadyDone = false;
+
+    public LLMCallback withActionAlreadyDone(boolean done) {
+        this.actionAlreadyDone = done;
+        return this;
+    }
+
+    public LLMCallback withRawUserMessage(String rawUserMessage) {
+        this.rawUserMessage = rawUserMessage;
+        return this;
+    }
+
     public LLMCallback(MaidAIChatManager chatManager, List<LLMMessage> messages, boolean subagents) {
         this.maid = chatManager.getMaid();
         this.chatManager = chatManager;
@@ -95,6 +137,18 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
 
     public LLMCallback(MaidAIChatManager chatManager, List<LLMMessage> messages) {
         this(chatManager, messages, false);
+    }
+
+    /**
+     * 接管一个**已经存在**的等待气泡，而不是自己建一个。
+     *
+     * <p>「先做后说」之后，一条指令的顺序是 判定 → 执行 → 说话，前两步对玩家不可见。
+     * 若等到说话那一步才建气泡，玩家会先看到两三秒的一片空白，以为没反应。
+     * 所以气泡在最开始就建好，一路传到这里由说话那一轮收尾。</p>
+     */
+    public LLMCallback withExistingBubble(long existingBubbleId) {
+        this.waitingChatBubbleId = existingBubbleId;
+        return this;
     }
 
     public LLMCallback addToolResult(String result, String toolId) {
@@ -168,25 +222,31 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
      */
     @Override
     public void onSuccess(ResponseChat responseChat) {
-        // 没索取第二段时整段响应都是对话文本，此时正文里的 --- 只是内容，拆分只会截断回复
-        ResponseChat response = chatManager.needsSeparateTtsText() ? responseChat : responseChat.asSinglePart();
+        // 主对话**永远只要一段**。第二段（待合成文本）改由一次不带历史的翻译请求产出，
+        // 见 TtsTranslationCallback：让模型在同一条回复里用 --- 分出第二段，在多轮下确定性失效。
+        // 整段响应都是对话文本，此时正文里的 --- 只是内容，拆分只会截断回复。
+        ResponseChat response = responseChat.asSinglePart();
         String chatText = response.getChatText();
-        String ttsText = response.getTtsText();
 
-        if (chatText.isBlank() || ttsText.isBlank()) {
+        if (chatText.isBlank()) {
             String message = "Error in Response Chat: %s".formatted(response);
             this.onFailure(null, new Throwable(message), ErrorCode.CHAT_TEXT_IS_EMPTY);
             return;
         }
 
         // 记录 LLM 的回答到历史中，供后续对话使用。
-        // 只存对话那一半：ttsText 是拿去合成语音的翻译，对后续对话零信息量，存进去只会让模型
-        // 把「上一次用的是哪种语言」当成范例照抄——玩家改了 TTS 语言后，历史里的旧语言反而胜出。
+        // 只存对话文本：译文是渲染产物，对后续对话零信息量，存进去只会让模型把「上一次用的是哪种语言」
+        // 当成范例照抄——玩家改了 TTS 语言后，历史里的旧语言反而胜出。
         chatManager.addAssistantHistory(chatText);
 
         TTSSite site = chatManager.getTTSSite();
         if (ServerRuleConfig.get(AIConfig.TTS_ENABLED) && site != null && site.enabled()) {
-            chatManager.tts(site, chatText, ttsText, waitingChatBubbleId);
+            // 判据与 needsSeparateTtsText 是同一个，别各写各的
+            if (chatManager.needsSeparateTtsText()) {
+                chatManager.requestTtsTranslation(site, chatText, waitingChatBubbleId);
+            } else {
+                chatManager.tts(site, chatText, chatText, waitingChatBubbleId);
+            }
         } else if (StringUtils.isNotBlank(chatText) && maid.level instanceof ServerLevel serverLevel) {
             MinecraftServer server = serverLevel.getServer();
             server.submit(() -> maid.getChatBubbleManager().addLLMChatText(chatText, waitingChatBubbleId));

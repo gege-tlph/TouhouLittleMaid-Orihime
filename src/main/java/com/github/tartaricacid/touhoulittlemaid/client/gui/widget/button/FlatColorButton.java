@@ -20,6 +20,13 @@ public class FlatColorButton extends Button {
     private float textScale = 1.0f;
     private float textOffsetX = 0.0f;
     private float textOffsetY = 0.0f;
+    /**
+     * 文字颜色覆写，{@code 0} 表示不覆写（沿用 active 白 / 禁用灰）。
+     *
+     * <p>0 当哨兵是安全的：它是「全透明黑」，没有任何调用方会真想要那个值。
+     * 传进来的值<b>必须带 alpha</b>——1.21.11 的 {@code Font} 不再把 alpha=0 补成不透明。</p>
+     */
+    private int messageColorOverride = 0;
 
     public FlatColorButton(int pX, int pY, int pWidth, int pHeight, Component pMessage, OnPress pOnPress) {
         super(pX, pY, pWidth, pHeight, pMessage, pOnPress, DEFAULT_NARRATION);
@@ -32,6 +39,20 @@ public class FlatColorButton extends Button {
 
     public FlatColorButton setTooltips(List<Component> tooltips) {
         this.tooltips = tooltips;
+        return this;
+    }
+
+    /** 去掉悬停提示。空列表不行——那会画出一个空提示框 */
+    public FlatColorButton clearTooltips() {
+        this.tooltips = null;
+        return this;
+    }
+
+    /**
+     * @param argb 带 alpha 的文字颜色；{@code 0} 恢复默认取色
+     */
+    public FlatColorButton setMessageColor(int argb) {
+        this.messageColorOverride = argb;
         return this;
     }
 
@@ -70,7 +91,10 @@ public class FlatColorButton extends Button {
         }
         //int i = getFGColor();
         int i = this.active ? 16777215 : 10526880;
-        this.renderString(graphics, minecraft.font, i | Mth.ceil(this.alpha * 255.0F) << 24);
+        int color = this.messageColorOverride != 0
+                ? this.messageColorOverride
+                : i | Mth.ceil(this.alpha * 255.0F) << 24;
+        this.renderString(graphics, minecraft.font, color);
     }
 
     // 1.21.11: AbstractWidget.renderString 已移除 → 自有辅助方法（renderContents 调用）

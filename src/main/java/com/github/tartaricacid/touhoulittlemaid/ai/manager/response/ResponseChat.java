@@ -7,9 +7,14 @@ import java.util.regex.Pattern;
 /**
  * 一次 LLM 文字回复的解析结果，拆成给玩家看的 {@link #chatText} 与拿去合成语音的 {@link #ttsText}。
  *
- * <p>只有当 TTS 确实会被调用、且合成语言与聊天语言不同时才会索取第二段，判定见
- * {@code MaidAIChatManager#needsSeparateTtsText}。其余情况下整段响应都是对话文本，
- * 由 {@link #asSinglePart()} 表达。</p>
+ * <p><b>现役对话路径已不再产生两段回复</b>：待合成文本改由一次不带历史的翻译请求产出
+ * （{@code MaidAIChatManager#requestTtsTranslation}），主对话恒定只要一段，
+ * 由 {@link #asSinglePart()} 表达。理由是「让模型在正文里带出 {@code ---} 分隔符」在多轮下
+ * 确定性失效，逐轮实测见 {@code StringConstant#TTS_TRANSLATION}。</p>
+ *
+ * <p><b>因此拆分逻辑不能删</b>：v0.8.5 及更早的存档里，助手历史存的就是 {@code chat---tts}
+ * 这种整串，{@code MaidAIChatManager#withoutTtsHalf} 靠它在回放时剥掉旧的 TTS 半段。
+ * 那些女仆的 NBT 无法靠「以后不再写脏数据」自愈。</p>
  */
 public class ResponseChat {
     /**

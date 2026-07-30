@@ -92,7 +92,9 @@ public class LLMOpenAIClient implements LLMClient {
                 String toolId = entry.getKey();
                 ITool<?> tool = entry.getValue();
 
-                if (tool == null || !tool.trigger(maid, chatCompletion)) {
+                // callback.allowsTool 让旁路只拿到工具的子集：needAddTools 是全有或全无，
+                // 而「只该动手」的那条执行旁路不该拿到 use_skill 这种会起子 agent 的工具
+                if (tool == null || !callback.allowsTool(toolId) || !tool.trigger(maid, chatCompletion)) {
                     continue;
                 }
 

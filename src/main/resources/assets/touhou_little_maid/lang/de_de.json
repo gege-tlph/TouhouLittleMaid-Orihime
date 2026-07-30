@@ -90,5 +90,12 @@
   "patchouli.touhou_little_maid.book.entries.other.power_point.name": "Power Punkt",
   "patchouli.touhou_little_maid.book.entries.overview.power_point.name": "Power Punkt",
   "patchouli.touhou_little_maid.book.entries.overview.what_is_touhou.name": "Touhou Projekt",
-  "patchouli.touhou_little_maid.book.entries.overview.world_spawn.name": "Weltspawn"
+  "patchouli.touhou_little_maid.book.entries.overview.world_spawn.name": "Weltspawn",
+  "ai.touhou_little_maid.chat.settings.hub.check_config": "Prüfen",
+  "ai.touhou_little_maid.chat.settings.hub.check_pass": "Bestanden",
+  "ai.touhou_little_maid.chat.settings.hub.check_error": "Fehler",
+  "ai.touhou_little_maid.chat.settings.hub.check_unreachable": "Offline",
+  "ai.touhou_little_maid.chat.settings.hub.check_busy": "Bitte warten",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_hint": "Der System-Vorleser wird von deinem Betriebssystem bereitgestellt und hat keine Einstellungen.",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_language_hint": "Hinweis: Stimme und Sprache werden vollständig vom Betriebssystem festgelegt. Die im Chatfenster eingestellte Synthesesprache gilt nicht für diesen Anbieter."
 }
