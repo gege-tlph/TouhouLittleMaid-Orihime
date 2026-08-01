@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.api.task;
 
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
@@ -51,8 +52,8 @@ public interface IRangedAttackTask extends IAttackTask {
      * @return 能够攻击
      */
     static boolean targetConditionsTest(EntityMaid maid, LivingEntity target, ModConfigSpec.IntValue configRange) {
-        TARGET_CONDITIONS.range(configRange.get());
-        // TODO: 1.21.11 fix - TargetingConditions.test now requires ServerLevel as first arg
+        TARGET_CONDITIONS.range(ServerRuleConfig.get(configRange));
+        // TargetingConditions.test 要求以 ServerLevel 作为调用方，非服务端世界一律判定为不可见
         if (!(maid.level() instanceof net.minecraft.server.level.ServerLevel serverLevel)) {
             return false;
         }
