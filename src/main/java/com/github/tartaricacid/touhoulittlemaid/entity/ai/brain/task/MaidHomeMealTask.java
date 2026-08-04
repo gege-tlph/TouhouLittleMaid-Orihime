@@ -77,7 +77,7 @@ public class MaidHomeMealTask extends MaidCheckRateTask {
         ItemStack handItemCopy = itemInHand.copy();
         ItemStack leftoverStack = ItemHandlerHelper.insertItemStacked(availableInv, handItemCopy, true);
         if (!leftoverStack.isEmpty()) {
-            // this.handFullBubbleKey = maid.getChatBubbleManager().addTextChatBubbleIfTimeout("chat_bubble.touhou_little_maid.inner.home_meal.two_hand_is_full", handFullBubbleKey);
+            this.handFullBubbleKey = maid.getChatBubbleManager().addTextChatBubbleIfTimeout("chat_bubble.touhou_little_maid.inner.home_meal.two_hand_is_full", handFullBubbleKey);
             return;
         }
 
@@ -99,7 +99,7 @@ public class MaidHomeMealTask extends MaidCheckRateTask {
         // 如果没搜索到，不执行后续吃的逻辑
         int size = candidateFood.size();
         if (size == 0) {
-            // this.mealEmptyBubbleKey = maid.getChatBubbleManager().addTextChatBubbleIfTimeout("chat_bubble.touhou_little_maid.inner.home_meal.meal_is_empty", this.mealEmptyBubbleKey);
+            this.mealEmptyBubbleKey = maid.getChatBubbleManager().addTextChatBubbleIfTimeout("chat_bubble.touhou_little_maid.inner.home_meal.meal_is_empty", this.mealEmptyBubbleKey);
             return;
         }
 

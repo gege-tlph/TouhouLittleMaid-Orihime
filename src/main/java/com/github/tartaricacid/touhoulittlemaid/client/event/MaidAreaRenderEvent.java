@@ -51,12 +51,13 @@ public class MaidAreaRenderEvent {
 
     private static void renderPos(@Nullable BlockPos workPos, @Nullable BlockPos idlePos, @Nullable BlockPos resetPos, EntityMaid maid, Player player) {
         BlockPos restrictCenter = maid.getHomePosition();
-        Vec3 restrictPos = Vec3.atCenterOf(restrictCenter);
+        Vec3 restrictPos = Vec3.atCenterOf(restrictCenter).add(0, 1, 0);
         if (!maid.isHomeModeEnable()) {
-            restrictPos = player.position();
+            restrictPos = player.position().add(0, 1, 0);
         }
-        AABB aabb = maid.getBoundingBox().move(0, -1, 0);
-        Gizmos.cuboid(aabb, GizmoStyle.fill(ARGB.colorFromFloat(0.8F, 0.2F, 0.75F, 0.8F)));
+        Gizmos.line(restrictPos, maid.position().add(0, 1, 0), 0xffff3333);
+        // colorFromFloat 参数序是 (alpha, r, g, b)；基准盒色 = r0.8 g0.8 b0.2 a0.75 的半透明黄
+        Gizmos.cuboid(maid.getBoundingBox(), GizmoStyle.fill(ARGB.colorFromFloat(0.75F, 0.8F, 0.8F, 0.2F)));
 
         if (workPos != null) {
             double radius = ServerRuleConfig.get(MaidConfig.MAID_WORK_RANGE) + 0.1;
@@ -64,8 +65,7 @@ public class MaidAreaRenderEvent {
 
             Vec3 textPos = new Vec3(workPos.getX() + 0.5, workPos.getY() + 2, workPos.getZ() + 0.5);
             String text = I18n.get("message.touhou_little_maid.kappa_compass.work_area");
-            renderText(text, textPos.add(0, -0.75, 0), 0xffff1111);
-            renderText("▼", textPos.add(0, 0.75, 0), 0xffff1111);
+            renderLabel(text, textPos, 0xffff1111);
         }
 
         if (idlePos != null) {
@@ -78,8 +78,7 @@ public class MaidAreaRenderEvent {
                 Gizmos.line(centerPos(idlePos), centerPos(workPos), 0xffffffff);
             }
             String text = I18n.get("message.touhou_little_maid.kappa_compass.idle_area");
-            renderText(text, textPos.add(0, -0.75, 0), 0xff11ff11);
-            renderText("▼", textPos.add(0, 0.75, 0), 0xff11ff11);
+            renderLabel(text, textPos, 0xff11ff11);
         }
 
         if (resetPos != null) {
@@ -93,8 +92,7 @@ public class MaidAreaRenderEvent {
                 Gizmos.line(centerPos(resetPos), centerPos(workPos), 0xffffffff);
             }
             String text = I18n.get("message.touhou_little_maid.kappa_compass.sleep_area");
-            renderText(text, textPos.add(0, -0.75, 0), 0xff1111ff);
-            renderText("▼", textPos.add(0, 0.75, 0), 0xff1111ff);
+            renderLabel(text, textPos, 0xff1111ff);
         }
     }
 
@@ -106,8 +104,18 @@ public class MaidAreaRenderEvent {
         return Vec3.atCenterOf(pos).add(0, 1, 0);
     }
 
+    /**
+     * 基准布局：文字锚点在 textPos 上方 1.07 格（poseStack.translate(0,1,0) + 0.07），
+     * 标签再高 0.75、▼ 再低 0.75（±5 像素 × 0.15 缩放经字体空间 y 反转）——
+     * 标签在上、▼ 在下指向方块；文字被墙体遮挡（不开 always-on-top）。
+     */
+    private static void renderLabel(String text, Vec3 textPos, int color) {
+        renderText(text, textPos.add(0, 1.07 + 0.75, 0), color);
+        renderText("▼", textPos.add(0, 1.07 - 0.75, 0), color);
+    }
+
     private static void renderText(String text, Vec3 pos, int color) {
-        Gizmos.billboardText(text, pos, new TextGizmo.Style(color, 1.5f, OptionalDouble.empty())).setAlwaysOnTop();
+        Gizmos.billboardText(text, pos, new TextGizmo.Style(color, 1.5f, OptionalDouble.empty()));
     }
 
     public static void addSchedulePos(int id, SchedulePos pos) {

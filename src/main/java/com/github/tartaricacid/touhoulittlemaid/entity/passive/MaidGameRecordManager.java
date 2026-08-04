@@ -7,6 +7,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
 import static com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid.GAME_STATUE;
+import static com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid.GOMOKU_WIN_COUNT;
 
 public class MaidGameRecordManager {
     // 逐字节对齐 origin/1.21.1 磁盘格式：嵌套 "MaidGameSkillData"{"Gomoku":int}（此前被移植期改名扁平化为根 int
@@ -16,7 +17,6 @@ public class MaidGameRecordManager {
     private static final byte NONE = 0, WIN = 1, LOSE = 2;
 
     private final EntityMaid maid;
-    private int gomokuWinCount = 0;
 
     public MaidGameRecordManager(EntityMaid maid) {
         this.maid = maid;
@@ -24,14 +24,18 @@ public class MaidGameRecordManager {
 
     void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(GAME_STATUE, (byte) 0);
+        // 胜场必须走同步数据：客户端 GUI tooltip（AbstractMaidContainerGui 的五子棋段位行）直接读它，
+        // 普通字段在客户端实体上恒为 0
+        builder.define(GOMOKU_WIN_COUNT, 0);
     }
 
     void addAdditionalSaveData(ValueOutput output) {
-        output.child(GAME_SKILL_TAG).putInt(GOMOKU, gomokuWinCount);
+        output.child(GAME_SKILL_TAG).putInt(GOMOKU, getGomokuWinCount());
     }
 
     void readAdditionalSaveData(ValueInput input) {
-        input.child(GAME_SKILL_TAG).ifPresent(gameSkill -> gomokuWinCount = gameSkill.getIntOr(GOMOKU, 0));
+        input.child(GAME_SKILL_TAG).ifPresent(gameSkill ->
+                maid.getEntityData().set(GOMOKU_WIN_COUNT, gameSkill.getIntOr(GOMOKU, 0)));
     }
 
     void tick() {
@@ -56,11 +60,11 @@ public class MaidGameRecordManager {
     }
 
     public int getGomokuWinCount() {
-        return gomokuWinCount;
+        return maid.getEntityData().get(GOMOKU_WIN_COUNT);
     }
 
     public void increaseGomokuWinCount() {
-        gomokuWinCount++;
+        maid.getEntityData().set(GOMOKU_WIN_COUNT, getGomokuWinCount() + 1);
     }
 
     public boolean isWin() {

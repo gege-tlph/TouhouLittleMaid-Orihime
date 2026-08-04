@@ -1,7 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.client.renderer.entity;
 
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.state.MaidFishingHookRenderState;
-import com.github.tartaricacid.touhoulittlemaid.compat.iris.IrisCompat;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.projectile.MaidFishingHook;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -111,18 +110,16 @@ public class MaidFishingHookRenderer<T extends MaidFishingHook, S extends MaidFi
         float[] colors = new float[]{state.lineColorR, state.lineColorG, state.lineColorB};
         float width = Minecraft.getInstance().getWindow().getAppropriateLineWidth();
 
+        // 顶点数必须保持偶数：lines() 按对消费，SubmitNodeCollector 同 RenderType 合批，
+        // 奇数顶点会让同批后续所有线段配对错位（实测为满屏乱线）。1.21.1 的 Oculus 补丁顶点
+        // 是给 17 顶点的 lineStrip 补偶用的；本方法已改为 vanilla 1.21.11 的 16×2 成对写法
+        // （天然偶数、与玩家钓线同形状），再加那个顶点反而破坏偶数——勿再引入。
         submitNodeCollector.submitCustomGeometry(poseStack, RenderTypes.lines(), (pose, buffer) -> {
             for (int i = 0; i < 16; ++i) {
                 float fraction1 = fraction(i);
                 float fraction2 = fraction(i + 1);
                 stringVertex(xa, ya, za, width, buffer, pose, fraction1, fraction2, colors[0], colors[1], colors[2]);
                 stringVertex(xa, ya, za, width, buffer, pose, fraction2, fraction1, colors[0], colors[1], colors[2]);
-            }
-            if (IrisCompat.isInstalled()) {
-                buffer.addVertex(pose, 0.0f, 0.0f, 0.0f)
-                        .setLineWidth(width)
-                        .setColor(0, 0, 0, 255)
-                        .setNormal(pose, 0.0F, 0.0F, 0.0F);
             }
         });
     }

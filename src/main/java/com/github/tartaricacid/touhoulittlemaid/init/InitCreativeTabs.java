@@ -19,8 +19,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
-// TODO: Patchouli excluded
-// import vazkii.patchouli.common.item.ItemModBook;
+import vazkii.patchouli.common.item.ItemModBook;
 
 import java.util.Optional;
 
@@ -35,10 +34,11 @@ public class InitCreativeTabs {
             .title(Component.translatable("item_group.touhou_little_maid.main"))
             .icon(() -> InitItems.HAKUREI_GOHEI.getDefaultInstance())
             .displayItems((par, output) -> {
-                // TODO: Patchouli excluded
-                // if (FabricLoader.getInstance().isModLoaded("patchouli")) {
-                //     output.accept(ItemModBook.forBook(MEMORIZABLE_GENSOKYO_LOCATION));
-                // }
+                // Patchouli 是 modCompileOnly 可选依赖：ItemModBook 只在 isModLoaded 守卫内被触碰，
+                // 未装该模组时该分支不执行、类不会被解析（与基准同款模式）
+                if (FabricLoader.getInstance().isModLoaded("patchouli")) {
+                    output.accept(ItemModBook.forBook(MEMORIZABLE_GENSOKYO_LOCATION));
+                }
                 output.accept(MAID_SPAWN_EGG);
                 output.accept(FAIRY_SPAWN_EGG);
                 output.accept(HAKUREI_GOHEI);

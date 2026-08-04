@@ -46,8 +46,7 @@ public class CompassRenderEvent {
             renderArea(workPos, radius, 0xffff0000);
             Vec3 textPos = new Vec3(workPos.getX() + 0.5, workPos.getY() + 2, workPos.getZ() + 0.5);
             String text = I18n.get("message.touhou_little_maid.kappa_compass.work_area");
-            renderText(text, textPos.add(0, -0.75, 0), 0xffff1111);
-            renderText("▼", textPos.add(0, 0.75, 0), 0xffff1111);
+            renderLabel(text, textPos, 0xffff1111);
         }
 
         BlockPos idlePos = ItemKappaCompass.getPoint(Activity.IDLE, stack);
@@ -61,8 +60,7 @@ public class CompassRenderEvent {
                 Gizmos.line(centerPos(idlePos), centerPos(workPos), 0xffffffff);
             }
             String text = I18n.get("message.touhou_little_maid.kappa_compass.idle_area");
-            renderText(text, textPos.add(0, -0.75, 0), 0xff11ff11);
-            renderText("▼", textPos.add(0, 0.75, 0), 0xff11ff11);
+            renderLabel(text, textPos, 0xff11ff11);
         }
 
         BlockPos resetPos = ItemKappaCompass.getPoint(Activity.REST, stack);
@@ -77,8 +75,7 @@ public class CompassRenderEvent {
                 Gizmos.line(centerPos(resetPos), centerPos(workPos), 0xffffffff);
             }
             String text = I18n.get("message.touhou_little_maid.kappa_compass.sleep_area");
-            renderText(text, textPos.add(0, -0.75, 0), 0xff1111ff);
-            renderText("▼", textPos.add(0, 0.75, 0), 0xff1111ff);
+            renderLabel(text, textPos, 0xff1111ff);
         }
     }
 
@@ -90,7 +87,17 @@ public class CompassRenderEvent {
         Gizmos.circle(centerPos(pos), (float) radius, GizmoStyle.stroke(color));
     }
 
+    /**
+     * 基准布局：文字锚点在 textPos 上方 1.07 格（poseStack.translate(0,1,0) + 0.07），
+     * 标签再高 0.75、▼ 再低 0.75（±5 像素 × 0.15 缩放经字体空间 y 反转）——
+     * 标签在上、▼ 在下指向方块；文字被墙体遮挡（不开 always-on-top）。
+     */
+    private static void renderLabel(String text, Vec3 textPos, int color) {
+        renderText(text, textPos.add(0, 1.07 + 0.75, 0), color);
+        renderText("▼", textPos.add(0, 1.07 - 0.75, 0), color);
+    }
+
     private static void renderText(String text, Vec3 pos, int color) {
-        Gizmos.billboardText(text, pos, new TextGizmo.Style(color, 1.5f, OptionalDouble.empty())).setAlwaysOnTop();
+        Gizmos.billboardText(text, pos, new TextGizmo.Style(color, 1.5f, OptionalDouble.empty()));
     }
 }

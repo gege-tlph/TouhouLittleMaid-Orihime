@@ -1,10 +1,13 @@
 package com.github.tartaricacid.touhoulittlemaid.client.renderer.item;
 
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityChair;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemChair;
 import com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.client.Minecraft;
@@ -21,6 +24,8 @@ import net.minecraft.world.level.Level;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -29,15 +34,30 @@ import java.util.function.Consumer;
 public final class ChairItemRenderer implements SpecialModelRenderer<ChairItemRenderer.State> {
     public static final Identifier ID = IdentifierUtil.modLoc("chair_item");
 
+    // 同 GarageKitItemRenderer：extractArgument 的返回值参与 GUI 图标缓存的 model identity，
+    // 必须引用稳定，否则创造栏满屏坐垫每帧全量重抽取重绘。按 modelId 记忆化。
+    private static final State EMPTY = new State();
+    private static final Cache<String, State> STATE_CACHE =
+            CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build();
+
     @Override
     public State extractArgument(ItemStack stack) {
-        State state = new State();
         ItemChair.Data data = ItemChair.getData(stack);
-        state.scale = CustomPackLoader.CHAIR_MODELS.getModelRenderItemScale(data.modelId());
         Level level = Minecraft.getInstance().level;
         if (level == null) {
-            return state;
+            return EMPTY;
         }
+        try {
+            return STATE_CACHE.get(data.modelId(), () -> buildState(data, level));
+        } catch (ExecutionException e) {
+            TouhouLittleMaid.LOGGER.error("Failed to prepare chair item preview", e);
+            return EMPTY;
+        }
+    }
+
+    private static State buildState(ItemChair.Data data, Level level) {
+        State state = new State();
+        state.scale = CustomPackLoader.CHAIR_MODELS.getModelRenderItemScale(data.modelId());
         // EntityCacheUtil.getChair assigns the negative preview id; the previous inline
         // ENTITY_CACHE.get bypassed it, so GeckoChairEntity.isPreviewEntity() stayed false,
         // the never-ticked preview chair froze Gecko's frame clock and the immutable

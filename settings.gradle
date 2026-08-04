@@ -7,3 +7,6 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
+// Pin the root project name so it never derives from the containing directory.
+rootProject.name = 'touhoulittlemaid-fabric'

@@ -260,9 +260,10 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
     private static final EntityDataAccessor<Boolean> DATA_IS_AIMING = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.BOOLEAN);
 
     // 游戏数据记录，包括赢棋次数和赢棋状态
-    // TODO: COMPOUND_TAG removed in 1.21.11, needs data component migration
-    // static final EntityDataAccessor<CompoundTag> GAME_SKILL = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.COMPOUND_TAG);
-    // TODO: COMPOUND_TAG removed in 1.21.11, needs data component migration
+    // 基准用 GAME_SKILL(CompoundTag) 同步胜场，客户端 GUI tooltip 直接读它；1.21.11 删了
+    // COMPOUND_TAG 序列化器，而那个 tag 只承载五子棋胜场一个键 → 降为 INT 同步字段。
+    // 磁盘格式不变（MaidGameRecordManager 仍写嵌套 "MaidGameSkillData"{"Gomoku":int}）。
+    static final EntityDataAccessor<Integer> GOMOKU_WIN_COUNT = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.INT);
     static final EntityDataAccessor<Byte> GAME_STATUE = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.BYTE);
 
     // 给 MaidConfigManager 用的，必须在这里声明，避免 ID 不同步

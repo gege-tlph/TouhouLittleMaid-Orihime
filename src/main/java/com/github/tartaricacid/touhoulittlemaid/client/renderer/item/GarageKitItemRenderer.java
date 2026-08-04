@@ -10,6 +10,8 @@ import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemGarageKit;
 import com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.mojang.serialization.MapCodec;
@@ -29,6 +31,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.TagValueInput;
 import org.joml.Vector3f;
@@ -36,6 +39,7 @@ import org.joml.Vector3fc;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil.clearMaidDataResidue;
@@ -49,14 +53,31 @@ public final class GarageKitItemRenderer implements SpecialModelRenderer<GarageK
     private final SimpleBedrockModel<Unit> baseModel =
             InternalBedrockModelRegistry.getModel(InternalBedrockModelRegistry.STATUE_BASE);
 
+    // GUI 的物品图标缓存按 model identity 判等，而 SpecialModelWrapper 会把 extractArgument 的
+    // 返回值追加进 identity——State 必须引用稳定：每帧新建会让图标缓存永远失效，创造栏/JEI
+    // 满屏手办时每帧全量重画（整只女仆 NBT load + 渲染状态抽取 + gecko 渲染线程 join）。
+    // 按数据组件记忆化后，重活只在数据变化时做一次；弱键随物品堆存亡，10 秒无访问过期。
+    private static final State EMPTY = new State();
+    private static final Cache<CustomData, State> STATE_CACHE =
+            CacheBuilder.newBuilder().weakKeys().expireAfterAccess(10, TimeUnit.SECONDS).build();
+
     @Override
     public State extractArgument(ItemStack stack) {
-        State state = new State();
-        CompoundTag data = ItemGarageKit.getMaidData(stack).copyTag();
+        CustomData data = ItemGarageKit.getMaidData(stack);
         Level level = Minecraft.getInstance().level;
         if (data.isEmpty() || level == null) {
-            return state;
+            return EMPTY;
         }
+        try {
+            return STATE_CACHE.get(data, () -> buildState(stack, data.copyTag(), level));
+        } catch (ExecutionException e) {
+            TouhouLittleMaid.LOGGER.error("Failed to prepare garage-kit item preview", e);
+            return EMPTY;
+        }
+    }
+
+    private State buildState(ItemStack stack, CompoundTag data, Level level) {
+        State state = new State();
         data.getString("id").flatMap(EntityType::byString).ifPresent(type -> {
             try {
                 Entity entity;

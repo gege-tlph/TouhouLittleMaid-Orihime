@@ -370,8 +370,10 @@ public class RecipeGenerator extends FabricRecipeProvider {
                         .unlockedBy(getHasName(Items.DIAMOND), has(ConventionalItemTags.DIAMOND_GEMS))
                         .save(this.output);
 
-                // COMPAT_PATCHOULI: 记忆幻想乡定位书配方依赖 vazkii.patchouli.common.item.*（Patchouli = A 级冻结，依赖不可用）
-                //   → 随 Patchouli 解冻恢复（连同 ItemStackShapelessRecipeBuilder + ResourceConditions modLoaded 门）。
+                // COMPAT_PATCHOULI: 手册配方依赖 vazkii.patchouli.common.item.*。Patchouli 现为 modCompileOnly
+                //   —— runData 运行期没有该 mod，PatchouliItems.BOOK 拿不到注册项，故本块不能解冻。
+                //   对应 json（recipe + advancement/recipes/misc）按基准手工维护在 src/main/generated，
+                //   由 PatchouliBookRecipeGuardTest 看守：将来重跑 runData 把它们冲掉会直接红。
                 // ResourceCondition modLoadedCondition = ResourceConditions.allModsLoaded(CompatRegistry.PATCHOULI);
                 // ItemStack patchouliBook = new ItemStack(PatchouliItems.BOOK);
                 // patchouliBook.set(PatchouliDataComponents.BOOK, InitItems.MEMORIZABLE_GENSOKYO_LOCATION);
