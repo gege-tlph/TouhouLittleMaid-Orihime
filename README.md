@@ -1,5 +1,14 @@
 # Touhou Little Maid: Tsumugi — Minecraft 1.21.11 Fabric
 
+**简体中文** | [English](README_en.md)
+
+[![CurseForge](https://img.shields.io/curseforge/dt/1636073?logo=curseforge&logoColor=white&label=CurseForge&color=F16436)](https://www.curseforge.com/minecraft/mc-mods/touhou-little-maid-tsumugi)
+[![Release](https://img.shields.io/github/v/release/gege-tlph/TouhouLittleMaid-Tsumugi?logo=github&label=Release)](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/releases/latest)
+[![GitHub downloads](https://img.shields.io/github/downloads/gege-tlph/TouhouLittleMaid-Tsumugi/total?logo=github&label=Downloads)](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/releases)
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-62B47A)](https://www.minecraft.net/)
+[![Mod Loader](https://img.shields.io/badge/Mod%20Loader-Fabric-DBD0B4)](https://fabricmc.net/)
+[![License](https://img.shields.io/badge/License-MIT%20%2B%20CC%20BY--NC--SA%204.0-blue)](LICENSE-MIT)
+
 > [!IMPORTANT]
 > 本仓库是 [Sh1roCu/TouhouLittleMaid-Orihime](https://github.com/Sh1roCu/TouhouLittleMaid-Orihime)
 > 的非官方后续移植，目标平台为 **Minecraft 1.21.11 + Fabric**，独立维护。
@@ -11,8 +20,14 @@
 为主题的女仆模组：你可以召唤女仆陪伴、让她们种地打鱼做饭、整理仓库、跟着你战斗、装扮和聊天。玩法资料请参阅
 [Touhou Little Maid Wiki](http://page.cfpa.team/TouhouLittleMaid/)。
 
-English: An unofficial Fabric 1.21.11 port of Touhou Little Maid, continuing from the Orihime 1.21.1
-Fabric port.
+## 下载
+
+| 渠道 | 链接 |
+|---|---|
+| CurseForge | [touhou-little-maid-tsumugi](https://www.curseforge.com/minecraft/mc-mods/touhou-little-maid-tsumugi) |
+| GitHub Releases | [Releases](../../releases) |
+
+两个渠道发布的是同一个构建。
 
 ## 关于本分支
 
@@ -102,7 +117,8 @@ AI 配置界面也重写了，好用得多：站点可以就地「检查配置�
 ## 安装
 
 1. 安装适用于 Minecraft 1.21.11 的 Fabric Loader。
-2. 从 [Releases](../../releases) 下载名称中**不含** `sources` 或 `shadow` 的
+2. 从 [CurseForge](https://www.curseforge.com/minecraft/mc-mods/touhou-little-maid-tsumugi)
+   或 [Releases](../../releases) 下载名称中**不含** `sources` 或 `shadow` 的
    `touhoulittlemaid-fabric-*.jar`。
 3. 把本模组、[Fabric API](https://modrinth.com/mod/fabric-api) 和
    [Forge Config API Port](https://modrinth.com/mod/forge-config-api-port)
@@ -178,11 +194,19 @@ AI 配置界面也重写了，好用得多：站点可以就地「检查配置�
 如果某个模组确实需要而作者没有跟进，我们也会像对 Yes Steve Model 和 Patchouli 那样，
 自己移植一份维护版本再对接。
 
-## 已知问题
+## 反馈问题
 
-本分支仍在积极开发中，遇到问题请提交
-[Issue](../../issues)，并附上 `logs/latest.log`、模组列表和复现步骤；
-若与 AI 功能相关，请说明用的是云端服务还是系统语音。
+本分支仍在积极开发中，遇到问题请提交 [Issue](../../issues/new/choose)。issue 区有四种模板：
+
+| 模板 | 用于 |
+|---|---|
+| 缺陷报告 | 行为不对、崩溃、渲染或存档问题 |
+| 模组兼容 | 与别的模组一起用时出问题，或希望新增兼容 |
+| 功能建议 | 希望新增或改进玩法、界面、命令 |
+| 使用问题 | 安装、配置、AI 聊天与语音服务的用法 |
+
+无论用哪个模板，都请附上 `logs/latest.log`、模组列表和复现步骤；若与 AI 功能相关，
+请说明用的是云端服务还是系统语音，并**先给密钥打码**。
 
 AI 聊天与语音需要你自己准备服务与密钥，本模组不提供也不代理任何服务。
 
