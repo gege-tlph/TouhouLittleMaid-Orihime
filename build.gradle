@@ -30,6 +30,24 @@ loom {
         datagen {
             property "fabric-api.datagen.modid", "touhou_little_maid"
         }
+        gametest {
+            server()
+            name = "Game Test"
+            vmArg "-Dfabric-api.gametest"
+            vmArg "-Dfabric-api.gametest.report-file=${projectDir}/build/gametest/report.xml"
+            runDir "build/gametest"
+        }
+        // 专服联机测试用的客户端。必须与 runServer 分开 runDir：两者都用 run/ 时，
+        // 正在运行的服务器锁住 run/.fabric/processedMods/*.jar，客户端重映射 mod 时删不掉，
+        // 直接 FileSystemException 启动失败。
+        clientDedicated {
+            client()
+            name = "Minecraft Client (Dedicated Test)"
+            runDir "run-dedicated-client"
+            // dev 客户端默认每次启动随机生成 Player### 用户名，UUID 随之改变，
+            // 于是 ops.json 里上一轮授予的 OP 全部失效。钉死用户名，OP 才能跨重启保留。
+            programArgs "--username", "TlmTester"
+        }
     }
 }
 
@@ -299,6 +317,21 @@ dependencies {
 //    implementation files("libs/Jankson-Fabric-8.0.0+j1.2.3.jar")
 //    implementation name: "libninepatch-1.2.0"
 //    implementation "me.zeroeightsix:fiber:0.23.0-SNAPSHOT"
+
+    // 单元与契约测试。1.21.11 分支上这一层拦下的是「纸面接口」「假成功保存」「提示词漂移」
+    // 一类编译期看不见的缺陷，移植期同样需要，故随工程设施一并带入。
+    testImplementation platform("org.junit:junit-bom:5.11.4")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testImplementation "org.mockito:mockito-core:5.15.2"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    workingDir layout.buildDirectory.dir("test-working")
+    doFirst {
+        workingDir.mkdirs()
+    }
 }
 
 shadowJar {

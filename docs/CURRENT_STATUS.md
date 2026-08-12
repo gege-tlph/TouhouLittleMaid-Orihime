@@ -1,0 +1,77 @@
+# Touhou Little Maid 26.1.2 Fabric 当前状态
+
+**本文是唯一活动状态账本，只写「现在什么是真的」。**
+开放项在最前面且各自自带验收标准与下一步；已关闭的压成一行 + 提交号；
+**不写会过时的数字**——那些跑 `python docs/tools/facts.py`。
+移植范围、边界与测试台账在 [PORT_26X_AUDIT.md](PORT_26X_AUDIT.md)，不要在本文复制。
+
+## 结论
+
+分支刚建立，**尚未移植任何差异化功能**。当前树 = `origin/26.1`（MC 26.1.2 Fabric）
+\+ 一层工程设施。**代码行为等同于代码宿主，不等同于我们 1.21.11 的行为。**
+
+---
+
+# 开放项
+
+**O1 · 探路轮未开始（下一步）**
+搬服务器规则体系的最小闭环 + 一条 GameTest，量出真实工时与冲突形态，再排整体计划。
+选它打头的理由：这套子系统没有行为基准约束、且新基完全没有对应文件，是最干净的一块。
+**验收标准**：`./gradlew build` 通过 · 新增的 GameTest 在 `runGametest` 里真的被执行
+（不是"类写好了"）· 门禁 `release-gate.ps1` 绿。
+
+**O2 · 构建尚未验证**
+本分支从未跑过 `./gradlew build`。工程设施是照搬来的，**JUnit 依赖、`runGametest`、
+`clientDedicated` 三处接线均未经运行验证**。
+**下一步**：跑一次 `./gradlew build`，再跑一次 `runGametest`（此时应为 0 个用例，
+用来证明任务本身可用，而不是证明测试通过）。
+⚠️ 跑之前确认 1.21.11 那条工作树没有 Gradle 在跑。
+
+**O3 · 前置项目未决**
+- **YSM**：Fabric 26.1.2 上不存在任何实现（本体仅 NeoForge 且闭源，OpenYSM 无 26.x）。
+  要保留该特色，须先把 `gege-tlph/OpenYSM-Updated` 移到 26.1.2——**独立项目，规模未评估**。
+- **Patchouli**：官方有 26.1 beta，我们维护的 fork 需跟进。
+
+**O4 · 公开发布链路尚未建立**
+本分支还没有清洁分支、没有公开远端分支、没有 CI。`tree_equiv.py` 与 `git_hygiene.py`
+里已经写好了目标 ref 名（`release/26.1.2-clean` / `fork/port/26.1.2-fabric`），
+但**那两个 ref 还不存在**，相关门禁步骤现在必然跳过或报缺失——属预期，不是缺陷。
+
+---
+
+# 已关闭（一行结论 + 提交）
+
+## 2026-08-13：分支建立与工程设施带入
+
+| 项 | 结论 |
+|---|---|
+| 工作树 | `git worktree add -b port/26.1.2-fabric … origin/26.1`；已解除对 `origin/26.1` 的跟踪，避免误推到基准仓库 |
+| 方法论 | `CLAUDE.md` 重写：隔离纪律 + **原样继承**最终阶段工程纪律与全部证伪表 + 方法论（四方校验的「行为基准」改为 1.21.11 分支） |
+| 门禁工具 | `docs/tools/` 七个脚本全部带入，分支常量已改（`release/26.1.2-clean` / `fork/port/26.1.2-fabric` / `mc26.1.2`），残留引用扫描为零 |
+| 测试基础设施 | `build.gradle` 补入 JUnit 5 + Mockito + `useJUnitPlatform()`，以及 `gametest` 与 `clientDedicated` 两个运行配置 |
+| **`.gitignore` 陷阱** | 新基第 26 行忽略了测试源码目录——**Gradle 会编译但 git 不跟踪**，与 1.21.11 分支踩过的是同一个坑。已删除 |
+| 本机设施 | `.mcp.json`、`AGENTS.md` 已复制（二者由跨工作树共享的 `.git/info/exclude` 忽略，不会误提交） |
+| 审计文档 | `PORT_26X_AUDIT.md` 自 1.21.11 分支迁入，并追加 §9 测试搬运台账（55 个测试类逐个登记） |
+
+---
+
+# 勿重做（已排除的可能性）
+
+- **跨分支 cherry-pick / rebase**：`origin/1.21.1` 与 `origin/26.x` **无共同祖先**，
+  提交级操作在技术上就不成立。差异化只能按行为重做。
+- **把 1.21.11 的 `fix(port)` / `fix(client): restore` 那一批搬过来**：它们修的是我们自己在
+  1.21.11 上造成的回归，新基没有这些回归。
+- **手搬 `src/main/generated`**：datagen 产物，在新基上重新生成。
+- **指望「有 26.x 版本」就等于 Fabric 上能用**：KubeJS / Aquaculture / Sophisticated Backpacks
+  的 26.x 全是 NeoForge。依赖可用性必须查到**加载器粒度**。
+
+---
+
+# 架构结论（本分支特有）
+
+- **新基把 `EntityMaid` 拆成了多个 manager**（基准 → 26.x 是 294 增 / 2,345 删），
+  并新增 `modules/maid-manager-codegen` 代码生成模块。我们的 manager 要按它的约定写。
+- **新基有一个同名不同物的 `MaidCombatManager`**（在 `entity.passive`），
+  与我们威胁响应用的 `entity.ai.combat.MaidCombatManager` 只是重名，**不要按名字合并**。
+- **新基带 `patches/` 与 `rewrite.yml`**（OpenRewrite）：宿主自己用自动化做跨版本迁移，
+  动手前值得先读懂，可能省掉大量手工改写。
