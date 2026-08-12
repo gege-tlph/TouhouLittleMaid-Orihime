@@ -8,6 +8,23 @@
 2. 要用 MCP rig 就**先跑 `docs/tools/mcp-up.ps1` 等握手成功再开会话**——
    HTTP MCP 只在会话启动那一刻连一次。
 
+## 环境陷阱：Gradle 发行包下不动
+
+本分支的 wrapper 要 **Gradle 9.4.0**（1.21.11 分支是 9.5.0，本机已缓存），而
+**`services.gradle.org` / `downloads.gradle.org` 在这台机器上取不到正文**——
+`HEAD` 返回 307/200 看着正常，`GET` 立刻 `Unexpected end of file from server`，
+wrapper 与 `curl` 各失败两次，不是抖动。
+
+绕法（**不要改仓库里的 `distributionUrl`**，那会把地区性镜像写进将来要公开的分支）：
+
+```powershell
+$d = "$env:USERPROFILE\.gradle\wrapper\dists\gradle-9.4.0-bin\lcvyxq3t37f6mx9miaydrrgs"
+curl.exe -L -o "$d\gradle-9.4.0-bin.zip" https://mirrors.cloud.tencent.com/gradle/gradle-9.4.0-bin.zip
+```
+
+放好后 wrapper 会直接解包。⚠️ **失败的下载会在缓存里留下 0 字节的 `.part` 与 `.lck`**，
+换镜像重试前先删掉它们，否则一次抖动会被固化成"一直坏"。
+
 ## 分支与工作树
 
 | 角色 | ref / 路径 |
