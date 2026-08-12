@@ -1,0 +1,119 @@
+name: 缺陷报告 / Bug report
+description: 游戏内行为不对、崩溃、渲染或存档问题 / Wrong in-game behavior, crashes, rendering or save issues
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量填全下面的信息——**日志和版本号是定位问题的前提**，缺了通常只能猜。
+
+        Thanks for the report! Please fill in as much as you can — **logs and version numbers are what make a bug diagnosable**; without them we can only guess.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: 提交前确认 / Before submitting
+      options:
+        - label: 我搜索过已有的 Issue，没有重复。 / I searched existing issues and found no duplicate.
+          required: true
+        - label: 我用的是本仓库 Releases 页下载的 JAR（不是自己改过的构建）。 / I am using a JAR from this repository's Releases page (not a modified build).
+          required: true
+        - label: 我已安装 Fabric API 与 Forge Config API Port，且版本满足 README 的要求。 / Fabric API and Forge Config API Port are installed and meet the versions listed in the README.
+          required: true
+
+  - type: input
+    id: mod-version
+    attributes:
+      label: 模组版本 / Mod version
+      description: 见 JAR 文件名或 Releases 标签，例如 v0.8.6.2+mc1.21.11 / From the JAR filename or the release tag, e.g. v0.8.6.2+mc1.21.11
+      placeholder: v0.8.6.2+mc1.21.11
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: Minecraft / Fabric Loader / Fabric API 版本
+      description: 三个版本号都要 / All three version numbers, please
+      placeholder: 1.21.11 / 0.18.5 / 0.141.1+1.21.11
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: 运行环境 / Environment
+      options:
+        - 单人存档 / Singleplayer
+        - 局域网联机 / LAN world
+        - 专用服务器 / Dedicated server
+        - 仅客户端（未进入世界）/ Client only (before entering a world)
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤 / Steps to reproduce
+      description: 越具体越好；如果只偶尔出现，也请说明大概多久一次。 / The more specific the better; if it only happens sometimes, say roughly how often.
+      placeholder: |
+        1. 召唤一只女仆，给她……
+        2. ……
+        3. 观察到……
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望的行为 / Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际的行为 / Actual behavior
+      description: 截图或录屏可以直接拖进来。 / You can drag screenshots or videos straight into this box.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志 / 崩溃报告 / Logs or crash report
+      description: |
+        请上传 `logs/latest.log`；如果游戏崩了，再附上 `crash-reports/` 里对应的那一份。
+        文件较大时请用附件或 Gist，不要只截一段。
+
+        Please attach `logs/latest.log`, plus the matching file from `crash-reports/` if the game crashed.
+        For large files use an attachment or a Gist rather than a cropped screenshot.
+    validations:
+      required: true
+
+  - type: textarea
+    id: mods
+    attributes:
+      label: 模组列表 / Mod list
+      description: 完整列表，或至少列出与问题可能相关的模组及版本。 / The full list, or at least every mod that might be involved, with versions.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: areas
+    attributes:
+      label: 涉及的功能 / Affected areas
+      description: 可多选，不确定就不选。 / Tick all that apply; leave blank if unsure.
+      options:
+        - label: AI 聊天 / 语音合成（TTS）/ 语音识别（STT） / AI chat, TTS or STT
+        - label: 女仆的工作或战斗行为 / Maid task or combat behavior
+        - label: 渲染、模型或光影 / Rendering, models or shaders
+        - label: 配置界面或命令 / Config screens or commands
+        - label: 存档、物品或数据丢失 / Save data or item loss
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充说明 / Anything else
+      description: "例如：换到哪个版本就好了、去掉哪个模组就不复现了。 / For example: which version still works, or which mod makes it go away."

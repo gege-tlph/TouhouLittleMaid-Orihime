@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 上游本体的问题 / Upstream mod issue
+    url: https://github.com/TartaricAcid/TouhouLittleMaid/issues
+    about: 问题在其他 Minecraft 版本或 Forge/NeoForge 上也存在？请提交到上游本体仓库。 / If the problem also happens on other Minecraft versions or on Forge/NeoForge, report it upstream.
+  - name: 1.21.1 Fabric 基准分支 / 1.21.1 Fabric baseline
+    url: https://github.com/Sh1roCu/TouhouLittleMaid-Orihime/issues
+    about: 问题在 Orihime 的 1.21.1 Fabric 版本上同样出现？请提交到基准仓库。 / If the same problem occurs on the Orihime 1.21.1 Fabric port, report it there.
+  - name: 下载与安装 / Downloads and installation
+    url: https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/releases
+    about: 安装包、依赖版本要求与更新日志都在 Releases 页。 / JARs, dependency requirements and changelogs live on the Releases page.
+  - name: 玩法资料 / Gameplay wiki
+    url: http://page.cfpa.team/TouhouLittleMaid/
+    about: 「女仆怎么用」这类玩法问题请先查 Wiki。 / For "how do I use X" gameplay questions, check the wiki first.

@@ -1,0 +1,43 @@
+name: 功能建议 / Feature request
+description: 希望新增或改进某个玩法、界面或命令 / Suggest new or improved gameplay, UI or commands
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        本分支以 Orihime 的 1.21.1 Fabric 实现为行为基准，改动会尽量克制。
+        与上游本体玩法有关的大改动，建议先提到[上游仓库](https://github.com/TartaricAcid/TouhouLittleMaid/issues)。
+
+        This fork tracks the Orihime 1.21.1 Fabric port as its behavior baseline, so changes stay conservative.
+        Large gameplay changes are usually better proposed [upstream](https://github.com/TartaricAcid/TouhouLittleMaid/issues).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 想解决什么问题 / What problem does this solve
+      description: 先说现在有什么不方便，再说想要的功能。 / Describe the inconvenience first, then the feature.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 期望的做法 / Proposed behavior
+      description: "越具体越好：在哪个界面、哪个按钮、什么命令、什么条件下触发。 / Be concrete: which screen, which button, which command, under what conditions."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 现在是怎么绕过去的 / Current workaround
+      description: 有没有别的模组或操作能做到类似的事。 / Any other mod or workflow that does something similar.
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: 补充 / Extra
+      options:
+        - label: 这个功能在上游本体（Forge/NeoForge 版）里已经有了。 / This already exists in the upstream Forge/NeoForge version.
+        - label: 我愿意提交 PR 来实现它。 / I'm willing to open a PR for it.

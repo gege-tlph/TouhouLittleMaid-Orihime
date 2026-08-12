@@ -1,0 +1,56 @@
+name: 使用问题 / Question
+description: 安装、配置、AI 聊天与语音服务的用法问题 / Installation, configuration, AI chat and voice service usage
+title: "[Question] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!CAUTION]
+        > **不要贴出 API 密钥。** 截图和配置文件里的 `api_key`、`token`、URL 里的密钥参数请先打码。
+        >
+        > **Never paste API keys.** Redact `api_key`, `token` and any key embedded in a URL before uploading screenshots or config files.
+
+        女仆玩法本身的问题（怎么招募、怎么派活）请先查
+        [Wiki](http://page.cfpa.team/TouhouLittleMaid/)。
+        AI 聊天与语音需要你自己准备服务和密钥，本模组不提供也不代理任何服务。
+
+        For general gameplay questions, check the [wiki](http://page.cfpa.team/TouhouLittleMaid/) first.
+        AI chat and voice require your own service and credentials; this mod neither provides nor proxies any service.
+
+  - type: dropdown
+    id: topic
+    attributes:
+      label: 问题类别 / Topic
+      options:
+        - 安装与依赖 / Installation and dependencies
+        - 配置界面或命令 / Config screens and commands
+        - AI 聊天（LLM） / AI chat (LLM)
+        - 语音合成 TTS / Text-to-speech
+        - 语音识别 STT / Speech-to-text
+        - 女仆玩法 / Maid gameplay
+        - 其他 / Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: 你的问题 / Your question
+      description: 说明你做了什么、看到了什么、期望是什么。 / What you did, what you saw, and what you expected.
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: 模组版本 / Minecraft / 运行环境 / Mod version, Minecraft version, environment
+      placeholder: v0.8.6.2+mc1.21.11 / 1.21.11 / 专用服务器 Dedicated server
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志 / Logs
+      description: 涉及 AI 或语音时，`logs/latest.log` 通常直接写明了失败原因（记得先打码密钥）。 / For AI or voice topics, `logs/latest.log` usually states the reason outright — redact keys first.

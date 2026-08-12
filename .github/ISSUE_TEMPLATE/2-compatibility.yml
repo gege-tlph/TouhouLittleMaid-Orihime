@@ -1,0 +1,67 @@
+name: 模组兼容 / Mod compatibility
+description: 与其他模组一起用时出问题，或希望新增对某个模组的兼容 / Something breaks alongside another mod, or you want compatibility with one
+title: "[Compat] "
+labels: ["compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        本模组的第三方兼容都是**可选**的：没装对应模组时不会加载，也不会影响运行。
+        README 里有「可选模组兼容」和「暂时没有兼容的模组」两张表，提交前请先看一眼。
+
+        All third-party compatibility here is **optional** — it never loads when the other mod is absent.
+        The README has two tables ("optional compatibility" and "not yet compatible"); please check them first.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 类型 / Type
+      options:
+        - 已有的兼容出问题了 / Existing compatibility is broken
+        - 希望新增兼容 / Requesting new compatibility
+    validations:
+      required: true
+
+  - type: input
+    id: target-mod
+    attributes:
+      label: 对方模组 / The other mod
+      description: 名称、版本，以及下载页链接（CurseForge / Modrinth / GitHub）。 / Name, version, and a download link (CurseForge / Modrinth / GitHub).
+      placeholder: Kaleidoscope Cookery Refabricated 1.4.0 — https://modrinth.com/mod/...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: platform
+    attributes:
+      label: 对方模组有 Minecraft 1.21.11 的 Fabric 版本吗？ / Does that mod have a Minecraft 1.21.11 Fabric build?
+      description: 没有的话通常做不了——我们没有可以对接的目标。 / If it doesn't, there is usually nothing we can hook into yet.
+      options:
+        - label: 有，链接已填在上面。 / Yes, the link above points to it.
+
+  - type: textarea
+    id: detail
+    attributes:
+      label: 具体希望怎样 / What should happen
+      description: |
+        新增兼容：说明你想要哪一块（例如「女仆能吃它的食物」「它的箱子接入无线物品传输」）。
+        兼容出问题：写清复现步骤、期望行为与实际行为。
+
+        New compatibility: say which part you want (e.g. "maids should eat its food", "its chests should join wireless item transfer").
+        Broken compatibility: give the steps to reproduce, plus expected and actual behavior.
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: 模组版本 / Minecraft / Fabric Loader / Mod, Minecraft and loader versions
+      placeholder: v0.8.6.2+mc1.21.11 / 1.21.11 / 0.18.5
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志 / Logs
+      description: 报告兼容故障时请附 `logs/latest.log`；纯新增请求可以留空。 / Attach `logs/latest.log` when reporting a failure; leave blank for a pure request.
