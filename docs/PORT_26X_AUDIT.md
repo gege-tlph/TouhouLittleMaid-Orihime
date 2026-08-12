@@ -401,6 +401,13 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 ⚠️ 每搬入一个 GameTest 类，**必须同时登记 `fabric.mod.json` 的 `fabric-gametest` entrypoint**，
 否则编译打包启动全正常、用例一次都不跑——1.21.11 上实证过。
 
+⚠️ **测试的 `workingDir` 是 `build/test-working`**：凡读文件的用例都要 `Path.of("..", "..")`
+回到项目根。搬用例时若照抄了相对路径却漏了这一层，症状是「找不到文件」而不是断言不成立，
+容易被误读成"这条断言在新基上不成立"。
+
+⚠️ **判据是「报告里出现了那个用例」**，不是「任务跑绿」：空的 `:test` 报 `NO-SOURCE` 同样是绿的。
+`BuildInfrastructureSmokeTest` 作为常驻探针留在树里，就是为了让"测试层被跳过"这件事可见。
+
 共 41 个 JUnit + 14 个 GameTest = 55 个测试类
 
 **A 配置所有权与持久化**（12）

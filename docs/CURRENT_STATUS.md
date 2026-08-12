@@ -20,11 +20,10 @@
 **验收标准**：`./gradlew build` 通过 · 新增的 GameTest 在 `runGametest` 里真的被执行
 （不是"类写好了"）· 门禁 `release-gate.ps1` 绿。
 
-**O2 · 构建尚未验证**
-本分支从未跑过 `./gradlew build`。工程设施是照搬来的，**JUnit 依赖、`runGametest`、
-`clientDedicated` 三处接线均未经运行验证**。
-**下一步**：跑一次 `./gradlew build`，再跑一次 `runGametest`（此时应为 0 个用例，
-用来证明任务本身可用，而不是证明测试通过）。
+**O2 · `runGametest` 尚未实跑（`build` 与 `test` 已验证，见已关闭表）**
+GameTest 那条路仍是纸面的：本分支还没有任何 GameTest 类，`runGametest` 会起一个专服，
+**没有用例时它证明不了什么**。因此它与 O1 探路轮绑在一起验——探路轮的第一个 GameTest 落地时，
+判据是**报告里真的出现那个用例**，不是「任务能启动」。
 ⚠️ 跑之前确认 1.21.11 那条工作树没有 Gradle 在跑。
 
 **O3 · 前置项目未决**
@@ -52,6 +51,19 @@
 | **`.gitignore` 陷阱** | 新基第 26 行忽略了测试源码目录——**Gradle 会编译但 git 不跟踪**，与 1.21.11 分支踩过的是同一个坑。已删除 |
 | 本机设施 | `.mcp.json`、`AGENTS.md` 已复制（二者由跨工作树共享的 `.git/info/exclude` 忽略，不会误提交） |
 | 审计文档 | `PORT_26X_AUDIT.md` 自 1.21.11 分支迁入，并追加 §9 测试搬运台账（55 个测试类逐个登记） |
+
+**构建与测试层已实跑验证**（2026-08-13）：
+
+- `./gradlew build` **绿**（`compileJava` 只有 deprecation/unchecked 提示；产出 dev jar 与 remap jar）。
+- **`:test` 第一次跑报的是 `NO-SOURCE`**——任务存在、被 `check` 依赖，但 Gradle 直接跳过，
+  屏幕上与「通过」一模一样。这正是本仓库栽过多次的纸面接口形状，**不算验证**。
+  加入 `BuildInfrastructureSmokeTest` 后重跑：`tests=3 failures=0`，测试层确认在执行。
+  该用例是**常驻探针**：它一旦不出现在报告里，就说明测试层又被跳过了。
+- ⚠️ **测试的 `workingDir` 是 `build/test-working`**（随配置从 1.21.11 分支带来），
+  所以**读文件的用例必须 `Path.of("..", "..")` 回到项目根**。第一次写的两条断言就栽在这里，
+  症状是「找不到文件」而非断言不成立。搬 41 个用例过来时逐个注意。
+- 观察到但不属于我们的：`shadowJar` 报 `META-INF/services` 重复覆盖，
+  新基自带该 services 文件，与本次改动无关。
 
 ---
 
