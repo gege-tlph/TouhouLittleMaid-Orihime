@@ -10,6 +10,8 @@ import com.github.tartaricacid.touhoulittlemaid.api.event.InteractMaidEvent;
 import com.github.tartaricacid.touhoulittlemaid.api.event.client.MaidPackLoaderEvent;
 import com.github.tartaricacid.touhoulittlemaid.client.animation.special.HardcodedAnimation;
 import com.github.tartaricacid.touhoulittlemaid.client.download.InfoGetManager;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
+import com.github.tartaricacid.touhoulittlemaid.network.client.config.ServerRulesClientCache;
 import com.github.tartaricacid.touhoulittlemaid.client.event.*;
 import com.github.tartaricacid.touhoulittlemaid.client.init.*;
 import com.github.tartaricacid.touhoulittlemaid.client.input.DismountBroomKey;
@@ -40,6 +42,13 @@ public class TouhouLittleMaidFabricClient implements ClientModInitializer {
         ClientRecipeSynchronizedEvent.EVENT.register(ClientRecipeEvent::onRecipeReceived);
         TouhouLittleMaidClient.setup();
         NetworkHandler.registerClientReceivers();
+        // 离开服务器后必须复位：运行期快照是那台服务器的值，缓存里还留着它的编辑权与文件值。
+        // 不清的话，下一次进单人档会先按上一台服务器的规则跑，直到它的首包到达。
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register(
+                (handler, client) -> {
+                    ServerRulesClientCache.clear();
+                    ServerRuleConfig.activatePendingValues();
+                });
         ClientExtensionsEvent.RegisterClientExtensions();
         InfoGetManager.onClientSetup();
 

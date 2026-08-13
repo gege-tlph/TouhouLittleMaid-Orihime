@@ -4,9 +4,12 @@ import cn.sh1rocu.touhoulittlemaid.util.PacketDistributor;
 import cn.sh1rocu.touhoulittlemaid.util.neoforge.network.AdvancedAddEntityPayload;
 import com.github.tartaricacid.touhoulittlemaid.network.message.*;
 import com.github.tartaricacid.touhoulittlemaid.network.message.ai.*;
+import com.github.tartaricacid.touhoulittlemaid.network.message.config.SaveServerRulesPacket;
+import com.github.tartaricacid.touhoulittlemaid.network.message.config.SyncServerRulesPacket;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -21,6 +24,10 @@ public class NetworkHandler {
     public static void registerPackets() {
         registerC2SPackets();
         registerS2CPackets();
+        // 世界规则是服务器权威的：客户端一进来就得拿到当前生效值，否则它侧的读点
+        // （区域渲染、指南针范围等）会一直用自己那份默认值，与服务器对不上。
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+                SyncServerRulesPacket.sendTo(handler.player));
     }
 
     private static <T extends CustomPacketPayload> void registerC2SPacket(CustomPacketPayload.Type<T> type, StreamCodec<? super RegistryFriendlyByteBuf, T> streamCodec, ServerPlayNetworking.PlayPayloadHandler<T> handler) {
@@ -61,6 +68,7 @@ public class NetworkHandler {
 
         ClientPlayNetworking.registerGlobalReceiver(SyncAISitesPacket.TYPE, SyncAISitesPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncMaidAIDataPacket.TYPE, SyncMaidAIDataPacket::handle);
+        ClientPlayNetworking.registerGlobalReceiver(SyncServerRulesPacket.TYPE, SyncServerRulesPacket::handle);
     }
 
     public static void registerS2CPackets() {
@@ -92,6 +100,7 @@ public class NetworkHandler {
 
         registerS2CPacket(SyncAISitesPacket.TYPE, SyncAISitesPacket.STREAM_CODEC);
         registerS2CPacket(SyncMaidAIDataPacket.TYPE, SyncMaidAIDataPacket.STREAM_CODEC);
+        registerS2CPacket(SyncServerRulesPacket.TYPE, SyncServerRulesPacket.STREAM_CODEC);
 
 
     }
@@ -130,6 +139,7 @@ public class NetworkHandler {
         registerC2SPacket(OpenMaidAIChatPacket.TYPE, OpenMaidAIChatPacket.STREAM_CODEC, OpenMaidAIChatPacket::handle);
         registerC2SPacket(SaveLLMSitePacket.TYPE, SaveLLMSitePacket.STREAM_CODEC, SaveLLMSitePacket::handle);
         registerC2SPacket(SaveTTSSitePacket.TYPE, SaveTTSSitePacket.STREAM_CODEC, SaveTTSSitePacket::handle);
+        registerC2SPacket(SaveServerRulesPacket.TYPE, SaveServerRulesPacket.STREAM_CODEC, SaveServerRulesPacket::handle);
     }
 
     public static void sendToClientPlayer(CustomPacketPayload payload, ServerPlayer player) {

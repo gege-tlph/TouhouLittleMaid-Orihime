@@ -20,6 +20,7 @@ public final class RootCommand {
         root.then(AIChatCommand.get());
         root.then(MaidCommand.get());
         root.then(BackupCommand.get());
+        root.then(ConfigCommand.get());
         dispatcher.register(root);
     }
 }

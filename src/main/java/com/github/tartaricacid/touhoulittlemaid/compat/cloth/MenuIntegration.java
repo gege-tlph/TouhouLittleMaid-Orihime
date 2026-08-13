@@ -1,41 +1,214 @@
 package com.github.tartaricacid.touhoulittlemaid.compat.cloth;
 
 import com.github.tartaricacid.touhoulittlemaid.api.event.client.AddClothConfigEvent;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ChairConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.RenderConfig;
+import com.github.tartaricacid.touhoulittlemaid.init.registry.CompatRegistry;
+import com.github.tartaricacid.touhoulittlemaid.network.client.config.ServerRulesClientCache;
+import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.neoforged.neoforge.common.ModConfigSpec;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * 本地个人配置的 Cloth 菜单。
+ * Cloth 配置菜单：本机个人配置 + 服务器权威的世界规则。
  *
- * <p>⚠️ <b>这里少了 36 个条目，是有意摘掉的，不是漏搬</b>：女仆范围 / 攻击与进食黑名单 / 表情包权重 /
- * 椅子整节 / 妖精与神社灯 / 首次进服赠品 / 稻草人范围——它们已成为**存档级的服务器权威世界规则**
- * （{@code ServerRuleConfig}），值不再存在于本端可写的配置文件里，`set()`/`save()` 在这里无处可落。</p>
+ * <p>两半的**保存去向完全不同**，别混：个人配置直接写本机 TOML（{@code value.set()/save()}）；
+ * 世界规则一个字节也不在本端落地，全部走 {@link ServerRulesClientCache.Session} 攒着，
+ * 保存时打成一个只含改动键的包发给服务端，由服务端校验后写存档文件。</p>
  *
- * <p><b>恢复锚点</b>：行为基准 {@code port/1.21.11-fabric} 的本文件把菜单重构成
- * 「个人设置 / 服务器规则 / 服务器维护」三段，服务器那两段用 {@code ServerRulesClientCache.Session}
- * 攒改动、按 {@code canEdit()} 判权限、保存时发包给服务端。那套东西依赖网络层
- * （{@code ServerRulesClientCache} + 保存包 + 权限判定 + {@code ActionButtonListEntry}），
- * 属审计 §3.A 的下一刀。**那一刀落地时必须回来把这 36 项装进「服务器规则」段**，
- * 对应用例是 §9 的 {@code RuleStagingSessionTest} 与 {@code ServerRulesSaveAuthorityContractTest}。
- * 在此之前，世界规则只能改存档的 {@code serverconfig/touhou_little_maid-server.toml}。</p>
+ * <p>世界规则那两栏由 {@link ServerRulesClientCache#canEdit()} 门控——无权限的玩家根本看不到，
+ * 而不是看得到点不动。权限在服务端求值后随快照下发，客户端不自行判断。</p>
  */
 public class MenuIntegration {
+    private static final String CATEGORY = "config.touhou_little_maid.menu.";
+
     public static ConfigBuilder getConfigBuilder() {
         ConfigBuilder root = ConfigBuilder.create().setTitle(Component.literal("Touhou Little Maid"));
         root.setGlobalized(true);
         root.setGlobalizedExpanded(false);
         ConfigEntryBuilder entryBuilder = root.entryBuilder();
+        ServerRulesClientCache.Session session = ServerRulesClientCache.createSession();
+
         maidConfig(root, entryBuilder);
         miscConfig(root, entryBuilder);
         renderConfig(root, entryBuilder);
         GlobalAIIntegration.aiChat(root, entryBuilder);
+        if (ServerRulesClientCache.canEdit()) {
+            addServerRules(root, entryBuilder, session);
+            addServerMaintenance(root, entryBuilder, session);
+        }
+
+        // Cloth 的保存回调是整个菜单一次性的：个人配置那半由各自的 setSaveConsumer 写完，
+        // 这里补上世界规则那半的提交。漏了这一行，世界规则改了会**静默丢失**且界面照样报已保存。
+        root.setSavingRunnable(session::save);
         AddClothConfigEvent.CALLBACK.invoker().post(new AddClothConfigEvent(root, entryBuilder));
         return root;
+    }
+
+    /**
+     * 存档级玩法规则。分组沿用行为基准 {@code port/1.21.11-fabric} 的六组划分，
+     * 少两组：{@code server.experimental}（`SMOOTH_FOLLOW` 未搬，见 `ServerRuleConfig.values()`），
+     * 以及 `maid_tamed_item` / `maid_temptation_item` 两条（上游 26.1 已改为物品标签，不再是配置项）。
+     */
+    private static void addServerRules(ConfigBuilder root, ConfigEntryBuilder entries,
+                                       ServerRulesClientCache.Session session) {
+        ConfigCategory category = root.getOrCreateCategory(Component.translatable(CATEGORY + "server_rules"));
+        if (!ServerRulesClientCache.isIntegratedServer()) {
+            category.addEntry(entries.startTextDescription(Component.translatable(
+                    CATEGORY + "server_rules.dedicated_reload").withStyle(ChatFormatting.YELLOW)).build());
+        }
+
+        SubCategoryBuilder basic = sub(entries, "server.maid_basic");
+        basic.add(serverBoolean(entries, "maid.maid_change_model", MaidConfig.MAID_CHANGE_MODEL, session));
+        basic.add(serverBoolean(entries, "maid.maid_gomoku_owner_limit", MaidConfig.MAID_GOMOKU_OWNER_LIMIT, session));
+        basic.add(serverInt(entries, "maid.owner_max_maid_num", MaidConfig.OWNER_MAX_MAID_NUM, 0, Integer.MAX_VALUE, session));
+        basic.add(serverDouble(entries, "maid.replace_allay_percent", MaidConfig.REPLACE_ALLAY_PERCENT, 0, 1, session));
+        basic.add(serverBoolean(entries, "maid.enable_emoji", MaidConfig.ENABLE_EMOJI, session));
+        basic.add(serverInt(entries, "maid.emoji_check_rate", MaidConfig.EMOJI_CHECK_RATE, 20, 24000, session));
+        basic.add(serverInt(entries, "maid.image_emoji_weight", MaidConfig.IMAGE_EMOJI_WEIGHT, 0, 100, session));
+        basic.add(serverInt(entries, "maid.kaomoji_emoji_weight", MaidConfig.KAOMOJI_EMOJI_WEIGHT, 0, 100, session));
+        category.addEntry(basic.build());
+
+        SubCategoryBuilder ranges = sub(entries, "server.work_ranges");
+        ranges.add(serverSlider(entries, "maid.maid_work_range", MaidConfig.MAID_WORK_RANGE, 3, 64, session));
+        ranges.add(serverSlider(entries, "maid.maid_idle_range", MaidConfig.MAID_IDLE_RANGE, 3, 32, session));
+        ranges.add(serverSlider(entries, "maid.maid_sleep_range", MaidConfig.MAID_SLEEP_RANGE, 3, 32, session));
+        ranges.add(serverSlider(entries, "maid.maid_non_home_range", MaidConfig.MAID_NON_HOME_RANGE, 3, 32, session));
+        ranges.add(serverInt(entries, "maid.feed_animal_max_number", MaidConfig.FEED_ANIMAL_MAX_NUMBER, 6, 65536, session));
+        category.addEntry(ranges.build());
+
+        SubCategoryBuilder combat = sub(entries, "server.combat");
+        combat.add(serverSlider(entries, "maid.bow_range", MaidConfig.BOW_RANGE, 8, 192, session));
+        combat.add(serverSlider(entries, "maid.cross_bow_range", MaidConfig.CROSS_BOW_RANGE, 8, 192, session));
+        combat.add(serverSlider(entries, "maid.danmaku_range", MaidConfig.DANMAKU_RANGE, 8, 192, session));
+        combat.add(serverSlider(entries, "maid.trident_range", MaidConfig.TRIDENT_RANGE, 8, 192, session));
+        combat.add(serverList(entries, "maid.maid_attack_ignore", MaidConfig.MAID_ATTACK_IGNORE, session));
+        combat.add(serverList(entries, "maid.maid_ranged_attack_ignore", MaidConfig.MAID_RANGED_ATTACK_IGNORE, session));
+        category.addEntry(combat.build());
+
+        SubCategoryBuilder food = sub(entries, "server.food_backpack");
+        food.add(serverList(entries, "maid.maid_backpack_blacklist", MaidConfig.MAID_BACKPACK_BLACKLIST, session));
+        food.add(serverList(entries, "maid.maid_work_meals_block_list", MaidConfig.MAID_WORK_MEALS_BLOCK_LIST, session));
+        food.add(serverList(entries, "maid.maid_home_meals_block_list", MaidConfig.MAID_HOME_MEALS_BLOCK_LIST, session));
+        food.add(serverList(entries, "maid.maid_heal_meals_block_list", MaidConfig.MAID_HEAL_MEALS_BLOCK_LIST, session));
+        food.add(serverList(entries, "maid.maid_work_meals_block_list_regex", MaidConfig.MAID_WORK_MEALS_BLOCK_LIST_REGEX, session));
+        food.add(serverList(entries, "maid.maid_home_meals_block_list_regex", MaidConfig.MAID_HOME_MEALS_BLOCK_LIST_REGEX, session));
+        food.add(serverList(entries, "maid.maid_heal_meals_block_list_regex", MaidConfig.MAID_HEAL_MEALS_BLOCK_LIST_REGEX, session));
+        food.add(entries.startStrList(tr("maid.maid_eaten_return_container_list"),
+                        session.getContainerPairs(MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST))
+                .setDefaultValue(containerDefaults())
+                .setTooltip(tip("maid.maid_eaten_return_container_list"))
+                .setSaveConsumer(values -> session.setContainerPairs(MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST, values))
+                .build());
+        category.addEntry(food.build());
+
+        SubCategoryBuilder world = sub(entries, "server.world_economy");
+        world.add(serverDouble(entries, "misc.maid_fairy_power_point", MiscConfig.MAID_FAIRY_POWER_POINT, 0, 5, session));
+        world.add(serverInt(entries, "misc.maid_fairy_spawn_probability", MiscConfig.MAID_FAIRY_SPAWN_PROBABILITY, 0, Integer.MAX_VALUE, session));
+        world.add(serverList(entries, "misc.maid_fairy_blacklist_dimension", MiscConfig.MAID_FAIRY_BLACKLIST_DIMENSION, session));
+        world.add(serverDouble(entries, "misc.player_death_loss_power_point", MiscConfig.PLAYER_DEATH_LOSS_POWER_POINT, 0, 5, session));
+        world.add(serverBoolean(entries, "misc.give_smart_slab", MiscConfig.GIVE_SMART_SLAB, session));
+        if (FabricLoader.getInstance().isModLoaded(CompatRegistry.PATCHOULI)) {
+            world.add(serverBoolean(entries, "misc.give_patchouli_book", MiscConfig.GIVE_PATCHOULI_BOOK, session));
+        }
+        world.add(serverDouble(entries, "misc.shrine_lamp_effect_cost", MiscConfig.SHRINE_LAMP_EFFECT_COST, 0, Double.MAX_VALUE, session));
+        world.add(serverDouble(entries, "misc.shrine_lamp_max_storage", MiscConfig.SHRINE_LAMP_MAX_STORAGE, 0, Double.MAX_VALUE, session));
+        world.add(serverInt(entries, "misc.shrine_lamp_max_range", MiscConfig.SHRINE_LAMP_MAX_RANGE, 0, Integer.MAX_VALUE, session));
+        world.add(serverInt(entries, "misc.scarecrow_range", MiscConfig.SCARECROW_RANGE, 0, Integer.MAX_VALUE, session));
+        category.addEntry(world.build());
+
+        SubCategoryBuilder chair = sub(entries, "server.chair");
+        chair.add(serverBoolean(entries, "chair.chair_change_model", ChairConfig.CHAIR_CHANGE_MODEL, session));
+        chair.add(serverBoolean(entries, "chair.chair_can_destroyed_by_anyone", ChairConfig.CHAIR_CAN_DESTROYED_BY_ANYONE, session));
+        category.addEntry(chair.build());
+    }
+
+    /** 运维参数：同属世界规则文件，但不进公开运行期快照，只有编辑者看得到。 */
+    private static void addServerMaintenance(ConfigBuilder root, ConfigEntryBuilder entries,
+                                             ServerRulesClientCache.Session session) {
+        ConfigCategory category = root.getOrCreateCategory(Component.translatable(CATEGORY + "server_maintenance"));
+        category.addEntry(serverList(entries, "menu.server.client_pack_download_urls", ServerConfig.CLIENT_PACK_DOWNLOAD_URLS, session));
+        category.addEntry(serverBoolean(entries, "menu.server.maid_ai_time_debug", ServerConfig.MAID_AI_TIME_DEBUG, session));
+        category.addEntry(serverInt(entries, "menu.server.maid_backup_interval_seconds",
+                ServerConfig.MAID_BACKUP_INTERVAL_SECONDS, 5, Integer.MAX_VALUE, session));
+        category.addEntry(serverInt(entries, "menu.server.maid_backup_max_count",
+                ServerConfig.MAID_BACKUP_MAX_COUNT, 1, 64, session));
+    }
+
+    private static SubCategoryBuilder sub(ConfigEntryBuilder entries, String key) {
+        return entries.startSubCategory(Component.translatable(CATEGORY + key)).setExpanded(false);
+    }
+
+    private static Component tr(String suffix) {
+        return Component.translatable("config.touhou_little_maid." + suffix);
+    }
+
+    private static Component tip(String suffix) {
+        return Component.translatable("config.touhou_little_maid." + suffix + ".tooltip");
+    }
+
+    private static AbstractConfigListEntry<Boolean> serverBoolean(ConfigEntryBuilder entries, String key,
+                                                                  ModConfigSpec.ConfigValue<Boolean> value,
+                                                                  ServerRulesClientCache.Session session) {
+        return entries.startBooleanToggle(tr(key), session.getBoolean(value))
+                .setDefaultValue(value.getDefault()).setTooltip(tip(key))
+                .setSaveConsumer(newValue -> session.set(value, newValue)).build();
+    }
+
+    private static AbstractConfigListEntry<Integer> serverInt(ConfigEntryBuilder entries, String key,
+                                                              ModConfigSpec.ConfigValue<Integer> value,
+                                                              int min, int max,
+                                                              ServerRulesClientCache.Session session) {
+        return entries.startIntField(tr(key), session.getInt(value)).setMin(min).setMax(max)
+                .setDefaultValue(value.getDefault()).setTooltip(tip(key))
+                .setSaveConsumer(newValue -> session.set(value, newValue)).build();
+    }
+
+    private static AbstractConfigListEntry<Integer> serverSlider(ConfigEntryBuilder entries, String key,
+                                                                 ModConfigSpec.ConfigValue<Integer> value,
+                                                                 int min, int max,
+                                                                 ServerRulesClientCache.Session session) {
+        return entries.startIntSlider(tr(key), session.getInt(value), min, max)
+                .setDefaultValue(value.getDefault()).setTooltip(tip(key))
+                .setSaveConsumer(newValue -> session.set(value, newValue)).build();
+    }
+
+    private static AbstractConfigListEntry<Double> serverDouble(ConfigEntryBuilder entries, String key,
+                                                                ModConfigSpec.ConfigValue<Double> value,
+                                                                double min, double max,
+                                                                ServerRulesClientCache.Session session) {
+        return entries.startDoubleField(tr(key), session.getDouble(value)).setMin(min).setMax(max)
+                .setDefaultValue(value.getDefault()).setTooltip(tip(key))
+                .setSaveConsumer(newValue -> session.set(value, newValue)).build();
+    }
+
+    private static AbstractConfigListEntry<List<String>> serverList(ConfigEntryBuilder entries, String key,
+                                                                    ModConfigSpec.ConfigValue<? extends List<? extends String>> value,
+                                                                    ServerRulesClientCache.Session session) {
+        List<String> defaults = new ArrayList<>();
+        value.getDefault().forEach(defaults::add);
+        return entries.startStrList(tr(key), session.getStringList(value))
+                .setDefaultValue(defaults).setTooltip(tip(key))
+                .setSaveConsumer(newValue -> session.set(value, newValue)).build();
+    }
+
+    private static List<String> containerDefaults() {
+        return MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST.getDefault().stream()
+                .filter(pair -> pair.size() == 2)
+                .map(pair -> pair.get(0) + "," + pair.get(1))
+                .toList();
     }
 
     @SuppressWarnings("all")
