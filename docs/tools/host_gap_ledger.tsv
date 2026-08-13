@@ -176,7 +176,7 @@ com/github/tartaricacid/touhoulittlemaid/api/event/ConvertMaidEvent.java	44	实�
 com/github/tartaricacid/touhoulittlemaid/api/event/MaidAfterEatEvent.java	36	女仆进食后的事件	未找到	待定	子代理报「未找到」，**主模型尚未复核**；与 ConvertFoodEatenEvent/RemainFoodEatenEvent 同一簇
 com/github/tartaricacid/touhoulittlemaid/api/event/RegisterKubeJSEvent.java	33	KubeJS 注册事件（原文已大段注释）	未找到	生态	KubeJS 的 26.x 仅 NeoForge；且 2026-07-28 已裁决放弃
 com/github/tartaricacid/touhoulittlemaid/api/event/client/RenderMaidEvent.java	40	女仆渲染事件（供其它 mod 扩展）	未找到	待定	子代理报「未找到」，**主模型尚未复核**
-com/github/tartaricacid/touhoulittlemaid/api/game/gomoku/GomokuCodec.java	120	五子棋棋局的编解码	未找到	丢失	已复核：26.1 保留了棋盘方块/方块实体/AI（棋还能下），但 gomokucodec/boardstate/gameRecord 关键词在 26.1 命中为 0——**丢的是棋局存档与胜负记录这一层**
+com/github/tartaricacid/touhoulittlemaid/api/game/gomoku/GomokuCodec.java	120	五子棋棋局的编解码	已补回（api/game/gomoku/GomokuCodec）	丢失	**已修复**：残局编解码是「残局道具」这条链路的地基，先补它并加往返测试
 cn/sh1rocu/touhoulittlemaid/api/event/AddPackFindersEvent.java	41	资源包查找器事件	PackRepositoryMixin+CustomPackLoader	替换	已复核：fork 自造的 Forge 风格事件总线整体被换掉，靶点类在 26.1.2 仍存在
 cn/sh1rocu/touhoulittlemaid/api/event/EntityJoinLevelEvent.java	43	实体加入世界事件	ServerEntityEvents.ENTITY_LOAD 等	替换	已复核：fork 自造的 Forge 风格事件总线整体被换掉，靶点类在 26.1.2 仍存在
 cn/sh1rocu/touhoulittlemaid/api/event/ExplosionEvents.java	38	爆炸事件框架	26.1 事件体系	替换	已复核：fork 自造的 Forge 风格事件总线整体被换掉，靶点类在 26.1.2 仍存在
