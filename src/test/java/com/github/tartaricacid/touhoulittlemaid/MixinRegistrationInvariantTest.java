@@ -48,18 +48,19 @@ class MixinRegistrationInvariantTest {
                     "cn.sh1rocu.touhoulittlemaid.mixin"));
 
     /**
-     * 代码宿主自己搁置的 mixin，**不是我们漏登记的**。
+     * 代码宿主自己搁置、且**登记它也没有意义**的 mixin —— 不是我们漏登记的。
      *
-     * <p>{@code client.HumanoidModelMixin}：整个方法体被注释掉、{@code @Mixin} 靶点改指
-     * {@code cn.sh1rocu.touhoulittlemaid.util.Dummy}、类上留着 {@code // FIXME}——
-     * {@code origin/26.1} 迁移期停在这里的。登记它没有任何意义（靶点是个空壳类）。</p>
+     * <p>宿主的搁置手法是：方法体整段注释掉、{@code @Mixin} 靶点改指
+     * {@code cn.sh1rocu.touhoulittlemaid.util.Dummy} 这个空壳类、留一句 {@code // FIXME}。
+     * 这种件登记进去只会往一个空壳上织入，不解决任何问题。</p>
      *
-     * <p>⚠️ 但它是一处**真实的行为回归**：`origin/1.21.1` 与行为基准 `port/1.21.11-fabric`
-     * 上这个 mixin 都是注册且生效的（玩家扛女仆时两条手臂会摆成抱姿）。
-     * 已记入 CURRENT_STATUS 开放项，**修好之后要把这一条从本名单里删掉**——
-     * 名单留着而缺陷已修，下一个人会以为它还坏着。</p>
+     * <p><b>往这里加条目之前必须先分清两件事</b>：它对行为基准而言是不是一处回归？
+     * 如果是，正确做法是**修好并登记**，而不是加进名单。
+     * 唯一一次用到本名单的 {@code client.HumanoidModelMixin} 正是这种情况——
+     * 它在 `origin/1.21.1` 与 `port/1.21.11-fabric` 上都生效，已按 26.1.2 的渲染状态形态复原，
+     * 条目随之删除。名单留着而缺陷已修，下一个人会以为它还坏着。</p>
      */
-    private static final Set<String> HOST_PARKED = Set.of("client.HumanoidModelMixin");
+    private static final Set<String> HOST_PARKED = Set.of();
 
     @Test
     void everyMixinSourceFileIsRegistered() throws IOException {

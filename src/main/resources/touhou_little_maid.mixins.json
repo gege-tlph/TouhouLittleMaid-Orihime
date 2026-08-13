@@ -27,11 +27,14 @@
     "accessor.LivingEntityAccessor"
   ],
   "client": [
+    "client.AvatarRenderStateMixin",
+    "client.AvatarRendererMixin",
     "client.ClientPacketListenerMixin",
     "client.DrawableGizmoPrimitives$GroupMixin",
     "client.DrawableGizmoPrimitives$TextMixin",
     "client.DrawableGizmoPrimitivesMixin",
     "client.FishingRodCastMixin",
+    "client.HumanoidModelMixin",
     "client.InventoryScreenMixin",
     "client.LanguageMixin",
     "client.LevelRendererMixin",
