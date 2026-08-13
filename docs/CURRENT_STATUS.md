@@ -7,33 +7,47 @@
 
 ## 结论
 
-当前树 = `origin/26.1`（MC 26.1.2 Fabric）+ 一层工程设施 + **两刀差异化（配置事务写盘、世界规则体系）**。
-**除这两刀外，代码行为等同于代码宿主，不等同于我们 1.21.11 的行为。**
-构建、JUnit、GameTest 三条链路均已实跑验证。
+当前树 = `origin/26.1`（MC 26.1.2 Fabric）+ 一层工程设施 + **审计 §3.A「服务器规则体系与配置所有权」已整块落地**
+（配置事务写盘 → 世界规则本体与文件层 → 读点改道 → 网络层与配置菜单 → op/deop 重发）。
+**除这一块外，代码行为等同于代码宿主，不等同于我们 1.21.11 的行为。**
+构建、JUnit、GameTest 三条链路均已实跑验证；**但全程没有入世实测**，凭据都来自自动化门。
 
 ---
 
 # 开放项
 
-**O1 · §3.A 剩余项（世界规则体系已闭环，只剩两条尾巴）**
+**O1 · 新发现：扛女仆时玩家手臂不摆姿势（宿主搁置件，真实行为回归）**
 
-配置三层的**世界规则那一层已完整**：本体、文件层、读点改道、网络层、配置菜单、`/tlm config reload`
-全部落地并有测试（见已关闭表两条）。剩下的：
+`client.HumanoidModelMixin` 在 `origin/1.21.1` 与行为基准 `port/1.21.11-fabric` 上**都注册且生效**
+（玩家把女仆扛在身上时，两条手臂摆成抱姿）。代码宿主 `origin/26.1` 迁移期把它整段注释掉、
+`@Mixin` 靶点改指 `Dummy`、类上留 `FIXME`，也没登记进 `mixins.json`。
+
+**这不是我们漏搬，是宿主搁置**；但对行为基准而言它是一处回归，属 §3.F 渲染。
+1.21.11 的版本已按 render-state 重构改写（用 `ICarryMaidRenderState` + `HumanoidRenderState`），
+可作直接参考。修好后**必须同时把它从 `MixinRegistrationInvariantTest.HOST_PARKED` 里删掉**——
+名单留着而缺陷已修，下一个人会以为它还坏着。
+
+发现方式值得记：它是新加的 `MixinRegistrationInvariantTest` 第一次跑就照出来的，
+而不是靠读代码发现的。**闸门的价值一半在它拦住的，一半在它顺手照出来的。**
+
+**O2 · §3.A 剩余两项（世界规则那一层已闭合）**
+
+配置三层的**世界规则那一层已完整**：本体、文件层、读点改道、网络层、配置菜单、
+`/tlm config reload`、op/deop 重发，全部落地并有测试（见已关闭表三条）。剩下的两项都不属这一层：
 
 | 缺口 | 现状 | 恢复锚点 |
 |---|---|---|
-| op / deop 后重发规则快照 | **未做**。`canEdit` 只在发包那一刻求值，先进服后被授予 OP 的玩家要重进才看得到玩法设置栏 | 审计 §3.A 第四行（`a04b810f7`）；基准实现在 `PlayerListMixin`，注入点必须是 `op`/`deop` 而非 `sendPlayerPermissionLevel` |
 | `AiServerRuleConfig` 那一店 | 未搬，整体属 §3.C。`ServerRuleConfig.get()` 无路由分支；两个包只装世界规则一半 | `ServerRuleConfig.get()`、`SyncServerRulesPacket` 两处 javadoc |
 | `ExperimentalConfig.SMOOTH_FOLLOW` | 类与值都未建；配置项要与消费者（§3.E 跟随手感）同批落地 | `ServerRuleConfig.values()` 的 javadoc |
 
 ⚠️ 上表每一条在代码里都有对应注释，**不要只靠本表**——本表会过时，注释在改到时才会被看见。
 
-**O2 · 前置项目未决**
+**O3 · 前置项目未决**
 - **YSM**：Fabric 26.1.2 上不存在任何实现（本体仅 NeoForge 且闭源，OpenYSM 无 26.x）。
   要保留该特色，须先把 `gege-tlph/OpenYSM-Updated` 移到 26.1.2——**独立项目，规模未评估**。
 - **Patchouli**：官方有 26.1 beta，我们维护的 fork 需跟进。
 
-**O3 · 公开发布链路尚未建立**
+**O4 · 公开发布链路尚未建立**
 本分支还没有清洁分支、没有公开远端分支、没有 CI。`tree_equiv.py` 与 `git_hygiene.py`
 里已经写好了目标 ref 名（`release/26.1.2-clean` / `fork/port/26.1.2-fabric`），
 但**那两个 ref 还不存在**，相关门禁步骤现在必然跳过或报缺失——属预期，不是缺陷。
@@ -41,6 +55,25 @@
 ---
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-13：op/deop 后重发规则快照 + mixin 登记闸门（`c8b0c4d70`）
+
+§3.A 最后一条。`canEdit` 只在发包那一刻求值，`/op` 与 `/deop` 本身不触发重新同步，
+先进服后被授予 OP 的玩家要重进才看得到玩法设置栏。**至此配置三层的世界规则那一层闭合。**
+
+**注入点的取证**（基准踩过坑，本轮在 26.1.2 上重验，结论照旧）：
+`javap` 实查 `PlayerList`，`sendPlayerPermissionLevel` 的调用方恰是四个——
+`placeNewPlayer` / `respawn` / `op` / `deop`。挂它会在**每次加入与每次重生**都白发一个规则包，
+故只挂 `op`(三参) 与 `deop`。单参 `op` 的方法体就是 `op(id, empty, empty)`，注入三参即覆盖两条路径。
+
+**顺带补的通用闸门 `MixinRegistrationInvariantTest`**：把核心纪律第 3 条机械化——
+每个 mixin 源文件都必须登记进 `mixins.json`。没登记是**纯静默**的（本仓库为此抓过 5 枚纸面接口）；
+登记了但靶点不存在则由 `required: true` 在启动时报错，不归它管。
+**它第一次跑就照出了 `HumanoidModelMixin`**（见 O1）。
+
+GameTest 加 `playerListMixinIsWovenIn`：反射查织入产物。
+`required: true` 只在**目标类被加载**时才会因注入失败而崩，「服务器起来了」本身不构成证据。
+
 
 ## 2026-08-13：世界规则网络层与配置菜单（`0e54b51ac`）
 

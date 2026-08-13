@@ -201,6 +201,13 @@
 ⚠️ 三项都依赖 1.21.11 的 RenderState / SubmitNodeCollector 形态，**26.x 的渲染管线要重新读**。
 YSM 那条还依赖 fork 侧的 `renderTlmLayers`，**双侧同时才有效**。
 
+**2026-08-13 追加（发现方式不同，单列）**：扛女仆时玩家手臂摆抱姿
+（`client.HumanoidModelMixin`）。这一条**不是我们的差异化**——`origin/1.21.1` 上就有，
+1.21.11 只是按 render-state 重构改写过（`ICarryMaidRenderState` + `HumanoidRenderState`）。
+代码宿主 `origin/26.1` 迁移期把它整段注释、`@Mixin` 靶点改指 `Dummy`、留 `FIXME`，
+也没登记进 `mixins.json`，于是相对行为基准是一处回归。
+由 `MixinRegistrationInvariantTest` 首跑照出，非人工阅读发现。详见 CURRENT_STATUS 开放项。
+
 ### G. 第三方兼容
 
 | 内容 | 证据 | 宿主 |
