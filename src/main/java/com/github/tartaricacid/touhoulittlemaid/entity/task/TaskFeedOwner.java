@@ -11,6 +11,8 @@ import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -19,6 +21,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect;
@@ -126,11 +129,16 @@ public class TaskFeedOwner implements IFeedTask {
 
     @Override
     public ItemStack feed(ItemStack stack, Player owner) {
-        //FIXME getUseAnimation and getDrinkingSound API changed
-        //if (stack.getUseAnimation() == ItemUseAnimation.DRINK) {
-        //    owner.level.playSound(null, owner, stack.getDrinkingSound(), SoundSource.NEUTRAL,
-        //            0.5f, owner.level.getRandom().nextFloat() * 0.1f + 0.9f);
-        //}
+        // 女仆喂主人喝东西（药水 / 牛奶 / 蜂蜜）时的饮用音效。
+        // 原注释写「getUseAnimation and getDrinkingSound API changed」，只对了一半：
+        // javap 26.1.2 实查，`ItemStack.getUseAnimation()` **一直都在**；变的只有
+        // `getDrinkingSound()`——音效挪进了 `Consumable` 组件的 `sound()`。
+        if (stack.getUseAnimation() == ItemUseAnimation.DRINK) {
+            Consumable consumable = stack.get(DataComponents.CONSUMABLE);
+            SoundEvent drinkSound = consumable != null ? consumable.sound().value() : SoundEvents.GENERIC_DRINK.value();
+            owner.level.playSound(null, owner, drinkSound, SoundSource.NEUTRAL,
+                    0.5f, owner.level.getRandom().nextFloat() * 0.1f + 0.9f);
+        }
         return stack.getItem().finishUsingItem(stack, owner.level, owner);
     }
 
