@@ -418,13 +418,13 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 - [ ] `AiServerRuleAttackTest.java`
 - [ ] `AiServerRuleMigrationTest.java`
 - [x] `AtomicConfigFileWriterTest.java` —— 逐字搬入、零修改（`8c439de1a`）
-- [ ] `ConfigPayloadCodecTest.java`
+- [x] `ConfigPayloadCodecTest.java` —— 搬入并加一条 Sync 包往返（`0e54b51ac`）
 - [ ] `GlobalConfigMigrationTest.java`
 - [ ] `MagmaCubeConfigInheritanceTest.java`
 - [ ] `MaidConfigLayoutTest.java`
-- [ ] `RuleStagingSessionTest.java`
+- [x] `RuleStagingSessionTest.java` —— 断言对象由 AI 值改为世界规则值，语义不变（`0e54b51ac`）
 - [x] `ServerRuleConfigTransactionTest.java` —— 搬入并加一条运维参数不进公开快照（`9354189d9`）
-- [ ] `ServerRulesSaveAuthorityContractTest.java`
+- [x] `ServerRulesSaveAuthorityContractTest.java` —— 去掉 AI 店那一半，加一条「激活与否按服务器形态判定」（`0e54b51ac`）
 - [ ] `WorldRuleTestHarness.java`
 
 **B 战斗 / 威胁响应**（3）

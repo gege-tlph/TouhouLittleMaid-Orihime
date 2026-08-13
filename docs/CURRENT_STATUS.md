@@ -15,17 +15,15 @@
 
 # 开放项
 
-**O1 · 世界规则的网络层（`ServerRuleConfig` 已落地，下一刀接这里）**
+**O1 · §3.A 剩余项（世界规则体系已闭环，只剩两条尾巴）**
 
-世界规则本体、文件层、读点改道、GameTest 已完成（见已关闭表）。**尚未落地的是它的网络层**，
-这也是本轮唯一有意留下的功能缺口：
+配置三层的**世界规则那一层已完整**：本体、文件层、读点改道、网络层、配置菜单、`/tlm config reload`
+全部落地并有测试（见已关闭表两条）。剩下的：
 
 | 缺口 | 现状 | 恢复锚点 |
 |---|---|---|
-| 配置菜单里的 36 个世界规则条目 | 已从 Cloth 菜单摘除；**现在只能改存档的 `serverconfig/touhou_little_maid-server.toml`** | `MenuIntegration` 类注释；台账 §9 的 `RuleStagingSessionTest` / `ServerRulesSaveAuthorityContractTest` |
-| 客户端拿不到服务器的规则快照 | 专服上客户端读到的是 spec 默认值（改前是它自己那份 common.toml，两者都不等于服务器值） | 同上，需运行期快照下发包 |
-| `activatePendingValues()` / `jsonKeys()` | 已搬入但**本轮无调用点**，其调用者在网络层 | 两个方法各自的 javadoc |
-| `AiServerRuleConfig` 路由分支 | `get()` 里**没有**这条分支，AI 规则那一店整体属 §3.C | `ServerRuleConfig.get()` 的 javadoc |
+| op / deop 后重发规则快照 | **未做**。`canEdit` 只在发包那一刻求值，先进服后被授予 OP 的玩家要重进才看得到玩法设置栏 | 审计 §3.A 第四行（`a04b810f7`）；基准实现在 `PlayerListMixin`，注入点必须是 `op`/`deop` 而非 `sendPlayerPermissionLevel` |
+| `AiServerRuleConfig` 那一店 | 未搬，整体属 §3.C。`ServerRuleConfig.get()` 无路由分支；两个包只装世界规则一半 | `ServerRuleConfig.get()`、`SyncServerRulesPacket` 两处 javadoc |
 | `ExperimentalConfig.SMOOTH_FOLLOW` | 类与值都未建；配置项要与消费者（§3.E 跟随手感）同批落地 | `ServerRuleConfig.values()` 的 javadoc |
 
 ⚠️ 上表每一条在代码里都有对应注释，**不要只靠本表**——本表会过时，注释在改到时才会被看见。
@@ -43,6 +41,30 @@
 ---
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-13：世界规则网络层与配置菜单（`0e54b51ac`）
+
+上一刀有意留下的功能缺口全部补齐：世界规则从「只能手改存档 TOML」回到**服务器权威 + 客户端可编辑**。
+
+| 落地 | 说明 |
+|---|---|
+| `SyncServerRulesPacket`（S2C） | 两份快照分开：`runtimeRulesJson` 发给所有人（客户端侧读点据此看到服务器的值），`editableRulesJson` 只发给有编辑权的人（菜单的编辑基线）。进服即下发 |
+| `SaveServerRulesPacket`（C2S） | **只带改动过的键**，两个管理员同时开菜单改不同字段不会互相回滚。服务端重做权限 / JSON / 键归属 / spec 校验，任一不过整批拒绝并回发权威快照 |
+| `ServerRulesClientCache` + `Session` | 菜单编辑的是**文件值**而非运行期值——专服上两者可以不同 |
+| Cloth 菜单 | 上一刀摘掉的 36 条以「玩法设置 / 高级设置」两栏装回，由 `canEdit()` 门控（无权限者看不到，而不是看得到点不动） |
+| `/tlm config reload` | 新基**没有**这个命令，随本刀补入。专服上「保存只写文件」这条路要靠它激活，缺了它那条路是死的 |
+| 断开连接复位 | 离开服务器时清缓存并把运行期快照退回本端文件值 |
+
+**一处 26.1.2 API 漂移**：`ServerPlayer.displayClientMessage(Component, boolean)` 已不存在，
+改用新基通用的 `sendSystemMessage(Component)`，玩家侧同样是一条聊天消息。
+
+**一处文案与基准有意不同**：基准的 `config.reload_success` 写「存档配置与 AI 站点已重新加载」，
+而它自己的 `ConfigCommand` 明写「与 AI 零瓜葛」——那是条陈旧文案。本分支按实际行为写。
+
+**红测三种缺陷形态，全部照出**：客户端接收器漏注册 / 进服不下发 / 激活判定写死。
+另有一条测试自身的缺陷被照出：读点契约的「命中数 ≥ 40」下限对**第一层**（禁止直接 `get()`）
+是错的——那一层命中数**本就应当是 0**，拿它当活性判据就是「零覆盖恒绿」。
+已改为按「走过了多少个源文件」判活性，两层各用各的下限。
 
 ## 2026-08-13：世界规则体系落地（`e1efc8b64` `d387a07b7` `9354189d9`）
 
