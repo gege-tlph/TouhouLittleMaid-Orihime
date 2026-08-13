@@ -28,6 +28,22 @@ ECOSYSTEM_IMPOSSIBLE = {
     "gun", "tacz", "swarfare", "emi", "immersivemelodies", "ponder",
     "embeddium", "accessories", "sbackpack", "improvedmobs", "slashblade",
     "ironchest", "theoneprobe", "kubejs", "aquaculture", "simplehats", "justmorecakes",
+    "jmc", "top",
+}
+
+# 已**逐条取证**的整包架构替换：源包整体被目标包取代，类名不对应，无法靠改名规则匹配。
+# 每条都要写清取证方式，别凭「看着像」往里加。
+KNOWN_REPLACED = {
+    "cn/sh1rocu/touhoulittlemaid/util/itemhandler/":
+        ("cn/sh1rocu/touhoulittlemaid/util/transfer/",
+         "Forge IItemHandler 垫片 → Fabric 资源句柄 API（26.1 有 transfer 包共 12+ 个类，"
+         "且 TaskBowAttack 等已 import CombinedResourceHandler）"),
+    "com/github/tartaricacid/touhoulittlemaid/client/animation/script/":
+        ("com/github/tartaricacid/touhoulittlemaid/client/animation/gecko/molang/",
+         "Nashorn JS 动画脚本 wrapper → molang 绑定（26.1 有 gecko/molang 绑定包）"),
+    "com/github/tartaricacid/simplebedrockmodel/":
+        ("(合并回主包)",
+         "build.gradle 里那行 include 依赖注释着「又合并回来了」"),
 }
 
 
@@ -65,24 +81,33 @@ def classify():
     new_paths = set(new)
 
     filtered = collections.Counter()
+    replaced = collections.Counter()
     residue = []
     for path in old:
         if path in new_paths:
             continue
         name = simple_name(path)
+        rest = path.replace("src/main/java/", "")
+        replacement = next((k for k in KNOWN_REPLACED if rest.startswith(k)), None)
         if new_names.get(name):
             filtered["同名类换了包"] += 1
         elif name.startswith("TileEntity") and new_names.get("BlockEntity" + name[len("TileEntity"):]):
             filtered["TileEntity→BlockEntity 改名"] += 1
+        # TileEntity<X>Renderer → client/renderer/blockentity/<X>Renderer（前缀去掉，不是换成 BlockEntity）
+        elif (name.startswith("TileEntity") and name.endswith("Renderer")
+              and new_names.get(name[len("TileEntity"):])):
+            filtered["TileEntity*Renderer→blockentity/*Renderer"] += 1
         elif name.startswith("Tile") and new_names.get("Block" + name[len("Tile"):]):
             filtered["Tile→Block 改名"] += 1
+        elif replacement:
+            replaced[replacement] += 1
         else:
             residue.append(path)
-    return old, new, filtered, residue
+    return old, new, filtered, replaced, residue
 
 
 def main():
-    old, new, filtered, residue = classify()
+    old, new, filtered, replaced, residue = classify()
     buckets = collections.defaultdict(list)
     for path in residue:
         buckets[module_of(path)].append(path)
@@ -98,8 +123,12 @@ def main():
     print("%s: %d 个 java 文件 → %s: %d 个" % (OLD_REF, len(old), NEW_REF, len(new)))
     print("路径级消失: %d" % (len(old) - sum(1 for p in old if p in set(new))))
     for reason, count in filtered.most_common():
-        print("  已过滤 [%s]: %d" % (reason, count))
-    print("残余候选（无同名类、无改名对应）: %d\n" % len(residue))
+        print("  已过滤·改名 [%s]: %d" % (reason, count))
+    for key, count in replaced.most_common():
+        target, why = KNOWN_REPLACED[key]
+        print("  已过滤·整包替换 [%s → %s]: %d" % (key.rstrip("/").split("/")[-1], target, count))
+        print("        取证：%s" % why)
+    print("残余候选（无同名类 / 无改名对应 / 无已知整包替换）: %d\n" % len(residue))
 
     eco, adjudicate = [], []
     for module, paths in buckets.items():
