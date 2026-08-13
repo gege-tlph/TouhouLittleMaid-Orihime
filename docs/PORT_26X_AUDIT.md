@@ -206,7 +206,13 @@ YSM 那条还依赖 fork 侧的 `renderTlmLayers`，**双侧同时才有效**。
 1.21.11 只是按 render-state 重构改写过（`ICarryMaidRenderState` + `HumanoidRenderState`）。
 代码宿主 `origin/26.1` 迁移期把它整段注释、`@Mixin` 靶点改指 `Dummy`、留 `FIXME`，
 也没登记进 `mixins.json`，于是相对行为基准是一处回归。
-由 `MixinRegistrationInvariantTest` 首跑照出，非人工阅读发现。详见 CURRENT_STATUS 开放项。
+由 `MixinRegistrationInvariantTest` 首跑照出，非人工阅读发现。
+**已修（`79e7f7914`）**，但尚无运行期凭据——客户端 mixin 在纯服务端的 `runGametest` 里不加载。
+
+⚠️ **这一条的意义超出它本身**：宿主在迁移期用「注释掉 + 靶点改指 `Dummy` + `FIXME`」的手法
+搁置过不止一处（`compat.improvedmobs.EventHandlerMixin` 同款，只是它**登记了**所以闸门抓不到）。
+**§3 各类在核对时，除了问「我们的东西搬了没」，还要问「宿主有没有把原本就有的东西搁置掉」**——
+后者不会出现在任何差异化清单里，因为它本来就不是差异化。
 
 ### G. 第三方兼容
 
