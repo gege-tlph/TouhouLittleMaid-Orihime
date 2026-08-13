@@ -8,6 +8,12 @@
 用法：
     PYTHONIOENCODING=utf-8 python docs/tools/host_gap.py            # 汇总
     PYTHONIOENCODING=utf-8 python docs/tools/host_gap.py <模块名>    # 展开某个桶
+    PYTHONIOENCODING=utf-8 python docs/tools/host_gap.py --ledger   # 核对判定账本，退出码非 0 = 账本与现实脱节
+
+判定账本 = `docs/tools/host_gap_ledger.tsv`，**逐条记录每个残余类的去向**，
+目的是：真动手实现时不必再查一遍（这个仓库 1600+ 个源文件，重查一次的代价很高）。
+`--ledger` 会双向核对——残余里有而账本没登记的、账本登记了但已不在残余里的，都报出来。
+**账本不是写完就算数的文档，是一份会被机械核对的数据。**
 
 判据与已知陷阱：
 - 只比**路径**会把「换包」误报成删除，故先按简单类名兜一次；
@@ -106,11 +112,87 @@ def classify():
     return old, new, filtered, replaced, residue
 
 
+LEDGER = "docs/tools/host_gap_ledger.tsv"
+#: 判定取值。**「待定」是允许的中间态，但不许留到最后**——账本里还有待定就说明这件事没做完。
+VERDICTS = {
+    "替换",   # 26.1 里有承接者，功能还在，只是换了实现／位置
+    "生态",   # 对应模组在 26.1.2 Fabric 上不存在，删掉是对的（审计 §2.2）
+    "丢失",   # 没有承接者，相对行为基准是真的少了东西 → 这些才是要干的活
+    "无关",   # 死代码 / 构建产物 / 与玩法无关，丢了也无所谓
+    "待定",
+}
+
+
+def load_ledger():
+    import os
+    if not os.path.exists(LEDGER):
+        return {}
+    rows = {}
+    with open(LEDGER, encoding="utf-8") as handle:
+        for line_no, line in enumerate(handle, 1):
+            line = line.rstrip("\n")
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split("\t")
+            if len(parts) < 5:
+                raise SystemExit("%s:%d 列数不足 5（path/lines/说明/承接者/判定[/备注]）" % (LEDGER, line_no))
+            rows[parts[0]] = parts
+    return rows
+
+
+def check_ledger(residue):
+    rows = load_ledger()
+    live = {p.replace("src/main/java/", "") for p in residue}
+    logged = set(rows)
+
+    missing = sorted(live - logged)
+    stale = sorted(logged - live)
+    bad_verdict = sorted(p for p, r in rows.items() if r[4] not in VERDICTS)
+    pending = sorted(p for p, r in rows.items() if r[4] == "待定")
+
+    counts = collections.Counter(r[4] for r in rows.values())
+    print("账本 %d 条 · 残余 %d 条" % (len(rows), len(live)))
+    for verdict, count in counts.most_common():
+        print("   %-4s %d" % (verdict, count))
+
+    problems = 0
+    if missing:
+        problems += 1
+        print("\n★ 残余里有、账本没登记（%d 条）——判定没做完：" % len(missing))
+        for path in missing[:20]:
+            print("    " + path)
+        if len(missing) > 20:
+            print("    …… 另 %d 条" % (len(missing) - 20))
+    if stale:
+        problems += 1
+        print("\n★ 账本登记了、但已不在残余里（%d 条）——多半是补回来了或过滤规则变了，该删账本行：" % len(stale))
+        for path in stale[:20]:
+            print("    " + path)
+    if bad_verdict:
+        problems += 1
+        print("\n★ 判定取值非法（只能是 %s）：" % "/".join(sorted(VERDICTS)))
+        for path in bad_verdict[:20]:
+            print("    %s → %r" % (path, rows[path][4]))
+    if pending:
+        print("\n· 仍为「待定」%d 条（允许的中间态，但不该留到最后）" % len(pending))
+
+    lost = sorted(p for p, r in rows.items() if r[4] == "丢失")
+    if lost:
+        print("\n=== 判定为「丢失」的 %d 条 —— 这些才是要干的活 ===" % len(lost))
+        for path in lost:
+            print("  %-72s %s" % (path, rows[path][2]))
+
+    return 1 if problems else 0
+
+
 def main():
     old, new, filtered, replaced, residue = classify()
     buckets = collections.defaultdict(list)
     for path in residue:
         buckets[module_of(path)].append(path)
+
+    if len(sys.argv) > 1 and sys.argv[1] == "--ledger":
+        return check_ledger(residue)
 
     if len(sys.argv) > 1:
         wanted = sys.argv[1]
