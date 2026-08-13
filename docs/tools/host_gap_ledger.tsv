@@ -159,3 +159,73 @@ com/github/tartaricacid/touhoulittlemaid/event/food/RemainFoodEatenEvent.java	53
 com/github/tartaricacid/touhoulittlemaid/crafting/FallbackIngredient.java	123	配方材料的后备候选	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 com/github/tartaricacid/touhoulittlemaid/init/InitTaskData.java	15	任务数据的初始化注册	未找到	待定	子代理报「未找到」，**主模型尚未复核**；与 TaskDataRegister/MaidTaskDataMaps 同一簇
 com/github/tartaricacid/touhoulittlemaid/molang/parser/ast/DoubleExpression.java	82	Molang 的双精度表达式节点	未找到	替换	molang 解析器在 26.1 有整包重构（见 geckolib3 那批的观察）
+com/github/tartaricacid/touhoulittlemaid/api/animation/IChairData.java	38	JS 动画里坐垫乘客数据的接口	未找到	替换	已复核：与 animation/script 的 JS wrapper 同一批——Nashorn 动画体系整体被 gecko/molang 绑定取代，这些是它对外的数据接口
+com/github/tartaricacid/touhoulittlemaid/api/animation/ICustomAnimation.java	85	JS 自定义动画的泛型接口	未找到	替换	已复核：与 animation/script 的 JS wrapper 同一批——Nashorn 动画体系整体被 gecko/molang 绑定取代，这些是它对外的数据接口
+com/github/tartaricacid/touhoulittlemaid/api/animation/IEntityData.java	26	JS 动画里实体数据的基接口	未找到	替换	已复核：与 animation/script 的 JS wrapper 同一批——Nashorn 动画体系整体被 gecko/molang 绑定取代，这些是它对外的数据接口
+com/github/tartaricacid/touhoulittlemaid/api/animation/IMagicCastingAnimationProvider.java	60	施法动画供应接口	未找到	替换	已复核：与 animation/script 的 JS wrapper 同一批——Nashorn 动画体系整体被 gecko/molang 绑定取代，这些是它对外的数据接口；另见 client/animation/gecko/magic/MagicCastingAnimationManager（待定）
+com/github/tartaricacid/touhoulittlemaid/api/animation/IMagicCastingState.java	58	施法状态接口	未找到	替换	已复核：与 animation/script 的 JS wrapper 同一批——Nashorn 动画体系整体被 gecko/molang 绑定取代，这些是它对外的数据接口
+com/github/tartaricacid/touhoulittlemaid/api/animation/IMaidData.java	302	JS 动画里女仆数据接口（含骨骼与部位）	未找到	替换	已复核：与 animation/script 的 JS wrapper 同一批——Nashorn 动画体系整体被 gecko/molang 绑定取代，这些是它对外的数据接口
+com/github/tartaricacid/touhoulittlemaid/api/animation/IModelRenderer.java	153	JS 动画里模型渲染接口	未找到	替换	已复核：与 animation/script 的 JS wrapper 同一批——Nashorn 动画体系整体被 gecko/molang 绑定取代，这些是它对外的数据接口
+com/github/tartaricacid/touhoulittlemaid/api/animation/IWorldData.java	38	JS 动画里世界数据接口	未找到	替换	已复核：与 animation/script 的 JS wrapper 同一批——Nashorn 动画体系整体被 gecko/molang 绑定取代，这些是它对外的数据接口
+com/github/tartaricacid/touhoulittlemaid/api/backpack/IBackpackData.java	15	背包数据接口	api/backpack/IMaidBackpack + MaidBackpackRenderData	替换	**已复核**：26.1 有 IMaidBackpack/ITriggerSlotChange/MaidBackpackRenderData 三个接口
+com/github/tartaricacid/touhoulittlemaid/api/bauble/IChestType.java	38	女仆可用容器类型的接口	未找到	待定	子代理报「未找到」，**主模型尚未复核**；与 inventory/chest 那 4 个同一簇
+com/github/tartaricacid/touhoulittlemaid/api/entity/IMaid.java	268	女仆实体的对外接口	api/entity/ILittleMaid	替换	改名
+com/github/tartaricacid/touhoulittlemaid/api/entity/data/TaskDataKey.java	35	任务数据键接口	未找到	待定	子代理报「未找到」，**主模型尚未复核**；与 TaskDataRegister/MaidTaskDataMaps/InitTaskData 同一簇
+com/github/tartaricacid/touhoulittlemaid/api/event/AddTopInfoEvent.java	49	The One Probe 信息条事件（原文已大段注释）	未找到	生态	TOP 无任何 26.x
+com/github/tartaricacid/touhoulittlemaid/api/event/ConvertMaidEvent.java	44	实体转化为女仆的事件	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/api/event/MaidAfterEatEvent.java	36	女仆进食后的事件	未找到	待定	子代理报「未找到」，**主模型尚未复核**；与 ConvertFoodEatenEvent/RemainFoodEatenEvent 同一簇
+com/github/tartaricacid/touhoulittlemaid/api/event/RegisterKubeJSEvent.java	33	KubeJS 注册事件（原文已大段注释）	未找到	生态	KubeJS 的 26.x 仅 NeoForge；且 2026-07-28 已裁决放弃
+com/github/tartaricacid/touhoulittlemaid/api/event/client/RenderMaidEvent.java	40	女仆渲染事件（供其它 mod 扩展）	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/api/game/gomoku/GomokuCodec.java	120	五子棋棋局的编解码	未找到	丢失	已复核：26.1 保留了棋盘方块/方块实体/AI（棋还能下），但 gomokucodec/boardstate/gameRecord 关键词在 26.1 命中为 0——**丢的是棋局存档与胜负记录这一层**
+cn/sh1rocu/touhoulittlemaid/api/event/AddPackFindersEvent.java	41	资源包查找器事件	PackRepositoryMixin+CustomPackLoader	替换	已复核：fork 自造的 Forge 风格事件总线整体被换掉，靶点类在 26.1.2 仍存在
+cn/sh1rocu/touhoulittlemaid/api/event/EntityJoinLevelEvent.java	43	实体加入世界事件	ServerEntityEvents.ENTITY_LOAD 等	替换	已复核：fork 自造的 Forge 风格事件总线整体被换掉，靶点类在 26.1.2 仍存在
+cn/sh1rocu/touhoulittlemaid/api/event/ExplosionEvents.java	38	爆炸事件框架	26.1 事件体系	替换	已复核：fork 自造的 Forge 风格事件总线整体被换掉，靶点类在 26.1.2 仍存在
+cn/sh1rocu/touhoulittlemaid/api/event/LivingAttackEvent.java	38	生物受攻击事件	MaidAttackEvent 等	替换	已复核：fork 自造的 Forge 风格事件总线整体被换掉，靶点类在 26.1.2 仍存在
+cn/sh1rocu/touhoulittlemaid/api/event/PlayerLoggedInEvent.java	26	玩家登录事件	ServerPlayerEvents.JOIN	替换	已复核：fork 自造的 Forge 风格事件总线整体被换掉，靶点类在 26.1.2 仍存在
+cn/sh1rocu/touhoulittlemaid/api/event/RegisterClientReloadListenersEvent.java	29	客户端重载监听的注册事件	ClientReloadListenerRegistry	替换	已复核：fork 自造的 Forge 风格事件总线整体被换掉，靶点类在 26.1.2 仍存在
+cn/sh1rocu/touhoulittlemaid/api/extension/IBlock.java	27	方块扩展接口（自定义破坏粒子等）	未找到	待定	子代理报「未找到」，**主模型尚未复核**；26.1 只有 IBlockExploded / IBlockEntityPersistentData，**子代理先报「保留」，被我质疑后自己更正为未找到**
+cn/sh1rocu/touhoulittlemaid/api/extension/IItemRenderer.java	10	物品渲染器扩展接口	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+cn/sh1rocu/touhoulittlemaid/api/extension/ILootContext.java	9	战利品上下文扩展	未找到	待定	战利品扩展一簇（ILootTable/ILootContext/LootCollector 等），与 LootTableMixin 同批，需一起判
+cn/sh1rocu/touhoulittlemaid/api/extension/ILootTable.java	9	战利品表扩展	未找到	待定	战利品扩展一簇（ILootTable/ILootContext/LootCollector 等），与 LootTableMixin 同批，需一起判
+cn/sh1rocu/touhoulittlemaid/api/extension/ILootTableBuilder.java	7	战利品表构建器扩展	未找到	待定	战利品扩展一簇（ILootTable/ILootContext/LootCollector 等），与 LootTableMixin 同批，需一起判
+cn/sh1rocu/touhoulittlemaid/api/extension/IPickedResult.java	8	拾取结果扩展	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+cn/sh1rocu/touhoulittlemaid/api/mixin/LootCollector.java	33	战利品收集器	未找到	待定	战利品扩展一簇（ILootTable/ILootContext/LootCollector 等），与 LootTableMixin 同批，需一起判
+cn/sh1rocu/touhoulittlemaid/mixin/compat/tacz/AbstractGunItemMixin.java	69	TACZ 枪械 的兼容代码：AbstractGunItemMixin	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+cn/sh1rocu/touhoulittlemaid/mixin/compat/tacz/GunAnimationStateContextMixin.java	43	TACZ 枪械 的兼容代码：GunAnimationStateContextMixin	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+cn/sh1rocu/touhoulittlemaid/mixin/compat/tacz/LivingEntityShootMixin.java	29	TACZ 枪械 的兼容代码：LivingEntityShootMixin	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+cn/sh1rocu/touhoulittlemaid/mixin/compat/tacz/ModernKineticGunScriptAPIMixin.java	50	TACZ 枪械 的兼容代码：ModernKineticGunScriptAPIMixin	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/accessories/AccessoriesCompat.java	65	Accessories 饰品 的兼容代码：AccessoriesCompat	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/accessories/AccessoriesEvent.java	62	Accessories 饰品 的兼容代码：AccessoriesEvent	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/embeddium/EmbeddiumGeoRenderer.java	218	Embeddium 渲染优化 的兼容代码：EmbeddiumGeoRenderer	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/emi/MaidEmiPlugin.java	95	EMI 物品浏览 的兼容代码：MaidEmiPlugin	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/emi/altar/EmiAltarRecipe.java	95	EMI 物品浏览 的兼容代码：EmiAltarRecipe	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/emi/altar/EmiAltarRecipeCategory.java	28	EMI 物品浏览 的兼容代码：EmiAltarRecipeCategory	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/emi/altar/EmiAltarRecipeMaker.java	24	EMI 物品浏览 的兼容代码：EmiAltarRecipeMaker	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/emi/transfer/BackpackRecipeHandler.java	48	EMI 物品浏览 的兼容代码：BackpackRecipeHandler	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/common/ai/GunAttackStrafingTask.java	103	TACZ/Superb Warfare 枪械 的兼容代码：GunAttackStrafingTask	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/common/ai/GunShootTargetTask.java	95	TACZ/Superb Warfare 枪械 的兼容代码：GunShootTargetTask	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/common/task/TaskGunAttack.java	149	TACZ/Superb Warfare 枪械 的兼容代码：TaskGunAttack	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/swarfare/SWarfareCompatInner.java	215	TACZ/Superb Warfare 枪械 的兼容代码：SWarfareCompatInner	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/swarfare/client/GunBaseAnimation.java	54	TACZ/Superb Warfare 枪械 的兼容代码：GunBaseAnimation	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/swarfare/client/GunGeckoAnimation.java	173	TACZ/Superb Warfare 枪械 的兼容代码：GunGeckoAnimation	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/swarfare/client/GunMaidRender.java	109	TACZ/Superb Warfare 枪械 的兼容代码：GunMaidRender	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/swarfare/event/GunHurtMaidEvent.java	90	TACZ/Superb Warfare 枪械 的兼容代码：GunHurtMaidEvent	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/swarfare/event/MaidSaddleClickEvent.java	25	TACZ/Superb Warfare 枪械 的兼容代码：MaidSaddleClickEvent	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/tacz/TacCompat.java	144	TACZ/Superb Warfare 枪械 的兼容代码：TacCompat	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/tacz/TacInnerCompat.java	162	TACZ/Superb Warfare 枪械 的兼容代码：TacInnerCompat	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/tacz/client/GunBaseAnimation.java	53	TACZ/Superb Warfare 枪械 的兼容代码：GunBaseAnimation	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/tacz/client/GunGeckoAnimation.java	169	TACZ/Superb Warfare 枪械 的兼容代码：GunGeckoAnimation	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/tacz/client/GunMaidRender.java	107	TACZ/Superb Warfare 枪械 的兼容代码：GunMaidRender	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/tacz/event/GunHurtMaidEvent.java	89	TACZ/Superb Warfare 枪械 的兼容代码：GunHurtMaidEvent	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/gun/tacz/event/MaidGunEquipEvent.java	16	TACZ/Superb Warfare 枪械 的兼容代码：MaidGunEquipEvent	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/immersivemelodies/client/CompatAnimation.java	23	Immersive Melodies 乐器 的兼容代码：CompatAnimation	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/immersivemelodies/client/ImmersiveMelodiesCompatInner.java	62	Immersive Melodies 乐器 的兼容代码：ImmersiveMelodiesCompatInner	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/immersivemelodies/client/MaidArmsAndHeadAccessor.java	134	Immersive Melodies 乐器 的兼容代码：MaidArmsAndHeadAccessor	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/immersivemelodies/server/ImmersiveMelodiesCompatServerInner.java	10	Immersive Melodies 乐器 的兼容代码：ImmersiveMelodiesCompatServerInner	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/ironchest/IronChestType.java	44	Iron Chests 的兼容代码：IronChestType	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/jmc/JmcEdible.java	135	Just More Cakes 的兼容代码：JmcEdible	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/kubejs/ModKubeJSCompat.java	28	KubeJS 脚本 的兼容代码：ModKubeJSCompat	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/ponder/MaidPonderPlugin.java	23	Ponder 演示 的兼容代码：MaidPonderPlugin	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/ponder/MaidPonderScenes.java	50	Ponder 演示 的兼容代码：MaidPonderScenes	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/simplehats/SimpleHatsRenderer.java	39	Simple Hats 的兼容代码：SimpleHatsRenderer	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
+com/github/tartaricacid/touhoulittlemaid/compat/top/TheOneProbeInfo.java	13	The One Probe 的兼容代码：TheOneProbeInfo	无	生态	该模组在 26.1.2 Fabric 上不存在（审计 §2.2 逐条实查，含加载器粒度）。删掉是对的，不是回归
