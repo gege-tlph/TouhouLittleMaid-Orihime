@@ -14,6 +14,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public record TaskData(
         String taskId,
@@ -48,7 +49,7 @@ public record TaskData(
     }
 
     public TaskData() {
-        this(DEFAULT_TASK_ID, DEFAULT_SCHEDULE, DEFAULT_RESTRICT_CENTER, MaidConfig.MAID_NON_HOME_RANGE.get());
+        this(DEFAULT_TASK_ID, DEFAULT_SCHEDULE, DEFAULT_RESTRICT_CENTER, ServerRuleConfig.get(MaidConfig.MAID_NON_HOME_RANGE));
     }
 
     public TaskData withTaskId(String taskId) {

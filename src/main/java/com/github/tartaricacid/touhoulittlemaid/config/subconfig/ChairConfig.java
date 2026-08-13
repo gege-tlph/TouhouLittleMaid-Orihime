@@ -7,7 +7,12 @@ public final class ChairConfig {
     public static ModConfigSpec.BooleanValue CHAIR_CHANGE_MODEL;
     public static ModConfigSpec.BooleanValue CHAIR_CAN_DESTROYED_BY_ANYONE;
 
-    public static void init(ModConfigSpec.Builder builder) {
+    /**
+     * 整节都是存档级世界规则，进 SERVER spec，由 {@code ServerRuleConfig} 独占管理
+     * （行为基准 {@code port/1.21.11-fabric} 上 ChairConfig 同样整节归 server）。
+     * **读这两个值只能走 {@code ServerRuleConfig.get(...)}。**
+     */
+    public static void initServerRule(ModConfigSpec.Builder builder) {
         builder.translation(TRANSLATE_KEY).push("chair");
 
         builder.comment("Chair can switch models freely")

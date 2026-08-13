@@ -61,6 +61,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class BlockGomoku extends BlockJoy implements IBoardGameBlock, IBlockExploded {
     public static final EnumProperty<GomokuPart> PART = EnumProperty.create("part", GomokuPart.class);
@@ -326,7 +327,7 @@ public class BlockGomoku extends BlockJoy implements IBoardGameBlock, IBlockExpl
         }
 
         // 检查是不是自己的女仆
-        if (MaidConfig.MAID_GOMOKU_OWNER_LIMIT.get() && !maid.isOwnedBy(player)) {
+        if (ServerRuleConfig.get(MaidConfig.MAID_GOMOKU_OWNER_LIMIT) && !maid.isOwnedBy(player)) {
             player.sendSystemMessage(Component.translatable("message.touhou_little_maid.gomoku.not_owner"));
             return InteractionResult.FAIL;
         }

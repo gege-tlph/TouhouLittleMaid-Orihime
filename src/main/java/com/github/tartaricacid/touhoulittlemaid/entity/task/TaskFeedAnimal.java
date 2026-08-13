@@ -39,6 +39,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class TaskFeedAnimal implements IAttackTask {
     public static final Identifier UID = IdentifierUtil.modLoc("feed_animal");
@@ -69,7 +70,7 @@ public class TaskFeedAnimal implements IAttackTask {
         BehaviorControl<EntityMaid> attackTargetTask = MaidMeleeAttack.create(20);
 
         return Lists.newArrayList(
-                Pair.of(5, new MaidFeedAnimalTask(0.6f, MaidConfig.FEED_ANIMAL_MAX_NUMBER.get())),
+                Pair.of(5, new MaidFeedAnimalTask(0.6f, ServerRuleConfig.get(MaidConfig.FEED_ANIMAL_MAX_NUMBER))),
                 Pair.of(6, supplementedTask),
                 Pair.of(6, findTargetTask),
                 Pair.of(6, moveToTargetTask),
@@ -83,7 +84,7 @@ public class TaskFeedAnimal implements IAttackTask {
                 .filter(Entity::isAlive)
                 .filter(e -> e instanceof Animal).count();
 
-        if (animalCount < (MaidConfig.FEED_ANIMAL_MAX_NUMBER.get() - 2)) {
+        if (animalCount < (ServerRuleConfig.get(MaidConfig.FEED_ANIMAL_MAX_NUMBER) - 2)) {
             return Optional.empty();
         }
 

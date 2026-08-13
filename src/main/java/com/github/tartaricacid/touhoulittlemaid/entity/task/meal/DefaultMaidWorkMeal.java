@@ -12,13 +12,14 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class DefaultMaidWorkMeal implements IMaidMeal {
     private static final int MAX_PROBABILITY = 100;
 
     public static boolean isWorkMeal(ItemStack stack) {
         return stack.has(DataComponents.FOOD)
-                && !IMaidMeal.isBlockList(stack, MaidConfig.MAID_WORK_MEALS_BLOCK_LIST.get())
+                && !IMaidMeal.isBlockList(stack, ServerRuleConfig.get(MaidConfig.MAID_WORK_MEALS_BLOCK_LIST))
                 && !IMaidMeal.isBlockList(stack, MaidMealRegConfigEvent.WORK_MEAL_REGEX);
     }
 

@@ -8,7 +8,9 @@ import com.github.tartaricacid.touhoulittlemaid.api.event.MaidDamageEvent;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidDeathEvent;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidFavorabilityLevelChangeEvent;
 import com.github.tartaricacid.touhoulittlemaid.config.CommonConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ConfigFileMigration;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.debug.event.DebugStickClickEvent;
 import com.github.tartaricacid.touhoulittlemaid.debug.target.SendMaidDebugDataEvent;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.RandomEmoji;
@@ -71,8 +73,22 @@ public class TouhouLittleMaidFabric implements ModInitializer {
     }
 
     private static void registerConfiguration() {
+        // 世界规则的 spec 先建起来（校验与默认值要用），但**有意不注册**：注册 Type.SERVER 会让
+        // Forge Config API Port 自己去管 <world>/serverconfig/touhou_little_maid-server.toml，
+        // 与 ServerRuleConfig 争同一个文件。详见 ServerConfig 的类注释。
+        ServerConfig.init();
+        // 必须先于 COMMON spec 注册：这些键原属 COMMON spec，注册那一刻 correct() 会把
+        // 「已不在 spec 里」的它们整批剥掉，旧值就没了。
+        ConfigFileMigration.migrateServerFileIfNeeded(ServerRuleConfig.values(), ServerConfig.CONFIG);
+        ServerRuleConfig.initializeDefaults();
         ConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.COMMON, CommonConfig.init());
-        ConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.SERVER, ServerConfig.init());
+
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+            if (!ServerRuleConfig.loadForServer(server)) {
+                throw new IllegalStateException("Failed to load Touhou Little Maid world config");
+            }
+        });
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> ServerRuleConfig.unloadWorld());
     }
 
     private void subscribeEvents() {
@@ -109,7 +125,6 @@ public class TouhouLittleMaidFabric implements ModInitializer {
         ServerEntityEvents.ENTITY_LOAD.register(EntityJoinWorldEvent::onCreeperJoinWorld);
         ServerEntityEvents.ENTITY_LOAD.register(EntityJoinWorldEvent::onAnimalJoinWorld);
         ServerEntityEvents.ENTITY_LOAD.register(EntityJoinWorldEvent::onPlayerJoinWorld);
-        ModConfigEvents.loading(TouhouLittleMaid.MOD_ID).register(MaidMealRegConfigEvent::onEvent);
         EntityTrackingEvents.START_TRACKING.register(MaidTrackEvent::onTrackingPlayer);
         InteractMaidEvent.CALLBACK.register(ApplyGoldenAppleEvent::onInteractMaid);
         InteractMaidEvent.CALLBACK.register(ApplyPotionEffectEvent::onInteractMaid);

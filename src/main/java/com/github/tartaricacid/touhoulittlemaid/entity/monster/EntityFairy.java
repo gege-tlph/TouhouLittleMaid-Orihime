@@ -45,6 +45,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import javax.annotation.Nullable;
 
 import static net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_BASE;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class EntityFairy extends Monster implements RangedAttackMob, FlyingAnimal, IHasPowerPoint {
     public static final EntityType<EntityFairy> TYPE = EntityType.Builder.<EntityFairy>of(EntityFairy::new, MobCategory.MONSTER)
@@ -74,7 +75,7 @@ public class EntityFairy extends Monster implements RangedAttackMob, FlyingAnima
 
     public static boolean checkFairySpawnRules(EntityType<EntityFairy> entityType, ServerLevelAccessor levelAccessor, EntitySpawnReason spawnType, BlockPos pos, RandomSource randomSource) {
         if (Monster.checkMonsterSpawnRules(entityType, levelAccessor, spawnType, pos, randomSource) && levelAccessor instanceof ServerLevel level) {
-            int scarecrowRange = MiscConfig.SCARECROW_RANGE.get();
+            int scarecrowRange = ServerRuleConfig.get(MiscConfig.SCARECROW_RANGE);
             long findCount = level.getPoiManager().getInSquare(type -> type.value().equals(InitPoi.SCARECROW), pos, scarecrowRange, PoiManager.Occupancy.ANY).count();
             return findCount <= 0;
         }
@@ -111,7 +112,7 @@ public class EntityFairy extends Monster implements RangedAttackMob, FlyingAnima
 
     @Override
     public int getPowerPoint() {
-        double reward = MiscConfig.MAID_FAIRY_POWER_POINT.get() * 100;
+        double reward = ServerRuleConfig.get(MiscConfig.MAID_FAIRY_POWER_POINT) * 100;
         if (this.isBaby()) {
             return (int) (reward * 2);
         }

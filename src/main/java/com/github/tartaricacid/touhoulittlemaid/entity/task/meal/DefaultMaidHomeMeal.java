@@ -12,13 +12,14 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class DefaultMaidHomeMeal implements IMaidMeal {
     private static final int MAX_PROBABILITY = 15;
 
     public static boolean isHomeMeal(ItemStack stack) {
         return stack.has(DataComponents.FOOD)
-               && !IMaidMeal.isBlockList(stack, MaidConfig.MAID_HOME_MEALS_BLOCK_LIST.get())
+               && !IMaidMeal.isBlockList(stack, ServerRuleConfig.get(MaidConfig.MAID_HOME_MEALS_BLOCK_LIST))
                && !IMaidMeal.isBlockList(stack, MaidMealRegConfigEvent.HOME_MEAL_REGEX);
     }
 

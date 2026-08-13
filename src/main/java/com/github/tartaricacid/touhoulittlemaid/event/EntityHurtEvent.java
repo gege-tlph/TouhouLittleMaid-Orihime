@@ -9,6 +9,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public final class EntityHurtEvent {
     public static void onArrowImpact(ProjectileImpactEvent event) {
@@ -30,7 +31,7 @@ public final class EntityHurtEvent {
                 }
             }
             Identifier registryName = BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType());
-            if (MaidConfig.MAID_RANGED_ATTACK_IGNORE.get().contains(registryName.toString())) {
+            if (ServerRuleConfig.get(MaidConfig.MAID_RANGED_ATTACK_IGNORE).contains(registryName.toString())) {
                 event.setCanceled(true);
             }
         }

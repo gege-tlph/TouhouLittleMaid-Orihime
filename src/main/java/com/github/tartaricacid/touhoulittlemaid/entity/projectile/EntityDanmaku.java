@@ -26,6 +26,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class EntityDanmaku extends ThrowableProjectile {
     public static final EntityType<EntityDanmaku> TYPE = EntityType.Builder.<EntityDanmaku>of(EntityDanmaku::new, MobCategory.MISC)
@@ -99,7 +100,7 @@ public class EntityDanmaku extends ThrowableProjectile {
                 return;
             }
             Identifier registryName = BuiltInRegistries.ENTITY_TYPE.getKey(hit.getType());
-            if (!registryName.equals(BuiltInRegistries.ENTITY_TYPE.getDefaultKey()) && MaidConfig.MAID_RANGED_ATTACK_IGNORE.get().contains(registryName.toString())) {
+            if (!registryName.equals(BuiltInRegistries.ENTITY_TYPE.getDefaultKey()) && ServerRuleConfig.get(MaidConfig.MAID_RANGED_ATTACK_IGNORE).contains(registryName.toString())) {
                 this.discard();
                 return;
             }

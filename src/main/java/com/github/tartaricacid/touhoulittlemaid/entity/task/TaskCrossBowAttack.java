@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.Predicate;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class TaskCrossBowAttack implements IRangedAttackTask {
     public static final Identifier UID = IdentifierUtil.modLoc("crossbow_attack");
@@ -80,7 +81,7 @@ public class TaskCrossBowAttack implements IRangedAttackTask {
 
     @Override
     public boolean canSee(EntityMaid maid, LivingEntity target) {
-        return IRangedAttackTask.targetConditionsTest(maid, target, MaidConfig.CROSS_BOW_RANGE);
+        return IRangedAttackTask.targetConditionsTest(maid, target, ServerRuleConfig.get(MaidConfig.CROSS_BOW_RANGE));
     }
 
     @Override
@@ -98,7 +99,7 @@ public class TaskCrossBowAttack implements IRangedAttackTask {
 
     @Override
     public float searchRadius(EntityMaid maid) {
-        return MaidConfig.CROSS_BOW_RANGE.get();
+        return ServerRuleConfig.get(MaidConfig.CROSS_BOW_RANGE);
     }
 
     @Override

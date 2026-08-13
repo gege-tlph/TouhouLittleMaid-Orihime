@@ -15,6 +15,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
 import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public record ChairModelPackage(int id, Identifier modelId, float mountedHeight, boolean tameableCanRide,
                                 boolean noGravity) implements CustomPacketPayload {
@@ -42,7 +43,7 @@ public record ChairModelPackage(int id, Identifier modelId, float mountedHeight,
         context.server().execute(() -> {
             ServerPlayer sender = context.player();
             Entity entity = sender.level.getEntity(message.id);
-            boolean canChangeModel = ChairConfig.CHAIR_CHANGE_MODEL.get() || sender.isCreative();
+            boolean canChangeModel = ServerRuleConfig.get(ChairConfig.CHAIR_CHANGE_MODEL) || sender.isCreative();
 
             if (entity instanceof EntityChair) {
                 if (canChangeModel) {

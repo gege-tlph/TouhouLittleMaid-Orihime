@@ -20,6 +20,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 
 import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public record MaidConfigPackage(int id, boolean home, boolean pick, boolean ride,
                                 MaidSchedule schedule) implements CustomPacketPayload {
@@ -97,7 +98,7 @@ public record MaidConfigPackage(int id, boolean home, boolean pick, boolean ride
             }
             schedulePos.setHomeModeEnable(maid, maid.blockPosition());
         } else {
-            maid.setHomeTo(BlockPos.ZERO, MaidConfig.MAID_NON_HOME_RANGE.get());
+            maid.setHomeTo(BlockPos.ZERO, ServerRuleConfig.get(MaidConfig.MAID_NON_HOME_RANGE));
         }
         maid.setHomeModeEnable(message.home);
     }

@@ -13,6 +13,7 @@ import net.minecraft.world.level.gamerules.GameRules;
 
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataAttachment.MAID_NUM;
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataAttachment.POWER_NUM;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class EntityDeathEvent {
     public static void onEntityDeath() {
@@ -37,7 +38,7 @@ public class EntityDeathEvent {
             PowerAttachment power = oldPlayer.getAttachedOrCreate(POWER_NUM, () -> new PowerAttachment(0));
             MaidNumAttachment maidNum = oldPlayer.getAttachedOrCreate(MAID_NUM, () -> new MaidNumAttachment(0));
             if (wasDeath && !isKeep) {
-                power.min(MiscConfig.PLAYER_DEATH_LOSS_POWER_POINT.get().floatValue());
+                power.min(ServerRuleConfig.get(MiscConfig.PLAYER_DEATH_LOSS_POWER_POINT).floatValue());
             }
             newPlayer.setAttached(POWER_NUM, power);
             newPlayer.setAttached(MAID_NUM, maidNum);

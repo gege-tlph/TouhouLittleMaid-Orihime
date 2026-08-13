@@ -12,6 +12,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class MaidNumAttachment {
     public static final Codec<MaidNumAttachment> CODEC = RecordCodecBuilder.create(ins -> ins.group(
@@ -67,7 +68,7 @@ public class MaidNumAttachment {
     }
 
     public int getMaxNum() {
-        return MaidConfig.OWNER_MAX_MAID_NUM.get();
+        return ServerRuleConfig.get(MaidConfig.OWNER_MAX_MAID_NUM);
     }
 
     public int get() {

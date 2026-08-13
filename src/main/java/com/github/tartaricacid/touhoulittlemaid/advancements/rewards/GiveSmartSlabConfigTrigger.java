@@ -11,6 +11,7 @@ import net.minecraft.advancements.criterion.SimpleCriterionTrigger;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Optional;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class GiveSmartSlabConfigTrigger extends SimpleCriterionTrigger<GiveSmartSlabConfigTrigger.Instance> {
     public static Criterion<GiveSmartSlabConfigTrigger.Instance> create() {
@@ -19,7 +20,7 @@ public class GiveSmartSlabConfigTrigger extends SimpleCriterionTrigger<GiveSmart
     }
 
     public void trigger(ServerPlayer serverPlayer) {
-        super.trigger(serverPlayer, instance -> MiscConfig.GIVE_SMART_SLAB.get());
+        super.trigger(serverPlayer, instance -> ServerRuleConfig.get(MiscConfig.GIVE_SMART_SLAB));
     }
 
     @Override

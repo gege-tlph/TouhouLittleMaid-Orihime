@@ -12,6 +12,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class SwitchFollowStateTool implements ITool<SwitchFollowStateTool.Result> {
     public static final String TOOL_ID = "switch_follow_state";
@@ -59,7 +60,7 @@ public class SwitchFollowStateTool implements ITool<SwitchFollowStateTool.Result
             if (!isHome) {
                 return callback.addToolResult("Already following the owner", toolId);
             }
-            maid.setHomeTo(BlockPos.ZERO, MaidConfig.MAID_NON_HOME_RANGE.get());
+            maid.setHomeTo(BlockPos.ZERO, ServerRuleConfig.get(MaidConfig.MAID_NON_HOME_RANGE));
             maid.setHomeModeEnable(false);
             return callback.addToolResult("Follow mode enabled", toolId);
         }

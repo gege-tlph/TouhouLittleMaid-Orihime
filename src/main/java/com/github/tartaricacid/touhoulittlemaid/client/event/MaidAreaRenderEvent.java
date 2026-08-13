@@ -24,6 +24,7 @@ import net.minecraft.world.phys.Vec3;
 import javax.annotation.Nullable;
 import java.util.OptionalDouble;
 import java.util.concurrent.TimeUnit;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class MaidAreaRenderEvent {
     private static final Cache<Integer, SchedulePos> CACHE = CacheBuilder.newBuilder().expireAfterWrite(30, TimeUnit.SECONDS).build();
@@ -60,7 +61,7 @@ public class MaidAreaRenderEvent {
         Gizmos.cuboid(aabb, GizmoStyle.fill(ARGB.colorFromFloat(0.8F, 0.2F, 0.75F, 0.8F)));
 
         if (workPos != null) {
-            double radius = MaidConfig.MAID_WORK_RANGE.get() + 0.1;
+            double radius = ServerRuleConfig.get(MaidConfig.MAID_WORK_RANGE) + 0.1;
             renderArea(workPos, radius, 0xffff0000);
 
             Vec3 textPos = new Vec3(workPos.getX() + 0.5, workPos.getY() + 2, workPos.getZ() + 0.5);
@@ -70,7 +71,7 @@ public class MaidAreaRenderEvent {
         }
 
         if (idlePos != null) {
-            double radius = MaidConfig.MAID_IDLE_RANGE.get();
+            double radius = ServerRuleConfig.get(MaidConfig.MAID_IDLE_RANGE);
             renderArea(idlePos, radius, 0xff00ff00);
             Vec3 textPos = new Vec3(idlePos.getX() + 0.5, idlePos.getY() + 2, idlePos.getZ() + 0.5);
             if (idlePos.equals(workPos)) {
@@ -84,7 +85,7 @@ public class MaidAreaRenderEvent {
         }
 
         if (resetPos != null) {
-            double radius = MaidConfig.MAID_SLEEP_RANGE.get() - 0.1;
+            double radius = ServerRuleConfig.get(MaidConfig.MAID_SLEEP_RANGE) - 0.1;
             renderArea(resetPos, radius, 0xff0000ff);
             Vec3 textPos = new Vec3(resetPos.getX() + 0.5, resetPos.getY() + 2, resetPos.getZ() + 0.5);
             if (resetPos.equals(idlePos)) {

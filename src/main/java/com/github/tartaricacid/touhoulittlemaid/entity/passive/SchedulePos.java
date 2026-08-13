@@ -14,6 +14,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
 import javax.annotation.Nullable;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public final class SchedulePos {
     private static final int MAX_TELEPORT_ATTEMPTS_TIMES = 10;
@@ -107,15 +108,15 @@ public final class SchedulePos {
         }
         Activity activity = maid.getScheduleDetail();
         if (activity == Activity.WORK) {
-            maid.setHomeTo(this.workPos, MaidConfig.MAID_WORK_RANGE.get());
+            maid.setHomeTo(this.workPos, ServerRuleConfig.get(MaidConfig.MAID_WORK_RANGE));
             return;
         }
         if (activity == Activity.IDLE) {
-            maid.setHomeTo(this.idlePos, MaidConfig.MAID_IDLE_RANGE.get());
+            maid.setHomeTo(this.idlePos, ServerRuleConfig.get(MaidConfig.MAID_IDLE_RANGE));
             return;
         }
         if (activity == Activity.REST) {
-            maid.setHomeTo(this.sleepPos, MaidConfig.MAID_SLEEP_RANGE.get());
+            maid.setHomeTo(this.sleepPos, ServerRuleConfig.get(MaidConfig.MAID_SLEEP_RANGE));
         }
     }
 

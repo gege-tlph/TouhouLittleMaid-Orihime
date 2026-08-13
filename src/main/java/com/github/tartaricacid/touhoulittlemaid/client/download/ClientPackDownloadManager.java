@@ -20,6 +20,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 /**
  * 依据服务端配置，下载客户端模型包
@@ -31,7 +32,7 @@ public class ClientPackDownloadManager {
     private static int CACHE_CONFIG_HASH = 0;
 
     public static void downloadClientPack() {
-        List<String> downloadList = ServerConfig.CLIENT_PACK_DOWNLOAD_URLS.get();
+        List<String> downloadList = ServerRuleConfig.get(ServerConfig.CLIENT_PACK_DOWNLOAD_URLS);
         // 先计算哈希值
         int hashCurrent = hashDownloadList(downloadList);
         // 对比前后哈希值，判断是否需要更新

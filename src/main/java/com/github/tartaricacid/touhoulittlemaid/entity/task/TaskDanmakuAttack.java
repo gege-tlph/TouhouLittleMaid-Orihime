@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import static com.github.tartaricacid.touhoulittlemaid.datagen.EnchantmentKeys.getEnchantmentLevel;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class TaskDanmakuAttack implements IRangedAttackTask {
     public static final Identifier UID = IdentifierUtil.modLoc("danmaku_attack");
@@ -90,7 +91,7 @@ public class TaskDanmakuAttack implements IRangedAttackTask {
 
     @Override
     public boolean canSee(EntityMaid maid, LivingEntity target) {
-        return IRangedAttackTask.targetConditionsTest(maid, target, MaidConfig.DANMAKU_RANGE);
+        return IRangedAttackTask.targetConditionsTest(maid, target, ServerRuleConfig.get(MaidConfig.DANMAKU_RANGE));
     }
 
     @Override
@@ -108,7 +109,7 @@ public class TaskDanmakuAttack implements IRangedAttackTask {
 
     @Override
     public float searchRadius(EntityMaid maid) {
-        return MaidConfig.DANMAKU_RANGE.get();
+        return ServerRuleConfig.get(MaidConfig.DANMAKU_RANGE);
     }
 
     @Override

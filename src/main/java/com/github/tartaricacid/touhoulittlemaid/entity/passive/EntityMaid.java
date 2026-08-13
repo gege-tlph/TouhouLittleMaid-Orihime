@@ -67,9 +67,9 @@ import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.List;
 
-import static com.github.tartaricacid.touhoulittlemaid.config.ServerConfig.MAID_AI_TIME_DEBUG;
 import static com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.MaidBrain.BRAIN_PROVIDER;
 import static com.github.tartaricacid.touhoulittlemaid.inventory.handler.MaidBackpackHandler.BACKPACK_ITEM_SLOT;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAttackMob {
     public static final Identifier ENTITY_ID = IdentifierUtil.modLoc("maid");
@@ -186,7 +186,7 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
         // 如果开启了 Debug 模式，此处会记录每次 AI 执行的时间
         // 超过 50ms 就会在控制台输出警告日志，方便开发者定位性能问题
         timeRecord = Util.getNanos() - timeRecord;
-        if (MAID_AI_TIME_DEBUG.get() && timeRecord > WARNING_TIME_NANOS) {
+        if (ServerRuleConfig.get(ServerConfig.MAID_AI_TIME_DEBUG) && timeRecord > WARNING_TIME_NANOS) {
             double timeMs = timeRecord / 1000000.0;
             BlockPos blockPos = this.blockPosition();
             String taskId = this.getTask().getUid().toString();
@@ -214,7 +214,7 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
         }
 
         // 强制开启女仆备份机制
-        int saveIntervalTick = ServerConfig.MAID_BACKUP_INTERVAL_SECONDS.get() * 20;
+        int saveIntervalTick = ServerRuleConfig.get(ServerConfig.MAID_BACKUP_INTERVAL_SECONDS) * 20;
         // 通过哈希计算出一个随机值，这样做可以避免所有实体都在同一 tick 进行保存
         int checkTick = Math.abs(this.getUUID().hashCode()) % saveIntervalTick;
         if (this.level.getGameTime() % saveIntervalTick == checkTick && this.level instanceof ServerLevel serverLevel) {

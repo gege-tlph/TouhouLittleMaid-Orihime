@@ -3,6 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.entity.task;
 import cn.sh1rocu.touhoulittlemaid.util.transfer.CombinedResourceHandler;
 import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IRangedAttackTask;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidAttackStrafingTask;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidRangedWalkToTarget;
@@ -114,7 +115,7 @@ public class TaskBowAttack implements IRangedAttackTask {
 
     @Override
     public boolean canSee(EntityMaid maid, LivingEntity target) {
-        return IRangedAttackTask.targetConditionsTest(maid, target, MaidConfig.BOW_RANGE);
+        return IRangedAttackTask.targetConditionsTest(maid, target, ServerRuleConfig.get(MaidConfig.BOW_RANGE));
     }
 
     @Override
@@ -132,7 +133,7 @@ public class TaskBowAttack implements IRangedAttackTask {
 
     @Override
     public float searchRadius(EntityMaid maid) {
-        return MaidConfig.BOW_RANGE.get();
+        return ServerRuleConfig.get(MaidConfig.BOW_RANGE);
     }
 
     @Override

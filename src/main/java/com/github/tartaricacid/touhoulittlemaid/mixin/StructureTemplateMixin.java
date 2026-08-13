@@ -19,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Optional;
 import java.util.Random;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 @Mixin(StructureTemplate.class)
 public abstract class StructureTemplateMixin {
@@ -29,7 +30,7 @@ public abstract class StructureTemplateMixin {
     private static void createEntityIgnoreException(ProblemReporter reporter, ServerLevelAccessor accessor, CompoundTag tag, CallbackInfoReturnable<Optional<Entity>> ci) {
         ci.getReturnValue().ifPresent(entity -> {
             ServerLevel level = accessor.getLevel();
-            if (entity.getType().equals(EntityTypeUtil.allay()) && TOUHOU_LITTLE_MAID$RANDOM.nextDouble() < MaidConfig.REPLACE_ALLAY_PERCENT.get()) {
+            if (entity.getType().equals(EntityTypeUtil.allay()) && TOUHOU_LITTLE_MAID$RANDOM.nextDouble() < ServerRuleConfig.get(MaidConfig.REPLACE_ALLAY_PERCENT)) {
                 EntityMaid entityMaid = InitEntities.MAID.create(level, EntitySpawnReason.STRUCTURE);
                 ci.setReturnValue(Optional.ofNullable(entityMaid));
             }

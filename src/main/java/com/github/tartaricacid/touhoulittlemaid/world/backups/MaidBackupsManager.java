@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 /**
  * 女仆数据备份管理器
@@ -324,7 +325,7 @@ public final class MaidBackupsManager {
             NbtIo.writeCompressed(backupData.entityDataOutput().buildResult(), backupFile.toPath());
 
             // 删除旧备份
-            removeOldBackups(backupData.saveFolder, ServerConfig.MAID_BACKUP_MAX_COUNT.get());
+            removeOldBackups(backupData.saveFolder, ServerRuleConfig.get(ServerConfig.MAID_BACKUP_MAX_COUNT));
 
         } catch (IOException e) {
             LOGGER.error("Failed to save entity data to: {}", backupFile, e);

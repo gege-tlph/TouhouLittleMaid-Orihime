@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import static com.github.tartaricacid.touhoulittlemaid.datagen.EnchantmentKeys.getEnchantmentHolder;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class TaskTridentAttack implements IRangedAttackTask {
     public static final Identifier UID = IdentifierUtil.modLoc("trident_attack");
@@ -88,7 +89,7 @@ public class TaskTridentAttack implements IRangedAttackTask {
 
     @Override
     public boolean canSee(EntityMaid maid, LivingEntity target) {
-        return IRangedAttackTask.targetConditionsTest(maid, target, MaidConfig.TRIDENT_RANGE);
+        return IRangedAttackTask.targetConditionsTest(maid, target, ServerRuleConfig.get(MaidConfig.TRIDENT_RANGE));
     }
 
     @Override
@@ -106,7 +107,7 @@ public class TaskTridentAttack implements IRangedAttackTask {
 
     @Override
     public float searchRadius(EntityMaid maid) {
-        return MaidConfig.TRIDENT_RANGE.get();
+        return ServerRuleConfig.get(MaidConfig.TRIDENT_RANGE);
     }
 
     @Override

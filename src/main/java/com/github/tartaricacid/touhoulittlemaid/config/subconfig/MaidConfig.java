@@ -56,7 +56,16 @@ public final class MaidConfig {
     public static ModConfigSpec.IntValue MAID_GUN_MEDIUM_DISTANCE;
     public static ModConfigSpec.IntValue MAID_GUN_NEAR_DISTANCE;
 
-    public static void init(ModConfigSpec.Builder builder) {
+    /**
+     * 实例级个人配置，进 {@link com.github.tartaricacid.touhoulittlemaid.config.CommonConfig} 的 COMMON spec。
+     *
+     * <p>对应行为基准 {@code port/1.21.11-fabric} 的 {@code initClient}——那边宿主的实例级 spec 是
+     * {@code Type.CLIENT}，本分支代码宿主用的是 {@code Type.COMMON}，故按新基改名，别照抄 {@code initClient}。</p>
+     *
+     * <p>{@code ENABLE_MAID_CURIOS} 与三项 {@code MAID_GUN_*} 是新基自己新增的，**在 1.21.11 上没有对应物**，
+     * 也就没有「该归谁」的基准。按「无症状不改」留在新基放它们的位置，不擅自纳入世界规则集。</p>
+     */
+    public static void initCommon(ModConfigSpec.Builder builder) {
         builder.translation(TRANSLATE_KEY).push("maid");
 
         builder.comment("This is a global config that applies to all maids: how often maids speak")
@@ -69,6 +78,29 @@ public final class MaidConfig {
 
         builder.comment("When installed Curios mod, whether to enable maid curios slot support");
         ENABLE_MAID_CURIOS = builder.define("EnableMaidCurios", true);
+
+        builder.comment("Recognition distance of a maid under the gun task, Suitable for sniper rifles");
+        MAID_GUN_LONG_DISTANCE = builder.defineInRange("MaidGunLongDistance", 64, 0, 512);
+
+        builder.comment("Recognition distance of a maid under the gun task, Suitable for most types");
+        MAID_GUN_MEDIUM_DISTANCE = builder.defineInRange("MaidGunMediumDistance", 48, 0, 512);
+
+        builder.comment("Recognition distance of a maid under the gun task, Suitable for pistols and shotguns");
+        MAID_GUN_NEAR_DISTANCE = builder.defineInRange("MaidGunNearDistance", 32, 0, 512);
+
+        builder.pop();
+    }
+
+    /**
+     * 存档级世界规则，进 {@link com.github.tartaricacid.touhoulittlemaid.config.ServerConfig} 的 SERVER spec，
+     * 由 {@link com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig} 独占管理。
+     *
+     * <p>对应行为基准的 {@code initServer}。**这些值一律不得再用 {@code XXX.get()} 读**——SERVER spec
+     * 有意不向 Forge Config API Port 注册，`get()` 会抛「Cannot get config value before config is loaded」。
+     * 唯一读口是 {@code ServerRuleConfig.get(...)}，`ServerRuleReadRoutingContractTest` 钉着这条。</p>
+     */
+    public static void initServerRule(ModConfigSpec.Builder builder) {
+        builder.translation(TRANSLATE_KEY).push("maid");
 
         builder.comment("The max range of maid work mode")
                 .translation(translateKey("maid_work_range"));
@@ -174,15 +206,6 @@ public final class MaidConfig {
         builder.comment("These entries configure the container returned after a maid has eaten", "Eg: [\"minecraft:beetroot_soup\", \"minecraft:bowl\"]")
                 .translation(translateKey("maid_eaten_return_container_list"));
         MAID_EATEN_RETURN_CONTAINER_LIST = builder.define("MaidEatenReturnContainerList", Lists.newArrayList());
-
-        builder.comment("Recognition distance of a maid under the gun task, Suitable for sniper rifles");
-        MAID_GUN_LONG_DISTANCE = builder.defineInRange("MaidGunLongDistance", 64, 0, 512);
-
-        builder.comment("Recognition distance of a maid under the gun task, Suitable for most types");
-        MAID_GUN_MEDIUM_DISTANCE = builder.defineInRange("MaidGunMediumDistance", 48, 0, 512);
-
-        builder.comment("Recognition distance of a maid under the gun task, Suitable for pistols and shotguns");
-        MAID_GUN_NEAR_DISTANCE = builder.defineInRange("MaidGunNearDistance", 32, 0, 512);
 
         builder.pop();
     }

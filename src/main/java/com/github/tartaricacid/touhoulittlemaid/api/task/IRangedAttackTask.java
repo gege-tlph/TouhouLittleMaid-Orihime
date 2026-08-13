@@ -46,13 +46,18 @@ public interface IRangedAttackTask extends IAttackTask {
     /**
      * 依据配置文件和 TargetingConditions 来检验攻击目标是否符合条件
      *
-     * @param maid        女仆
-     * @param target      女仆将要攻击的对象
-     * @param configRange 相关距离的配置文件
+     * @param maid   女仆
+     * @param target 女仆将要攻击的对象
+     * @param range  相关距离，由调用方经 {@code ServerRuleConfig.get(...)} 解析后传入
      * @return 能够攻击
+     *
+     * <p>形参原本收的是 {@code ModConfigSpec.IntValue} 本身，由本方法自己 {@code get()}。
+     * 那些距离已成为服务器权威的世界规则，读口只有 {@code ServerRuleConfig.get(...)}，
+     * 而「把配置对象传进来、在里面读」这种写法会让读点藏在形参后面——按 {@code XXX.get()} 扫是扫不出来的。
+     * 故改收**已解析的值**：让调用点天然正确，而不是靠每个调用方自觉。</p>
      */
-    static boolean targetConditionsTest(EntityMaid maid, LivingEntity target, ModConfigSpec.IntValue configRange) {
-        TARGET_CONDITIONS.range(configRange.get());
+    static boolean targetConditionsTest(EntityMaid maid, LivingEntity target, int range) {
+        TARGET_CONDITIONS.range(range);
         if (maid.level() instanceof ServerLevel serverLevel) {
             return TARGET_CONDITIONS.test(serverLevel, maid, target);
         }

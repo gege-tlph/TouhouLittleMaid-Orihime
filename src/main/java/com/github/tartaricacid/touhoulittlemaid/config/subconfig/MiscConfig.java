@@ -24,7 +24,30 @@ public final class MiscConfig {
     public static ModConfigSpec.BooleanValue USE_NEW_MAID_FAIRY_MODEL;
     public static ModConfigSpec.BooleanValue INVULNERABLE_PARTICLE_EFFECT;
 
-    public static void init(ModConfigSpec.Builder builder) {
+    /** 实例级个人配置，进 COMMON spec。对应行为基准 {@code port/1.21.11-fabric} 的 {@code initClient}。 */
+    public static void initCommon(ModConfigSpec.Builder builder) {
+        builder.translation(TRANSLATE_KEY).push("misc");
+
+        builder.comment("Whether to turn off the Optifine warning")
+                .translation(translateKey("close_optifine_warning"));
+        CLOSE_OPTIFINE_WARNING = builder.define("CloseOptifineWarning", false);
+
+        builder.comment("Whether to use the new version of the Fairy Maid model")
+                .translation(translateKey("use_new_maid_fairy_model"));
+        USE_NEW_MAID_FAIRY_MODEL = builder.define("UseNewMaidFairyModel", true);
+
+        builder.comment("Does an invulnerable maid have a particle effect?")
+                .translation(translateKey("invulnerable_particle_effect"));
+        INVULNERABLE_PARTICLE_EFFECT = builder.define("InvulnerableParticleEffect", true);
+
+        builder.pop();
+    }
+
+    /**
+     * 存档级世界规则，进 SERVER spec，由 {@code ServerRuleConfig} 独占管理。
+     * 对应行为基准的 {@code initServer}；**读这些值只能走 {@code ServerRuleConfig.get(...)}**。
+     */
+    public static void initServerRule(ModConfigSpec.Builder builder) {
         builder.translation(TRANSLATE_KEY).push("misc");
 
         builder.comment("Maid fairy's power point")
@@ -65,21 +88,9 @@ public final class MiscConfig {
                 .translation(translateKey("shrine_lamp_max_range"));
         SHRINE_LAMP_MAX_RANGE = builder.defineInRange("ShrineLampMaxRange", 6, 0, Integer.MAX_VALUE);
 
-        builder.comment("Whether to turn off the Optifine warning")
-                .translation(translateKey("close_optifine_warning"));
-        CLOSE_OPTIFINE_WARNING = builder.define("CloseOptifineWarning", false);
-
         builder.comment("The range of the scarecrow to prevent the fairy maid from spawning")
                 .translation(translateKey("scarecrow_range"));
         SCARECROW_RANGE = builder.defineInRange("ScarecrowRange", 16 * 3, 0, Integer.MAX_VALUE);
-
-        builder.comment("Whether to use the new version of the Fairy Maid model")
-                .translation(translateKey("use_new_maid_fairy_model"));
-        USE_NEW_MAID_FAIRY_MODEL = builder.define("UseNewMaidFairyModel", true);
-
-        builder.comment("Does an invulnerable maid have a particle effect?")
-                .translation(translateKey("invulnerable_particle_effect"));
-        INVULNERABLE_PARTICLE_EFFECT = builder.define("InvulnerableParticleEffect", true);
 
         builder.pop();
     }

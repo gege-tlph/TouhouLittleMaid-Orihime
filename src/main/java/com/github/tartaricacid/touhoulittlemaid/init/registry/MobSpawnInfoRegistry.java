@@ -12,14 +12,14 @@ import net.minecraft.world.level.biome.MobSpawnSettings;
 
 import java.util.List;
 
-import static com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig.MAID_FAIRY_BLACKLIST_DIMENSION;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public final class MobSpawnInfoRegistry {
     private static Weighted<MobSpawnSettings.SpawnerData> SPAWNER_DATA;
 
     public static void addMobSpawnInfo(PotentialSpawnsEvent event) {
         if (event.getLevel() instanceof ServerLevel level) {
-            int spawnProbability = MiscConfig.MAID_FAIRY_SPAWN_PROBABILITY.get();
+            int spawnProbability = ServerRuleConfig.get(MiscConfig.MAID_FAIRY_SPAWN_PROBABILITY);
             if (spawnProbability <= 0) {
                 // 优先判断等于 0 的情况，减少性能消耗
                 return;
@@ -40,6 +40,6 @@ public final class MobSpawnInfoRegistry {
     }
 
     private static boolean dimensionIsOkay(Identifier id) {
-        return !MAID_FAIRY_BLACKLIST_DIMENSION.get().contains(id.toString());
+        return !ServerRuleConfig.get(MiscConfig.MAID_FAIRY_BLACKLIST_DIMENSION).contains(id.toString());
     }
 }

@@ -14,6 +14,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 
 import java.util.function.Consumer;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 @SuppressWarnings("deprecation")
 public class ItemScarecrow extends BlockItem {
@@ -27,7 +28,7 @@ public class ItemScarecrow extends BlockItem {
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display,
                                 Consumer<Component> tooltip, TooltipFlag flag) {
-        int range = MiscConfig.SCARECROW_RANGE.get();
+        int range = ServerRuleConfig.get(MiscConfig.SCARECROW_RANGE);
         tooltip.accept(Component
                 .translatable("tooltips.touhou_little_maid.scarecrow.desc", range, range)
                 .withStyle(ChatFormatting.GRAY)

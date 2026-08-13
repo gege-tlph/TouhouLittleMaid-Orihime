@@ -25,6 +25,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 
 import java.util.List;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class BlockEntityMaidBeacon extends BlockEntityBase {
     public static final String POTION_INDEX_TAG = "PotionIndex";
@@ -62,7 +63,7 @@ public class BlockEntityMaidBeacon extends BlockEntityBase {
     }
 
     private void updateAbsorbPower(Level world) {
-        int range = MiscConfig.SHRINE_LAMP_MAX_RANGE.get();
+        int range = ServerRuleConfig.get(MiscConfig.SHRINE_LAMP_MAX_RANGE);
         AABB inflate = new AABB(getBlockPos()).inflate(range, range, range);
         List<EntityPowerPoint> list = world.getEntitiesOfClass(EntityPowerPoint.class, inflate, Entity::isAlive);
         for (EntityPowerPoint powerPoint : list) {
@@ -136,11 +137,11 @@ public class BlockEntityMaidBeacon extends BlockEntityBase {
     }
 
     public float getEffectCost() {
-        return (float) (MiscConfig.SHRINE_LAMP_EFFECT_COST.get() / 900);
+        return (float) (ServerRuleConfig.get(MiscConfig.SHRINE_LAMP_EFFECT_COST) / 900);
     }
 
     public float getMaxStorage() {
-        return MiscConfig.SHRINE_LAMP_MAX_STORAGE.get().floatValue();
+        return ServerRuleConfig.get(MiscConfig.SHRINE_LAMP_MAX_STORAGE).floatValue();
     }
 
     public enum BeaconEffect {

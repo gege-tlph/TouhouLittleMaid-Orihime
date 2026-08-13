@@ -56,6 +56,7 @@ import java.util.List;
 import static com.github.tartaricacid.touhoulittlemaid.datagen.EnchantmentKeys.getEnchantmentLevel;
 import static com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagItem.MAID_VANISHING_BLOCKLIST_ITEM;
 import static net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 /**
  * 物品管理类，各种形式的物品存入与取出
@@ -106,7 +107,7 @@ public class MaidItemManager {
     @SuppressWarnings("deprecation")
     public static boolean canInsertItem(ItemStack stack) {
         Identifier key = BuiltInRegistries.ITEM.getKey(stack.getItem());
-        if (MaidConfig.MAID_BACKPACK_BLACKLIST.get().contains(key.toString())) {
+        if (ServerRuleConfig.get(MaidConfig.MAID_BACKPACK_BLACKLIST).contains(key.toString())) {
             return false;
         }
         return stack.getItem().canFitInsideContainerItems();

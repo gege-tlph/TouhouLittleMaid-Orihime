@@ -11,6 +11,7 @@ import net.minecraft.advancements.criterion.SimpleCriterionTrigger;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Optional;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class GivePatchouliBookConfigTrigger extends SimpleCriterionTrigger<GivePatchouliBookConfigTrigger.Instance> {
     public static Criterion<GivePatchouliBookConfigTrigger.Instance> create() {
@@ -19,7 +20,7 @@ public class GivePatchouliBookConfigTrigger extends SimpleCriterionTrigger<GiveP
     }
 
     public void trigger(ServerPlayer serverPlayer) {
-        super.trigger(serverPlayer, _ -> MiscConfig.GIVE_PATCHOULI_BOOK.get());
+        super.trigger(serverPlayer, _ -> ServerRuleConfig.get(MiscConfig.GIVE_PATCHOULI_BOOK));
     }
 
     @Override

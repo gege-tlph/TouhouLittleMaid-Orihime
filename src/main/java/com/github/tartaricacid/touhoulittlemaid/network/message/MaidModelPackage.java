@@ -15,6 +15,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
 import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public record MaidModelPackage(int id, Identifier modelId) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<MaidModelPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("maid_model"));
@@ -36,7 +37,7 @@ public record MaidModelPackage(int id, Identifier modelId) implements CustomPack
             ServerPlayer sender = context.player();
             Entity entity = sender.level.getEntity(message.id);
             if (entity instanceof EntityMaid maid && maid.isOwnedBy(sender)) {
-                if (sender.isCreative() || MaidConfig.MAID_CHANGE_MODEL.get()) {
+                if (sender.isCreative() || ServerRuleConfig.get(MaidConfig.MAID_CHANGE_MODEL)) {
                     maid.setModelId(message.modelId.toString());
                     InitTrigger.MAID_EVENT.trigger(sender, TriggerType.CHANGE_MAID_MODEL);
                 } else {

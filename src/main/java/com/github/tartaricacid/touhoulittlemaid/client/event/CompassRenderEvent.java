@@ -19,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.OptionalDouble;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class CompassRenderEvent {
     //AfterOpaqueFeatures
@@ -43,7 +44,7 @@ public class CompassRenderEvent {
         }
         BlockPos workPos = ItemKappaCompass.getPoint(Activity.WORK, stack);
         if (workPos != null) {
-            double radius = MaidConfig.MAID_WORK_RANGE.get() + 0.1;
+            double radius = ServerRuleConfig.get(MaidConfig.MAID_WORK_RANGE) + 0.1;
             renderArea(workPos, radius, 0xffff0000);
             Vec3 textPos = new Vec3(workPos.getX() + 0.5, workPos.getY() + 2, workPos.getZ() + 0.5);
             String text = I18n.get("message.touhou_little_maid.kappa_compass.work_area");
@@ -53,7 +54,7 @@ public class CompassRenderEvent {
 
         BlockPos idlePos = ItemKappaCompass.getPoint(Activity.IDLE, stack);
         if (idlePos != null) {
-            double radius = MaidConfig.MAID_IDLE_RANGE.get();
+            double radius = ServerRuleConfig.get(MaidConfig.MAID_IDLE_RANGE);
             renderArea(idlePos, radius, 0xff00ff00);
             Vec3 textPos = new Vec3(idlePos.getX() + 0.5, idlePos.getY() + 2, idlePos.getZ() + 0.5);
             if (idlePos.equals(workPos)) {
@@ -68,7 +69,7 @@ public class CompassRenderEvent {
 
         BlockPos resetPos = ItemKappaCompass.getPoint(Activity.REST, stack);
         if (resetPos != null) {
-            double radius = MaidConfig.MAID_SLEEP_RANGE.get() - 0.1;
+            double radius = ServerRuleConfig.get(MaidConfig.MAID_SLEEP_RANGE) - 0.1;
             renderArea(resetPos, radius, 0xff0000ff);
             Vec3 textPos = new Vec3(resetPos.getX() + 0.5, resetPos.getY() + 2, resetPos.getZ() + 0.5);
             if (resetPos.equals(idlePos)) {

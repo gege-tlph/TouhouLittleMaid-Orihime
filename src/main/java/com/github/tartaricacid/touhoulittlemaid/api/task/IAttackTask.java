@@ -27,6 +27,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.Optional;
 
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataAttachment.ATTACK_LIST;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public interface IAttackTask extends IMaidTask {
     String MAID_NO_ATTACK_TAG = "MaidNoAttack";
@@ -67,7 +68,7 @@ public interface IAttackTask extends IMaidTask {
         }
 
         // 判断配置文件的
-        if (MaidConfig.MAID_ATTACK_IGNORE.get().contains(id.toString())) {
+        if (ServerRuleConfig.get(MaidConfig.MAID_ATTACK_IGNORE).contains(id.toString())) {
             return false;
         }
 

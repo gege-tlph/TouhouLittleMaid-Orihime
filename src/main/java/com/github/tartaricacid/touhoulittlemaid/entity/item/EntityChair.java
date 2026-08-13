@@ -37,6 +37,7 @@ import java.util.Optional;
 
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent.*;
 import static net.minecraft.network.syncher.EntityDataSerializers.*;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public class EntityChair extends AbstractEntityFromItem implements OwnableEntity {
     public static final Identifier ENTITY_ID = IdentifierUtil.modLoc("chair");
@@ -129,7 +130,7 @@ public class EntityChair extends AbstractEntityFromItem implements OwnableEntity
 
     @Override
     protected boolean canKillEntity(Player player) {
-        if (ChairConfig.CHAIR_CAN_DESTROYED_BY_ANYONE.get()) {
+        if (ServerRuleConfig.get(ChairConfig.CHAIR_CAN_DESTROYED_BY_ANYONE)) {
             return true;
         }
         var reference = this.getOwnerReference();
