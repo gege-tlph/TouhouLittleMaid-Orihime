@@ -32,6 +32,7 @@
     "common.PackRepositoryMixin",
     "common.ParrotMixin",
     "common.PersistentEntitySectionManagerMixin",
+    "common.PlayerListMixin",
     "common.PlayerMixin",
     "common.RedStoneWireBlockMixin",
     "common.ServerEntityMixin",

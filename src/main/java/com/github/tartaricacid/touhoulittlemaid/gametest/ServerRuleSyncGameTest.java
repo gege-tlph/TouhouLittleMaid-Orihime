@@ -21,6 +21,26 @@ import net.minecraft.gametest.framework.GameTestHelper;
  * S2C 的注册与进服下发因此改由源码层的 {@code ServerRuleNetworkWiringContractTest} 看管。</p>
  */
 public class ServerRuleSyncGameTest {
+    /**
+     * {@code PlayerListMixin} 真的被织进去了。
+     *
+     * <p>{@code required: true} + {@code defaultRequire: 1} 只在**目标类被加载**时才会因注入失败而崩，
+     * 所以「服务器起来了」本身并不构成证据。这里直接查织入产物：mixin 加进去的私有方法在不在
+     * {@code PlayerList} 上。查得到 = 这个类被转换过且我们的注入落地了。</p>
+     */
+    @GameTest
+    public void playerListMixinIsWovenIn(GameTestHelper helper) {
+        boolean woven = java.util.Arrays.stream(
+                        net.minecraft.server.players.PlayerList.class.getDeclaredMethods())
+                .anyMatch(method -> method.getName().equals("tlm$resyncServerRules"));
+        if (!woven) {
+            helper.fail("PlayerListMixin 没有织进 PlayerList："
+                    + "op/deop 之后不会重发规则快照，先进服后被授予 OP 的玩家要重进才看得到玩法设置");
+            return;
+        }
+        helper.succeed();
+    }
+
     @GameTest
     public void saveRulePayloadHasAServerSideReceiver(GameTestHelper helper) {
         if (!ServerPlayNetworking.getGlobalReceivers().contains(SaveServerRulesPacket.TYPE.id())) {
