@@ -13,7 +13,8 @@
   "environment": "*",
   "entrypoints": {
     "fabric-gametest": [
-      "com.github.tartaricacid.touhoulittlemaid.gametest.ConfigWriteGameTest"
+      "com.github.tartaricacid.touhoulittlemaid.gametest.ConfigWriteGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.gametest.WorldRuleGameTest"
     ],
     "fabric-datagen": [
       "com.github.tartaricacid.touhoulittlemaid.datagen.DataGenerator"
