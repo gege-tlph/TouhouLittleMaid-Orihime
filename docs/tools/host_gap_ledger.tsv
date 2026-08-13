@@ -120,3 +120,42 @@ com/github/tartaricacid/touhoulittlemaid/item/ItemTankBackpack.java	79	液体背
 com/github/tartaricacid/touhoulittlemaid/ai/service/function/FunctionCallRegister.java	30	旧工具函数注册（1.5.1 起弃用）	Skill 机制（SkillBean/SkillLoader）	替换	
 com/github/tartaricacid/touhoulittlemaid/ai/service/function/IFunctionCall.java	65	旧工具函数接口（1.5.1 起弃用）	Skill 机制	替换	
 com/github/tartaricacid/touhoulittlemaid/ai/service/function/response/ToolResponse.java	5	旧工具函数返回值（1.5.1 起弃用）	Skill 机制	替换	
+com/github/tartaricacid/touhoulittlemaid/compat/rei/MaidREIClientPlugin.java	97	REI 客户端插件：注册祭坛配方与容器点击	未找到	丢失	⚠️ REI 在 26.1.2 上**是有的**（26.1.819+fabric），是宿主 build.gradle 把依赖注释掉了，不是生态问题。审计 §3.G/§7.1 已把「REI 集成」列为要带过去的一项
+com/github/tartaricacid/touhoulittlemaid/compat/rei/altar/ReiAltarRecipeCategory.java	94	REI 里的祭坛配方分类展示	未找到	丢失	⚠️ REI 在 26.1.2 上**是有的**（26.1.819+fabric），是宿主 build.gradle 把依赖注释掉了，不是生态问题。审计 §3.G/§7.1 已把「REI 集成」列为要带过去的一项
+com/github/tartaricacid/touhoulittlemaid/compat/rei/altar/ReiAltarRecipeDisplay.java	58	REI 祭坛配方的数据模型	未找到	丢失	⚠️ REI 在 26.1.2 上**是有的**（26.1.819+fabric），是宿主 build.gradle 把依赖注释掉了，不是生态问题。审计 §3.G/§7.1 已把「REI 集成」列为要带过去的一项
+com/github/tartaricacid/touhoulittlemaid/compat/rei/altar/ReiAltarRecipeMaker.java	29	REI 祭坛配方工厂	未找到	丢失	⚠️ REI 在 26.1.2 上**是有的**（26.1.819+fabric），是宿主 build.gradle 把依赖注释掉了，不是生态问题。审计 §3.G/§7.1 已把「REI 集成」列为要带过去的一项
+com/github/tartaricacid/touhoulittlemaid/compat/rei/transfer/BackpackTransferHandler.java	57	REI 往女仆背包转移物品	未找到	丢失	⚠️ REI 在 26.1.2 上**是有的**（26.1.819+fabric），是宿主 build.gradle 把依赖注释掉了，不是生态问题。审计 §3.G/§7.1 已把「REI 集成」列为要带过去的一项
+com/github/tartaricacid/touhoulittlemaid/compat/jei/MaidPlugin.java	79	JEI 插件主类：注册祭坛与背包	compat/jei/MaidJeiPlugin	替换	JEI 依赖仍激活，entrypoint 也在
+com/github/tartaricacid/touhoulittlemaid/compat/jei/altar/AltarRecipeMaker.java	41	JEI 祭坛配方导入	compat/jei/altar/AltarRecipeCategory	替换	
+com/github/tartaricacid/touhoulittlemaid/compat/jei/altar/AltarRecipeWrapper.java	35	JEI 祭坛配方展示包装	并入 AltarRecipeCategory	替换	
+com/github/tartaricacid/touhoulittlemaid/compat/jei/altar/EntityPlaceholderSubtype.java	19	JEI 变体分类（祭坛产物）	未找到	待定	子代理报「未找到」，**主模型尚未复核**；与 ItemEntityPlaceholder 同一簇，一起判
+com/github/tartaricacid/touhoulittlemaid/compat/ysm/YsmCompat.java	51	YSM 兼容层	无	生态	YSM 在 26.1.2 Fabric 上不存在（审计 §2.2），且 YSM 移植本身是独立前置项目
+com/github/tartaricacid/touhoulittlemaid/compat/ysm/event/OpenYsmMaidScreenEvent.java	31	YSM 屏幕事件	无	生态	YSM 在 26.1.2 Fabric 上不存在（审计 §2.2），且 YSM 移植本身是独立前置项目
+com/github/tartaricacid/touhoulittlemaid/compat/ysm/event/UpdateRemoteStructEvent.java	35	YSM 结构更新事件	无	生态	YSM 在 26.1.2 Fabric 上不存在（审计 §2.2），且 YSM 移植本身是独立前置项目
+com/github/tartaricacid/touhoulittlemaid/compat/ysm/event/YsmMaidClientTickEvent.java	29	YSM 客户端 tick 事件	无	生态	YSM 在 26.1.2 Fabric 上不存在（审计 §2.2），且 YSM 移植本身是独立前置项目
+com/github/tartaricacid/touhoulittlemaid/compat/patchouli/AltarRecipeComponent.java	98	手册里的祭坛配方页面组件	compat/patchouli/PatchouliCompat	待定	子代理报「未找到」，**主模型尚未复核**；Patchouli 依赖已注释，我们维护的 fork 需跟进到 26.1 beta
+com/github/tartaricacid/touhoulittlemaid/compat/patchouli/MultiblockRegistry.java	26	手册的多方块结构注册	compat/patchouli/PatchouliCompat	待定	同上
+com/github/tartaricacid/touhoulittlemaid/compat/patchouli/OpenDefaultBook.java	17	打开默认手册	compat/patchouli/PatchouliCompat	待定	同上
+com/github/tartaricacid/touhoulittlemaid/compat/carryon/RenderFixer.java	21	Carry On 抱起女仆时的渲染修正	未找到	丢失	⚠️ Carry On 在 26.1.2 上有正式版（2.10.0），依赖被注释是宿主没接回，不是生态问题
+com/github/tartaricacid/touhoulittlemaid/compat/patpat/PatPatRenderer.java	11	摸头动画里的女仆模型渲染	compat/patpat/PatPatCompat	替换	PatPat 有 26.1 正式版，依赖被注释
+com/github/tartaricacid/touhoulittlemaid/compat/sodium/SodiumGeoRenderer.java	230	Geckolib 与 Sodium 的渲染适配	compat/sodium/SodiumCompat	替换	
+com/github/tartaricacid/touhoulittlemaid/compat/tbackpack/TBackpackCompatInner.java	10	旅行者背包兼容内层	compat/tbackpack/TBackpackCompat	替换	
+com/github/tartaricacid/touhoulittlemaid/compat/extracontainer/accessories/AccessoriesSlotRef.java	39	Accessories 槽位引用	compat/.../curios/CuriosSlotRef	替换	Accessories 无 26.x，改走 Curios/Trinkets
+com/github/tartaricacid/touhoulittlemaid/datapack/BoardStateData.java	59	棋局状态的持久化	未找到	丢失	棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
+com/github/tartaricacid/touhoulittlemaid/datapack/pojo/BoardStateRecord.java	17	棋局状态记录	未找到	丢失	棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
+com/github/tartaricacid/touhoulittlemaid/datapack/resources/BoardStateDataReloadListener.java	63	棋局数据的重载监听	未找到	丢失	棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
+com/github/tartaricacid/touhoulittlemaid/loot/LootTableTypeCondition.java	57	按战利品表类型过滤的条件	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/loot/RandomBoardStateFunction.java	100	随机棋局作为战利品	未找到	丢失	棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
+com/github/tartaricacid/touhoulittlemaid/loot/SetTankCountFunction.java	89	设定液体背包容量的战利品函数	未找到	丢失	液体背包一簇（见背包四型）
+com/github/tartaricacid/touhoulittlemaid/network/message/SyncFluidAmountPackage.java	36	液体量同步包	未找到	丢失	液体背包一簇（见背包四型）
+com/github/tartaricacid/touhoulittlemaid/network/message/SyncYsmMaidDataPackage.java	63	YSM 女仆数据同步包	未找到	生态	YSM 在 26.1.2 Fabric 上不存在（审计 §2.2），且 YSM 移植本身是独立前置项目
+com/github/tartaricacid/touhoulittlemaid/network/message/YsmMaidModelPackage.java	56	YSM 女仆模型同步包	未找到	生态	YSM 在 26.1.2 Fabric 上不存在（审计 §2.2），且 YSM 移植本身是独立前置项目
+com/github/tartaricacid/touhoulittlemaid/config/GeneralConfig.java	21	实例级配置入口	config/CommonConfig	替换	**已复核，子代理报错**：26.1 把 GeneralConfig 改名成了 CommonConfig
+com/github/tartaricacid/touhoulittlemaid/config/subconfig/VanillaConfig.java	37	原版模型/纹理替换的五个开关	未找到	丢失	已复核：上游整个删掉了原版替换功能，yukkuri 资源 11→0，渲染器也一并没了
+com/github/tartaricacid/touhoulittlemaid/datagen/ItemModelGenerator.java	32	物品模型的数据生成	未找到	待定	子代理报「未找到」，**主模型尚未复核**；datagen 产物，玩家不可见
+com/github/tartaricacid/touhoulittlemaid/datagen/tag/TagRecipeSerializer.java	28	标签配方序列化	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/event/food/ConvertFoodEatenEvent.java	34	食物被吃后转换成另一物品的事件	未找到	待定	子代理报「未找到」，**主模型尚未复核**；与 MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST 可能相关，要一起看
+com/github/tartaricacid/touhoulittlemaid/event/food/RemainFoodEatenEvent.java	53	食物吃剩容器的事件	未找到	待定	子代理报「未找到」，**主模型尚未复核**；同上
+com/github/tartaricacid/touhoulittlemaid/crafting/FallbackIngredient.java	123	配方材料的后备候选	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/init/InitTaskData.java	15	任务数据的初始化注册	未找到	待定	子代理报「未找到」，**主模型尚未复核**；与 TaskDataRegister/MaidTaskDataMaps 同一簇
+com/github/tartaricacid/touhoulittlemaid/molang/parser/ast/DoubleExpression.java	82	Molang 的双精度表达式节点	未找到	替换	molang 解析器在 26.1 有整包重构（见 geckolib3 那批的观察）
