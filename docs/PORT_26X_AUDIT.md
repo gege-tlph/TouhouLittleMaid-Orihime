@@ -410,6 +410,9 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 
 共 41 个 JUnit + 14 个 GameTest = 55 个测试类
 
+本分支另有**不在这 55 个里**的新增用例（1.21.11 上没有对应物，故不占台账条目）：
+`ServerRuleReadRoutingContractTest`（读点唯一性，3 例）、`WorldRuleGameTest`（世界规则全链路，GameTest）。
+
 **A 配置所有权与持久化**（12）
 - [ ] `AiConfigFileMigrationTest.java`
 - [ ] `AiServerRuleAttackTest.java`
@@ -420,7 +423,7 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 - [ ] `MagmaCubeConfigInheritanceTest.java`
 - [ ] `MaidConfigLayoutTest.java`
 - [ ] `RuleStagingSessionTest.java`
-- [ ] `ServerRuleConfigTransactionTest.java`
+- [x] `ServerRuleConfigTransactionTest.java` —— 搬入并加一条运维参数不进公开快照（`9354189d9`）
 - [ ] `ServerRulesSaveAuthorityContractTest.java`
 - [ ] `WorldRuleTestHarness.java`
 

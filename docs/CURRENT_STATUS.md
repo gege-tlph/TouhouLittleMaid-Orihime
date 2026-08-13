@@ -7,18 +7,28 @@
 
 ## 结论
 
-当前树 = `origin/26.1`（MC 26.1.2 Fabric）+ 一层工程设施 + **一刀差异化（配置事务写盘）**。
-**除这一刀外，代码行为等同于代码宿主，不等同于我们 1.21.11 的行为。**
+当前树 = `origin/26.1`（MC 26.1.2 Fabric）+ 一层工程设施 + **两刀差异化（配置事务写盘、世界规则体系）**。
+**除这两刀外，代码行为等同于代码宿主，不等同于我们 1.21.11 的行为。**
 构建、JUnit、GameTest 三条链路均已实跑验证。
 
 ---
 
 # 开放项
 
-**O1 · 下一刀未定（探路轮已完成，见已关闭表）**
-探路轮量出的结论是「零依赖切片可逐字搬」，**不能外推到那 247 个需要重做的文件**。
-下一刀建议取 `ServerRuleConfig` 本体——它才第一次真正碰到新基的宿主结构
-（依赖四个 subconfig 与一个事件类），量出来的数才有代表性。
+**O1 · 世界规则的网络层（`ServerRuleConfig` 已落地，下一刀接这里）**
+
+世界规则本体、文件层、读点改道、GameTest 已完成（见已关闭表）。**尚未落地的是它的网络层**，
+这也是本轮唯一有意留下的功能缺口：
+
+| 缺口 | 现状 | 恢复锚点 |
+|---|---|---|
+| 配置菜单里的 36 个世界规则条目 | 已从 Cloth 菜单摘除；**现在只能改存档的 `serverconfig/touhou_little_maid-server.toml`** | `MenuIntegration` 类注释；台账 §9 的 `RuleStagingSessionTest` / `ServerRulesSaveAuthorityContractTest` |
+| 客户端拿不到服务器的规则快照 | 专服上客户端读到的是 spec 默认值（改前是它自己那份 common.toml，两者都不等于服务器值） | 同上，需运行期快照下发包 |
+| `activatePendingValues()` / `jsonKeys()` | 已搬入但**本轮无调用点**，其调用者在网络层 | 两个方法各自的 javadoc |
+| `AiServerRuleConfig` 路由分支 | `get()` 里**没有**这条分支，AI 规则那一店整体属 §3.C | `ServerRuleConfig.get()` 的 javadoc |
+| `ExperimentalConfig.SMOOTH_FOLLOW` | 类与值都未建；配置项要与消费者（§3.E 跟随手感）同批落地 | `ServerRuleConfig.values()` 的 javadoc |
+
+⚠️ 上表每一条在代码里都有对应注释，**不要只靠本表**——本表会过时，注释在改到时才会被看见。
 
 **O2 · 前置项目未决**
 - **YSM**：Fabric 26.1.2 上不存在任何实现（本体仅 NeoForge 且闭源，OpenYSM 无 26.x）。
@@ -33,6 +43,47 @@
 ---
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-13：世界规则体系落地（`e1efc8b64` `d387a07b7` `9354189d9`）
+
+**这是第一刀真正碰新基宿主结构的差异化**，量出的数才有代表性（探路轮那刀零依赖，量不出成本）。
+
+**先答上一轮的两个问题**（结论与「它们在新基改名/合并了」的猜想都不同）：
+
+| 问 | 实查结论 |
+|---|---|
+| `ExperimentalConfig` 去哪了 | **哪也没去，它是我们独有的**——`origin/1.21.1` 与 `origin/26.1` 都没有。唯一成员 `SMOOTH_FOLLOW` 的消费者属 §3.E |
+| `VanillaConfig` 去哪了 | **上游在 26.1 删了**，连同整个原版替换功能（`yukkuri` 资源 11 → 0，只剩一条孤儿 lang 键）。不是改名也不是合并 |
+| 顺带 | `MAID_TAMED_ITEM` / `MAID_TEMPTATION_ITEM` **由配置项改成了物品标签** `TagItem.*`，`values()` 少两项且无等价物 |
+
+**决定「我们的类挂在哪」的那个事实**：新基把 SERVER spec **注册给了 Forge Config API Port**，
+于是 FCAP 自己在管 `<world>/serverconfig/touhou_little_maid-server.toml`——正是 `ServerRuleConfig`
+要独占的那个文件。故照 1.21.11 的做法**不注册 SERVER spec**，只把它当 spec 用（`correct` 播种、
+`getSpec().test()` 校验）。副产物是一条机制性保证：规则值上的 `XXX.get()` 会抛
+`Cannot get config value before config is loaded`（已对 FCAP 26.1.4 的 `ConfigValue.getRaw`
+字节码取证）——**漏改道的读点当场炸，而不是静默读到实例级旧值**。后者才是危险形态。
+
+| 量到的 | 结果 |
+|---|---|
+| 主体（`ServerRuleConfig` / 事务用例） | 语义逐条可搬，改动都在**接口而非逻辑**：去掉 AI 路由分支、`values()` 少三项、快照回退用 `getDefault()` |
+| 真正的成本 | **在宿主的读写面上**：93 处读点 / 38 个文件改道，Cloth 菜单摘 36 条，两个 subconfig 拆 `initCommon` / `initServerRule` |
+| 新基逼出来的新代码 | `ConfigFileMigration.migrateServerFileIfNeeded`（值原属 COMMON spec，注册那刻 `correct()` 会剥掉旧值）+ `prepareWorldFile` 不再「文件已存在即返回」（FCAP 建的那份只有四项） |
+| 结论 | **「代码能不能搬」不是成本所在，「宿主有多少地方在读它」才是。**§7.1 那 247 个同名文件的估算应按此校准 |
+
+**两次红测各照出一个真缺陷**（都不是测试本身的问题，是被测代码的）：
+
+1. 契约测试第一版按 `Owner.FIELD.get()` 扫，对**把配置对象当参数传**（`targetConditionsTest`
+   收 `ModConfigSpec.IntValue` 自己 `get()`）和**静态导入后写裸名字**两种形态零覆盖——
+   四条攻击任务与两处静态导入正是这么漏改的，运行期一攻击就炸。
+2. GameTest 第一版拿「世界文件存在」当接线判据，摘掉 `SERVER_STARTING` 钩子后**照样通过**：
+   `runGametest` 的 run 目录多轮复用，读到的是上一轮遗留的文件。
+
+**验收凭据**：`./gradlew build` 绿；JUnit 报告 17 例 0 失败（新增 9 例）；
+`build/gametest/report.xml` 含
+`touhou_little_maid:world_rule_game_test_world_rules_are_loaded_from_the_save_on_server_start`。
+
+⚠️ **尚未入世实测**：本轮全部凭据来自自动化门，没有用户实机验收。世界规则在真实存档里的
+表现（尤其是从 stock 26.1 升级过来的存档能不能继承旧值）需要一次入世确认。
 
 ## 2026-08-13：继承前提逐条修正（`d726e2915`）
 
