@@ -414,7 +414,7 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 - [ ] `AiConfigFileMigrationTest.java`
 - [ ] `AiServerRuleAttackTest.java`
 - [ ] `AiServerRuleMigrationTest.java`
-- [ ] `AtomicConfigFileWriterTest.java`
+- [x] `AtomicConfigFileWriterTest.java` —— 逐字搬入、零修改（`8c439de1a`）
 - [ ] `ConfigPayloadCodecTest.java`
 - [ ] `GlobalConfigMigrationTest.java`
 - [ ] `MagmaCubeConfigInheritanceTest.java`
