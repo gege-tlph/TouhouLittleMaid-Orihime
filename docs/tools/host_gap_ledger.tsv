@@ -1,0 +1,67 @@
+# 反向缺口判定账本 —— origin/1.21.1 有、origin/26.1 没有的类，逐条判定去向
+#
+# 目的：**真动手实现时不必再查一遍。** 本仓库 1600+ 个源文件，重查一次代价很高。
+# 由 docs/tools/host_gap.py --ledger 双向核对，账本与现实脱节即非 0 退出。
+#
+# 列： 路径(去 src/main/java/ 前缀) 	 行数 	 一句话说明 	 26.1 承接者 	 判定 	 备注
+# 判定： 替换=功能还在只是换了实现/位置 · 生态=对应模组在 26.1.2 Fabric 上不存在
+#        丢失=没有承接者，相对行为基准真少了东西 · 无关=死代码/与玩法无关 · 待定
+
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/builder/ILoopType.java	71	geckolib3 内部：ILoopType	LoopType	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/controller/AnimationController.java	513	geckolib3 内部：AnimationController	IAnimationController+Bedrock/Coded/Hybrid+AnimationPlayer	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/controller/AnimationControllerContext.java	13	geckolib3 内部：AnimationControllerContext	AnimationContext	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/event/KeyframeEvent.java	33	geckolib3 内部：KeyframeEvent	EventKeyFrame	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/event/ParticleKeyFrameEvent.java	17	geckolib3 内部：ParticleKeyFrameEvent	ParticleEventKeyFrame	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/event/SoundKeyframeEvent.java	18	geckolib3 内部：SoundKeyframeEvent	SoundKeyframeExecutor	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/keyframe/AnimationPointQueue.java	13	geckolib3 内部：AnimationPointQueue	未找到	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/keyframe/TransitionPoint.java	24	geckolib3 内部：TransitionPoint	Beginning/EndingTransitionPoint	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/molang/binding/variable/ForeignVariableBinding.java	37	geckolib3 内部：ForeignVariableBinding	未找到	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/molang/builtin/query/EmptyFunction.java	12	geckolib3 内部：EmptyFunction	未找到	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/molang/storage/IForeignVariableStorage.java	5	geckolib3 内部：IForeignVariableStorage	未找到	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/molang/storage/VariableStorage.java	85	geckolib3 内部：VariableStorage	MolangMemory+StackMemory	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/molang/value/DoubleValue.java	33	geckolib3 内部：DoubleValue	未找到	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/processor/IBone.java	40	geckolib3 内部：IBone	IBoneView	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/processor/ILocationBone.java	27	geckolib3 内部：ILocationBone	IBoneView	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/processor/PointData.java	7	geckolib3 内部：PointData	未找到	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/core/util/Memoizer.java	20	geckolib3 内部：Memoizer	未找到	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/geo/IGeoEntity.java	19	geckolib3 内部：IGeoEntity	GeckoRenderData	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/geo/IGeoEntityRenderer.java	13	geckolib3 内部：IGeoEntityRenderer	IGeoRenderer<TState,TData>	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/geo/animated/ILocationModel.java	48	geckolib3 内部：ILocationModel	AnimatedGeoModel	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/geo/render/IGeoBuilder.java	9	geckolib3 内部：IGeoBuilder	GeoBuilder	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/geo/render/built/GeoCube.java	202	geckolib3 内部：GeoCube	GeoMesh/GeoBone	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/geo/render/built/GeoQuad.java	48	geckolib3 内部：GeoQuad	GeoMesh(内联)	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/geo/render/built/GeoVertex.java	37	geckolib3 内部：GeoVertex	GeoMesh(内联)	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/geckolib3/util/RenderUtils.java	79	geckolib3 内部：RenderUtils	未找到	替换	geckolib3 是内嵌的第三方动画库副本，26.1 里仍有 218 个文件，宿主对它做了整包重构（事件扁平化/控制器分层/骨骼接口合并/渲染转状态驱动）。**按类逐条判定对内嵌库是错的粒度**——该问的是「动画行为对不对」，那要实机验，不是清点类
+com/github/tartaricacid/touhoulittlemaid/client/animation/CustomJsAnimationManger.java	119	Nashorn 引擎执行自定义 JS 动画	未找到	替换	已复核：同 animation/script 那批，Nashorn JS 动画整体被 gecko/molang 绑定取代
+com/github/tartaricacid/touhoulittlemaid/client/animation/HardcodedAnimationManger.java	76	注册硬编码女仆特殊动画（游泳/三叉戟）	client/animation/special/HardcodedAnimation	替换	
+com/github/tartaricacid/touhoulittlemaid/client/animation/gecko/magic/MagicCastingAnimationManager.java	73	魔法咏唱动画提供器	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/client/event/ReloadResourceEvent.java	63	资源重载监听，触发自定义包重载	client/resource/listener/CustomPackReloadListener	替换	
+com/github/tartaricacid/touhoulittlemaid/client/event/SpecialMaidRenderEvent.java	87	特殊女仆模型渲染（复活节彩蛋等）	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/client/gui/entity/cache/CacheIconManager.java	119	女仆/椅子模型缓存图标管理	未找到	丢失	已复核：MiscConfig 的 MODEL_ICON_CACHE 开关在 26.1 也一并删了，是同一批移除
+com/github/tartaricacid/touhoulittlemaid/client/gui/entity/cache/CacheScreen.java	109	模型缓存图标的显示屏	未找到	丢失	已复核：MiscConfig 的 MODEL_ICON_CACHE 开关在 26.1 也一并删了，是同一批移除
+com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/CraftingTableBackpackContainerScreen.java	54	工作台背包容器屏	未找到	丢失	已确认丢失（背包四型），见 entity/backpack 那批
+com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/EnderChestBackpackContainerScreen.java	54	末影箱背包容器屏	未找到	丢失	已确认丢失（背包四型），见 entity/backpack 那批
+com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/FurnaceBackpackContainerScreen.java	57	熔炉背包容器屏	未找到	丢失	已确认丢失（背包四型），见 entity/backpack 那批
+com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/TankBackpackContainerScreen.java	77	液体背包容器屏	未找到	丢失	已确认丢失（背包四型），见 entity/backpack 那批
+com/github/tartaricacid/touhoulittlemaid/client/gui/widget/button/MaidAIChatConfigButton.java	101	女仆 AI 聊天配置按钮	未找到	待定	子代理报「未找到」，**主模型尚未复核**；26.1 有 AI 聊天体系，多半是重构
+com/github/tartaricacid/touhoulittlemaid/client/init/InitSpecialItemRender.java	109	特殊物品自定义模型渲染的初始化	client/event/RegisterSpecialModelEvent	替换	
+com/github/tartaricacid/touhoulittlemaid/client/model/AbstractModel.java	25	EntityModel 的抽象基类	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/client/model/EntityPlaceholderModel.java	26	实体占位符的 Bedrock 立方体模型	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/client/model/bedrock/BedrockModel.java	182	Bedrock 模型渲染（支持 Gecko 动画）	client/model/bedrock/SimpleBedrockModel	替换	
+com/github/tartaricacid/touhoulittlemaid/client/renderer/entity/EntityMarisaYukkuriSlimeRender.java	62	魔理沙 Yukkuri（岩浆怪替换）渲染器	未找到	丢失	已复核：属上游删除的原版替换功能（yukkuri 资源 11→0、VanillaConfig 整个删掉），与行为基准比是丢失
+com/github/tartaricacid/touhoulittlemaid/client/renderer/entity/EntityYukkuriSlimeRender.java	56	Yukkuri（史莱姆替换）渲染器	未找到	丢失	已复核：属上游删除的原版替换功能（yukkuri 资源 11→0、VanillaConfig 整个删掉），与行为基准比是丢失
+com/github/tartaricacid/touhoulittlemaid/client/renderer/entity/ReplaceExperienceOrbRenderer.java	76	经验球替换成点符的渲染器	未找到	丢失	已复核：属上游删除的原版替换功能（yukkuri 资源 11→0、VanillaConfig 整个删掉），与行为基准比是丢失（对应 REPLACE_XP_TEXTURE）
+com/github/tartaricacid/touhoulittlemaid/client/renderer/item/PerspectiveBakedModel.java	69	按显示上下文切换烘焙模型视角	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/client/renderer/item/ReplaceableBakedModel.java	87	可替换内部烘焙模型的代理	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/CacheIconTexture.java	43	缓存图标纹理加载	未找到	丢失	已复核：MiscConfig 的 MODEL_ICON_CACHE 开关在 26.1 也一并删了，是同一批移除
+com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/FilePackTexture.java	66	从文件系统加载自定义包纹理	client/renderer/texture/CustomPackTexture	替换	
+com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/GifTexture.java	107	GIF 动画纹理支持	未找到	丢失	已复核：GIF 表情气泡，1.21.11 注释记载这正是实机「有的只剩气泡框」的根因
+com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/ZipPackTexture.java	77	从 ZIP 包加载纹理	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/client/renderer/tileentity/PicnicBasketRender.java	55	野餐篮的自定义渲染	client/renderer/blockentity/PicnicMatRender	待定	子代理报「未找到」，**主模型尚未复核**（承接者名字不同，需确认是不是同一个东西）
+com/github/tartaricacid/touhoulittlemaid/client/renderer/tileentity/TileEntityEntityPlaceholderRenderer.java	103	实体占位符方块的渲染	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/client/renderer/tileentity/TileEntityItemStackChairRenderer.java	72	椅子物品形态的渲染	client/renderer/item/ChairItemRenderer	替换	
+com/github/tartaricacid/touhoulittlemaid/client/renderer/tileentity/TileEntityItemStackGarageKitRenderer.java	121	手办物品形态的渲染	client/renderer/item/GarageKitItemRenderer	替换	
+com/github/tartaricacid/touhoulittlemaid/client/resource/BedrockModelLoader.java	113	Bedrock 模型资源加载与注册	client/resource/bedrock/InternalBedrockModelManager	替换	
+com/github/tartaricacid/touhoulittlemaid/client/resource/GeckoModelLoader.java	163	Gecko 模型/动画 json 的加载解析	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/client/resource/LegacyPackRepositorySource.java	45	遗留资源包仓库源	未找到	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/client/tooltip/ClientBoardStateTooltip.java	190	棋局状态（五子棋/象棋）的物品提示渲染	client/init/InitClientTooltip	待定	子代理报「未找到」，**主模型尚未复核**
