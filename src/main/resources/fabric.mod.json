@@ -12,6 +12,9 @@
   "icon": "logo.png",
   "environment": "*",
   "entrypoints": {
+    "fabric-gametest": [
+      "com.github.tartaricacid.touhoulittlemaid.gametest.ConfigWriteGameTest"
+    ],
     "fabric-datagen": [
       "com.github.tartaricacid.touhoulittlemaid.datagen.DataGenerator"
     ],

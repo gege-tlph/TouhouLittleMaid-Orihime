@@ -295,8 +295,15 @@ dependencies {
 //    compileOnly(files("libs/compile_only/superbwarfare-fabric-0.0.1-forge0.8.7.jar"))
 
     // 地图相关模组兼容
-    runtimeOnly "maven.modrinth:xaeros-minimap:fabric-26.1.2-25.3.12"
-    runtimeOnly "maven.modrinth:xaeros-world-map:fabric-26.1.2-1.40.16"
+    // Xaero 小地图/世界地图是开发客户端的便利件，但它们没有声明 client-only，
+    // 于是 Fabric 会把它们一并加载进 **GameTest 的服务端**，并在 serverStarting 阶段崩：
+    //   java.lang.IllegalStateException: Registry is not frozen yet!
+    //     at xaero.lib.common.config.channel.register.ConfigChannelRegistry.iterator
+    // 而 runGametest 必须有服务端。loom 未拆分环境源集时 runtimeOnly 对所有运行配置生效，
+    // 没有"只给客户端"的作用域，故整体停用。要在 dev 客户端里看地图就临时取消注释，
+    // 但**别提交**——那会让 runGametest 再次全线崩溃。
+//    runtimeOnly "maven.modrinth:xaeros-minimap:fabric-26.1.2-25.3.12"
+//    runtimeOnly "maven.modrinth:xaeros-world-map:fabric-26.1.2-1.40.16"
 
     // 拔刀剑
 //    compileOnly "cn.sh1rocu:slashblade-refabricated:1.21.1-1.0.1-Resharped-1.7.55"
