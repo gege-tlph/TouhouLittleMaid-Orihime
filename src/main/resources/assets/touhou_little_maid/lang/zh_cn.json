@@ -1175,5 +1175,6 @@
   "board_state.touhou_little_maid.gomoku.bed": "床阵",
   "board_state.touhou_little_maid.gomoku.noodles": "面条阵",
   "board_state.touhou_little_maid.gomoku.square": "口字阵",
-  "board_state.touhou_little_maid.gomoku.stealth_cow": "隐身牛阵"
+  "board_state.touhou_little_maid.gomoku.stealth_cow": "隐身牛阵",
+  "item.touhou_little_maid.ender_chest_backpack": "末影箱背包"
 }

@@ -40,7 +40,7 @@ com/github/tartaricacid/touhoulittlemaid/client/event/SpecialMaidRenderEvent.jav
 com/github/tartaricacid/touhoulittlemaid/client/gui/entity/cache/CacheIconManager.java	119	女仆/椅子模型缓存图标管理	未找到	丢失	已复核：MiscConfig 的 MODEL_ICON_CACHE 开关在 26.1 也一并删了，是同一批移除
 com/github/tartaricacid/touhoulittlemaid/client/gui/entity/cache/CacheScreen.java	109	模型缓存图标的显示屏	未找到	丢失	已复核：MiscConfig 的 MODEL_ICON_CACHE 开关在 26.1 也一并删了，是同一批移除
 com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/CraftingTableBackpackContainerScreen.java	54	工作台背包容器屏	未找到	丢失	已确认丢失（背包四型），见 entity/backpack 那批
-com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/EnderChestBackpackContainerScreen.java	54	末影箱背包容器屏	未找到	丢失	已确认丢失（背包四型），见 entity/backpack 那批
+com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/EnderChestBackpackContainerScreen.java	54	末影箱背包容器屏	未找到	丢失	【已补回 PENDING】已确认丢失（背包四型），见 entity/backpack 那批
 com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/FurnaceBackpackContainerScreen.java	57	熔炉背包容器屏	未找到	丢失	已确认丢失（背包四型），见 entity/backpack 那批
 com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/TankBackpackContainerScreen.java	77	液体背包容器屏	未找到	丢失	已确认丢失（背包四型），见 entity/backpack 那批
 com/github/tartaricacid/touhoulittlemaid/client/gui/widget/button/MaidAIChatConfigButton.java	101	女仆 AI 聊天配置按钮	未找到	待定	子代理报「未找到」，**主模型尚未复核**；26.1 有 AI 聊天体系，多半是重构
@@ -89,7 +89,7 @@ com/github/tartaricacid/touhoulittlemaid/util/ShapeDraw.java	27	画扇形等 2D 
 cn/sh1rocu/touhoulittlemaid/util/entity/PlayerUtil.java	20	玩家交互距离计算	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 cn/sh1rocu/touhoulittlemaid/util/recipe/ItemStackShapelessRecipeBuilder.java	91	支持 ItemStack 结果的无序合成配方构建器	未找到	待定	子代理报「未找到」，**主模型尚未复核**；datagen 用，玩家不可见
 com/github/tartaricacid/touhoulittlemaid/entity/backpack/CraftingTableBackpack.java	110	工作台背包：随身合成	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
-com/github/tartaricacid/touhoulittlemaid/entity/backpack/EnderChestBackpack.java	111	末影箱背包：随身末影箱	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
+com/github/tartaricacid/touhoulittlemaid/entity/backpack/EnderChestBackpack.java	111	末影箱背包：随身末影箱	未找到	丢失	【已补回 PENDING】背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/entity/backpack/FurnaceBackpack.java	141	熔炉背包：随身烧炼	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/entity/backpack/TankBackpack.java	157	液体背包：随身流体储存	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/entity/backpack/data/FurnaceBackpackData.java	241	熔炉背包的数据与烧炼逻辑	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
@@ -105,7 +105,7 @@ com/github/tartaricacid/touhoulittlemaid/inventory/chest/ChestManager.java	38	�
 com/github/tartaricacid/touhoulittlemaid/inventory/chest/SnackCabinetType.java	27	小食柜作为女仆可用容器的判定	未找到	待定	子代理报「未找到」，**主模型尚未复核**；箱子类型一簇（4 个）
 com/github/tartaricacid/touhoulittlemaid/inventory/chest/VanillaChestType.java	31	原版箱子作为女仆可用容器的判定	未找到	待定	子代理报「未找到」，**主模型尚未复核**；箱子类型一簇（4 个）
 com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/CraftingTableBackpackContainer.java	134	工作台背包的容器与合成逻辑	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
-com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/EnderChestBackpackContainer.java	33	末影箱背包的容器	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
+com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/EnderChestBackpackContainer.java	33	末影箱背包的容器	未找到	丢失	【已补回 PENDING】背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/FurnaceBackpackContainer.java	97	熔炉背包的容器与烧炼进度	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/TankBackpackContainer.java	104	液体背包的容器与流体操作	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/inventory/handler/MaidHandsInvWrapper.java	19	女仆手持栏的物品栏包装与校验	未找到	待定	子代理报「未找到」，**主模型尚未复核**；可能随 itemhandler→transfer 整包替换一起走了

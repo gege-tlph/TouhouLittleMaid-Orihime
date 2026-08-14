@@ -45,6 +45,7 @@ public class InitCreativeTabs {
                 output.accept(MAID_BACKPACK_SMALL);
                 output.accept(MAID_BACKPACK_MIDDLE);
                 output.accept(MAID_BACKPACK_BIG);
+                output.accept(ENDER_CHEST_BACKPACK);
                 output.accept(SUBSTITUTE_JIZO);
                 output.accept(ULTRAMARINE_ORB_ELIXIR);
                 output.accept(EXPLOSION_PROTECT_BAUBLE);

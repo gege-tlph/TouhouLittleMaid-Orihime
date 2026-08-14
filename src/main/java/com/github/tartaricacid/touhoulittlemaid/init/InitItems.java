@@ -31,6 +31,7 @@ public interface InitItems {
     Item MAID_BACKPACK_SMALL = register("maid_backpack_small", ItemMaidBackpack::new);
     Item MAID_BACKPACK_MIDDLE = register("maid_backpack_middle", ItemMaidBackpack::new);
     Item MAID_BACKPACK_BIG = register("maid_backpack_big", ItemMaidBackpack::new);
+    Item ENDER_CHEST_BACKPACK = register("ender_chest_backpack", ItemMaidBackpack::new);
 
     // 残局道具：把一局棋存进物品，右键棋盘摆上去
     Item GOMOKU_BOARD_STATE = register("gomoku_board_state", ItemBoardState::new);

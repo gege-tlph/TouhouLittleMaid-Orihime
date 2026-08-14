@@ -1175,5 +1175,6 @@
   "board_state.touhou_little_maid.gomoku.bed": "Bed Endgame",
   "board_state.touhou_little_maid.gomoku.noodles": "Noodles Endgame",
   "board_state.touhou_little_maid.gomoku.square": "Square Endgame",
-  "board_state.touhou_little_maid.gomoku.stealth_cow": "Stealth Cow Endgame"
+  "board_state.touhou_little_maid.gomoku.stealth_cow": "Stealth Cow Endgame",
+  "item.touhou_little_maid.ender_chest_backpack": "Ender Chest Backpack"
 }

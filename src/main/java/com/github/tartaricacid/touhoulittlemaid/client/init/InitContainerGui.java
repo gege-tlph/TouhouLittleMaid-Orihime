@@ -18,6 +18,7 @@ public final class InitContainerGui {
         MenuScreens.register(InitContainer.MAID_SMALL_BACKPACK_CONTAINER, SmallBackpackContainerScreen::new);
         MenuScreens.register(InitContainer.MAID_MIDDLE_BACKPACK_CONTAINER, MiddleBackpackContainerScreen::new);
         MenuScreens.register(InitContainer.MAID_BIG_BACKPACK_CONTAINER, BigBackpackContainerScreen::new);
+        MenuScreens.register(InitContainer.MAID_ENDER_CHEST_CONTAINER, EnderChestBackpackContainerScreen::new);
 
         MenuScreens.register(InitContainer.MAID_BAUBLE_CONTAINER, BaubleContainerScreen::new);
         MenuScreens.register(InitContainer.MAID_CONFIG_CONTAINER, MaidConfigContainerGui::new);

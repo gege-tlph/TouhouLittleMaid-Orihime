@@ -18,7 +18,8 @@
       "com.github.tartaricacid.touhoulittlemaid.gametest.ServerRuleSyncGameTest",
       "com.github.tartaricacid.touhoulittlemaid.gametest.FeedTaskGameTest",
       "com.github.tartaricacid.touhoulittlemaid.gametest.BoardStateItemGameTest",
-      "com.github.tartaricacid.touhoulittlemaid.gametest.BoardStateLootGameTest"
+      "com.github.tartaricacid.touhoulittlemaid.gametest.BoardStateLootGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.gametest.BackpackRegistrationGameTest"
     ],
     "fabric-datagen": [
       "com.github.tartaricacid.touhoulittlemaid.datagen.DataGenerator"
