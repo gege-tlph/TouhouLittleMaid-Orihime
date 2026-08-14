@@ -1168,5 +1168,12 @@
   "item.touhou_little_maid.cchess_board_state": "象棋残局",
   "item.touhou_little_maid.wchess_board_state": "国际象棋残局",
   "tooltips.touhou_little_maid.board_state.empty": "上面没有任何棋局数据",
-  "tooltips.touhou_little_maid.board_state.author": "作者：%s"
+  "tooltips.touhou_little_maid.board_state.author": "作者：%s",
+  "board_state.touhou_little_maid.gomoku.moon": "月亮阵",
+  "board_state.touhou_little_maid.chess.default": "国际象棋残局",
+  "board_state.touhou_little_maid.xiangqi.default": "象棋残局",
+  "board_state.touhou_little_maid.gomoku.bed": "床阵",
+  "board_state.touhou_little_maid.gomoku.noodles": "面条阵",
+  "board_state.touhou_little_maid.gomoku.square": "口字阵",
+  "board_state.touhou_little_maid.gomoku.stealth_cow": "隐身牛阵"
 }

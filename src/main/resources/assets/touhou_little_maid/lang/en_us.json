@@ -1168,5 +1168,12 @@
   "item.touhou_little_maid.cchess_board_state": "Xiangqi Board State",
   "item.touhou_little_maid.wchess_board_state": "Chess Board State",
   "tooltips.touhou_little_maid.board_state.empty": "There is no board game data on it",
-  "tooltips.touhou_little_maid.board_state.author": "Author: %s"
+  "tooltips.touhou_little_maid.board_state.author": "Author: %s",
+  "board_state.touhou_little_maid.gomoku.moon": "Moon Endgame",
+  "board_state.touhou_little_maid.chess.default": "Chess Endgame",
+  "board_state.touhou_little_maid.xiangqi.default": "Xiangqi Endgame",
+  "board_state.touhou_little_maid.gomoku.bed": "Bed Endgame",
+  "board_state.touhou_little_maid.gomoku.noodles": "Noodles Endgame",
+  "board_state.touhou_little_maid.gomoku.square": "Square Endgame",
+  "board_state.touhou_little_maid.gomoku.stealth_cow": "Stealth Cow Endgame"
 }
