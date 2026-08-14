@@ -1169,6 +1169,8 @@
   "item.touhou_little_maid.wchess_board_state": "Chess Board State",
   "tooltips.touhou_little_maid.board_state.empty": "There is no board game data on it",
   "tooltips.touhou_little_maid.board_state.author": "Author: %s",
+  "board_state.touhou_little_maid.show_picture": "<Press Shift To Show Details>",
+  "board_state.touhou_little_maid.gomoku.default": "Gomoku Endgame",
   "board_state.touhou_little_maid.gomoku.moon": "Moon Endgame",
   "board_state.touhou_little_maid.chess.default": "Chess Endgame",
   "board_state.touhou_little_maid.xiangqi.default": "Xiangqi Endgame",

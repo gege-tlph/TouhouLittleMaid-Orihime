@@ -1169,6 +1169,8 @@
   "item.touhou_little_maid.wchess_board_state": "国际象棋残局道具",
   "tooltips.touhou_little_maid.board_state.empty": "这上面没有残局数据",
   "tooltips.touhou_little_maid.board_state.author": "作者：%s",
+  "board_state.touhou_little_maid.show_picture": "< 按下 Shift 显示细节 >",
+  "board_state.touhou_little_maid.gomoku.default": "五子棋残局",
   "board_state.touhou_little_maid.gomoku.moon": "月亮阵",
   "board_state.touhou_little_maid.chess.default": "国际象棋残局",
   "board_state.touhou_little_maid.xiangqi.default": "中国象棋残局",

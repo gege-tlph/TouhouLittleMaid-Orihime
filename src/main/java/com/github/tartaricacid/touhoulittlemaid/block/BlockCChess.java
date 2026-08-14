@@ -265,7 +265,6 @@ public class BlockCChess extends BlockJoy implements IBoardGameBlock, IBlockExpl
             return InteractionResult.FAIL;
         }
 
-        // 只能空手操作
         // 如果是残局道具，那么直接设置残局
         ItemStack heldItem = player.getMainHandItem();
         if (heldItem.is(InitItems.CCHESS_BOARD_STATE)) {
@@ -282,6 +281,7 @@ public class BlockCChess extends BlockJoy implements IBoardGameBlock, IBlockExpl
             return InteractionResult.SUCCESS_SERVER;
         }
 
+        // 只能空手操作
         if (!itemStack.isEmpty()) {
             return InteractionResult.FAIL;
         }

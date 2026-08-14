@@ -1,9 +1,13 @@
 package com.github.tartaricacid.touhoulittlemaid.item;
 
 import com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent;
+import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
+import com.github.tartaricacid.touhoulittlemaid.inventory.tooltip.BoardStateTooltip;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.netty.buffer.ByteBuf;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -11,6 +15,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -18,6 +23,7 @@ import net.minecraft.world.item.component.TooltipDisplay;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -28,11 +34,11 @@ import java.util.function.Consumer;
  * 内容是「棋局数据 + 描述 key + 作者」三段。五子棋那段的编码见 {@code GomokuCodec}，
  * 中国象棋/国际象棋那段是 FEN。</p>
  *
- * <p>⚠️ <b>缺一块，是有意的</b>：行为基准 {@code port/1.21.11-fabric} 的本类还有一个
- * {@code getTooltipImage}——按住 Shift 时在物品提示框里画出棋盘缩略图。
- * 那需要 {@code BoardStateTooltip} 与客户端的 {@code ClientBoardStateTooltip} 渲染器，
- * 属棋局那一簇的「提示框预览」那一刀。**在它落地之前不要贸然加回 getTooltipImage**：
- * 返回一个没有注册客户端渲染器的 TooltipComponent，画不出来还可能直接抛。</p>
+ * <p>按住 Shift 时 {@link #getTooltipImage} 返回 {@link BoardStateTooltip}，
+ * 由客户端的 {@code ClientBoardStateTooltip} 画出棋盘缩略图；未按 Shift 时
+ * {@code appendHoverText} 会补一行「按下 Shift 显示细节」的提示。
+ * （历史注：预览那一刀 {@code be630452f} 只落了组件与渲染器，这两处生产者是审计时
+ * 发现「ofGomoku 三个工厂零调用者」后才补回的——链路两端都要有人，缺一端都是死代码。）</p>
  */
 public class ItemBoardState extends Item {
     public ItemBoardState(Identifier id) {
@@ -51,6 +57,35 @@ public class ItemBoardState extends Item {
             return null;
         }
         return new String[]{info.data(), info.description(), info.author()};
+    }
+
+    @Override
+    @Environment(EnvType.CLIENT)
+    public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
+        // 26.1.2 与 1.21.11 同款：Screen.hasShiftDown() 已删（javap 实查无此方法），
+        // tooltip 时刻的全局 shift 查询用 InputConstants.isKeyDown——即旧实现的底层。
+        if (!tlm$hasShiftDown()) {
+            return Optional.empty();
+        }
+
+        String[] state = getState(stack);
+        if (state == null) {
+            return Optional.empty();
+        }
+        String stateData = state[0];
+        if (StringUtils.isBlank(stateData)) {
+            return Optional.empty();
+        }
+
+        if (stack.is(InitItems.GOMOKU_BOARD_STATE)) {
+            return Optional.of(BoardStateTooltip.ofGomoku(stateData));
+        } else if (stack.is(InitItems.CCHESS_BOARD_STATE)) {
+            return Optional.of(BoardStateTooltip.ofXiangqi(stateData));
+        } else if (stack.is(InitItems.WCHESS_BOARD_STATE)) {
+            return Optional.of(BoardStateTooltip.ofChess(stateData));
+        }
+
+        return Optional.empty();
     }
 
     @Override
@@ -73,6 +108,21 @@ public class ItemBoardState extends Item {
             tooltip.accept(Component.translatable("tooltips.touhou_little_maid.board_state.author", author)
                     .withStyle(ChatFormatting.GRAY));
         }
+
+        // 未按 Shift 时提示「按下 Shift 显示细节」——与 getTooltipImage 的门控是同一对
+        if (!tlm$hasShiftDown()) {
+            tooltip.accept(Component.translatable("board_state.touhou_little_maid.show_picture")
+                    .withStyle(ChatFormatting.DARK_GRAY).withStyle(ChatFormatting.ITALIC));
+        }
+    }
+
+    // 仅客户端 tooltip 路径调用（getTooltipImage 有 @Environment(CLIENT)；appendHoverText 只在
+    // 客户端执行），与 origin 在 common 类里 import Screen 的 client-in-common 形态一致。
+    @Environment(EnvType.CLIENT)
+    private static boolean tlm$hasShiftDown() {
+        var window = net.minecraft.client.Minecraft.getInstance().getWindow();
+        return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, com.mojang.blaze3d.platform.InputConstants.KEY_LSHIFT)
+                || com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, com.mojang.blaze3d.platform.InputConstants.KEY_RSHIFT);
     }
 
     public record BoardStateInfo(String data, String description, String author) {
