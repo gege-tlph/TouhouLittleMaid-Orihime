@@ -99,7 +99,7 @@ com/github/tartaricacid/touhoulittlemaid/entity/data/MaidTaskDataMaps.java	103	�
 com/github/tartaricacid/touhoulittlemaid/entity/data/TaskDataRegister.java	81	任务数据类型的注册表与编解码	未找到	待定	子代理报「未找到」，**主模型尚未复核**；同上，是一整套任务数据机制
 com/github/tartaricacid/touhoulittlemaid/entity/info/models/ServerChairModels.java	49	服务端侧的椅子模型数据管理	未找到	待定	子代理报「未找到」，**主模型尚未复核**；1.21.1 里被 ServerCustomPackLoader 引用，26.1 有同名 ServerCustomPackLoader
 com/github/tartaricacid/touhoulittlemaid/entity/passive/DefaultMaidSoundPack.java	14	默认女仆音效包的选择	未找到	待定	子代理报「未找到」，**主模型尚未复核**
-com/github/tartaricacid/touhoulittlemaid/entity/passive/MaidGameRecordManager.java	98	女仆棋类对战的记录与胜负状态	未找到	丢失	棋局系统一簇：26.1 仍有 BlockGomoku/BlockCChess/BlockWChess 三种棋盘方块，但棋盘状态物品与对战记录这一层没了。**需确认棋盘方块在 26.1 上还能不能正常玩**
+com/github/tartaricacid/touhoulittlemaid/entity/passive/MaidGameRecordManager.java	98	女仆棋类对战的记录与胜负状态	entity/passive/MaidGameManager + entity/data/GameData + InitDataAttachment.GAME	替换	**主模型改判**：子代理按类名搜报「未找到」，实为宿主把它重构成了 MaidGameManager，状态改存 GameData 数据附件。且 MaidGameManager.tick() **保留了 !(getVehicle() instanceof EntitySit) 判据**——那正是上游 #912（棋盘被破坏后女仆卡在棋局状态）的自愈机制，26.1 这里是对的
 com/github/tartaricacid/touhoulittlemaid/inventory/chest/BarrelChestType.java	28	木桶作为女仆可用容器的判定	未找到	待定	子代理报「未找到」，**主模型尚未复核**；箱子类型一簇（4 个）
 com/github/tartaricacid/touhoulittlemaid/inventory/chest/ChestManager.java	38	女仆可用容器类型的管理与注册	未找到	待定	子代理报「未找到」，**主模型尚未复核**；箱子类型一簇（4 个），1.21.1 里被 ILittleMaid/IChestType 引用
 com/github/tartaricacid/touhoulittlemaid/inventory/chest/SnackCabinetType.java	27	小食柜作为女仆可用容器的判定	未找到	待定	子代理报「未找到」，**主模型尚未复核**；箱子类型一簇（4 个）
