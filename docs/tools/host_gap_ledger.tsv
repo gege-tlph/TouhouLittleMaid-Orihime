@@ -155,7 +155,7 @@ com/github/tartaricacid/touhoulittlemaid/config/subconfig/VanillaConfig.java	37	
 com/github/tartaricacid/touhoulittlemaid/datagen/ItemModelGenerator.java	32	物品模型的数据生成	未找到	待定	子代理报「未找到」，**主模型尚未复核**；datagen 产物，玩家不可见
 com/github/tartaricacid/touhoulittlemaid/datagen/tag/TagRecipeSerializer.java	28	标签配方序列化	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 com/github/tartaricacid/touhoulittlemaid/event/food/ConvertFoodEatenEvent.java	34	食物被吃后转换成另一物品的事件	未找到	待定	子代理报「未找到」，**主模型尚未复核**；与 MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST 可能相关，要一起看
-com/github/tartaricacid/touhoulittlemaid/event/food/RemainFoodEatenEvent.java	53	食物吃剩容器的事件	未找到	待定	子代理报「未找到」，**主模型尚未复核**；同上
+com/github/tartaricacid/touhoulittlemaid/event/food/RemainFoodEatenEvent.java	53	食物吃剩容器的事件	未找到	待定	子代理报「未找到」，**主模型尚未复核**；同上；⚠ 移植本文件时必须随行采用 #1139 形状校验（基准 69a5d0383：坏形状配置在服务端 tick 内抛 CCE/IOOBE），见 archive/HANDOFF_DEFECT_FIXES_2026-08-15.md §C
 com/github/tartaricacid/touhoulittlemaid/crafting/FallbackIngredient.java	123	配方材料的后备候选	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 com/github/tartaricacid/touhoulittlemaid/init/InitTaskData.java	15	任务数据的初始化注册	InitDataAttachment（Fabric attachment）+ AttackListData	替换	【2026-08-15 复核 待定→替换】origin 通用任务数据注册面内部唯一注册项 = maid_attack_list（InitTaskData 实查）；宿主 AttackListData + SetAttackListPackage + AttackTaskConfigGui 全链路在，存储走 Fabric attachment。ILittleMaid.registerTaskData 扩展点随宿主取消，第三方需求出现时再评估
 com/github/tartaricacid/touhoulittlemaid/molang/parser/ast/DoubleExpression.java	82	Molang 的双精度表达式节点	未找到	替换	molang 解析器在 26.1 有整包重构（见 geckolib3 那批的观察）
