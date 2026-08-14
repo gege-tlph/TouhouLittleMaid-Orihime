@@ -221,9 +221,12 @@ dependencies {
 
     // JEI
     implementation "maven.modrinth:jei:${jei_version}"
-    // REI
-//    compileOnly "maven.modrinth:architectury-api:${architectury_api_version}"
-//    compileOnly "me.shedaniel:RoughlyEnoughItems-fabric:${rei_version}"
+    // REI（宿主注释掉的依赖解开，版本经 1.21.11 交接实测可下载；compileOnly = 软兼容，
+    // 运行期只在 REI 在场时经 rei_client entrypoint 实例化插件）
+    // implementation 而非 compileOnly：开发客户端要能实测 REI 界面（宿主对 JEI 同款做法）。
+    // 生产端仍是软兼容——fabric.mod.json 的 depends 不含它们。
+    implementation "maven.modrinth:architectury-api:${architectury_api_version}"
+    implementation "me.shedaniel:RoughlyEnoughItems-fabric:${rei_version}"
     implementation("me.shedaniel.cloth:cloth-config-fabric:${cloth_config_version}") {
         exclude group: 'net.fabricmc.fabric-api'
     }
