@@ -35,15 +35,16 @@
 账本 `docs/tools/host_gap_ledger.tsv`（222 条全登记），核对 `python docs/tools/host_gap.py --ledger`。
 方法与完整结果见审计 §7.8。
 
-**替换 77 · 生态 48 · 丢失 42 · 待定 54 · 无关 1**（动手补的过程中改判两条：`ClientBoardStateTooltip` 待定→丢失并已补，`MaidGameRecordManager` 丢失→替换）
-
-**42 条丢失中：已补回 8 · 待补 34**，跑 `python docs/tools/host_gap.py --ledger` 看当前分栏。
+**判定分布与「已补回 / 待补」分栏不在本文写死**——跑 `python docs/tools/host_gap.py --ledger` 看实时数
+（本文此前写死过一次，两天内过时了两回，正是本文开头「不写会过时的数字」那条禁令针对的形态）。
+动手补的过程中已改判三条：`ClientBoardStateTooltip` 待定→丢失并已补、`MaidGameRecordManager` 丢失→替换、
+`IBackpackData` 替换→丢失——**判定的最终校验是真去补它**。
 
 42 条「丢失」归成五簇，**按建议实施顺序**：
 
 | # | 簇 | 条数 | 后果 | 备注 |
 |---|---|---|---|---|
-| 1 | **女仆背包四型**（工作台/末影箱/熔炉/液体） | 15 | 四种背包玩法整个没了 | 最大一块，横跨物品/容器/GUI/数据/渲染/战利品/网络包七层 |
+| 1 | **女仆背包四型**（工作台/末影箱/熔炉/液体） | 15 | 四种背包玩法整个没了 | **已补 2/4**（末影箱 `8efc995d4`、工作台 `60aa8dcc6`，一种背包 = 九个登记点 + 贴图/模型/lang/创造栏）。**熔炉/液体贵一档**：依赖 `IBackpackData`（同簇丢失）与 Forge `InvWrapper`→Fabric `transfer` 重写，且 26.1 的背包状态已改走数据附件（`InitDataAttachment.BACKPACK`），正确做法是并进附件而非照抄基准的 `EntityMaid` 字段路线 |
 | 2 | ~~**棋局存档与记录层**~~ | ~~8~~ | **已补完**（`e778676cc`…`ba5b8af65`） | 见已关闭表 |
 | 3 | **REI 集成** | 5 | 祭坛配方在 REI 里查不到 | ⚠️ **必须排在背包四型之后**（读码确认：插件要给工作台/熔炉背包容器注册点击区与转移处理器）。且不是「搬」是「重写」——基准取配方走我们未搬的 §3.K，宿主已有 `ClientRecipeEvent.ALTAR_RECIPES` 可用。依赖已实测可下载 |
 | 4 | **原版替换功能** | 4 | Yukkuri 史莱姆 / 点符经验球没了 | 与已知的 `VanillaConfig` 删除同批，闭环 |
