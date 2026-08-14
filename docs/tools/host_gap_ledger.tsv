@@ -120,11 +120,11 @@ com/github/tartaricacid/touhoulittlemaid/item/ItemTankBackpack.java	79	液体背
 com/github/tartaricacid/touhoulittlemaid/ai/service/function/FunctionCallRegister.java	30	旧工具函数注册（1.5.1 起弃用）	Skill 机制（SkillBean/SkillLoader）	替换	
 com/github/tartaricacid/touhoulittlemaid/ai/service/function/IFunctionCall.java	65	旧工具函数接口（1.5.1 起弃用）	Skill 机制	替换	
 com/github/tartaricacid/touhoulittlemaid/ai/service/function/response/ToolResponse.java	5	旧工具函数返回值（1.5.1 起弃用）	Skill 机制	替换	
-com/github/tartaricacid/touhoulittlemaid/compat/rei/MaidREIClientPlugin.java	97	REI 客户端插件：注册祭坛配方与容器点击	未找到	丢失	⚠️ REI 在 26.1.2 上**是有的**（26.1.819+fabric），是宿主 build.gradle 把依赖注释掉了，不是生态问题。审计 §3.G/§7.1 已把「REI 集成」列为要带过去的一项
-com/github/tartaricacid/touhoulittlemaid/compat/rei/altar/ReiAltarRecipeCategory.java	94	REI 里的祭坛配方分类展示	未找到	丢失	⚠️ REI 在 26.1.2 上**是有的**（26.1.819+fabric），是宿主 build.gradle 把依赖注释掉了，不是生态问题。审计 §3.G/§7.1 已把「REI 集成」列为要带过去的一项
-com/github/tartaricacid/touhoulittlemaid/compat/rei/altar/ReiAltarRecipeDisplay.java	58	REI 祭坛配方的数据模型	未找到	丢失	⚠️ REI 在 26.1.2 上**是有的**（26.1.819+fabric），是宿主 build.gradle 把依赖注释掉了，不是生态问题。审计 §3.G/§7.1 已把「REI 集成」列为要带过去的一项
-com/github/tartaricacid/touhoulittlemaid/compat/rei/altar/ReiAltarRecipeMaker.java	29	REI 祭坛配方工厂	未找到	丢失	⚠️ REI 在 26.1.2 上**是有的**（26.1.819+fabric），是宿主 build.gradle 把依赖注释掉了，不是生态问题。审计 §3.G/§7.1 已把「REI 集成」列为要带过去的一项
-com/github/tartaricacid/touhoulittlemaid/compat/rei/transfer/BackpackTransferHandler.java	57	REI 往女仆背包转移物品	未找到	丢失	⚠️ REI 在 26.1.2 上**是有的**（26.1.819+fabric），是宿主 build.gradle 把依赖注释掉了，不是生态问题。审计 §3.G/§7.1 已把「REI 集成」列为要带过去的一项
+com/github/tartaricacid/touhoulittlemaid/compat/rei/MaidREIClientPlugin.java	97	REI 客户端插件：注册祭坛配方与容器点击	未找到	丢失	⚠️ **顺序依赖（2026-08-14 读码确认）**：MaidREIClientPlugin 要给 CraftingTableBackpackContainerScreen / FurnaceBackpackContainerScreen 注册点击区，并给 CraftingTableBackpackContainer / FurnaceBackpackContainer 注册转移处理器，BackpackTransferHandler 更是整个建立在这两个容器上——**REI 必须排在背包四型之后**。另：本簇不是「搬」而是「重写」——基准的取配方走我们自己的 ClientAltarRecipeCache（§3.K，未搬），而宿主已有 ClientRecipeEvent.ALTAR_RECIPES（List<RecipeHolder<AltarRecipe>>，数据更全），应改用后者。依赖本身可用：maven.shedaniel.me 可达，REI 26.1.819 与 architectury 20.0.12+fabric 均已实测可解析下载。
+com/github/tartaricacid/touhoulittlemaid/compat/rei/altar/ReiAltarRecipeCategory.java	94	REI 里的祭坛配方分类展示	未找到	丢失	同上（REI 簇，须排在背包四型之后）
+com/github/tartaricacid/touhoulittlemaid/compat/rei/altar/ReiAltarRecipeDisplay.java	58	REI 祭坛配方的数据模型	未找到	丢失	同上（REI 簇，须排在背包四型之后）
+com/github/tartaricacid/touhoulittlemaid/compat/rei/altar/ReiAltarRecipeMaker.java	29	REI 祭坛配方工厂	未找到	丢失	同上（REI 簇，须排在背包四型之后）
+com/github/tartaricacid/touhoulittlemaid/compat/rei/transfer/BackpackTransferHandler.java	57	REI 往女仆背包转移物品	未找到	丢失	同上（REI 簇，须排在背包四型之后）
 com/github/tartaricacid/touhoulittlemaid/compat/jei/MaidPlugin.java	79	JEI 插件主类：注册祭坛与背包	compat/jei/MaidJeiPlugin	替换	JEI 依赖仍激活，entrypoint 也在
 com/github/tartaricacid/touhoulittlemaid/compat/jei/altar/AltarRecipeMaker.java	41	JEI 祭坛配方导入	compat/jei/altar/AltarRecipeCategory	替换	
 com/github/tartaricacid/touhoulittlemaid/compat/jei/altar/AltarRecipeWrapper.java	35	JEI 祭坛配方展示包装	并入 AltarRecipeCategory	替换	
