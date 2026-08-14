@@ -145,7 +145,7 @@ com/github/tartaricacid/touhoulittlemaid/datapack/BoardStateData.java	59	棋局�
 com/github/tartaricacid/touhoulittlemaid/datapack/pojo/BoardStateRecord.java	17	棋局状态记录	未找到	丢失	【已补回 bbd3b6f45】棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
 com/github/tartaricacid/touhoulittlemaid/datapack/resources/BoardStateDataReloadListener.java	63	棋局数据的重载监听	未找到	丢失	【已补回 bbd3b6f45】棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
 com/github/tartaricacid/touhoulittlemaid/loot/LootTableTypeCondition.java	57	按战利品表类型过滤的条件	未找到	待定	子代理报「未找到」，**主模型尚未复核**
-com/github/tartaricacid/touhoulittlemaid/loot/RandomBoardStateFunction.java	100	随机棋局作为战利品	未找到	丢失	【已补回 ba5b8af65】棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
+com/github/tartaricacid/touhoulittlemaid/loot/RandomBoardStateFunction.java	100	随机棋局作为战利品	未找到	丢失	【已补回 ba5b8af65+b4fc6feff】棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
 com/github/tartaricacid/touhoulittlemaid/loot/SetTankCountFunction.java	89	设定液体背包容量的战利品函数	未找到	丢失	液体背包一簇（见背包四型）
 com/github/tartaricacid/touhoulittlemaid/network/message/SyncFluidAmountPackage.java	36	液体量同步包	未找到	丢失	液体背包一簇（见背包四型）
 com/github/tartaricacid/touhoulittlemaid/network/message/SyncYsmMaidDataPackage.java	63	YSM 女仆数据同步包	未找到	生态	YSM 在 26.1.2 Fabric 上不存在（审计 §2.2），且 YSM 移植本身是独立前置项目

@@ -109,8 +109,13 @@
 **接线的运行期证据是跨刀拿到的**：数据包重载监听器在 `bbd3b6f45` 只有构建绿，
 到 `ba5b8af65` 的 GameTest 才拿到运行期凭据（红测摘掉注册 → 三类棋谱全为 0）。
 
-⚠️ 仍缺一环：把残局道具塞进原版战利品箱的那张表是 datagen 产物，需改
-`LootTableGenerator` 并重跑 datagen，本轮未做。函数本身已可被数据包直接引用。
+**最后一环也已补齐**（`b4fc6feff`）：残局道具会出现在制图师村屋箱与要塞图书馆。
+我一度把它留成待办，理由是「datagen 会产生大而危险的 diff」——**那是没验证就下的判断，两条都不成立**：
+报错的是 `downloadAssets`（战利品表 datagen 不需要游戏资源，`-x downloadAssets` 即可跑通）；
+跑通后虽动 183 个文件，但 `git diff --numstat --ignore-cr-at-eol` 为 **0**，全是换行差异、内容一字未变。
+
+⚠️ 环境备忘：本机跑 datagen 必须 `./gradlew runDatagen -x downloadAssets`，
+且提交前要把 183 个文件的 CRLF/LF churn 还原、只 stage 真正新增的产物。
 
 
 ## 2026-08-13：复原「扛女仆时玩家手臂摆抱姿」（`79e7f7914`）
