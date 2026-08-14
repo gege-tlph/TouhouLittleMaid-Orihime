@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.init;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
+import com.github.tartaricacid.touhoulittlemaid.item.ItemBoardState;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemFoxScroll.TrackInfo;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
@@ -153,6 +154,14 @@ public class InitDataComponent {
             register(INIT_MAID_OWNER, DataComponentType.<UUID>builder()
                     .persistent(UUIDUtil.CODEC)
                     .networkSynchronized(UUIDUtil.STREAM_CODEC)
+                    .build());
+
+    /** 残局道具存的三段：棋局数据 / 描述 key / 作者 */
+    private static final String BOARD_STATE_TAG_NAME = "board_state";
+    public static final DataComponentType<ItemBoardState.BoardStateInfo> BOARD_STATE_TAG =
+            register(BOARD_STATE_TAG_NAME, DataComponentType.<ItemBoardState.BoardStateInfo>builder()
+                    .persistent(ItemBoardState.BoardStateInfo.CODEC)
+                    .networkSynchronized(ItemBoardState.BoardStateInfo.STREAM_CODEC)
                     .build());
 
     private static <T extends DataComponentType<?>> T register(String id, T type) {

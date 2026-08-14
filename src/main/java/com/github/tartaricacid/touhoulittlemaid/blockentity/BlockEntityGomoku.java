@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.blockentity;
 
 import com.github.tartaricacid.touhoulittlemaid.api.block.IBoardGameEntityBlock;
+import com.github.tartaricacid.touhoulittlemaid.api.game.gomoku.GomokuCodec;
 import com.github.tartaricacid.touhoulittlemaid.api.game.gomoku.Point;
 import com.github.tartaricacid.touhoulittlemaid.api.game.gomoku.Statue;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBlocks;
@@ -117,6 +118,19 @@ public class BlockEntityGomoku extends BlockEntityJoy implements IBoardGameEntit
 
     public Statue getStatue() {
         return Statue.values()[Mth.clamp(statue, 0, Statue.values().length - 1)];
+    }
+
+    /** 残局道具用：把整局棋打包出去 */
+    public GomokuCodec.StateData getStateData() {
+        return new GomokuCodec.StateData(this.chessData, this.chessCounter, this.latestChessPoint);
+    }
+
+    /** 残局道具用：把一局棋整体摆上来 */
+    public void setStateData(GomokuCodec.StateData stateData) {
+        this.chessData = stateData.board();
+        this.chessCounter = stateData.turnCount();
+        this.latestChessPoint = stateData.latestPoint();
+        this.refresh();
     }
 
     public int getChessCounter() {

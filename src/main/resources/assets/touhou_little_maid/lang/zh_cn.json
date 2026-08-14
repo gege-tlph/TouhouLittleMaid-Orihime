@@ -1163,5 +1163,10 @@
   "config.touhou_little_maid.server_rules.save.no_permission": "你没有修改服务器规则的权限",
   "config.touhou_little_maid.server_rules.save.invalid": "服务器拒绝了无效的配置修改",
   "commands.touhou_little_maid.config.reload_success": "存档配置已重新加载并同步到在线玩家",
-  "commands.touhou_little_maid.config.reload_failed": "无法重新加载存档配置，请检查 TOML 文件和日志"
+  "commands.touhou_little_maid.config.reload_failed": "无法重新加载存档配置，请检查 TOML 文件和日志",
+  "item.touhou_little_maid.gomoku_board_state": "五子棋残局",
+  "item.touhou_little_maid.cchess_board_state": "象棋残局",
+  "item.touhou_little_maid.wchess_board_state": "国际象棋残局",
+  "tooltips.touhou_little_maid.board_state.empty": "上面没有任何棋局数据",
+  "tooltips.touhou_little_maid.board_state.author": "作者：%s"
 }

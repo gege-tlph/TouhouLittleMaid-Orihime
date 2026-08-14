@@ -72,6 +72,12 @@ public class BlockEntityCChess extends BlockEntityJoy implements IBoardGameEntit
         return chessData;
     }
 
+    /** 残局道具用：按 FEN 摆上一局棋 */
+    public void setEndgame(String endgame) {
+        this.chessData.fromFen(endgame);
+        this.refresh();
+    }
+
     public boolean isCheckmate() {
         return checkmate;
     }

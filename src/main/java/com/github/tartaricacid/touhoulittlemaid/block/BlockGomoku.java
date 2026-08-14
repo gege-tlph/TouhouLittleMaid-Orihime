@@ -13,7 +13,10 @@ import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.MaidGomokuAI;
 import com.github.tartaricacid.touhoulittlemaid.entity.favorability.Type;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntitySit;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.api.game.gomoku.GomokuCodec;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
+import com.github.tartaricacid.touhoulittlemaid.item.ItemBoardState;
+import org.apache.commons.lang3.StringUtils;
 import com.github.tartaricacid.touhoulittlemaid.init.InitSounds;
 import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemGohei;
@@ -297,6 +300,22 @@ public class BlockGomoku extends BlockJoy implements IBoardGameBlock, IBlockExpl
             if (success != null) {
                 return success;
             }
+        }
+
+        // 如果是残局道具，那么直接设置残局
+        ItemStack heldItem = player.getMainHandItem();
+        if (heldItem.is(InitItems.GOMOKU_BOARD_STATE)) {
+            String[] boardState = ItemBoardState.getState(heldItem);
+            if (boardState == null) {
+                return InteractionResult.FAIL;
+            }
+            String data = boardState[0];
+            if (StringUtils.isEmpty(data)) {
+                return InteractionResult.FAIL;
+            }
+            gomoku.setStateData(GomokuCodec.decode(data));
+            level.playSound(null, pos, InitSounds.GOMOKU_RESET, SoundSource.BLOCKS, 1.0f, 1.0f);
+            return InteractionResult.SUCCESS_SERVER;
         }
 
         // 然后是下棋，必须空手

@@ -1163,5 +1163,10 @@
   "config.touhou_little_maid.server_rules.save.no_permission": "You do not have permission to edit server rules",
   "config.touhou_little_maid.server_rules.save.invalid": "The server rejected an invalid configuration change",
   "commands.touhou_little_maid.config.reload_success": "World configuration reloaded and synchronized to online players",
-  "commands.touhou_little_maid.config.reload_failed": "Could not reload the world configuration; check the TOML file and log"
+  "commands.touhou_little_maid.config.reload_failed": "Could not reload the world configuration; check the TOML file and log",
+  "item.touhou_little_maid.gomoku_board_state": "Gomoku Board State",
+  "item.touhou_little_maid.cchess_board_state": "Xiangqi Board State",
+  "item.touhou_little_maid.wchess_board_state": "Chess Board State",
+  "tooltips.touhou_little_maid.board_state.empty": "There is no board game data on it",
+  "tooltips.touhou_little_maid.board_state.author": "Author: %s"
 }
