@@ -39,6 +39,15 @@
 - ✅ **REI 三项**（2026-08-14 第二轮实测，`30d0d2795`）：折叠组、祭坛配方页 + 背包 GUI
   点击区、一键转移进合成格/熔炉格
 
+**图标缓存刀零实机项（2026-08-14 新增，单人档即可验）**——判据照 origin 行为：
+
+- 开启「缓存模型图标」开关（Cloth 菜单 misc 段）后首次打开模型选择 GUI：弹缓存进度屏
+  （进度文本 + 每模型约两帧推进）、跑完自动回模型 GUI、右侧模型图标从缓存纹理显示
+  （非活体渲染；椅子 GUI、模型切换器同验）；开关关闭时直接进 GUI 走活体渲染老路
+- ⚠️ 本刀的截图时序是按 26.1.2 帧循环反编译源第三次重推导的（详见已关闭表），
+  **纯实机才能定案**——若图标错位成「前一个模型的画面」即时序推导错误，立刻报告
+- F3+T 资源重载后图标会暂时变 missing，属预期：包重载会重填队列，下次开 GUI 自动重缓存
+
 **仍开放（都需要专服/局域网或旧存档，单人档验不到）**：
 
 | 待验 | 为什么这轮验不到 | 怎么验 |
@@ -58,7 +67,7 @@
 动手补的过程中已改判三条：`ClientBoardStateTooltip` 待定→丢失并已补、`MaidGameRecordManager` 丢失→替换、
 `IBackpackData` 替换→丢失——**判定的最终校验是真去补它**。
 
-42 条「丢失」归成五簇，**按建议实施顺序**：
+「丢失」归成五簇，**五簇已全部清零**（2026-08-14），剩余待补只有零散两条与 TACZ 批（后者归 O6）：
 
 | # | 簇 | 条数 | 后果 | 备注 |
 |---|---|---|---|---|
@@ -66,15 +75,12 @@
 | 2 | ~~**棋局存档与记录层**~~ | ~~8~~ | **已补完**（`e778676cc`…`ba5b8af65`） | 见已关闭表 |
 | 3 | ~~**REI 集成**~~ | ~~5~~ | **已补完**（`30d0d2795`：四件逐字 + Maker 重写走宿主 `ClientRecipeEvent.ALTAR_RECIPES`；REI 实证加载且 GameTest 28/0） | 见已关闭表 |
 | 4 | ~~**原版替换功能**~~ | ~~4+2~~ | **已补完**（`6cbe559ba`，含两处改判：InitSpecialItemRender 替换→丢失、ReplaceableBakedModel 待定→丢失） | 见已关闭表 |
-| 5 | **模型图标缓存** | 4+分支 | 模型预览图标不缓存 | ⚠️ **2026-08-14 取证：真实边界比账本 4 条大**——`getCacheIconId` 消费链（`IModelInfo` 接口方法 + `MaidModelInfo`/`ChairModelInfo` 实现 + 三个模型 GUI 的图标分支 + `AbstractMaidContainerGui`/两个 detail GUI 的 `CacheIconManager` 改道）在宿主是**丢分支**（反向缺口按丢文件计数看不见）。且 `CacheScreen` 截图时序按 1.21.11 延迟提交管线重推导过一次，26.1.2 的 extract 管线要**第三次重推导**（`Screen.render`→`extractRenderState`），纯实机可验——全队列客户端最脆的一刀，须整刀做。依赖都在：`EntityCacheUtil.ENTITY_CACHE` ✓、彩蛋常量挪至 `SpecialMaidModelResolver` ✓、`TileEntityModelSwitcher`→`BlockEntityModelSwitcher` 改名 |
-| — | 零散 | 6 | GIF 表情纹理、Carry On 渲染修正等 | |
+| 5 | ~~**模型图标缓存**~~ | ~~4+分支~~ | **已补完**（`e45ea33a6`：4 文件 + 5 处丢分支 + 队列接线 + 配置菜单 lang，契约测试三形态红测过） | 见已关闭表；⚠️ 零实机项在 O1 |
+| — | 零散 | 2 | `GifTexture`（GIF 表情纹理）、`RenderFixer`（Carry On 渲染修正，Carry On 2.10.0 有 26.1.2 正式版可接回） | 实时待补名单跑 `--ledger`；此前表里写的「6」把已随其它刀补掉/改判的算在内，机械口径以工具为准 |
 
-⚠️ **还有 55 条「待定」**：子代理报「未找到」而我尚未复核，一律不写成结论
+⚠️ **还有一批「待定」**（实时数跑 `--ledger`）：子代理报「未找到」而我尚未复核，一律不写成结论
 （上一轮子代理判定被逐条推翻过）。`--ledger` 会一直提示，忘不掉。
 待定里已看出三簇值得优先复核：**箱子类型（5）、任务数据（4）、战利品扩展（6）**。
-
-**实施顺序（2026-08-14 按读码依赖修正）**：背包四型 → REI → 其余三簇。
-原先建议的「先 REI 后背包」**是错的**：REI 插件依赖工作台/熔炉背包的容器与屏。
 
 **O3 · §3.A 剩余两项（世界规则那一层已闭合）**
 
@@ -119,7 +125,7 @@
 - 取证纪律两条随单收下：**创造模式玩家不被怪物索敌**（战斗类取证先证明触发条件成立）；
   **比值型聚合指标分母趋零会爆炸**（两数不自洽就回看原始序列）
 
-**排序**：在反向缺口余下三簇（REI/原版替换/图标缓存）之后、§3.B/§3.C 大簇之前或同批，
+**排序**：反向缺口五簇已清零，本批在零散两条与待定复核之后、§3.B/§3.C 大簇之前或同批，
 届时由用户定夺。
 
 **O4 · 前置项目未决**
@@ -135,6 +141,36 @@
 ---
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-14：模型图标缓存整簇补回（`e45ea33a6`）——反向缺口第五簇清零
+
+4 文件（CacheIconManager/CacheScreen/CacheIconTexture/IconCache）+ 5 处入口路由 +
+三个 GUI 图标分支 + `IModelInfo.getCacheIconId` 消费链 + `MODEL_ICON_CACHE`
+（initCommon 个人配置 + Cloth misc 段 + lang 两键双语；`cache_screen` 两键宿主本就留着——
+又一处宿主删代码留资源，这次顺风）。
+
+**取证推翻了两个「基准已验」假设**：
+
+1. **基准分支这一簇是死代码**：origin/1.21.1 的队列填充接线（`MaidModels`/`ChairModels.addPack`
+   登记 + `CustomPackLoader.clearCache`）在基准重构出 `AbstractClientModels` 时被静默丢失，
+   队列恒空 → 缓存屏在 1.21.11 上从不弹出。故基准三件的「1.21.11 新纹理管线」注释**从未被
+   运行期执行过**，不能当已验事实引用；本刀全部按 26.1.2 反编译源重推导，并补
+   `CacheIconWiringContractTest`（构造点唯一路由·生产者接线·GUI 分支·配置所有权·lang 四键，
+   三种缺陷形态红测：摘接线/全限定名绕过/配置挪世界规则侧 → 各自当场红）。
+2. **基准的截图时序注释在 26.1.2 不成立**：渲染线程上 `Minecraft.execute` 是**内联执行**
+   （`scheduleExecutables()` = `runningTask() || !isSameThread()`，帧循环里两者皆否），
+   「execute 延到下一帧回读」照搬会把每个图标错位成前一个模型。重推导为显式帧计数：
+   模型第 2 个 extract 帧内联发起截图（此刻主 RenderTarget 恰持有上一帧完整画面，
+   拷贝命令先于本帧渲染命令入 GPU 命令流），回调经 `RenderSystem.executePendingTasks`
+   在渲染线程执行——顺带满足 `registerAndLoad` 的渲染线程约束。
+
+**26.1.2 实查漂移**：`TextureManager.register` 只入表不上传（基准裸 `register` 是从未踩响的
+潜在炸弹）→ `registerAndLoad`；`byPath` 私有化且 `getTexture` 对未注册 id 会自动建
+SimpleTexture 报错加载（不能当存在性探针）→ `CacheIconManager` 自持已注册集合；
+`Window.getGuiScale()` double→int；`NativeImage.pixels` 私有化 → `getPixel/setPixel`；
+`setIsYsmModel` 随 YSM 不存在于 26.1.2 Fabric 删去。
+
+门禁：compileJava 0 错、JUnit 57/0（新增 5）、GameTest 28/0。⚠️ 零实机项见 O1。
 
 ## 2026-08-14：实机崩溃「岩浆怪替换开关一开即崩」（`e48a55f56`）
 

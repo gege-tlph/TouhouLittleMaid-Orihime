@@ -37,8 +37,8 @@ com/github/tartaricacid/touhoulittlemaid/client/animation/HardcodedAnimationMang
 com/github/tartaricacid/touhoulittlemaid/client/animation/gecko/magic/MagicCastingAnimationManager.java	73	魔法咏唱动画提供器	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 com/github/tartaricacid/touhoulittlemaid/client/event/ReloadResourceEvent.java	63	资源重载监听，触发自定义包重载	client/resource/listener/CustomPackReloadListener	替换	
 com/github/tartaricacid/touhoulittlemaid/client/event/SpecialMaidRenderEvent.java	87	特殊女仆模型渲染（复活节彩蛋等）	未找到	待定	子代理报「未找到」，**主模型尚未复核**
-com/github/tartaricacid/touhoulittlemaid/client/gui/entity/cache/CacheIconManager.java	119	女仆/椅子模型缓存图标管理	未找到	丢失	已复核：MiscConfig 的 MODEL_ICON_CACHE 开关在 26.1 也一并删了，是同一批移除
-com/github/tartaricacid/touhoulittlemaid/client/gui/entity/cache/CacheScreen.java	109	模型缓存图标的显示屏	未找到	丢失	已复核：MiscConfig 的 MODEL_ICON_CACHE 开关在 26.1 也一并删了，是同一批移除
+com/github/tartaricacid/touhoulittlemaid/client/gui/entity/cache/CacheIconManager.java	119	女仆/椅子模型缓存图标管理	未找到	丢失	【已补回 e45ea33a6】整簇整刀补回（4 文件+5 处丢分支+队列接线+配置菜单 lang）。⚠️ 基准分支同型接线（addPack/clearCache 登记队列）在其重构时也丢了，缓存屏在 1.21.11 从不弹出——本刀按 origin/1.21.1 行为补全并加 CacheIconWiringContractTest 看守；截图时序按 26.1.2 帧循环第三次重推导（execute 内联，改显式帧计数），零实机项在 O1
+com/github/tartaricacid/touhoulittlemaid/client/gui/entity/cache/CacheScreen.java	109	模型缓存图标的显示屏	未找到	丢失	【已补回 e45ea33a6】整簇整刀补回（4 文件+5 处丢分支+队列接线+配置菜单 lang）。⚠️ 基准分支同型接线（addPack/clearCache 登记队列）在其重构时也丢了，缓存屏在 1.21.11 从不弹出——本刀按 origin/1.21.1 行为补全并加 CacheIconWiringContractTest 看守；截图时序按 26.1.2 帧循环第三次重推导（execute 内联，改显式帧计数），零实机项在 O1
 com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/CraftingTableBackpackContainerScreen.java	54	工作台背包容器屏	未找到	丢失	【已补回 60aa8dcc6】已确认丢失（背包四型），见 entity/backpack 那批
 com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/EnderChestBackpackContainerScreen.java	54	末影箱背包容器屏	未找到	丢失	【已补回 8efc995d4】已确认丢失（背包四型），见 entity/backpack 那批
 com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/FurnaceBackpackContainerScreen.java	57	熔炉背包容器屏	未找到	丢失	【已补回 40b8cfde0】extractBackground + GuiTools.guiBlit，火焰/箭头 uv 与基准逐字相同，贴图实测 256×256。已确认丢失（背包四型），见 entity/backpack 那批
@@ -53,7 +53,7 @@ com/github/tartaricacid/touhoulittlemaid/client/renderer/entity/EntityYukkuriSli
 com/github/tartaricacid/touhoulittlemaid/client/renderer/entity/ReplaceExperienceOrbRenderer.java	76	经验球替换成点符的渲染器	未找到	丢失	【已补回 6cbe559ba】entityCutoutNoCull 改名 entityCutout（反编译证无剔除管线，语义不变）；textures/entity/point_item.png 自基准取回。已复核：属上游删除的原版替换功能（yukkuri 资源 11→0、VanillaConfig 整个删掉），与行为基准比是丢失（对应 REPLACE_XP_TEXTURE）
 com/github/tartaricacid/touhoulittlemaid/client/renderer/item/PerspectiveBakedModel.java	69	按显示上下文切换烘焙模型视角	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 com/github/tartaricacid/touhoulittlemaid/client/renderer/item/ReplaceableBakedModel.java	87	可替换内部烘焙模型的代理	未找到	丢失	【已补回 6cbe559ba】2026-08-14 改判 待定→丢失：图腾/经验瓶两开关的唯一消费者（配置项与消费者同批落地）；Unbaked.bake 增 Matrix4fc 参已适配。子代理报「未找到」，**主模型尚未复核**
-com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/CacheIconTexture.java	43	缓存图标纹理加载	未找到	丢失	已复核：MiscConfig 的 MODEL_ICON_CACHE 开关在 26.1 也一并删了，是同一批移除
+com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/CacheIconTexture.java	43	缓存图标纹理加载	未找到	丢失	【已补回 e45ea33a6】整簇整刀补回（4 文件+5 处丢分支+队列接线+配置菜单 lang）。⚠️ 基准分支同型接线（addPack/clearCache 登记队列）在其重构时也丢了，缓存屏在 1.21.11 从不弹出——本刀按 origin/1.21.1 行为补全并加 CacheIconWiringContractTest 看守；截图时序按 26.1.2 帧循环第三次重推导（execute 内联，改显式帧计数），零实机项在 O1
 com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/FilePackTexture.java	66	从文件系统加载自定义包纹理	client/renderer/texture/CustomPackTexture	替换	
 com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/GifTexture.java	107	GIF 动画纹理支持	未找到	丢失	已复核：GIF 表情气泡，1.21.11 注释记载这正是实机「有的只剩气泡框」的根因
 com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/ZipPackTexture.java	77	从 ZIP 包加载纹理	未找到	待定	子代理报「未找到」，**主模型尚未复核**
@@ -81,7 +81,7 @@ cn/sh1rocu/touhoulittlemaid/mixin/common/LootTableMixin.java	62	拦截 loot 应�
 cn/sh1rocu/touhoulittlemaid/mixin/common/PlayerListMixin.java	19	玩家加入触发 PlayerLoggedInEvent	26.1 事件体系	替换	已复核：fork 自造的 Forge 风格事件总线整体被换掉，26.1 改用自己那套回调（KeyInputCallback/PlaySoundEvent/RenderHandEvent 等）。靶点类在 26.1.2 仍存在，所以不是靶点没了。注：我们已自建同名 PlayerListMixin 做 op/deop 重发，与它无关
 cn/sh1rocu/touhoulittlemaid/mixin/common/ServerPacksSourceMixin.java	29	数据包加载触发 AddPackFindersEvent	PackRepositoryMixin+CustomPackLoader	替换	已复核：自定义资源包发现改由 PackRepositoryMixin + PackRepositoryExtension + CustomPackLoader/ServerCustomPackLoader 承担
 com/github/tartaricacid/touhoulittlemaid/mixin/client/ItemPropertiesMixin.java	22	女仆持钓竿时的钓鱼状态谓词	client/mixin/FishingRodCastMixin	替换	**已复核，子代理报错**：26.1 有 client.FishingRodCastMixin 且已登记进 mixins.json
-com/github/tartaricacid/touhoulittlemaid/util/IconCache.java	48	模型图标缓存的截图导出	未找到	丢失	与模型图标缓存同簇（CacheIconManager 等），MiscConfig.MODEL_ICON_CACHE 开关一并消失
+com/github/tartaricacid/touhoulittlemaid/util/IconCache.java	48	模型图标缓存的截图导出	未找到	丢失	【已补回 e45ea33a6】同簇整刀补回；26.1.2 漂移：NativeImage.pixels 私有化，裁剪改 getPixel/setPixel 并顺带绿幕转透明
 com/github/tartaricacid/touhoulittlemaid/util/MaidFluidRender.java	119	把流体纹理画进 GUI（源自 JEI）	未找到	丢失	【已补回 ff7ee685d】26.1.2 漂移：FluidVariantRendering.getSprite 已删 → ModelManager.getFluidStateModelSet 链（JEI 29.5 Fabric 同款，字节码实查）。与背包四型同批（液体背包），见 entity/backpack 那批
 com/github/tartaricacid/touhoulittlemaid/util/MaidFluidUtil.java	54	流体与桶的交互处理	未找到	丢失	【已补回 ff7ee685d】Forge ItemHandlerHelper → 宿主 ItemsUtil.insertItemStacked（SlottedStorage）。与背包四型同批（液体背包），见 entity/backpack 那批
 com/github/tartaricacid/touhoulittlemaid/util/ResourceLocationUtil.java	27	资源 id 字符串的校验与分解	util/IdentifierUtil	替换	**已复核，子代理报错**：MiscConfig 的 import 从 ResourceLocationUtil.isValidResourceLocation 改成了 IdentifierUtil.isValid
