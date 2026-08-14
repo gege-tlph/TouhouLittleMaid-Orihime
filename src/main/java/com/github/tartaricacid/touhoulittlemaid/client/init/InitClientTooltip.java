@@ -1,7 +1,9 @@
 package com.github.tartaricacid.touhoulittlemaid.client.init;
 
+import com.github.tartaricacid.touhoulittlemaid.client.tooltip.ClientBoardStateTooltip;
 import com.github.tartaricacid.touhoulittlemaid.client.tooltip.ClientItemContainerTooltip;
 import com.github.tartaricacid.touhoulittlemaid.client.tooltip.ClientMaidTooltip;
+import com.github.tartaricacid.touhoulittlemaid.inventory.tooltip.BoardStateTooltip;
 import com.github.tartaricacid.touhoulittlemaid.inventory.tooltip.ItemContainerTooltip;
 import com.github.tartaricacid.touhoulittlemaid.inventory.tooltip.ItemMaidTooltip;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
@@ -14,6 +16,9 @@ public class InitClientTooltip {
         }
         if (component instanceof ItemContainerTooltip itemContainerTooltip) {
             return new ClientItemContainerTooltip(itemContainerTooltip);
+        }
+        if (component instanceof BoardStateTooltip boardStateTooltip) {
+            return new ClientBoardStateTooltip(boardStateTooltip);
         }
         return null;
     }
