@@ -91,6 +91,49 @@ public final class IconCache {
     }
 
     /**
+     * 面积平均降采样（alpha 加权，防全透明像素把边缘平均出黑晕）。
+     * <p>
+     * 图标以 256² 捕获，GUI 里按 24 GUI 格显示：直接最近邻绘制是约 10:1 抽点，
+     * 细部件被抽丢成锯齿/斑驳（origin 固有显示质量；2026-08-15 用户报「不完美」，
+     * 随差分抠像一并改进）。捕获后先降到显示物理尺寸（24 × guiScale），
+     * 贴图与屏幕像素 1:1，锯齿消除。
+     */
+    public static NativeImage downscaleBox(NativeImage src, int outSize) {
+        int srcSize = Math.min(src.getWidth(), src.getHeight());
+        NativeImage out = new NativeImage(outSize, outSize, true);
+        for (int oy = 0; oy < outSize; oy++) {
+            int y0 = oy * srcSize / outSize;
+            int y1 = Math.max(y0 + 1, (oy + 1) * srcSize / outSize);
+            for (int ox = 0; ox < outSize; ox++) {
+                int x0 = ox * srcSize / outSize;
+                int x1 = Math.max(x0 + 1, (ox + 1) * srcSize / outSize);
+                long aSum = 0, rSum = 0, gSum = 0, bSum = 0;
+                int count = 0;
+                for (int y = y0; y < y1; y++) {
+                    for (int x = x0; x < x1; x++) {
+                        int argb = src.getPixel(x, y);
+                        int a = argb >>> 24;
+                        aSum += a;
+                        rSum += (long) ((argb >> 16) & 0xFF) * a;
+                        gSum += (long) ((argb >> 8) & 0xFF) * a;
+                        bSum += (long) (argb & 0xFF) * a;
+                        count++;
+                    }
+                }
+                if (aSum == 0) {
+                    continue;
+                }
+                int a = (int) (aSum / count);
+                int r = (int) (rSum / aSum);
+                int g = (int) (gSum / aSum);
+                int b = (int) (bSum / aSum);
+                out.setPixel(ox, oy, a << 24 | r << 16 | g << 8 | b);
+            }
+        }
+        return out;
+    }
+
+    /**
      * 单像素差分：入参为绿幕/品红幕下的 ARGB 读回值（读回 α 恒为 FF，忽略），返回带真实 α 的 ARGB。
      */
     public static int combinePixel(int greenArgb, int magentaArgb) {

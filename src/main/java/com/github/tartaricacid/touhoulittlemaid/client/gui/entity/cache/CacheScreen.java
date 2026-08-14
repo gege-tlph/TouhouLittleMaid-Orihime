@@ -48,9 +48,19 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
      * （RenderSystem.executePendingTasks，渲染线程）送达后差分合成、registerAndLoad、进入下一个模型。
      */
     private static final int CAPTURE_AT_FRAME = 3;
+    /**
+     * gecko 模型捕获前的安定等待（客户端 tick，与帧率无关）。
+     * 实测教训（酒狐系）：特效骨骼（ysmGlow* 魔法阵/闪光）在几何默认态是<b>可见</b>的，
+     * 靠动画（idle/parallel/条件转场）把它们收起来——活体 GUI 已渲染多帧动画安定后不可见，
+     * 而绑定后第 3 帧就截图会把尚未收起的特效拍进图标（用户描述「动画帧不对」的根因）。
+     * 等待期间照常逐帧渲染，让控制器转场跑完再截。
+     */
+    private static final int GECKO_WARMUP_TICKS = 20;
 
     private E processingInfo = null;
     private int framesDrawn = 0;
+    private int ticksSinceModelStart = 0;
+    private boolean captureIssued = false;
     /**
      * 屏关闭后仍可能有 fence 回调迟到，据此丢弃并释放，防止 NativeImage 泄漏
      */
@@ -98,6 +108,8 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
         if (this.processingInfo == null) {
             this.processingInfo = modelInfos.poll();
             this.framesDrawn = 0;
+            this.ticksSinceModelStart = 0;
+            this.captureIssued = false;
         }
         E modelInfo = this.processingInfo;
         if (modelInfo == null) {
@@ -114,13 +126,31 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
         graphics.fill(magentaX, 0, magentaX + scaleModified, scaleModified + 2, IconCache.BACKGROUND_MAGENTA);
         this.drawEntity(graphics, magentaX, 0, modelInfo, scaleModified);
 
-        if (this.framesDrawn == CAPTURE_AT_FRAME) {
+        boolean warmedUp = !modelInfo.isGeckoModel() || this.ticksSinceModelStart >= GECKO_WARMUP_TICKS;
+        if (this.framesDrawn >= CAPTURE_AT_FRAME && warmedUp && !this.captureIssued) {
+            this.captureIssued = true;
             IconCache.capturePair(256, magentaX * guiScale,
                     (greenShot, magentaShot) -> acceptPair(modelInfo, greenShot, magentaShot));
         }
         if (this.framesDrawn <= CAPTURE_AT_FRAME) {
             this.framesDrawn++;
         }
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        this.ticksSinceModelStart++;
+    }
+
+    /**
+     * 必须不暂停（与被本屏顶替的 AbstractModelGui 一致）。实测定案（酒狐系法阵/绿框持续入镜的根因）：
+     * 单人档暂停会冻结 level 时间 → {@code query.anim_time} 不走 → gecko 的 pre_parallel/条件动画
+     * 永不推进 → 模型作者靠动画隐藏（scale=0）的特效骨骼以几何默认态一直可见。
+     */
+    @Override
+    public boolean isPauseScreen() {
+        return false;
     }
 
     private void acceptPair(E modelInfo, NativeImage greenShot, NativeImage magentaShot) {
@@ -134,7 +164,18 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
         greenShot.close();
         magentaShot.close();
 
-        CacheIconTexture cacheIconTexture = new CacheIconTexture(modelInfo.getModelId(), combined);
+        // 显示端质量：GUI 按 24 GUI 格绘制，最近邻 10:1 抽样会抽丢细部件（用户实测「不完美」）。
+        // 捕获后按当前 guiScale 面积平均降到显示物理尺寸，贴图与屏幕像素 1:1
+        int guiScale = Screens.getMinecraft(this).getWindow().getGuiScale();
+        int iconSize = Math.clamp(24 * guiScale, 24, 256);
+        NativeImage icon;
+        if (iconSize < 256) {
+            icon = IconCache.downscaleBox(combined, iconSize);
+            combined.close();
+        } else {
+            icon = combined;
+        }
+        CacheIconTexture cacheIconTexture = new CacheIconTexture(modelInfo.getModelId(), icon);
         // 26.1.2 的 register 只入表不上传（TextureManager 反编译实查），
         // ReloadableTexture 必须走 registerAndLoad 当场 load + 上传；本回调已在渲染线程，满足其线程约束
         Minecraft.getInstance().getTextureManager().registerAndLoad(modelInfo.getCacheIconId(), cacheIconTexture);
