@@ -63,6 +63,32 @@ public class FurnaceBackpackGameTest {
     }
 
     /**
+     * 卸下背包的丢物路径：经 VanillaContainerWrapper 从熔炉容器抽取（onTakeOff 同一条路）。
+     *
+     * <p>实机复现过的崩溃（2026-08-14，用户在熔炉背包燃烧时替换成工作台背包）：
+     * 宿主自 NeoForge 移植的 {@code RootCommitJournal.createSnapshot()} 返回 null，
+     * 而它嫁接的 Fabric {@code SnapshotParticipant.updateSnapshots} 对快照做非空断言——
+     * 这个 wrapper 的取放路径在宿主树里**从来没工作过**，本用例把它钉在服务端门里。</p>
+     */
+    @GameTest
+    public void takeOffDropPathExtractsThroughVanillaContainerWrapper(GameTestHelper helper) {
+        EntityMaid maid = spawnFurnaceMaid(helper);
+        if (!(maid.getBackpackData() instanceof FurnaceBackpackData data)) {
+            helper.fail("熔炉背包的数据对象没绑上");
+            return;
+        }
+        data.setItem(0, new ItemStack(Items.BEEF, 5));
+        data.setItem(1, new ItemStack(Items.COAL, 3));
+        com.github.tartaricacid.touhoulittlemaid.util.ItemsUtil.dropEntityItems(
+                maid, cn.sh1rocu.touhoulittlemaid.util.transfer.VanillaContainerWrapper.of(data), 0, null);
+        if (!data.isEmpty()) {
+            helper.fail("熔炉三格没有被抽空：input=" + data.getItem(0) + " fuel=" + data.getItem(1));
+            return;
+        }
+        helper.succeed();
+    }
+
+    /**
      * 稀疏槽位存取往返（上游缺陷 #1053 的回归钉）：只有燃料槽有物品时，
      * 存了再读，燃料必须还在燃料槽——不带索引的旧格式会把它压紧进输入槽，
      * 重进世界后燃料会被当原料烧掉。
