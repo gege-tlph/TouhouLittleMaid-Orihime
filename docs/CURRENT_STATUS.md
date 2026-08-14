@@ -67,7 +67,7 @@
 | 2 | ~~**棋局存档与记录层**~~ | ~~8~~ | **已补完**（`e778676cc`…`ba5b8af65`） | 见已关闭表 |
 | 3 | ~~**REI 集成**~~ | ~~5~~ | **已补完**（`30d0d2795`：四件逐字 + Maker 重写走宿主 `ClientRecipeEvent.ALTAR_RECIPES`；REI 实证加载且 GameTest 28/0） | 见已关闭表 |
 | 4 | ~~**原版替换功能**~~ | ~~4+2~~ | **已补完**（`6cbe559ba`，含两处改判：InitSpecialItemRender 替换→丢失、ReplaceableBakedModel 待定→丢失） | 见已关闭表 |
-| 5 | **模型图标缓存** | 4 | 模型预览图标不缓存 | `MiscConfig.MODEL_ICON_CACHE` 一并消失 |
+| 5 | **模型图标缓存** | 4+分支 | 模型预览图标不缓存 | ⚠️ **2026-08-14 取证：真实边界比账本 4 条大**——`getCacheIconId` 消费链（`IModelInfo` 接口方法 + `MaidModelInfo`/`ChairModelInfo` 实现 + 三个模型 GUI 的图标分支 + `AbstractMaidContainerGui`/两个 detail GUI 的 `CacheIconManager` 改道）在宿主是**丢分支**（反向缺口按丢文件计数看不见）。且 `CacheScreen` 截图时序按 1.21.11 延迟提交管线重推导过一次，26.1.2 的 extract 管线要**第三次重推导**（`Screen.render`→`extractRenderState`），纯实机可验——全队列客户端最脆的一刀，须整刀做。依赖都在：`EntityCacheUtil.ENTITY_CACHE` ✓、彩蛋常量挪至 `SpecialMaidModelResolver` ✓、`TileEntityModelSwitcher`→`BlockEntityModelSwitcher` 改名 |
 | — | 零散 | 6 | GIF 表情纹理、Carry On 渲染修正等 | |
 
 ⚠️ **还有 55 条「待定」**：子代理报「未找到」而我尚未复核，一律不写成结论
