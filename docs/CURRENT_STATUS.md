@@ -33,6 +33,10 @@
 - ☑️ 饮用音效（女仆喂主人喝东西）：条件难凑本轮未实测，**用户裁定视为验收通过、
   除非后续被报告 bug**（2026-08-14）——口径与上面的实测项不同，特此分开记
 
+**新增待实测（原版替换刀，`6cbe559ba`）**：配置菜单「原版设置」栏五开关逐个开合——
+史莱姆/岩浆怪变油库里、经验球变点符、图腾变 1UP、附魔之瓶变点符；**开关即时生效**
+（包装器每帧读配置，无需重启）；关闭状态下与原版渲染一字不差。
+
 **新增待实测（REI 刀，`30d0d2795`）**：开发客户端现已自带 REI——REI 界面能查到祭坛配方
 （工作站图标=两种御币）、工作台/熔炉背包 GUI 的配方点击区、REI 一键转移进背包合成格/熔炉格。
 
@@ -62,7 +66,7 @@
 | 1 | ~~**女仆背包四型**~~ | ~~15~~ | **已补完 4/4**（末影箱 `8efc995d4`、工作台 `60aa8dcc6`、熔炉 `40b8cfde0`、液体 `ff7ee685d`） | 见已关闭表 |
 | 2 | ~~**棋局存档与记录层**~~ | ~~8~~ | **已补完**（`e778676cc`…`ba5b8af65`） | 见已关闭表 |
 | 3 | ~~**REI 集成**~~ | ~~5~~ | **已补完**（`30d0d2795`：四件逐字 + Maker 重写走宿主 `ClientRecipeEvent.ALTAR_RECIPES`；REI 实证加载且 GameTest 28/0） | 见已关闭表 |
-| 4 | **原版替换功能** | 4 | Yukkuri 史莱姆 / 点符经验球没了 | 与已知的 `VanillaConfig` 删除同批，闭环 |
+| 4 | ~~**原版替换功能**~~ | ~~4+2~~ | **已补完**（`6cbe559ba`，含两处改判：InitSpecialItemRender 替换→丢失、ReplaceableBakedModel 待定→丢失） | 见已关闭表 |
 | 5 | **模型图标缓存** | 4 | 模型预览图标不缓存 | `MiscConfig.MODEL_ICON_CACHE` 一并消失 |
 | — | 零散 | 6 | GIF 表情纹理、Carry On 渲染修正等 | |
 
@@ -116,6 +120,18 @@
 ---
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-14：原版替换补回（`6cbe559ba`）——反向缺口第四簇清零（4+2 条）
+
+五开关整簇：油库里史莱姆/岩浆怪、点符经验球、1UP 图腾、点符附魔之瓶。
+**两处账本改判**：InitSpecialItemRender 原判「替换」被实查证伪（所谓承接者是椅子/手办
+special renderer，同名家族误判）；ReplaceableBakedModel 待定→丢失（两开关唯一消费者）。
+基准三渲染器已是 render-state 形态近乎原样搬入；四处 26.1.2 漂移全部实查
+（CameraRenderState→state.level、BlockStateModel→block.dispatch、
+BlockModelWrapper→CuboidItemModelWrapper、entityCutoutNoCull→entityCutout 命名反转语义不变）。
+VanillaConfig 按交接裁决进 CommonConfig；inheritMagmaCubeFromSlime 迁移随行
+（四例 JUnit，接线哨兵红测过）。宿主半吊子清点：yukkuri 资源留了、常量没留；点符/1UP 资源全删。
+JUnit 51/0、GameTest 28/0。零实机项进 O1。
 
 ## 2026-08-14：REI 集成补回（`30d0d2795`）——反向缺口第三簇清零
 
