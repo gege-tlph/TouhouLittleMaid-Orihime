@@ -127,6 +127,7 @@
 | 瞬态应战 Activity 仲裁 | `f7ea486bf` | 新增 |
 | 每女仆响应策略（关闭 / 自卫 / 护主）+ 持久化 | `604927e30` `9dd7783f2` | 新增 |
 | 任意手持物近战 | `bb5f847d4` | 已有 |
+| **女仆配置屏重做**：`MaidConfigLayout` 布局引擎 + 重写 `MaidConfigContainerGui`（较宿主版 +64/−139 行），响应策略的配置行就住在这屏里 | `1f1b72105` `9dd7783f2`；`MaidConfigLayoutTest`（§9 台账 A 组，未搬） | 宿主是旧版屏，**无 `MaidConfigLayout`**。⚠️ 玩家可见（用户 2026-08-14 实机点名）；**必须与本簇同刀**——先搬屏就是绑不上后端的纸面界面 |
 
 ⚠️ **新基有一个同名不同物的 `MaidCombatManager`**：基准把 `EntityMaid` 的战斗逻辑抽进了
 `entity.passive.MaidCombatManager`，与我们的 `entity.ai.combat.MaidCombatManager` **只是重名**。
@@ -152,6 +153,7 @@
 | 服务端按需下发 STT 凭据 / Velocity 常开 | `ea1c10ecb` `f51fc214f` |
 | 开发环境对话驱动命令 | `4b0683905` |
 | 15 种社区语言补齐 | `4fc61407d` |
+| **AI 设置屏五页重做**（玩家可见，用户 2026-08-14 实机点名）：hub 侧边栏做权限边界并把 AI 配置收拢一处、用量页 `AIChatSettingsUsageScreen`（宿主无）、STT 由每女仆选站改**全局单选**（基准删了宿主还有的 `AIChatSettingsSTTSiteScreen`）、hub 共享暂存「任何一页保存都提交全部改动」契约（证伪表「三处写下契约代码没做」那条的主角，枚举测试钉着） | `92d473a15` `b4eb00235` `5ee4c81d7` |
 
 交叉验证：1.21.11 分支账本 2026-07-28 / 07-30 两节，及那条分支的站点配置拓扑设计文档
 （结论已复述于本节，按隔离纪律不跨分支指路）。
