@@ -82,6 +82,9 @@ public class TouhouLittleMaidFabricClient implements ClientModInitializer {
         ClientTooltipComponentCallback.EVENT.register(InitClientTooltip::onRegisterClientTooltip);
         InitContainerGui.clientSetup();
         InitEntitiesRender.onEntityRenderers();
+        // 图腾/经验瓶的可替换物品模型（VanillaConfig 后两个开关的消费者）
+        net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin.register(
+                new com.github.tartaricacid.touhoulittlemaid.client.init.InitSpecialItemRender());
         InitEntitiesRender.onRegisterLayers();
         ClientEntityEvents.ENTITY_LOAD.register(EntityCacheUtil::onChangeDim);
         LevelRenderEvents.AFTER_SOLID_FEATURES.register(DebugClientRenderEvent::onRender);

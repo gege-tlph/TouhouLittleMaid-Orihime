@@ -36,6 +36,9 @@ public final class ConfigFileMigration {
     /** 这些规则值在代码宿主 origin/26.1 上原属 COMMON spec，即实例级的这个文件。 */
     private static final String LEGACY_FILE_NAME = TouhouLittleMaid.MOD_ID + "-common.toml";
 
+    private static final java.util.List<String> REPLACE_SLIME_MODEL_PATH = java.util.List.of("vanilla", "ReplaceSlimeModel");
+    private static final java.util.List<String> REPLACE_MAGMA_CUBE_MODEL_PATH = java.util.List.of("vanilla", "ReplaceMagmaCubeModel");
+
     private ConfigFileMigration() {
     }
 
@@ -77,6 +80,41 @@ public final class ConfigFileMigration {
             LOGGER.info("Migrated {} server rule values from {} to {}", migrated, legacy, serverFile);
         } catch (RuntimeException | IOException exception) {
             LOGGER.error("Failed to snapshot server rule values from {}", legacy, exception);
+        }
+    }
+
+    public static void inheritMagmaCubeFromSlime() {
+        inheritMagmaCubeFromSlime(FabricLoader.getInstance().getConfigDir());
+    }
+
+    /**
+     * 在 COMMON spec 加载既有文件之前跑：早于「岩浆怪独立开关」拆分的旧文件，
+     * 让玩家的 ReplaceSlimeModel 选择顺延到岩浆怪，而不是被 spec 默认值静默盖掉。
+     * 已带新键的文件、第三方未知键与注释一律不动。
+     *
+     * <p>行为基准的同名方法作用于它的 global 文件；本分支无 global 层，
+     * {@code VanillaConfig} 落在 COMMON（{@code touhou_little_maid-common.toml}），
+     * 故迁移目标同为此文件，语义不变（{@code MagmaCubeConfigInheritanceTest} 钉着）。</p>
+     */
+    static void inheritMagmaCubeFromSlime(Path configDir) {
+        Path common = configDir.resolve(LEGACY_FILE_NAME);
+        if (!Files.isRegularFile(common)) {
+            return;
+        }
+        try {
+            CommentedConfig config = read(common);
+            if (config.contains(REPLACE_MAGMA_CUBE_MODEL_PATH)) {
+                return;
+            }
+            if (!(config.getRaw(REPLACE_SLIME_MODEL_PATH) instanceof Boolean slimeValue)) {
+                return;
+            }
+            config.set(REPLACE_MAGMA_CUBE_MODEL_PATH, slimeValue);
+            writeAtomically(config, common);
+            LOGGER.info("Inherited ReplaceMagmaCubeModel={} from legacy ReplaceSlimeModel in {}",
+                    slimeValue, common);
+        } catch (RuntimeException | IOException exception) {
+            LOGGER.error("Failed to migrate ReplaceMagmaCubeModel in {}", common, exception);
         }
     }
 

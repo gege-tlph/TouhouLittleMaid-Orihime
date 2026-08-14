@@ -16,6 +16,9 @@ public final class CommonConfig {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         MaidConfig.initCommon(builder);
         MiscConfig.initCommon(builder);
+        // 原版替换五开关：实例级个人配置（按 1.21.11 交接裁决进 COMMON 侧；行为基准放在 global 文件，
+        // 本分支无 global 层，落在 common 同为个人所有权，语义不变）
+        VanillaConfig.init(builder);
         RenderConfig.init(builder);
         AIConfig.init(builder);
         CONFIG = builder.build();

@@ -6,6 +6,7 @@ import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ChairConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.RenderConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.VanillaConfig;
 import com.github.tartaricacid.touhoulittlemaid.init.registry.CompatRegistry;
 import com.github.tartaricacid.touhoulittlemaid.network.client.config.ServerRulesClientCache;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
@@ -42,6 +43,7 @@ public class MenuIntegration {
         ServerRulesClientCache.Session session = ServerRulesClientCache.createSession();
 
         maidConfig(root, entryBuilder);
+        vanillaConfig(root, entryBuilder);
         miscConfig(root, entryBuilder);
         renderConfig(root, entryBuilder);
         GlobalAIIntegration.aiChat(root, entryBuilder);
@@ -260,6 +262,28 @@ public class MenuIntegration {
                 .setSaveConsumer(i -> {
                     MaidConfig.MAID_GUN_NEAR_DISTANCE.set(i);
                     MaidConfig.MAID_GUN_NEAR_DISTANCE.save();
+                }).build());
+    }
+
+    /** 原版替换五开关：实例级个人配置，默认全 false（用户 2026-07-24 定案，上游默认全 true） */
+    private static void vanillaConfig(ConfigBuilder root, ConfigEntryBuilder entryBuilder) {
+        ConfigCategory vanilla = root.getOrCreateCategory(Component.translatable("config.touhou_little_maid.vanilla"));
+        addVanillaToggle(vanilla, entryBuilder, "replace_slime_model", VanillaConfig.REPLACE_SLIME_MODEL);
+        addVanillaToggle(vanilla, entryBuilder, "replace_magma_cube_model", VanillaConfig.REPLACE_MAGMA_CUBE_MODEL);
+        addVanillaToggle(vanilla, entryBuilder, "replace_xp_texture", VanillaConfig.REPLACE_XP_TEXTURE);
+        addVanillaToggle(vanilla, entryBuilder, "replace_totem_texture", VanillaConfig.REPLACE_TOTEM_TEXTURE);
+        addVanillaToggle(vanilla, entryBuilder, "replace_xp_bottle_texture", VanillaConfig.REPLACE_XP_BOTTLE_TEXTURE);
+    }
+
+    private static void addVanillaToggle(ConfigCategory category, ConfigEntryBuilder entryBuilder,
+                                         String key, net.neoforged.neoforge.common.ModConfigSpec.BooleanValue value) {
+        category.addEntry(entryBuilder.startBooleanToggle(
+                        Component.translatable("config.touhou_little_maid.vanilla." + key), value.get())
+                .setDefaultValue(value.getDefault())
+                .setTooltip(Component.translatable("config.touhou_little_maid.vanilla." + key + ".tooltip"))
+                .setSaveConsumer(b -> {
+                    value.set(b);
+                    value.save();
                 }).build());
     }
 

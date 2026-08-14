@@ -80,6 +80,8 @@ public class TouhouLittleMaidFabric implements ModInitializer {
         // 必须先于 COMMON spec 注册：这些键原属 COMMON spec，注册那一刻 correct() 会把
         // 「已不在 spec 里」的它们整批剥掉，旧值就没了。
         ConfigFileMigration.migrateServerFileIfNeeded(ServerRuleConfig.values(), ServerConfig.CONFIG);
+        // 同样先于 COMMON 注册：旧文件缺岩浆怪独立开关时继承史莱姆开关的旧值
+        ConfigFileMigration.inheritMagmaCubeFromSlime();
         ServerRuleConfig.initializeDefaults();
         ConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.COMMON, CommonConfig.init());
 

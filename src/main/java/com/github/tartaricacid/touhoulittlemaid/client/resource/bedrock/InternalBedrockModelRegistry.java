@@ -58,6 +58,10 @@ public final class InternalBedrockModelRegistry {
 
     public static final Identifier TOMBSTONE = addEntityModel("tombstone");
 
+    // 原版替换（油库里）：宿主删渲染器时资源留在了树里，常量随本刀补回
+    public static final Identifier REIMU_YUKKURI = addEntityModel("reimu_yukkuri");
+    public static final Identifier MARISA_YUKKURI = addEntityModel("marisa_yukkuri");
+
     public static final Identifier BIG_BACKPACK = addEntityModel("backpack/big_backpack");
     public static final Identifier MIDDLE_BACKPACK = addEntityModel("backpack/middle_backpack");
     public static final Identifier SMALL_BACKPACK = addEntityModel("backpack/small_backpack");

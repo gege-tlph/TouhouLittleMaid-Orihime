@@ -30,6 +30,12 @@ public final class InitEntitiesRender {
         EntityRenderers.register(EntityBroom.TYPE, EntityBroomRender::new);
         EntityRenderers.register(MaidFishingHook.TYPE, MaidFishingHookRenderer::new);
 
+        // 原版替换三渲染器（行为基准同款）：包装器形态，开关关闭时完整委托原版渲染器，
+        // 每帧读 VanillaConfig 开关，改配置即时生效无需重启
+        EntityRenderers.register(net.minecraft.world.entity.EntityType.SLIME, EntityYukkuriSlimeRender::new);
+        EntityRenderers.register(net.minecraft.world.entity.EntityType.MAGMA_CUBE, EntityMarisaYukkuriSlimeRender::new);
+        EntityRenderers.register(net.minecraft.world.entity.EntityType.EXPERIENCE_ORB, ReplaceExperienceOrbRenderer::new);
+
         BlockEntityRenderers.register(InitBlocks.ALTAR_BE, AltarRenderer::new);
         BlockEntityRenderers.register(InitBlocks.STATUE_BE, StatueRenderer::new);
         BlockEntityRenderers.register(InitBlocks.GARAGE_KIT_BE, GarageKitRenderer::new);
