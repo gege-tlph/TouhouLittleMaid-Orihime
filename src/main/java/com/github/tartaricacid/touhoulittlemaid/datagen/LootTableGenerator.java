@@ -53,6 +53,9 @@ public class LootTableGenerator {
     public static final ResourceKey<LootTable> RANDOM_BOARD_STATE = getLootTableKey("chest/random_board_state");
     public static final ResourceKey<LootTable> SPAWN_BONUS = getLootTableKey("chest/spawn_bonus");
     public static final ResourceKey<LootTable> NORMAL_BACKPACK = getLootTableKey("chest/normal_backpack");
+    // 背包四型的另外两张表（furnace_or_crafting_table_backpack / tank_backpack）引用尚未补回的
+    // 熔炉/液体背包物品，随那两刀一起落地；账本 host_gap_ledger 的对应行有标注。
+    public static final ResourceKey<LootTable> ENDER_CHEST_BACKPACK = getLootTableKey("chest/ender_chest_backpack");
 
     public static final ResourceKey<LootTable> NORMAL_BAUBLE = getLootTableKey("chest/normal_bauble");
     public static final ResourceKey<LootTable> RARE_BAUBLE = getLootTableKey("chest/rare_bauble");
@@ -123,6 +126,11 @@ public class LootTableGenerator {
                     .add(LootItem.lootTableItem(InitItems.MAID_BACKPACK_MIDDLE).setWeight(9))
                     .add(LootItem.lootTableItem(InitItems.MAID_BACKPACK_BIG).setWeight(4))
                     .add(EmptyLootItem.emptyItem().setWeight(50))));
+
+            consumer.accept(ENDER_CHEST_BACKPACK, LootTable.lootTable().withPool(LootPool.lootPool()
+                    .setRolls(ConstantValue.exactly(1))
+                    .add(LootItem.lootTableItem(InitItems.ENDER_CHEST_BACKPACK).setWeight(1))
+                    .add(EmptyLootItem.emptyItem().setWeight(4))));
 
             consumer.accept(NORMAL_BAUBLE, LootTable.lootTable().withPool(LootPool.lootPool()
                     .setRolls(UniformGenerator.between(1, 3))

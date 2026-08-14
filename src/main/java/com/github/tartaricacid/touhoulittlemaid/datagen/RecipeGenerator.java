@@ -67,11 +67,23 @@ public class RecipeGenerator extends RecipeProvider {
                 .requires(ConventionalItemTags.DIAMOND_GEMS)
                 .save(recipeOutput);
 
+        AltarRecipeBuilder.shapeless(items, InitItems.CRAFTING_TABLE_BACKPACK)
+                .power(0.2F)
+                .requires(InitItems.MAID_BACKPACK_MIDDLE)
+                .requires(ConventionalItemTags.PLAYER_WORKSTATIONS_CRAFTING_TABLES)
+                .save(recipeOutput);
+
         AltarRecipeBuilder.shapeless(items, InitItems.DROWN_PROTECT_BAUBLE)
                 .power(0.2F)
                 .requires(ConventionalItemTags.NETHER_WART_CROPS)
                 .requires(ConventionalItemTags.LIME_DYES)
                 .requires(4, ItemTags.FISHES)
+                .save(recipeOutput);
+
+        AltarRecipeBuilder.shapeless(items, InitItems.ENDER_CHEST_BACKPACK)
+                .power(0.2F)
+                .requires(InitItems.MAID_BACKPACK_MIDDLE)
+                .requires(Items.ENDER_CHEST)
                 .save(recipeOutput);
 
         AltarRecipeBuilder.shapeless(items, InitItems.EXPLOSION_PROTECT_BAUBLE)
