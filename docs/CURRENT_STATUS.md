@@ -88,20 +88,36 @@
 
 ⚠️ 上表每一条在代码里都有对应注释，**不要只靠本表**——本表会过时，注释在改到时才会被看见。
 
-**O6 · TACZ 兼容 + 远程应战批（2026-08-14 新开，清单已收）**
+**O6 · TACZ 兼容 + 远程应战批（2026-08-14 新开，两份清单已收齐）**
 
-1.21.11 分支同日完成了这轮并送来移植清单（原文归档于
-[archive/PORT_TACZ_AND_RANGED_AI.md](archive/PORT_TACZ_AND_RANGED_AI.md)，结论已入审计）：
+1.21.11 分支同日完成这轮并送来两份清单：专题版
+[archive/PORT_TACZ_AND_RANGED_AI.md](archive/PORT_TACZ_AND_RANGED_AI.md)（TACZ+远程 AI 操作指引）
+与全量版 [archive/PORT_TACZ_AND_RANGED_AI_FULL.md](archive/PORT_TACZ_AND_RANGED_AI_FULL.md)
+（27 笔 67 文件按 A 恢复基准/B 超基准逐条决定/C 门禁 分三类 + 1.21.11 API 事实表）。
+蒸馏结论已入审计 §2.2/§3.B，动手时**两份都过一遍**：
 
 - **生态裁决已翻**：TaCZ Refabricated 有 26.1.2 分支构件（审计 §2.2 专门行），
   账本 14 行枪械条目改判「丢失」；⚠️ 上游明说 1.21.11 与 26.x 是**两套实现**，
-  凡涉 TACZ 内部（mixin 注入点、数据组件）必须按 26.1.2 的 jar 重验，不能照抄 1.21.11 的验证结论
-- **远程应战批与 TACZ 无关、26.1.2 同样需要**（行为基准已前移，审计 §3.B 新行）：
-  应战活动接远程行为、弓弩解绑工作任务、swingingArms 清理等
-- **注册面九处清单**与 1.21.11 特有改写的逐条重验表都在归档原文里，动手时照单走
-- **未决项随迁**：持远程武器时 BFS 寻路半径吃任务索敌半径——26.1.2 现树
-  `TaskBowAttack.searchRadius` 同构大概率同在，判据 = 拿弩兵女仆复现（非 TACZ 独有）
-- 恢复锚点已埋：`ServerRuleConfig.values()` javadoc（枪械三键必须进认领清单，否则崩服）
+  凡涉 TACZ 内部（mixin 注入点、数据组件）必须按 26.1.2 的 jar 重验；Fabric API 下限也按其
+  fabric.mod.json 重读（1.21.11 那次升 API 就是被 TACZ 逼的）
+- **远程应战批与 TACZ 无关、26.1.2 同样需要**（行为基准已前移，精确参数与陷阱全在审计
+  §3.B 那一行：速度 0.5、站定距离 16、resolveImplementation 不加 isWeapon、
+  canUseNonMeleeWeapon 陷阱、swingingArms 修复已随基准定案）
+- **B 类超基准项逐条显式决定**（全量清单 B1–B7）：除上述外还有
+  `GunRecognitionRange` 按枪种取值（基准无此文件，基准的扫描/交战半径本就不一致）、
+  渲染期不读实体（`EntityMaidRenderState.backpackShowItem` 字段，26.1.2 渲染架构同源直接适用）、
+  `GeoLocatorType` 的 TAC_PISTOL/RIFLE 取消注释、**菜单三个枪械滑块要包 `isModLoaded`**
+  （⚠️ 26.1.2 现树的三个滑块是裸露的，TACZ 刀时对齐）、66 条枪械 lang×11 语言文件
+  （`.desc` 按只有 TaCZ 重写，基准原文提到的 SBW 未恢复）
+- **「持枪寻路异常」降级**：基准分支六组受控对照（平地/地形×静止/慢走×四种武器）
+  复现不出——枪每组都不比其它武器差、交战组最稳；等用户给复现现场再立案。
+  半径耦合确认是真实性能面但非该症状成因，BFS 解耦属超基准候选未做
+- 恢复锚点已埋：`ServerRuleConfig.values()` javadoc（枪械三键必须进认领清单，
+  1.21.11 两次崩服实证「用对访问器 ≠ 读得到」）
+- 1.21.11 API 事实表（AbstractArrow 挪包、getBaseDamage 删除、药水箭组件拷贝、
+  不死系毒/再生免疫是原版规则等）在全量清单尾部，26.1.2 动到箭/远程时先查它
+- 取证纪律两条随单收下：**创造模式玩家不被怪物索敌**（战斗类取证先证明触发条件成立）；
+  **比值型聚合指标分母趋零会爆炸**（两数不自洽就回看原始序列）
 
 **排序**：在反向缺口余下三簇（REI/原版替换/图标缓存）之后、§3.B/§3.C 大簇之前或同批，
 届时由用户定夺。
