@@ -39,16 +39,18 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
      * 「execute 延迟到下一帧回读」在此并不成立，照搬会把每个图标错位成前一个模型的画面。
      * 故在帧 k 的 extract 里发起的截图，读到的是<b>帧 k-1</b> 的完整画面。
      * <p>
-     * 双背景差分抠像（2026-08-15 用户批准的超基准改进，动机见 {@link IconCache}）按此排帧：
-     * 帧 0 绘绿幕 + 模型；帧 1 起改绘品红幕 + 模型，并发起第一张捕获（读到帧 0 = 绿幕像）；
-     * 帧 2 发起第二张捕获（读到帧 1 = 品红像）。两张相邻帧的姿态差只有 1 帧，
-     * 把呼吸/眨眼类持续动画造成的差分误读压到最低。两张都经 fence 回调
+     * 双背景差分抠像（2026-08-15 用户批准的超基准改进，动机见 {@link IconCache}）采用<b>同帧双幕</b>：
+     * 每帧并排绘制绿幕块与品红幕块、同一模型渲染两次——同帧 = 同一动画时间戳，姿态逐位相同。
+     * 首版曾跨帧取两张（绿一帧、品红一帧），bedrock 模型近乎静止没暴露问题，gecko 模型的
+     * 骨骼动画在帧间位移全部被差分误读成透明度，实测出鬼影——同帧双幕把「时间」这个变量整个消掉。
+     * 捕获推迟到第 {@link #CAPTURE_AT_FRAME} 个绘制帧发起（读到的是其前一帧画面），
+     * 给 gecko 模型的动画绑定/异步初始化留缓冲。回读经 fence 回调
      * （RenderSystem.executePendingTasks，渲染线程）送达后差分合成、registerAndLoad、进入下一个模型。
      */
+    private static final int CAPTURE_AT_FRAME = 3;
+
     private E processingInfo = null;
     private int framesDrawn = 0;
-    private NativeImage greenShot = null;
-    private NativeImage magentaShot = null;
     /**
      * 屏关闭后仍可能有 fence 回调迟到，据此丢弃并释放，防止 NativeImage 泄漏
      */
@@ -104,41 +106,33 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
         // 26.1.2：Window.getGuiScale() 返回 int（1.21.11 是 double），除法必须走浮点，否则整数截断
         int guiScale = Screens.getMinecraft(this).getWindow().getGuiScale();
         int scaleModified = (int) Math.ceil(256.0 / guiScale);
+        int magentaX = scaleModified + 2;
 
-        // 帧 0 绿幕，帧 1 起品红幕；两张捕获各读前一帧，见类头时序注释
-        int background = this.framesDrawn == 0 ? IconCache.BACKGROUND_GREEN : IconCache.BACKGROUND_MAGENTA;
-        graphics.fill(0, 0, scaleModified, scaleModified + 2, background);
+        // 同帧双幕：左绿右品红，各画一遍同一模型；等待回读期间每帧重复，画面内容保持稳定
+        graphics.fill(0, 0, scaleModified, scaleModified + 2, IconCache.BACKGROUND_GREEN);
         this.drawEntity(graphics, 0, 0, modelInfo, scaleModified);
+        graphics.fill(magentaX, 0, magentaX + scaleModified, scaleModified + 2, IconCache.BACKGROUND_MAGENTA);
+        this.drawEntity(graphics, magentaX, 0, modelInfo, scaleModified);
 
-        if (this.framesDrawn == 1) {
-            IconCache.captureScreenshot(256, image -> acceptShot(modelInfo, image, true));
-        } else if (this.framesDrawn == 2) {
-            IconCache.captureScreenshot(256, image -> acceptShot(modelInfo, image, false));
+        if (this.framesDrawn == CAPTURE_AT_FRAME) {
+            IconCache.capturePair(256, magentaX * guiScale,
+                    (greenShot, magentaShot) -> acceptPair(modelInfo, greenShot, magentaShot));
         }
-        if (this.framesDrawn < 3) {
+        if (this.framesDrawn <= CAPTURE_AT_FRAME) {
             this.framesDrawn++;
         }
     }
 
-    private void acceptShot(E modelInfo, NativeImage image, boolean isGreen) {
+    private void acceptPair(E modelInfo, NativeImage greenShot, NativeImage magentaShot) {
         // fence 回调在渲染线程执行（executePendingTasks），与 extract 无并发
         if (this.closed) {
-            image.close();
+            greenShot.close();
+            magentaShot.close();
             return;
         }
-        if (isGreen) {
-            this.greenShot = image;
-        } else {
-            this.magentaShot = image;
-        }
-        if (this.greenShot == null || this.magentaShot == null) {
-            return;
-        }
-        NativeImage combined = IconCache.combine(this.greenShot, this.magentaShot);
-        this.greenShot.close();
-        this.magentaShot.close();
-        this.greenShot = null;
-        this.magentaShot = null;
+        NativeImage combined = IconCache.combine(greenShot, magentaShot);
+        greenShot.close();
+        magentaShot.close();
 
         CacheIconTexture cacheIconTexture = new CacheIconTexture(modelInfo.getModelId(), combined);
         // 26.1.2 的 register 只入表不上传（TextureManager 反编译实查），
@@ -152,14 +146,6 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
     public void removed() {
         super.removed();
         this.closed = true;
-        if (this.greenShot != null) {
-            this.greenShot.close();
-            this.greenShot = null;
-        }
-        if (this.magentaShot != null) {
-            this.magentaShot.close();
-            this.magentaShot = null;
-        }
     }
 
     public interface EntityRender<T extends LivingEntity, E extends IModelInfo> {

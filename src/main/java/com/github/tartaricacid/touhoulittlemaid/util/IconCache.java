@@ -4,7 +4,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 /**
  * Refer: https://github.com/CyclopsMC/IconExporter/
@@ -13,7 +13,7 @@ import java.util.function.Consumer;
  * ⚠️ 与 origin 的单绿幕等值抠像不同，本实现是<b>双背景差分抠像</b>（2026-08-15 用户批准的超基准改进）：
  * origin 只抠掉与纯绿逐位相等的像素，凡贴图带半透明像素的部件（琪露诺冰翅 α=128 等）
  * 与绿幕混合后逃过等值判定，图标上整片变绿——origin 固有伪影，实机截图证实。
- * 改为同一模型在绿幕与品红幕下各捕获一帧，逐像素反解：
+ * 改为同一帧里并排绘制绿幕与品红幕两块、同一模型渲染两次（同帧 = 同动画时间戳），逐像素反解：
  * {@code P₁ = F·α + B₁·(1-α)}、{@code P₂ = F·α + B₂·(1-α)} →
  * {@code (1-α) = (P₂-P₁)/(B₂-B₁)}（三通道求均值抗读回舍入噪声）、{@code F = (P₁ - B₁·(1-α))/α}。
  * 不透明像素两张全同 → 原样保留（模型自身的绿色部件零误杀）；纯背景差满幅 → 全透明；
@@ -37,28 +37,42 @@ public final class IconCache {
     /**
      * 26.1.2：Screenshot.takeScreenshot(RenderTarget, Consumer&lt;NativeImage&gt;) 编码一条 GPU
      * copyTextureToBuffer 命令 + fence，回调经 RenderSystem.executePendingTasks 在 fence 就绪后
-     * 于渲染线程执行（Minecraft.runTick 反编译实查）。本方法只裁剪不抠像，抠像在
-     * {@link #combine(NativeImage, NativeImage)} 里按双背景差分完成。
+     * 于渲染线程执行（Minecraft.runTick 反编译实查）。
+     * <p>
+     * 一次截图裁出<b>同一帧里并排绘制的绿幕/品红幕两块</b>——两块出自同一动画时间戳，
+     * 姿态逐位相同，差分不会把动画位移误读成透明度（gecko 模型实测教训：跨帧取两张时
+     * 骨骼动画在帧间的位移全部变成鬼影）。本方法只裁剪不抠像，抠像在
+     * {@link #combine(NativeImage, NativeImage)} 里完成。
      * NativeImage.pixels 字段在 26.1.2 已私有化，裁剪用公开的 getPixel/setPixel 逐像素拷贝。
+     *
+     * @param scaleImage       每块的边长（物理像素）
+     * @param magentaXPhysical 品红块左上角的物理 x 偏移（GUI 坐标 × guiScale）
      */
-    public static void captureScreenshot(int scaleImage, Consumer<NativeImage> callback) {
+    public static void capturePair(int scaleImage, int magentaXPhysical, BiConsumer<NativeImage, NativeImage> callback) {
         // 尝试全屏截图
         Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget(), imageFull -> {
-            // 从全屏截图中裁出左上角我们需要的那部分。
-            // useCalloc=true 让越界兜底区域保持全零（窗口物理尺寸小于 scaleImage 时不越界读取；
-            // 两张捕获的全零区域在差分中恰好判为全透明）
-            NativeImage image = new NativeImage(scaleImage, scaleImage, true);
-            int copyWidth = Math.min(scaleImage, imageFull.getWidth());
-            int copyHeight = Math.min(scaleImage, imageFull.getHeight());
-            for (int cy = 0; cy < copyHeight; cy++) {
-                for (int cx = 0; cx < copyWidth; cx++) {
-                    image.setPixel(cx, cy, imageFull.getPixel(cx, cy));
-                }
-            }
+            NativeImage greenShot = cropRegion(imageFull, 0, 0, scaleImage);
+            NativeImage magentaShot = cropRegion(imageFull, magentaXPhysical, 0, scaleImage);
             // 关闭全屏截图的缓存
             imageFull.close();
-            callback.accept(image);
+            callback.accept(greenShot, magentaShot);
         });
+    }
+
+    /**
+     * useCalloc=true 让越界兜底区域保持全零（窗口物理尺寸装不下两块时不越界读取；
+     * 两块的全零区域在差分中恰好判为全透明）
+     */
+    private static NativeImage cropRegion(NativeImage full, int x0, int y0, int size) {
+        NativeImage image = new NativeImage(size, size, true);
+        int copyWidth = Math.clamp(full.getWidth() - x0, 0, size);
+        int copyHeight = Math.clamp(full.getHeight() - y0, 0, size);
+        for (int cy = 0; cy < copyHeight; cy++) {
+            for (int cx = 0; cx < copyWidth; cx++) {
+                image.setPixel(cx, cy, full.getPixel(x0 + cx, y0 + cy));
+            }
+        }
+        return image;
     }
 
     /**
