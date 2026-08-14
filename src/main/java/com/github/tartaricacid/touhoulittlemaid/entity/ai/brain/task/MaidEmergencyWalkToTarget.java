@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.combat.MaidCombatManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.mojang.datafixers.kinds.OptionalBox;
 import net.minecraft.world.entity.LivingEntity;
@@ -36,7 +37,13 @@ public final class MaidEmergencyWalkToTarget {
 
         EntityTracker tracker = new EntityTracker(target, true);
         lookTarget.set(tracker);
-        if (maid.isWithinMeleeAttackRange(target) || !maid.canBrainMoving()) {
+        boolean rangedStandoff = MaidCombatManager.isHoldingUsableRangedWeapon(maid)
+                && maid.canSee(target)
+                && maid.distanceToSqr(target) <= MaidCombatManager.LOCAL_PROTECTION_RANGE
+                * MaidCombatManager.LOCAL_PROTECTION_RANGE;
+        // 端着远程武器时不再贴脸：目标已在保护半径内且看得见，就站定射击。
+        // 同时这一步把 WALK_TARGET 让出来——应战的走位行为要求 WALK_TARGET 缺席才会进入。
+        if (rangedStandoff || maid.isWithinMeleeAttackRange(target) || !maid.canBrainMoving()) {
             walkTarget.erase();
         } else {
             walkTarget.set(new WalkTarget(tracker, speedModifier, 0));

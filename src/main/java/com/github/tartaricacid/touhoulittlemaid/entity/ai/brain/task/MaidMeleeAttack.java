@@ -32,6 +32,10 @@ public class MaidMeleeAttack {
             MaidTargetingContext targetingContext = maid.getCombatManager().getTargetingContext();
             boolean emergency = maid.getCombatManager().isEmergencyActive();
             boolean emergencyReady = !emergency || maid.getCombatManager().canRunCombatActions();
+            // 应战仍然放行近战——`usableBowCanMeleeOnlyThroughEmergencyLayer` 钉的就是这条：
+            // 敌人已经贴到脸上时，端着弓也得还手，不能站着挨打。
+            // 用户抱怨的「上去手打」拦在**走位**那一步（MaidEmergencyWalkToTarget 不再主动贴脸），
+            // 而本行为本身就要求目标已在近战距离内，所以两者不冲突。
             boolean heldItemAllowsMelee = emergency || !isHoldingUsableProjectileWeapon(maid);
             if (emergencyReady
                 && MaidTargetingPolicy.canContinueTargeting(maid, target, targetingContext)

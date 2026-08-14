@@ -186,6 +186,12 @@ looking upstream:
 | Carry On | Model and pose while a maid is being carried |
 | PatPat | Head-patting effect |
 | Inventory Profiles Next | Sorting in the maid backpack screen |
+| TACZ (Timeless and Classics Zero) | Maids fight with guns, draw ammo and reload from the backpack, gun-holding animations and back-slung gun rendering |
+
+> [!NOTE]
+> TACZ itself ships only for Forge/NeoForge. What this fork integrates with is the unofficial Fabric
+> port [q14433686-arch/TaCZ_Refabricated_Unofficial](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases),
+> branch `1.21.11` (requires Fabric API 0.141.6 or newer). Other TACZ builds will not work.
 
 ## Mods not yet compatible
 
@@ -202,7 +208,6 @@ that we don't want to:
 | Ponder | Fabric build stops at 1.20.1 |
 | Improved Mobs | Fabric build stops at 1.21.1 |
 | Just More Cakes | Fabric build stops at 1.21.1 |
-| TACZ | The mod itself is Forge-only; the Fabric port stops at 1.21.1 |
 | KubeJS | Upstream dropped this integration |
 | Iron Chests | No Fabric build |
 | Aquaculture | No Fabric build (officially NeoForge only) |

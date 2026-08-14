@@ -658,6 +658,7 @@
   "config.touhou_little_maid.part_ai.tts_language": "文音之語",
   "config.touhou_little_maid.part_ai.tts_language.tooltip": "文至音之語",
   "task.touhou_little_maid.idle": "閒",
+  "task.touhou_little_maid.gun_attack": "銃擊",
   "task.touhou_little_maid.attack": "擊",
   "task.touhou_little_maid.ranged_attack": "弓擊",
   "task.touhou_little_maid.crossbow_attack": "弩擊",

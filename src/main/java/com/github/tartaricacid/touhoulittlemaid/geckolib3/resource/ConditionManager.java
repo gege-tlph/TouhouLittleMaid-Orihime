@@ -14,6 +14,11 @@ public class ConditionManager {
     public final ConditionalVehicle vehicle = new ConditionalVehicle();
     public final ConditionalPassenger passenger = new ConditionalPassenger();
     public final ConditionalChair chair = new ConditionalChair();
+    /**
+     * TaCZ 枪械按枪 id 分动画（{@code tac:hold:rifle$tacz:ak47} 这种）。
+     * 基准里它是 {@code ConditionManager.TAC} 那张静态表的一项，本树随 GeckoContainer 走每模型实例。
+     */
+    public final ConditionTAC tac = new ConditionTAC();
 
     public void addTest(String name) {
         swing.addTest(name);
@@ -26,5 +31,6 @@ public class ConditionManager {
         vehicle.addTest(name);
         passenger.addTest(name);
         chair.addTest(name);
+        tac.addTest(name);
     }
 }

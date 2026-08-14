@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.compat.cloth;
 
 import com.github.tartaricacid.touhoulittlemaid.api.event.client.AddClothConfigEvent;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.settings.AIChatSettingsHubScreen;
+import com.github.tartaricacid.touhoulittlemaid.compat.gun.tacz.TacCompat;
 import com.github.tartaricacid.touhoulittlemaid.config.GeneralConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
@@ -144,6 +145,13 @@ public final class MenuIntegration {
         combat.add(serverSlider(entries, "maid.cross_bow_range", MaidConfig.CROSS_BOW_RANGE, 8, 192, session));
         combat.add(serverSlider(entries, "maid.danmaku_range", MaidConfig.DANMAKU_RANGE, 8, 192, session));
         combat.add(serverSlider(entries, "maid.trident_range", MaidConfig.TRIDENT_RANGE, 8, 192, session));
+        // 枪械三档距离只服务 TaCZ。按本仓库约定，模组专属选项按 isModLoaded 动态显示：
+        // 只在装了 TaCZ 时露面，免得没装的人看到一组永远不起作用的滑条
+        if (FabricLoader.getInstance().isModLoaded(TacCompat.TACZ_ID)) {
+            combat.add(serverSlider(entries, "maid.maid_gun_long_distance", MaidConfig.MAID_GUN_LONG_DISTANCE, 0, 512, session));
+            combat.add(serverSlider(entries, "maid.maid_gun_medium_distance", MaidConfig.MAID_GUN_MEDIUM_DISTANCE, 0, 512, session));
+            combat.add(serverSlider(entries, "maid.maid_gun_near_distance", MaidConfig.MAID_GUN_NEAR_DISTANCE, 0, 512, session));
+        }
         combat.add(serverList(entries, "maid.maid_attack_ignore", MaidConfig.MAID_ATTACK_IGNORE, session));
         combat.add(serverList(entries, "maid.maid_ranged_attack_ignore", MaidConfig.MAID_RANGED_ATTACK_IGNORE, session));
         category.addEntry(combat.build());

@@ -415,6 +415,7 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
                 .add(Attributes.ENTITY_INTERACTION_RANGE, 2)
                 .add(InitAttribute.MAID_USE_ITEM_SPEED)
                 .add(InitAttribute.MAID_CROSSBOW_ATTACK_SPEED)
+                .add(InitAttribute.MAID_GUN_ATTACK_SPEED)
                 .add(InitAttribute.MAID_SHOOT_COOLDOWN)
                 .add(InitAttribute.MAID_TRIDENT_COOLDOWN)
                 .add(InitAttribute.MAID_PICKUP_RANGE)
@@ -1313,8 +1314,11 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
 
     @Override
     public void performRangedAttack(LivingEntity target, float distanceFactor) {
-        IMaidTask maidTask = this.getTask();
-        if (maidTask instanceof IRangedAttackTask rangedAttackTask
+        // 基准只认当前工作任务，任务不是远程任务时整个方法是空操作。现改为
+        // 按手里的武器找实现（当前任务优先，故弓手/弩手的行为逐字不变），这样
+        // 「农场女仆手持弓有箭」在威胁响应里也打得响，与枪械那条路对齐。
+        IRangedAttackTask rangedAttackTask = IRangedAttackTask.resolveImplementation(this, this.getMainHandItem());
+        if (rangedAttackTask != null
                 && MaidTargetingPolicy.canAttack(this, target,
                 this.getCombatManager().getTargetingContext())) {
             // 调用饰品的攻击

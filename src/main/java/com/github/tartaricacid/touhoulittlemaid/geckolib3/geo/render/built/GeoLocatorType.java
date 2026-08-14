@@ -11,11 +11,14 @@ public class GeoLocatorType {
     public static final GeoLocatorType RIGHT_HAND = new GeoLocatorType("RightHandLocator");
     public static final GeoLocatorType BACKPACK = new GeoLocatorType("BackpackLocator");
     public static final GeoLocatorType HEAD = new GeoLocatorType("Head");
+    // TaCZ 背枪定位点。模型骨骼叫 PistolLocator / RifleLocator，
+    // 由 RawGeometryTree 的 getByName 自动归组——这两行注释掉的那段时间里，
+    // 模型即使有这两根骨骼也会被判成「不是定位点」，背枪渲染无从谈起。
+    public static final GeoLocatorType TAC_PISTOL = new GeoLocatorType("PistolLocator");
+    public static final GeoLocatorType TAC_RIFLE = new GeoLocatorType("RifleLocator");
 /*
     public static final GeoLocatorType LEFT_WAIST = new GeoLocatorType("LeftWaistLocator");
     public static final GeoLocatorType RIGHT_WAIST = new GeoLocatorType("RightWaistLocator");
-    public static final GeoLocatorType TAC_PISTOL = new GeoLocatorType("PistolLocator");
-    public static final GeoLocatorType TAC_RIFLE = new GeoLocatorType("RifleLocator");
 */
 
     private final String name;

@@ -5,6 +5,8 @@ import com.github.tartaricacid.touhoulittlemaid.api.backpack.MaidBackpackRenderD
 import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.EntityMaidModel;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.EntityMaidRenderer;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.state.EntityMaidRenderState;
+import com.github.tartaricacid.touhoulittlemaid.compat.gun.common.GunClientUtil;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -48,6 +50,15 @@ public class LayerMaidBackItem extends RenderLayer<EntityMaidRenderState, Entity
             state.backItem.submit(poseStack, submitNode, state.lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor);
 
             poseStack.popPose();
+            return;
+        }
+
+        // 枪械额外渲染兼容。取的是抽取期存下的原始 ItemStack：
+        // state.backItem 只在物品带 TOOL 组件时才被填充，枪不满足，读它必然为空。
+        EntityMaid backMaid = state.maid;
+        if (backMaid != null) {
+            GunClientUtil.renderBackGun(poseStack, submitNode, state.lightCoords,
+                    state.backpackShowItem, backMaid);
         }
     }
 }

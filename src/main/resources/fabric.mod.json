@@ -53,6 +53,7 @@
       "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidFollowOwnerGameTest",
       "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidFarmNavigationGameTest",
       "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidEmergencyCombatGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidRangedEmergencyGameTest",
       "com.github.tartaricacid.touhoulittlemaid.entity.ai.combat.MaidCombatIntentGameTest",
       "com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicyGameTest",
       "com.github.tartaricacid.touhoulittlemaid.entity.passive.MaidSwimmingGameTest",

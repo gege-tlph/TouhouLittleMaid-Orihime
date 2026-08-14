@@ -100,6 +100,7 @@ public final class InitItems {
     public static Item ALL_NETHERITE_EQUIPMENT = register("all_netherite_equipment", ItemAdvancementIcon::new);
     public static Item KILL_WITHER = register("kill_wither", ItemAdvancementIcon::new);
     public static Item KILL_DRAGON = register("kill_dragon", ItemAdvancementIcon::new);
+    public static Item TACZ_GUN_ICON = register("tacz_gun_icon", ItemAdvancementIcon::new);
 
     private static Item register(String id, Item item) {
         return Registry.register(BuiltInRegistries.ITEM, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), item);

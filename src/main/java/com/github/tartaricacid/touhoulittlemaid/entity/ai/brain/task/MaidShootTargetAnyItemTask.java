@@ -22,12 +22,12 @@ import java.util.function.Predicate;
 public class MaidShootTargetAnyItemTask extends Behavior<EntityMaid> {
     private final int attackCooldown;
     private final int chargeDurationTick;
-    private final Predicate<ItemStack> weaponTest;
+    private final Predicate<EntityMaid> weaponTest;
     private int attackTime = -1;
     private int seeTime;
     private int swingTime;
 
-    public MaidShootTargetAnyItemTask(int attackCooldown, int chargeDurationTick, Predicate<ItemStack> weaponTest) {
+    public MaidShootTargetAnyItemTask(int attackCooldown, int chargeDurationTick, Predicate<EntityMaid> weaponTest) {
         super(ImmutableMap.of(MemoryModuleType.LOOK_TARGET, MemoryStatus.REGISTERED,
                 MemoryModuleType.ATTACK_TARGET, MemoryStatus.VALUE_PRESENT), 1200);
         this.attackCooldown = attackCooldown;
@@ -41,7 +41,7 @@ public class MaidShootTargetAnyItemTask extends Behavior<EntityMaid> {
         if (memory.isPresent()) {
             LivingEntity target = memory.get();
             return MaidTargetingPolicy.canContinueTargeting(owner, target, MaidTargetingContext.PLANNED_ATTACK)
-                    && owner.isHolding(weaponTest) && owner.canSee(target);
+                    && weaponTest.test(owner) && owner.canSee(target);
         }
         return false;
     }
@@ -133,5 +133,8 @@ public class MaidShootTargetAnyItemTask extends Behavior<EntityMaid> {
         this.attackTime = -1;
         this.swingTime = 0;
         entityIn.stopUsingItem();
+        // start() 置了 swingingArms，可用物品那一支（弓）从不清它。
+        // 不在这里清掉，换武器后女仆会一直保持拉弓姿势。
+        entityIn.setSwingingArms(false);
     }
 }

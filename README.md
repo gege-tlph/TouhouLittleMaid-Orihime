@@ -164,6 +164,12 @@ AI 配置界面也重写了，好用得多：站点可以就地「检查配置�
 | Carry On | 搬运女仆时的模型与姿势 |
 | PatPat | 摸头效果 |
 | Inventory Profiles Next | 女仆背包界面排序 |
+| TACZ（Timeless and Classics Zero） | 女仆持枪作战、背包取弹换弹、持枪动画与背枪渲染 |
+
+> [!NOTE]
+> TACZ 官方只发 Forge/NeoForge。这里兼容的是非官方 Fabric 移植
+> [q14433686-arch/TaCZ_Refabricated_Unofficial](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases)
+> 的 `1.21.11` 分支（需 Fabric API 0.141.6 以上）。装别的 TACZ 构件不会生效。
 
 ## 暂时没有兼容的模组
 
@@ -179,7 +185,6 @@ AI 配置界面也重写了，好用得多：站点可以就地「检查配置�
 | Ponder | Fabric 版最新到 1.20.1 |
 | Improved Mobs | Fabric 版最新到 1.21.1 |
 | Just More Cakes | Fabric 版最新到 1.21.1 |
-| TACZ | 本体只有 Forge；Fabric 移植版最新到 1.21.1 |
 | KubeJS | 上游已放弃该兼容 |
 | Iron Chests | 没有 Fabric 版 |
 | Aquaculture | 没有 Fabric 版（官方只发 NeoForge） |

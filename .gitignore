@@ -24,6 +24,7 @@ build
 eclipse
 run
 run*/
+logs
 
 /src/generated/.cache/
 /src/main/generated/.cache/
@@ -37,3 +38,8 @@ run*/
 
 # build.gradle experiment/backup copies (build.gradle itself is tracked)
 /build.gradle.*
+
+# 第三方 mod jar 一律不入库（体积 + 许可证）。本仓库 MIT+CC，
+# libs/compile_only 里的构件各自保留其上游许可证；缺件时构建会打印下载地址。
+/libs/*.jar
+/libs/compile_only/*.jar

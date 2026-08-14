@@ -194,6 +194,12 @@ public class EntityMaidRenderState extends HumanoidRenderState {
      */
     public final ItemStackRenderState backItem = new ItemStackRenderState();
     /**
+     * 背包展示物的原始 ItemStack。{@link #backItem} 只在物品带 {@code TOOL} 组件时才被填充，
+     * 而枪械不带——枪械层要拿原始物品判型。抽取期存进来，免得渲染期回头读实体
+     * （submit 跑在渲染线程，服务端线程正在改背包）。
+     */
+    public ItemStack backpackShowItem = ItemStack.EMPTY;
+    /**
      * 游戏时间，用于一些仅根据时间变化的动画或渲染效果
      */
     public long gameTime;
@@ -249,6 +255,7 @@ public class EntityMaidRenderState extends HumanoidRenderState {
         backBanner = null;
         headBlockState = null;
         backItem.clear();
+        backpackShowItem = ItemStack.EMPTY;
         gameTime = 0;
         dimension = null;
         raining = false;
@@ -396,6 +403,7 @@ public class EntityMaidRenderState extends HumanoidRenderState {
         state.backpack = state.showBackpack ? maid.getMaidBackpackType() : BackpackManager.getEmptyBackpack();
 
         ItemStack showItem = maid.getBackpackShowItem();
+        state.backpackShowItem = showItem;
         // 只有工具类物品才会显示在背部
         if (showItem.has(DataComponents.TOOL)) {
             itemModelResolver.updateForLiving(state.backItem, showItem, ItemDisplayContext.FIXED, maid);

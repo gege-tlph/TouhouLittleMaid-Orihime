@@ -5,6 +5,7 @@ import com.github.tartaricacid.touhoulittlemaid.api.animation.IMagicCastingState
 import com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.condition.*;
 import com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.controller.IAnimationPredicate;
 import com.github.tartaricacid.touhoulittlemaid.client.entity.GeckoMaidEntity;
+import com.github.tartaricacid.touhoulittlemaid.compat.gun.common.GunClientUtil;
 import com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.magic.MagicCastingAnimationManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityChair;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntitySit;
@@ -89,7 +90,8 @@ public final class AnimationManager {
                 if (state.getPredicate().test(maid, event)) {
                     String animationName = state.getAnimationName();
                     LoopType loopType = state.getLoopType();
-                    return playAnimation(event, animationName, loopType);
+                    PlayState gunMainAnimation = GunClientUtil.playGunMainAnimation(maid, event, animationName, loopType);
+                    return gunMainAnimation != null ? gunMainAnimation : playAnimation(event, animationName, loopType);
                 }
             }
         }
@@ -125,6 +127,10 @@ public final class AnimationManager {
         EntityMaid maid = event.getAnimatableEntity().getMaid();
         if (!maid.swinging && !maid.isUsingItem()) {
             ItemStack mainHandItem = maid.getItemInHand(InteractionHand.MAIN_HAND);
+            PlayState gunHoldAnimation = GunClientUtil.playGunHoldAnimation(mainHandItem, event);
+            if (gunHoldAnimation != null) {
+                return gunHoldAnimation;
+            }
             if (mainHandItem.is(Items.CROSSBOW) && CrossbowItem.isCharged(mainHandItem)) {
                 return playAnimation(event, "hold_mainhand:charged_crossbow", LoopType.LOOP);
             }

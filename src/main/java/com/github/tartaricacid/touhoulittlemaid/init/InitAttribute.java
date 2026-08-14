@@ -18,6 +18,12 @@ public interface InitAttribute {
      */
     Holder<Attribute> MAID_CROSSBOW_ATTACK_SPEED = newAttribute("maid_crossbow_attack_speed", 1, 0, Integer.MAX_VALUE);
     /**
+     * 女仆使用枪械（TaCZ/卓越前线）射击的速度倍率，数值越大，射击间隔越短
+     * <p>
+     * 可能无法超越枪本身的最大射速
+     */
+    Holder<Attribute> MAID_GUN_ATTACK_SPEED = newAttribute("maid_gun_attack_speed", 1, 0, Integer.MAX_VALUE);
+    /**
      * 女仆单次射击（弓、弩）后的冷却时间，数值越大，射击后的冷却时间越长
      */
     Holder<Attribute> MAID_SHOOT_COOLDOWN = newAttribute("maid_shoot_cooldown", 2, 0, Integer.MAX_VALUE);

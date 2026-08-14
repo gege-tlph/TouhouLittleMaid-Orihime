@@ -270,6 +270,13 @@ public final class ServerRuleConfig {
                 MaidConfig.CROSS_BOW_RANGE,
                 MaidConfig.DANMAKU_RANGE,
                 MaidConfig.TRIDENT_RANGE,
+                // 枪械（TaCZ）三档识别距离。**必须在本清单里**：get() 对未认领的键会回落到裸 spec，
+                // 而裸 spec 在集成服务端的 tick 期没加载 → IllegalStateException 崩服（2026-08-14 实测两次）
+                MaidConfig.MAID_GUN_LONG_DISTANCE,
+                MaidConfig.MAID_GUN_MEDIUM_DISTANCE,
+                MaidConfig.MAID_GUN_NEAR_DISTANCE,
+                // 枪械（TaCZ）三档识别距离。**必须在本清单里**：get() 对未认领的键会回落到裸 spec，
+                // 而裸 spec 在集成服务端的 tick 期没加载 → IllegalStateException 崩服（2026-08-14 实测两次）
                 MaidConfig.FEED_ANIMAL_MAX_NUMBER,
                 MaidConfig.MAID_CHANGE_MODEL,
                 MaidConfig.MAID_GOMOKU_OWNER_LIMIT,

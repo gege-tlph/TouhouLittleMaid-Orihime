@@ -2,10 +2,13 @@ package com.github.tartaricacid.touhoulittlemaid.api.task;
 
 import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.entity.task.TaskManager;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
+import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.List;
@@ -16,6 +19,37 @@ public interface IRangedAttackTask extends IAttackTask {
      * 可见性校验工具，来自于 Sensor
      */
     TargetingConditions TARGET_CONDITIONS = TargetingConditions.forCombat();
+
+    /**
+     * 按女仆手里的武器找一个能开火的远程实现。
+     *
+     * <p>{@code EntityMaid.performRangedAttack} 原本只认**当前工作任务**：任务不是远程任务时
+     * 整个方法是空操作。后果是「农场女仆手持弓有箭」在威胁响应里只能冲上去肉搏，而同样情形下
+     * 手持枪却会站定开枪（枪走 TaCZ 自己的射击链，不受任务限制）——同样是「手里有能打的远程武器」，
+     * 一个用一个不用。因此弓弩也不再绑定工作任务，改为按手里的武器找实现。</p>
+     *
+     * <p>优先用当前任务（这样已经是弓手/弩手的女仆行为逐字不变），找不到才扫注册表。
+     * 扫描顺序即 {@code TaskManager.getTaskIndex()} 的顺序，取第一个认领这把武器的远程任务，
+     * 因此第三方模组注册的远程任务也会被自动覆盖。</p>
+     *
+     * @return 能开火的实现；手里那把没有任何远程任务认领时返回 {@code null}
+     */
+    @Nullable
+    static IRangedAttackTask resolveImplementation(EntityMaid maid, ItemStack weapon) {
+        // 当前任务只要是远程任务就直接用它，**不再额外要求它的 isWeapon 认这把武器**——
+        // 基准就是这么做的（MaidShootTargetTask 的进入条件只要求 ProjectileWeaponItem，不要求是弓），
+        // 加了那层检查会让「弓兵模式手持弩」改用弩的实现，手持无人认领的模组远程武器时
+        // 更会解析为 null 直接哑火。扫注册表只在任务不是远程任务时兜底，于是新能力是纯增量。
+        if (maid.getTask() instanceof IRangedAttackTask current) {
+            return current;
+        }
+        for (IMaidTask task : TaskManager.getTaskIndex()) {
+            if (task instanceof IRangedAttackTask ranged && ranged.isWeapon(maid, weapon)) {
+                return ranged;
+            }
+        }
+        return null;
+    }
 
     /**
      * 寻找第一个可见目标，使用独立的方法，区别于 IAttackTask
@@ -53,7 +87,7 @@ public interface IRangedAttackTask extends IAttackTask {
      */
     static boolean targetConditionsTest(EntityMaid maid, LivingEntity target, ModConfigSpec.IntValue configRange) {
         TARGET_CONDITIONS.range(ServerRuleConfig.get(configRange));
-        // TargetingConditions.test 要求以 ServerLevel 作为调用方，非服务端世界一律判定为不可见
+        // TODO: 1.21.11 fix - TargetingConditions.test now requires ServerLevel as first arg
         if (!(maid.level() instanceof net.minecraft.server.level.ServerLevel serverLevel)) {
             return false;
         }

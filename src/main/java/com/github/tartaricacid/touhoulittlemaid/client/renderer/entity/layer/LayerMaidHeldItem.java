@@ -4,6 +4,7 @@ import com.github.tartaricacid.simplebedrockmodel.client.bedrock.model.BedrockPa
 import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.EntityMaidModel;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.EntityMaidRenderer;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.state.EntityMaidRenderState;
+import com.github.tartaricacid.touhoulittlemaid.compat.gun.common.GunClientUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -53,6 +54,9 @@ public class LayerMaidHeldItem extends RenderLayer<EntityMaidRenderState, Entity
             poseStack.translate((isLeft ? -1 : 1) / 16.0, 0.125, -0.525);
         }
 
+        boolean isLeftHand = handSide == HumanoidArm.LEFT;
+        GunClientUtil.addItemTranslate(poseStack,
+                isLeftHand ? state.leftHandItemStack : state.rightHandItemStack, isLeftHand);
         itemRender.submit(poseStack, submitNode, state.lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor);
         poseStack.popPose();
     }

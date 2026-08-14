@@ -55,6 +55,10 @@ public final class LocationModelLocatorSource implements IGeoLocatorSource {
         } else if (type == GeoLocatorType.LEFT_HAND) {
             visitChain(model.leftHandBones(), poseStack, visitor);
             visitExtraChains(model.extraLeftHandBones(), poseStack, visitor);
+        } else if (type == GeoLocatorType.TAC_PISTOL) {
+            visitChain(model.tacPistolBones(), poseStack, visitor);
+        } else if (type == GeoLocatorType.TAC_RIFLE) {
+            visitChain(model.tacRifleBones(), poseStack, visitor);
         }
     }
 
@@ -78,6 +82,12 @@ public final class LocationModelLocatorSource implements IGeoLocatorSource {
         }
         if (type == GeoLocatorType.LEFT_HAND) {
             return (model.leftHandBones().isEmpty() ? 0 : 1) + model.extraLeftHandBones().size();
+        }
+        if (type == GeoLocatorType.TAC_PISTOL) {
+            return model.tacPistolBones().isEmpty() ? 0 : 1;
+        }
+        if (type == GeoLocatorType.TAC_RIFLE) {
+            return model.tacRifleBones().isEmpty() ? 0 : 1;
         }
         return 0;
     }

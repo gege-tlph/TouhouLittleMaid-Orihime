@@ -4,6 +4,8 @@ plugins {
     id 'com.gradleup.shadow' version '9.4.1'
 
     id "org.openrewrite.rewrite" version "7.32.2"
+    // 字节码静态分析。手动跑 spotbugsMain，不进默认构建，配置见文件末尾
+    id 'com.github.spotbugs' version '6.5.10'
 }
 version = project.mod_version
 group = project.maven_group
@@ -152,6 +154,21 @@ configurations {
         extendsFrom mcLib
     }
 }
+// TACZ 的编译期 jar。不入库，故可能缺席——缺席时让 compileJava 直接说清楚怎么补，
+// 而不是让 javac 抛出几十条「找不到程序包 com.tacz」把人引向别处。
+def taczCompileJar = file("libs/compile_only/TACZ-Refabricated-1.21.11-1.1.8+fabric.1.21.11.R1.jar")
+tasks.named('compileJava').configure {
+    doFirst {
+        if (!taczCompileJar.exists()) {
+            throw new GradleException(
+                    "缺少 TACZ 编译期依赖：${taczCompileJar}\n" +
+                    "从 https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases/tag/1.21.11_R1\n" +
+                    "下载 TACZ-Refabricated-1.21.11-1.1.8+fabric.1.21.11.R1.jar 放到 libs/compile_only/ 下。\n" +
+                    "该 jar 体积大且许可证与本仓库不同，按约定不入库。")
+        }
+    }
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings loom.officialMojangMappings()
@@ -205,11 +222,18 @@ dependencies {
 
     // 农夫乐事
     modCompileOnly "maven.modrinth:farmers-delight-refabricated:1.21.11-3.4.9"
+    // TACZ（枪械）—— 非官方 Fabric 移植 q14433686-arch/TaCZ_Refabricated_Unofficial 分支 1.21.11。
+    // 只在 GitHub Releases 发布，没有 Maven 坐标（Modrinth 的 tacz-refabricated 停在 1.21.1），
+    // 故按本地 jar 引入；jar 不入库（55 MB，且它是 GPL-3.0 而本仓库 MIT+CC）。
+    // 下载地址见上方 compileJava 守卫的报错文案，缺文件时会直接打印。
+    modCompileOnly files(taczCompileJar)
     modImplementation "me.zeroeightsix:fiber:0.23.0-SNAPSHOT"
 
     testImplementation platform("org.junit:junit-bom:5.11.4")
     testImplementation "org.junit.jupiter:junit-jupiter"
     testImplementation "org.mockito:mockito-core:5.15.2"
+    // 架构断言读字节码而非源码文本：直接看调用图与字段访问，没有「扫源码」那类脆弱面
+    testImplementation "com.tngtech.archunit:archunit:1.4.1"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
@@ -286,9 +310,6 @@ jar {
     }
 }
 
-// 尚无可用依赖的可选兼容模块
-sourceSets.main.java.exclude 'cn/sh1rocu/touhoulittlemaid/mixin/compat/**'
-sourceSets.main.java.exclude 'cn/sh1rocu/touhoulittlemaid/util/compat/**'
 publishing {
     publications {
         create("mavenJava", MavenPublication) {
@@ -302,3 +323,23 @@ publishing {
         }
     }
 }
+
+// SpotBugs：字节码静态分析，用于查静态可变状态一类靠读码容易漏的问题。
+// 插件把 spotbugsMain 挂在 check 上，因此它随 `gradlew build` 一起跑；
+// ignoreFailures = true 使它只报告、不拦构建，报告在 build/reports/spotbugs/main.html。
+spotbugs {
+    ignoreFailures = true
+    showStackTraces = false
+    reportLevel = com.github.spotbugs.snom.Confidence.valueOf('HIGH')
+    effort = com.github.spotbugs.snom.Effort.valueOf('MAX')
+}
+
+tasks.named('spotbugsMain') {
+    reports {
+        html { required = true }
+        xml { required = false }
+    }
+}
+
+// 测试代码不跑分析：噪音大、价值低
+tasks.matching { it.name == 'spotbugsTest' }.configureEach { enabled = false }
