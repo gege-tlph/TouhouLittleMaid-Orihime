@@ -121,6 +121,14 @@
 
 # 已关闭（一行结论 + 提交）
 
+## 2026-08-14：实机崩溃「岩浆怪替换开关一开即崩」（`e48a55f56`）
+
+实测轮用户复现：开关一开渲染线程 NPE（model==null）。日志第一现场在启动期——
+加载器对缺失模型文件只打一行 ERROR 继续跑，用到才崩。根因是上一刀我的取证错误
+（把基准 grep 输出误读成本树的，详见证伪表新条目），4 个 yukkuri 资源实为两树都缺。
+自基准取回并验字节；**新闸 `BedrockModelResourceInvariantTest`**（登记闸家族第三枚）：
+注册常量↔模型文件机械对账，红测过（挪走一个 json 当场红）。**用户复验待做**。
+
 ## 2026-08-14：原版替换补回（`6cbe559ba`）——反向缺口第四簇清零（4+2 条）
 
 五开关整簇：油库里史莱姆/岩浆怪、点符经验球、1UP 图腾、点符附魔之瓶。
@@ -130,8 +138,9 @@ special renderer，同名家族误判）；ReplaceableBakedModel 待定→丢失
 （CameraRenderState→state.level、BlockStateModel→block.dispatch、
 BlockModelWrapper→CuboidItemModelWrapper、entityCutoutNoCull→entityCutout 命名反转语义不变）。
 VanillaConfig 按交接裁决进 CommonConfig；inheritMagmaCubeFromSlime 迁移随行
-（四例 JUnit，接线哨兵红测过）。宿主半吊子清点：yukkuri 资源留了、常量没留；点符/1UP 资源全删。
-JUnit 51/0、GameTest 28/0。零实机项进 O1。
+（四例 JUnit，接线哨兵红测过）。~~宿主半吊子清点：yukkuri 资源留了、常量没留~~（**此句错误，`e48a55f56` 纠正**：
+yukkuri 4 个资源宿主同样删了——「留了」是把基准 grep 输出误读成本树的，见证伪表新条目）；
+点符/1UP 资源全删。JUnit 51/0、GameTest 28/0。零实机项进 O1。
 
 ## 2026-08-14：REI 集成补回（`30d0d2795`）——反向缺口第三簇清零
 
