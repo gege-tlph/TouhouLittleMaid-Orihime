@@ -136,7 +136,7 @@ com/github/tartaricacid/touhoulittlemaid/compat/ysm/event/YsmMaidClientTickEvent
 com/github/tartaricacid/touhoulittlemaid/compat/patchouli/AltarRecipeComponent.java	98	手册里的祭坛配方页面组件	compat/patchouli/PatchouliCompat	待定	子代理报「未找到」，**主模型尚未复核**；Patchouli 依赖已注释，我们维护的 fork 需跟进到 26.1 beta
 com/github/tartaricacid/touhoulittlemaid/compat/patchouli/MultiblockRegistry.java	26	手册的多方块结构注册	compat/patchouli/PatchouliCompat	待定	同上
 com/github/tartaricacid/touhoulittlemaid/compat/patchouli/OpenDefaultBook.java	17	打开默认手册	compat/patchouli/PatchouliCompat	待定	同上
-com/github/tartaricacid/touhoulittlemaid/compat/carryon/RenderFixer.java	21	Carry On 抱起女仆时的渲染修正	未找到	丢失	⚠️ Carry On 在 26.1.2 上有正式版（2.10.0），依赖被注释是宿主没接回，不是生态问题
+com/github/tartaricacid/touhoulittlemaid/compat/carryon/RenderFixer.java	21	Carry On 抱起女仆时的渲染修正	无	无关	【2026-08-14 改判 丢失→无关】origin 的它是给 1.21.1 时代 Carry On 附魔物品渲染 bug 的绕行（判据 BufferSource.fixedBuffers.size()==5）。实查：行为基准 port/1.21.11-fabric 在 render-state 重写时已放弃它（renderer 树 carryon/fixedBuffers 零命中，无等价承接）；26.1.2 layer 已是 submit(PoseStack, SubmitNodeCollector, ...)，判据载体不存在。现存 Carry On 兼容 = 黑名单 tag + molang 变量（纯数据层），与基准一致，无需编译依赖。若实机复现同类 bug，按「修上游不修我方」给 Carry On 提修复，属超基准新决策
 com/github/tartaricacid/touhoulittlemaid/compat/patpat/PatPatRenderer.java	11	摸头动画里的女仆模型渲染	compat/patpat/PatPatCompat	替换	PatPat 有 26.1 正式版，依赖被注释
 com/github/tartaricacid/touhoulittlemaid/compat/sodium/SodiumGeoRenderer.java	230	Geckolib 与 Sodium 的渲染适配	compat/sodium/SodiumCompat	替换	
 com/github/tartaricacid/touhoulittlemaid/compat/tbackpack/TBackpackCompatInner.java	10	旅行者背包兼容内层	compat/tbackpack/TBackpackCompat	替换	
