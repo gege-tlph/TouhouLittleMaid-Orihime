@@ -62,8 +62,10 @@ public class TouhouLittleMaidFabric implements ModInitializer {
     public void onInitialize() {
         // AI模块初始化较快，需要最优先加载config，否则ConfigProxySelector的config字段可能为null
         registerConfiguration();
-        CommonRegistry.onSetupEvent();
+        // 必须先 commonSetup（解包内置默认模型包到 tlm_custom_pack）再 onSetupEvent（扫描服务端模型表）：
+        // 顺序反了则首装后的整个首个进程里模型表为空，女仆名退回裸实体键名，直到重启才恢复
         TouhouLittleMaid.commonSetup();
+        CommonRegistry.onSetupEvent();
         CompatRegistry.onEnqueue();
         DatapackRegistry.onAddReloadListenerEvent();
         DatapackSyncEvent.onDatapackSyncEvent();

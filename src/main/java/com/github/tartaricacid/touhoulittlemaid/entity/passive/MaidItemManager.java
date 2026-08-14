@@ -435,22 +435,29 @@ public class MaidItemManager {
      * 将之前临时存在背包里的物品再次放在对应的手上
      *
      */
-    void backCurrentHandItemStack(EntityMaid maid) {
-        // 先看看副手是否为空？
-        ItemStack offhandItem = maid.getItemInHand(InteractionHand.OFF_HAND);
-        if (!offhandItem.isEmpty()) {
+    /**
+     * 上游缺陷（TartaricAcid/TouhouLittleMaid#1177）：本方法原本硬编码操作副手，而
+     * {@code memoryHandItemStack} 的调用方（工作餐 / 家餐 / 自愈 / 换气）都用
+     * {@code HandUtils.NATIVE_HANDS} 挑「第一只空手」，主手为空时换的是<b>主手</b>。
+     * 于是主手空、副手有物时吃一次工作餐，副手那件无关物品会被塞进背包（满则掉地上），
+     * 随后副手被清空——玩家侧表现为物品凭空消失。判据改由调用方传入「正在使用的那只手」。
+     */
+    void backCurrentHandItemStack(EntityMaid maid, InteractionHand usedHand) {
+        // 先看看这只手是否为空？（进食后此处通常是碗、瓶等剩余物）
+        ItemStack usedHandItem = maid.getItemInHand(usedHand);
+        if (!usedHandItem.isEmpty()) {
             var backpackInv = getAvailableBackpackInv();
-            ItemStack stack = ItemsUtil.insertItemStacked(backpackInv, offhandItem.copy(), false, null);
+            ItemStack stack = ItemsUtil.insertItemStacked(backpackInv, usedHandItem.copy(), false, null);
             if (!stack.isEmpty()) {
                 ItemEntity itemEntity = new ItemEntity(maid.level(), maid.getX(), maid.getY() + 0.5, maid.getZ(), stack);
                 maid.level.addFreshEntity(itemEntity);
             }
         }
-        // 副手此时为空，那么插入我们的物品
+        // 这只手此时为空，那么插入我们的物品
         var hide = this.getHideInv();
         ItemStack stack = ItemUtil.getStack(hide, 0);
         ItemStack output = ItemsUtil.extractItem(hide, 0, stack.getCount(), false, null);
-        maid.setItemInHand(InteractionHand.OFF_HAND, output);
+        maid.setItemInHand(usedHand, output);
     }
 
     void onEquipItem(EquipmentSlot slot, ItemStack oldItem, ItemStack newItem) {
@@ -580,7 +587,15 @@ public class MaidItemManager {
 
     private ItemStack getArrowFromEntity(AbstractArrow entity) {
         if (entity instanceof ArrowAccessor mixinArrow) {
-            if (mixinArrow.tlmInGround() || entity.isNoPhysics()) {
+            // 落地箭矢：一律可捡，这是女仆回收箭矢的正常玩法
+            if (mixinArrow.tlmInGround()) {
+                return mixinArrow.getTlmPickupItem();
+            }
+            // 上游缺陷（TartaricAcid/TouhouLittleMaid#938）：isNoPhysics() 等价于
+            // 「忠诚三叉戟正在飞回主人」——ThrownTrident 对 loyalty>0 的返程 setNoPhysics(true)。
+            // 原版对该状态的拾取一律限定所有者，女仆原先照单全收，会在半空截走玩家的忠诚三叉戟。
+            // 此处按原版同款判据收口，女仆自己投出的（owner == maid）与无主投射物不受影响。
+            if (entity.isNoPhysics() && (entity.getOwner() == null || entity.getOwner() == this.maid)) {
                 return mixinArrow.getTlmPickupItem();
             }
         }

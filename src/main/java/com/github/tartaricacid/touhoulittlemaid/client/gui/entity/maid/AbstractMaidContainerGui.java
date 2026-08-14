@@ -101,9 +101,13 @@ public abstract class AbstractMaidContainerGui<T extends AbstractMaidContainer> 
 
     public AbstractMaidContainerGui(T screenContainer, Inventory inv, Component titleIn, int imageWidth, int imageHeight) {
         super(screenContainer, inv, titleIn, imageWidth, imageHeight);
+        // 上游缺陷（TartaricAcid/TouhouLittleMaid#1058 / #1059）：此处原先对 menu.getMaid()
+        // 二次解引用。女仆在界面打开与数据包往返之间被魂符收走或回收时 getMaid() 返回 null，
+        // 构造函数当场 NPE——发生在 init()/render() 的既有 null 守卫之前，守卫够不着，
+        // 客户端整个断线退回多人游戏菜单。这里只解引用一次并安全降级，把控制权交还既有守卫。
         this.maid = menu.getMaid();
-        this.task = menu.getMaid().getTask();
-        this.notHiddenTasks = TaskManager.getNotHiddenTaskList(this.maid);
+        this.task = this.maid == null ? null : this.maid.getTask();
+        this.notHiddenTasks = this.maid == null ? java.util.Collections.emptyList() : TaskManager.getNotHiddenTaskList(this.maid);
     }
 
     @Override

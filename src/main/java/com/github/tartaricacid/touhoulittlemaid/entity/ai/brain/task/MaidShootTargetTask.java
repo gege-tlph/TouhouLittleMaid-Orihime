@@ -107,5 +107,8 @@ public class MaidShootTargetTask extends Behavior<EntityMaid> {
         this.seeTime = 0;
         this.attackTime = -1;
         entityIn.stopUsingItem();
+        // start() 里置了 swingingArms，这里必须清：另外五个同类任务都是置位+清位，
+        // 只有本任务与 MaidTridentTargetTask 漏了，于是拉过弓之后换任何武器都保持拉弓姿势
+        entityIn.setSwingingArms(false);
     }
 }

@@ -130,5 +130,7 @@ public class MaidShootTargetAnyItemTask extends Behavior<EntityMaid> {
         this.attackTime = -1;
         this.swingTime = 0;
         entityIn.stopUsingItem();
+        // start() 置了 swingingArms，可用物品那一支（弓）从不清它——换武器后保持拉弓姿势
+        entityIn.setSwingingArms(false);
     }
 }

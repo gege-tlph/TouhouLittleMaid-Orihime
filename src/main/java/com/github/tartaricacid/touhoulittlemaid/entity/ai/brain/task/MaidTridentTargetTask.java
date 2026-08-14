@@ -104,6 +104,8 @@ public class MaidTridentTargetTask extends Behavior<EntityMaid> {
 
     @Override
     protected void stop(ServerLevel worldIn, EntityMaid entityIn, long gameTimeIn) {
+        // 与 MaidShootTargetTask 同一处遗漏：start() 置了 swingingArms 却从不清
+        entityIn.setSwingingArms(false);
         this.seeTime = 0;
         this.attackTime = -1;
         entityIn.stopUsingItem();

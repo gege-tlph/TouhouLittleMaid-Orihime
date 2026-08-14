@@ -219,7 +219,9 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
         // 强制开启女仆备份机制
         int saveIntervalTick = ServerRuleConfig.get(ServerConfig.MAID_BACKUP_INTERVAL_SECONDS) * 20;
         // 通过哈希计算出一个随机值，这样做可以避免所有实体都在同一 tick 进行保存
-        int checkTick = Math.abs(this.getUUID().hashCode()) % saveIntervalTick;
+        // floorMod 而非 abs+%：hashCode 恰为 Integer.MIN_VALUE 时 abs 仍为负，
+        // 下方 gameTime % n == 负数 永假，该女仆的备份将终生静默失效
+        int checkTick = Math.floorMod(this.getUUID().hashCode(), saveIntervalTick);
         if (this.level.getGameTime() % saveIntervalTick == checkTick && this.level instanceof ServerLevel serverLevel) {
             MaidBackupsManager.save(serverLevel.getServer(), this);
         }
@@ -462,8 +464,11 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
     @Override
     protected void completeUsingItem() {
         this.getSwimManager().resetEatBreatheItem();
+        // 上游缺陷（TartaricAcid/TouhouLittleMaid#1177）配套：换手恢复的判据是「正在使用的那只手」，
+        // 必须在 super 清掉使用状态之前捕获（清掉后 getUsedItemHand 退回主手默认值）
+        InteractionHand usedHand = this.getUsedItemHand();
         super.completeUsingItem();
-        this.itemManager.backCurrentHandItemStack(this);
+        this.itemManager.backCurrentHandItemStack(this, usedHand);
     }
 
     @Override
