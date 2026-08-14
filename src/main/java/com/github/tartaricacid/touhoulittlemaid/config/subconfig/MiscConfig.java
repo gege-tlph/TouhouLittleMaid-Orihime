@@ -22,6 +22,7 @@ public final class MiscConfig {
     public static ModConfigSpec.BooleanValue CLOSE_OPTIFINE_WARNING;
     public static ModConfigSpec.IntValue SCARECROW_RANGE;
     public static ModConfigSpec.BooleanValue USE_NEW_MAID_FAIRY_MODEL;
+    public static ModConfigSpec.BooleanValue MODEL_ICON_CACHE;
     public static ModConfigSpec.BooleanValue INVULNERABLE_PARTICLE_EFFECT;
 
     /** 实例级个人配置，进 COMMON spec。对应行为基准 {@code port/1.21.11-fabric} 的 {@code initClient}。 */
@@ -35,6 +36,9 @@ public final class MiscConfig {
         builder.comment("Whether to use the new version of the Fairy Maid model")
                 .translation(translateKey("use_new_maid_fairy_model"));
         USE_NEW_MAID_FAIRY_MODEL = builder.define("UseNewMaidFairyModel", true);
+
+        builder.comment("Whether to enable model icon caching").translation(translateKey("model_icon_cache"));
+        MODEL_ICON_CACHE = builder.define("EnableModelIconCache", false);
 
         builder.comment("Does an invulnerable maid have a particle effect?")
                 .translation(translateKey("invulnerable_particle_effect"));

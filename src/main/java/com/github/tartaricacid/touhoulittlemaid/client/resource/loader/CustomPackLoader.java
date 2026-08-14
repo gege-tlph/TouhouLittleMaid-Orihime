@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.client.resource.loader;
 
 import com.github.tartaricacid.simplebedrockmodel.client.bedrock.pojo.CubesItem;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
+import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.cache.CacheIconManager;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.accessor.ResourceAccessor;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.models.ChairModels;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.models.MaidModels;
@@ -45,6 +46,7 @@ public class CustomPackLoader {
         CustomPackTextureLoader.clear();
         LanguageLoader.clear();
         CustomSoundLoader.clear();
+        CacheIconManager.clearCache();
 
         // 读取
         loadPacks(PACK_FOLDER.toFile());

@@ -1,11 +1,14 @@
 package com.github.tartaricacid.touhoulittlemaid.client.gui.entity.model;
 
+import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.cache.CacheIconManager;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.detail.ChairModelDetailsGui;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.ChairModelInfo;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityChair;
 import com.github.tartaricacid.touhoulittlemaid.network.message.ChairModelPackage;
 import com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil;
+import com.github.tartaricacid.touhoulittlemaid.util.GuiTools;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.Minecraft;
@@ -13,6 +16,7 @@ import com.github.tartaricacid.touhoulittlemaid.util.migrate.ScreenUtil;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.Level;
 
@@ -47,7 +51,15 @@ public class ChairModelGui extends AbstractModelGui<EntityChair, ChairModelInfo>
 
     @Override
     protected void drawRightEntity(GuiGraphicsExtractor graphics, int posX, int posY, ChairModelInfo modelItem) {
-        drawEntity(graphics, posX, posY, modelItem);
+        Identifier cacheIconId = modelItem.getCacheIconId();
+        // 26.1.2：TextureManager.byPath 已私有化，基准直接读它的判在写法改走 CacheIconManager 自持注册表
+        if (MiscConfig.MODEL_ICON_CACHE.get() && CacheIconManager.isIconCached(cacheIconId)) {
+            int textureSize = 24;
+            // 整图缩放绘制（w==uW、h==vH），语义同基准 blit 管线形态
+            GuiTools.guiBlit(graphics, cacheIconId, posX - textureSize / 2, posY - textureSize, 0, 0, textureSize, textureSize, textureSize, textureSize);
+        } else {
+            drawEntity(graphics, posX, posY, modelItem);
+        }
     }
 
     @Override

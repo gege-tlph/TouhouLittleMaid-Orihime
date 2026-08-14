@@ -794,6 +794,8 @@
   "config.touhou_little_maid.misc.scarecrow_range.tooltip": "The range that the Granite Inari Fox will prevent maid fairies from spawning",
   "config.touhou_little_maid.misc.use_new_maid_fairy_model": "Use New Maid Fairy Model",
   "config.touhou_little_maid.misc.use_new_maid_fairy_model.tooltip": "Whether to use the new version of the Fairy Maid model",
+  "config.touhou_little_maid.misc.model_icon_cache": "Cache Model Icons",
+  "config.touhou_little_maid.misc.model_icon_cache.tooltip": "Caches generated maid and chair model icons to reduce repeated generation.",
   "config.touhou_little_maid.misc.invulnerable_particle_effect": "Invulnerable Particle Effect",
   "config.touhou_little_maid.misc.invulnerable_particle_effect.tooltip": "Does an invulnerable maid have a particle effect?",
   "config.touhou_little_maid.vanilla": "Vanilla",

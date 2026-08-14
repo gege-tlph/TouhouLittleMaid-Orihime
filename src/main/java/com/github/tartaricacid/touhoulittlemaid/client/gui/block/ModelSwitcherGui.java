@@ -5,6 +5,7 @@ import com.github.tartaricacid.touhoulittlemaid.blockentity.BlockEntityModelSwit
 import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.DirectButton;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.ImageButtonWithId;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.TouhouImageButton;
+import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.cache.CacheIconManager;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelInfo;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -12,7 +13,6 @@ import com.github.tartaricacid.touhoulittlemaid.network.message.SaveSwitcherData
 import com.github.tartaricacid.touhoulittlemaid.util.GuiTools;
 import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.ParseI18n;
-import com.github.tartaricacid.touhoulittlemaid.util.migrate.ScreenUtil;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -81,7 +81,7 @@ public class ModelSwitcherGui extends Screen {
         BlockEntityModelSwitcher.ModeInfo info = this.infoList.get(selectedIndex);
         maid.setModelId(info.getModelId().toString());
 
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.touhou_little_maid.button.skin"), b -> ScreenUtil.setScreen(new ModelSwitcherModelGui(maid, info, this)))
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.touhou_little_maid.button.skin"), b -> CacheIconManager.openModelSwitcherModelGui(maid, info, this))
                 .pos(leftPos + 55, topPos + 15).size(76, 20).build());
 
         this.addRenderableWidget(new DirectButton(leftPos + 55, topPos + 38, 76, 20, info.getDirection(),

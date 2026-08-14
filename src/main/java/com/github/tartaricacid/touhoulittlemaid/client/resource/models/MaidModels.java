@@ -1,7 +1,9 @@
 package com.github.tartaricacid.touhoulittlemaid.client.resource.models;
 
+import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.cache.CacheIconManager;
 import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.EntityMaidModel;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.state.EntityMaidRenderState;
+import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.CustomModelPack;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelInfo;
 import com.google.common.collect.Maps;
 
@@ -35,6 +37,13 @@ public final class MaidModels extends AbstractClientModels<EntityMaidModel, Maid
         super.clearAll();
         this.easterEggNormalTagModelIdMap.clear();
         this.easterEggEncryptTagModelIdMap.clear();
+    }
+
+    /** origin/1.21.1 在 MaidModels.addPack 内联登记图标缓存队列；宿主重构出 AbstractClientModels 后由本覆写承接 */
+    @Override
+    public void addPack(CustomModelPack<MaidModelInfo> pack) {
+        super.addPack(pack);
+        CacheIconManager.addMaidPack(pack);
     }
 
     public boolean containsInfo(String modelId) {

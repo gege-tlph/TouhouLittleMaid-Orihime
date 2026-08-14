@@ -1,12 +1,11 @@
 package com.github.tartaricacid.touhoulittlemaid.client.gui.entity.detail;
 
-import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.model.ChairModelGui;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.ModelDetailsButton;
+import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.cache.CacheIconManager;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.ChairModelInfo;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityChair;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
-import com.github.tartaricacid.touhoulittlemaid.util.migrate.ScreenUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
@@ -36,7 +35,7 @@ public class ChairModelDetailsGui extends AbstractModelDetailsGui<EntityChair, C
 
     @Override
     protected void applyReturnButtonLogic() {
-        ScreenUtil.setScreen(new ChairModelGui(sourceEntity));
+        CacheIconManager.openChairModelGui(sourceEntity);
     }
 
     @Override

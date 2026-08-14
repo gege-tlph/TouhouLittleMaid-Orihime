@@ -304,6 +304,13 @@ public class MenuIntegration {
                     MiscConfig.USE_NEW_MAID_FAIRY_MODEL.save();
                 }).build());
 
+        misc.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.misc.model_icon_cache"), MiscConfig.MODEL_ICON_CACHE.get())
+                .setDefaultValue(false).setTooltip(Component.translatable("config.touhou_little_maid.misc.model_icon_cache.tooltip"))
+                .setSaveConsumer(b -> {
+                    MiscConfig.MODEL_ICON_CACHE.set(b);
+                    MiscConfig.MODEL_ICON_CACHE.save();
+                }).build());
+
         misc.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.misc.invulnerable_particle_effect"), MiscConfig.INVULNERABLE_PARTICLE_EFFECT.get())
                 .setDefaultValue(true).setTooltip(Component.translatable("config.touhou_little_maid.misc.invulnerable_particle_effect.tooltip"))
                 .setSaveConsumer(s -> {
