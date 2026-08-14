@@ -90,10 +90,10 @@ cn/sh1rocu/touhoulittlemaid/util/entity/PlayerUtil.java	20	玩家交互距离计
 cn/sh1rocu/touhoulittlemaid/util/recipe/ItemStackShapelessRecipeBuilder.java	91	支持 ItemStack 结果的无序合成配方构建器	未找到	待定	子代理报「未找到」，**主模型尚未复核**；datagen 用，玩家不可见
 com/github/tartaricacid/touhoulittlemaid/entity/backpack/CraftingTableBackpack.java	110	工作台背包：随身合成	未找到	丢失	【已补回 60aa8dcc6】背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/entity/backpack/EnderChestBackpack.java	111	末影箱背包：随身末影箱	未找到	丢失	【已补回 8efc995d4】背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
-com/github/tartaricacid/touhoulittlemaid/entity/backpack/FurnaceBackpack.java	141	熔炉背包：随身烧炼	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
-com/github/tartaricacid/touhoulittlemaid/entity/backpack/TankBackpack.java	157	液体背包：随身流体储存	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
-com/github/tartaricacid/touhoulittlemaid/entity/backpack/data/FurnaceBackpackData.java	241	熔炉背包的数据与烧炼逻辑	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
-com/github/tartaricacid/touhoulittlemaid/entity/backpack/data/TankBackpackData.java	115	液体背包的数据与流体操作	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
+com/github/tartaricacid/touhoulittlemaid/entity/backpack/FurnaceBackpack.java	141	熔炉背包：随身烧炼	未找到	丢失	⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
+com/github/tartaricacid/touhoulittlemaid/entity/backpack/TankBackpack.java	157	液体背包：随身流体储存	未找到	丢失	⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
+com/github/tartaricacid/touhoulittlemaid/entity/backpack/data/FurnaceBackpackData.java	241	熔炉背包的数据与烧炼逻辑	未找到	丢失	⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
+com/github/tartaricacid/touhoulittlemaid/entity/backpack/data/TankBackpackData.java	115	液体背包的数据与流体操作	未找到	丢失	⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/entity/chatbubble/ChatBubbleManger.java	30	旧聊天气泡管理器（类名拼写有误）	entity/chatbubble/ChatBubbleManager	替换	只是改掉了拼错的类名
 com/github/tartaricacid/touhoulittlemaid/entity/data/MaidTaskDataMaps.java	103	女仆任务数据的映射缓存	未找到	待定	子代理报「未找到」，**主模型尚未复核**；1.21.1 里被 EntityMaid/TaskDataRegister/InitTaskData 引用
 com/github/tartaricacid/touhoulittlemaid/entity/data/TaskDataRegister.java	81	任务数据类型的注册表与编解码	未找到	待定	子代理报「未找到」，**主模型尚未复核**；同上，是一整套任务数据机制
@@ -167,7 +167,7 @@ com/github/tartaricacid/touhoulittlemaid/api/animation/IMagicCastingState.java	5
 com/github/tartaricacid/touhoulittlemaid/api/animation/IMaidData.java	302	JS 动画里女仆数据接口（含骨骼与部位）	未找到	替换	已复核：与 animation/script 的 JS wrapper 同一批——Nashorn 动画体系整体被 gecko/molang 绑定取代，这些是它对外的数据接口
 com/github/tartaricacid/touhoulittlemaid/api/animation/IModelRenderer.java	153	JS 动画里模型渲染接口	未找到	替换	已复核：与 animation/script 的 JS wrapper 同一批——Nashorn 动画体系整体被 gecko/molang 绑定取代，这些是它对外的数据接口
 com/github/tartaricacid/touhoulittlemaid/api/animation/IWorldData.java	38	JS 动画里世界数据接口	未找到	替换	已复核：与 animation/script 的 JS wrapper 同一批——Nashorn 动画体系整体被 gecko/molang 绑定取代，这些是它对外的数据接口
-com/github/tartaricacid/touhoulittlemaid/api/backpack/IBackpackData.java	15	背包数据接口	api/backpack/IMaidBackpack + MaidBackpackRenderData	替换	**已复核**：26.1 有 IMaidBackpack/ITriggerSlotChange/MaidBackpackRenderData 三个接口
+com/github/tartaricacid/touhoulittlemaid/api/backpack/IBackpackData.java	15	背包数据接口	未找到	丢失	**主模型改判（2026-08-14 动手时发现）**：先前记「替换 → IMaidBackpack + MaidBackpackRenderData」是错的。IBackpackData 是**每种背包的持久化数据**接口（熔炉的烧炼进度、液体背包的流体量），与 IMaidBackpack（背包行为）和 MaidBackpackRenderData（渲染）是三件不同的事。26.1 的 api/backpack/ 只有后两者，**没有它**。属背包四型簇，熔炉与液体两种都要用。
 com/github/tartaricacid/touhoulittlemaid/api/bauble/IChestType.java	38	女仆可用容器类型的接口	未找到	待定	子代理报「未找到」，**主模型尚未复核**；与 inventory/chest 那 4 个同一簇
 com/github/tartaricacid/touhoulittlemaid/api/entity/IMaid.java	268	女仆实体的对外接口	api/entity/ILittleMaid	替换	改名
 com/github/tartaricacid/touhoulittlemaid/api/entity/data/TaskDataKey.java	35	任务数据键接口	未找到	待定	子代理报「未找到」，**主模型尚未复核**；与 TaskDataRegister/MaidTaskDataMaps/InitTaskData 同一簇
