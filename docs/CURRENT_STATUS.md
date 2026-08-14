@@ -114,6 +114,25 @@
 
 # 已关闭（一行结论 + 提交）
 
+## 2026-08-14：SpotBugs（手动报告态）+ ArchUnit（进 JUnit 门）落地
+
+自 1.21.11 分支照搬的门禁工具副本（隔离纪律允许共享），按本分支适配：
+
+- **ArchUnit 两条规则进 `test` 门**（`ArchitectureRulesTest`）：①认领的世界规则不得裸读
+  ②经读口读的键必须在认领清单里——字节码判据，间接引用与静态导入的绕过形态无所遁形，
+  与既有源码扫描契约互为补充。适配两处：认领清单暂只世界规则一份（AI 店 §3.C 落地时
+  加回另一半，锚点在 `claimedWorldRuleFields`）；引导走 `ServerConfig.init()`。
+  **双红测通过**：两条规则各注入一个违规（裸读认领键 / 经读口读未认领键）→ 各自当场红并
+  精确定位违规行 → 还原回绿。每条规则自带双下限活性断言（字段识别与调用识别分开看守）。
+- **SpotBugs 手动报告态**：`gradlew spotbugsMain` → `build/reports/spotbugs/main.html`，
+  HIGH 置信 + MAX 力度，**不进默认构建不进发布门**（新闸先红测再纳入的纪律）。
+  首报 64 类告警备查（`BC_IMPOSSIBLE_CAST` 46、`NP_NULL_ON_SOME_PATH` 10、
+  `RV_ABSOLUTE_VALUE_OF_RANDOM_INT` 6——修不修逐条另议，多数属宿主/基准代码，行为对基准优先）。
+- 已否决规则记录在测试 javadoc：「客户端类不得被服务端引用」在本仓库不适用
+  （基准靠 @Environment 与 isClientSide 分流，不靠包边界，1.21.11 分支实测 1000+ 处基线）。
+- PIT 变异测试在 1.21.11 分支评估过、用户裁决不采用（minion 不继承 workingDir/loom
+  classpath，对扫源码型契约测试天然无效）——本分支同构，别再试，理由记在 build.gradle。
+
 ## 2026-08-14：实机崩溃「替换燃烧中的熔炉背包」（`d1fcc58c4`）
 
 单人档验收中用户复现：熔炉背包燃烧时手持工作台背包右键女仆替换，客户端必崩

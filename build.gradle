@@ -5,6 +5,9 @@ plugins {
     id 'com.gradleup.shadow' version '9.4.1'
     // OpenRewrite 插件，用于自动化处理 Minecraft 或者 Fabric 更新时的代码修改
     id "org.openrewrite.rewrite" version "7.35.0"
+    // 质量闸：字节码静态分析（手动跑 spotbugsMain，不进默认构建），配置见文件末尾。
+    // 自 1.21.11 分支照搬（隔离纪律：门禁工具以副本共享）
+    id 'com.github.spotbugs' version '6.5.10'
 }
 
 version = project.mod_version
@@ -330,6 +333,10 @@ dependencies {
     testImplementation platform("org.junit:junit-bom:5.11.4")
     testImplementation "org.junit.jupiter:junit-jupiter"
     testImplementation "org.mockito:mockito-core:5.15.2"
+    // 架构断言：读**字节码**而非源码文本。本仓库既有契约测试多在扫源码，1.21.11 分支
+    // 已两次栽在识别依据上（剥注释、字面量换常量）；ArchUnit 直接看调用图与字段访问，
+    // 没有这类脆弱面。自 1.21.11 分支照搬。
+    testImplementation "com.tngtech.archunit:archunit:1.4.1"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
@@ -447,3 +454,31 @@ publishing {
 rewrite {
     activeRecipe("com.github.tartaricacid.Upgrade")
 }
+// ============================================================================
+// SpotBugs：字节码静态分析（自 1.21.11 分支照搬的门禁工具副本）。
+// 手写的「扫源码 + 断言」是在土法重造工业工具，且两条分支各因识别依据栽过。
+//
+// ⚠️ **不进默认构建**：手动跑 `gradlew spotbugsMain` → build/reports/spotbugs/main.html。
+//    发布门禁暂不接——按 tree_equiv 假绿那次教训，新闸得先红测、确认真的会红，再谈纳入。
+//
+// 📌 PIT（变异测试）在 1.21.11 分支评估过、用户裁决未采用：它的 minion 不继承
+//    test 任务的 workingDir 与 loom classpath，且对「扫源码文本」型契约测试天然无能为力。
+//    本分支同构，不必再试一遍。
+// ============================================================================
+
+spotbugs {
+    ignoreFailures = true          // 先报告不拦路，避免一上来被历史噪音淹没
+    showStackTraces = false
+    reportLevel = com.github.spotbugs.snom.Confidence.valueOf('HIGH')
+    effort = com.github.spotbugs.snom.Effort.valueOf('MAX')
+}
+
+tasks.named('spotbugsMain') {
+    reports {
+        html { required = true }
+        xml { required = false }
+    }
+}
+
+// 测试类分析价值低且噪音大，暂不跑
+tasks.matching { it.name == 'spotbugsTest' }.configureEach { enabled = false }
