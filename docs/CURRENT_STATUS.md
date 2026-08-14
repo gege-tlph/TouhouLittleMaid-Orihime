@@ -35,14 +35,16 @@
 账本 `docs/tools/host_gap_ledger.tsv`（222 条全登记），核对 `python docs/tools/host_gap.py --ledger`。
 方法与完整结果见审计 §7.8。
 
-**替换 76 · 生态 48 · 丢失 42 · 待定 55 · 无关 1**
+**替换 77 · 生态 48 · 丢失 42 · 待定 54 · 无关 1**（动手补的过程中改判两条：`ClientBoardStateTooltip` 待定→丢失并已补，`MaidGameRecordManager` 丢失→替换）
+
+**42 条丢失中：已补回 8 · 待补 34**，跑 `python docs/tools/host_gap.py --ledger` 看当前分栏。
 
 42 条「丢失」归成五簇，**按建议实施顺序**：
 
 | # | 簇 | 条数 | 后果 | 备注 |
 |---|---|---|---|---|
 | 1 | **女仆背包四型**（工作台/末影箱/熔炉/液体） | 15 | 四种背包玩法整个没了 | 最大一块，横跨物品/容器/GUI/数据/渲染/战利品/网络包七层 |
-| 2 | **棋局存档与记录层** | 8 | 棋还能下，但存不了棋局、没有胜负记录 | 方块与 AI 都在，只缺上层 |
+| 2 | ~~**棋局存档与记录层**~~ | ~~8~~ | **已补完**（`e778676cc`…`ba5b8af65`） | 见已关闭表 |
 | 3 | **REI 集成** | 5 | 祭坛配方在 REI 里查不到 | ⚠️ REI 有 26.1.2 正式版，是宿主注释了依赖 |
 | 4 | **原版替换功能** | 4 | Yukkuri 史莱姆 / 点符经验球没了 | 与已知的 `VanillaConfig` 删除同批，闭环 |
 | 5 | **模型图标缓存** | 4 | 模型预览图标不缓存 | `MiscConfig.MODEL_ICON_CACHE` 一并消失 |
@@ -79,6 +81,37 @@
 ---
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-14：棋局簇补完（`e778676cc` `c47fd7572` `bbd3b6f45` `be630452f` `ba5b8af65` `af7372306`）
+
+反向缺口五簇里的第二簇。宿主删得很干净——`board_state` 在 `origin/26.1` 的源码与资源里
+**命中为 0**，不是「注册还在类没了」那种半吊子，所以没有残留物要清理。
+
+| 刀 | 内容 |
+|---|---|
+| `e778676cc` | `GomokuCodec` 残局编解码 + 6 条往返 JUnit（红测：黑白对调当场红 2 条） |
+| `c47fd7572` | 三个残局道具 + 数据组件 + 三个棋盘方块的右键分支 + 方块实体存取 + 创造栏/lang/模型贴图 |
+| `bbd3b6f45` | 数据包预设棋谱（三份 json + 重载监听器） |
+| `be630452f` | 提示框棋盘预览（闭合上一刀留的锚点） |
+| `ba5b8af65` | 随机残局战利品函数 |
+| `af7372306` | 改判 `MaidGameRecordManager`：不是丢失，是被重构成 `MaidGameManager` |
+
+**三处 26.1.2 的真实 API 漂移**（都已实查取证）：
+- 提示框绘制 `renderImage(GuiGraphics)` → `extractImage(GuiGraphicsExtractor)`，
+  与本版本的渲染状态抽取模型一致；`GuiGraphics` 类已不存在
+- 战利品函数 `getType()` 返回 `LootItemFunctionType` → `codec()` 返回 `MapCodec`
+- 重载监听器不再需要 `IdentifiableResourceReloadListener`，id 在注册那步传入
+
+**两处「把复核交给编译器」**：基准的 `ItemBoardState` 留着一句
+「TODO: 检查 appendHoverText 是否匹配父类」，javap 实查签名一致，故删 TODO 补 `@Override`；
+`extractImage` 是接口 default 方法（写错只会静默不画），同样补 `@Override` 断言。
+
+**接线的运行期证据是跨刀拿到的**：数据包重载监听器在 `bbd3b6f45` 只有构建绿，
+到 `ba5b8af65` 的 GameTest 才拿到运行期凭据（红测摘掉注册 → 三类棋谱全为 0）。
+
+⚠️ 仍缺一环：把残局道具塞进原版战利品箱的那张表是 datagen 产物，需改
+`LootTableGenerator` 并重跑 datagen，本轮未做。函数本身已可被数据包直接引用。
+
 
 ## 2026-08-13：复原「扛女仆时玩家手臂摆抱姿」（`79e7f7914`）
 
