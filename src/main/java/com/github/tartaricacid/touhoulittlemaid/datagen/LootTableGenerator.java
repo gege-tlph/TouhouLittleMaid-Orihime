@@ -4,6 +4,7 @@ import com.github.tartaricacid.touhoulittlemaid.block.BlockMaidBed;
 import com.github.tartaricacid.touhoulittlemaid.block.BlockScarecrow;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBlocks;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
+import com.github.tartaricacid.touhoulittlemaid.loot.RandomBoardStateFunction;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
 import com.github.tartaricacid.touhoulittlemaid.loot.SetInitMaidOwnerFunction;
 import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
@@ -49,6 +50,7 @@ public class LootTableGenerator {
     public static final ResourceKey<LootTable> SHRINE_LESS = getLootTableKey("chest/shrine_less");
     public static final ResourceKey<LootTable> SHRINE_MORE = getLootTableKey("chest/shrine_more");
 
+    public static final ResourceKey<LootTable> RANDOM_BOARD_STATE = getLootTableKey("chest/random_board_state");
     public static final ResourceKey<LootTable> SPAWN_BONUS = getLootTableKey("chest/spawn_bonus");
     public static final ResourceKey<LootTable> NORMAL_BACKPACK = getLootTableKey("chest/normal_backpack");
 
@@ -93,6 +95,15 @@ public class LootTableGenerator {
                     .setRolls(ConstantValue.exactly(1))
                     .add(LootItem.lootTableItem(InitItems.SHRINE))
                     .add(EmptyLootItem.emptyItem().setWeight(2))));
+
+            // 随机残局：只取带 library 标签的棋谱
+            var library = RandomBoardStateFunction.create().addTag("library");
+            consumer.accept(RANDOM_BOARD_STATE, LootTable.lootTable()
+                    .withPool(LootPool.lootPool()
+                            .setRolls(ConstantValue.exactly(1))
+                            .add(LootItem.lootTableItem(InitItems.GOMOKU_BOARD_STATE).apply(library))
+                            .add(LootItem.lootTableItem(InitItems.CCHESS_BOARD_STATE).apply(library))
+                            .add(LootItem.lootTableItem(InitItems.WCHESS_BOARD_STATE).apply(library))));
 
             consumer.accept(SPAWN_BONUS, LootTable.lootTable()
                     .withPool(LootPool.lootPool()

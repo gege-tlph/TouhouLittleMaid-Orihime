@@ -42,6 +42,8 @@ public class InitLootModifier {
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.SPAWN_BONUS)));
                     else if (key.equals(BuiltInLootTables.VILLAGE_TEMPLE))
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.NORMAL_BAUBLE)));
+                    else if (key.equals(BuiltInLootTables.VILLAGE_CARTOGRAPHER))
+                        builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.RANDOM_BOARD_STATE)));
                     else if (key.equals(BuiltInLootTables.DESERT_PYRAMID))
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.RARE_BAUBLE)));
                     else if (key.equals(BuiltInLootTables.JUNGLE_TEMPLE))
@@ -56,6 +58,7 @@ public class InitLootModifier {
                     else if (key.equals(BuiltInLootTables.STRONGHOLD_LIBRARY))
                         builder.withPool(LootPool.lootPool()
                                 .add(NestedLootTable.lootTableReference(LootTableGenerator.SHRINE_LESS))
+                                .add(NestedLootTable.lootTableReference(LootTableGenerator.RANDOM_BOARD_STATE))
                         );
                     else if (key.equals(BuiltInLootTables.ANCIENT_CITY))
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.SHRINE_LESS)));

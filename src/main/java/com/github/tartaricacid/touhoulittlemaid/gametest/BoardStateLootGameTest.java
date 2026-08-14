@@ -67,6 +67,25 @@ public class BoardStateLootGameTest {
         helper.succeed();
     }
 
+    /**
+     * 那张战利品表真的被服务器加载了。
+     *
+     * <p>表是 datagen 产物、函数是代码注册的，**两边的 id 对不上时只会在加载时报错**，
+     * 而报错发生在服务器启动早期，很容易被当成别的问题。这条把它钉在明面上。</p>
+     */
+    @GameTest
+    public void randomBoardStateLootTableIsLoaded(GameTestHelper helper) {
+        var key = net.minecraft.resources.ResourceKey.create(
+                net.minecraft.core.registries.Registries.LOOT_TABLE,
+                Identifier.fromNamespaceAndPath("touhou_little_maid", "chest/random_board_state"));
+        var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
+        if (table == net.minecraft.world.level.storage.loot.LootTable.EMPTY) {
+            helper.fail("chest/random_board_state 战利品表没加载：datagen 产物与函数注册的 id 可能对不上");
+            return;
+        }
+        helper.succeed();
+    }
+
     /** 填过棋谱的道具必须真的带上了数据——这是战利品函数唯一的可见产物。 */
     @GameTest
     public void aPresetCanBeWrittenOntoTheItem(GameTestHelper helper) {
