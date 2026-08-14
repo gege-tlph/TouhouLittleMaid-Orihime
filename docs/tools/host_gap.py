@@ -177,10 +177,16 @@ def check_ledger(residue):
         print("\n· 仍为「待定」%d 条（允许的中间态，但不该留到最后）" % len(pending))
 
     lost = sorted(p for p, r in rows.items() if r[4] == "丢失")
+    # 备注栏以【已补回 <sha>】开头 = 我们树上已经补回来了。
+    # 账本比对的是两个 origin ref，补回本树不会让条目从残余里消失，故只能靠这个标记区分。
+    restored = [p for p in lost if len(rows[p]) > 5 and rows[p][5].startswith("【已补回")]
+    todo = [p for p in lost if p not in restored]
     if lost:
-        print("\n=== 判定为「丢失」的 %d 条 —— 这些才是要干的活 ===" % len(lost))
-        for path in lost:
-            print("  %-72s %s" % (path, rows[path][2]))
+        print("\n=== 判定为「丢失」%d 条：已补回 %d · 待补 %d ===" % (len(lost), len(restored), len(todo)))
+        for path in todo:
+            print("  [待补] %-64s %s" % (path, rows[path][2]))
+        for path in restored:
+            print("  [已补] %-64s %s" % (path, rows[path][2]))
 
     return 1 if problems else 0
 

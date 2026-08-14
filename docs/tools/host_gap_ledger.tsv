@@ -64,7 +64,7 @@ com/github/tartaricacid/touhoulittlemaid/client/renderer/tileentity/TileEntityIt
 com/github/tartaricacid/touhoulittlemaid/client/resource/BedrockModelLoader.java	113	Bedrock 模型资源加载与注册	client/resource/bedrock/InternalBedrockModelManager	替换	
 com/github/tartaricacid/touhoulittlemaid/client/resource/GeckoModelLoader.java	163	Gecko 模型/动画 json 的加载解析	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 com/github/tartaricacid/touhoulittlemaid/client/resource/LegacyPackRepositorySource.java	45	遗留资源包仓库源	未找到	待定	子代理报「未找到」，**主模型尚未复核**
-com/github/tartaricacid/touhoulittlemaid/client/tooltip/ClientBoardStateTooltip.java	190	棋局状态（五子棋/象棋）的物品提示渲染	client/init/InitClientTooltip	待定	子代理报「未找到」，**主模型尚未复核**
+com/github/tartaricacid/touhoulittlemaid/client/tooltip/ClientBoardStateTooltip.java	190	棋局状态（五子棋/象棋）的物品提示渲染	未找到	丢失	【已补回 be630452f】已复核：26.1 无任何承接者，本轮已按 26.1.2 的 extractImage/GuiGraphicsExtractor 形态补回
 cn/sh1rocu/touhoulittlemaid/mixin/accessor/DimensionDataStorageAccessor.java	13	暴露 DimensionDataStorage.dataFolder	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 cn/sh1rocu/touhoulittlemaid/mixin/accessor/ItemRendererAccessor.java	15	暴露 ItemRenderer.renderModelLists	ChairItemRenderer/InitEntitiesRender 直接实现	替换	
 cn/sh1rocu/touhoulittlemaid/mixin/accessor/TextureSheetParticleAccessor.java	15	暴露 TextureSheetParticle.setSprite	SingleQuadParticleAccessor	替换	26.1 的 mixins.json 里有 accessor.SingleQuadParticleAccessor
@@ -109,9 +109,9 @@ com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/EnderChest
 com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/FurnaceBackpackContainer.java	97	熔炉背包的容器与烧炼进度	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/TankBackpackContainer.java	104	液体背包的容器与流体操作	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/inventory/handler/MaidHandsInvWrapper.java	19	女仆手持栏的物品栏包装与校验	未找到	待定	子代理报「未找到」，**主模型尚未复核**；可能随 itemhandler→transfer 整包替换一起走了
-com/github/tartaricacid/touhoulittlemaid/inventory/tooltip/BoardStateTooltip.java	20	棋盘状态的提示框内容	未找到	丢失	棋局系统一簇：26.1 仍有 BlockGomoku/BlockCChess/BlockWChess 三种棋盘方块，但棋盘状态物品与对战记录这一层没了。**需确认棋盘方块在 26.1 上还能不能正常玩**
+com/github/tartaricacid/touhoulittlemaid/inventory/tooltip/BoardStateTooltip.java	20	棋盘状态的提示框内容	未找到	丢失	【已补回 be630452f】棋局系统一簇：26.1 仍有 BlockGomoku/BlockCChess/BlockWChess 三种棋盘方块，但棋盘状态物品与对战记录这一层没了。**需确认棋盘方块在 26.1 上还能不能正常玩**
 com/github/tartaricacid/touhoulittlemaid/inventory/tooltip/YsmMaidInfo.java	7	女仆模型信息（YSM 用）	未找到	生态	YSM 在 26.1.2 Fabric 上不存在
-com/github/tartaricacid/touhoulittlemaid/item/ItemBoardState.java	115	棋盘状态物品：存棋局数据	未找到	丢失	棋局系统一簇：26.1 仍有 BlockGomoku/BlockCChess/BlockWChess 三种棋盘方块，但棋盘状态物品与对战记录这一层没了。**需确认棋盘方块在 26.1 上还能不能正常玩**
+com/github/tartaricacid/touhoulittlemaid/item/ItemBoardState.java	115	棋盘状态物品：存棋局数据	未找到	丢失	【已补回 c47fd7572】棋局系统一簇：26.1 仍有 BlockGomoku/BlockCChess/BlockWChess 三种棋盘方块，但棋盘状态物品与对战记录这一层没了。**需确认棋盘方块在 26.1 上还能不能正常玩**
 com/github/tartaricacid/touhoulittlemaid/item/ItemEntityPlaceholder.java	110	祭坛配方的结果物品与其可视化	未找到	待定	子代理报「未找到」，**主模型尚未复核**；26.1 仍有祭坛，需确认配方产物现在是什么
 com/github/tartaricacid/touhoulittlemaid/item/ItemFairySpawnEgg.java	46	小妖精刷怪蛋	未找到	待定	子代理报「未找到」，**主模型尚未复核**；1.21.1 里由 InitItems 注册
 com/github/tartaricacid/touhoulittlemaid/item/ItemHakureiGohei.java	129	博丽御币武器与多方块交互	item/ItemGohei	替换	26.1 改名为 ItemGohei
@@ -141,9 +141,9 @@ com/github/tartaricacid/touhoulittlemaid/compat/patpat/PatPatRenderer.java	11	�
 com/github/tartaricacid/touhoulittlemaid/compat/sodium/SodiumGeoRenderer.java	230	Geckolib 与 Sodium 的渲染适配	compat/sodium/SodiumCompat	替换	
 com/github/tartaricacid/touhoulittlemaid/compat/tbackpack/TBackpackCompatInner.java	10	旅行者背包兼容内层	compat/tbackpack/TBackpackCompat	替换	
 com/github/tartaricacid/touhoulittlemaid/compat/extracontainer/accessories/AccessoriesSlotRef.java	39	Accessories 槽位引用	compat/.../curios/CuriosSlotRef	替换	Accessories 无 26.x，改走 Curios/Trinkets
-com/github/tartaricacid/touhoulittlemaid/datapack/BoardStateData.java	59	棋局状态的持久化	未找到	丢失	棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
-com/github/tartaricacid/touhoulittlemaid/datapack/pojo/BoardStateRecord.java	17	棋局状态记录	未找到	丢失	棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
-com/github/tartaricacid/touhoulittlemaid/datapack/resources/BoardStateDataReloadListener.java	63	棋局数据的重载监听	未找到	丢失	棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
+com/github/tartaricacid/touhoulittlemaid/datapack/BoardStateData.java	59	棋局状态的持久化	未找到	丢失	【已补回 bbd3b6f45】棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
+com/github/tartaricacid/touhoulittlemaid/datapack/pojo/BoardStateRecord.java	17	棋局状态记录	未找到	丢失	【已补回 bbd3b6f45】棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
+com/github/tartaricacid/touhoulittlemaid/datapack/resources/BoardStateDataReloadListener.java	63	棋局数据的重载监听	未找到	丢失	【已补回 bbd3b6f45】棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
 com/github/tartaricacid/touhoulittlemaid/loot/LootTableTypeCondition.java	57	按战利品表类型过滤的条件	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 com/github/tartaricacid/touhoulittlemaid/loot/RandomBoardStateFunction.java	100	随机棋局作为战利品	未找到	丢失	棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
 com/github/tartaricacid/touhoulittlemaid/loot/SetTankCountFunction.java	89	设定液体背包容量的战利品函数	未找到	丢失	液体背包一簇（见背包四型）
@@ -176,7 +176,7 @@ com/github/tartaricacid/touhoulittlemaid/api/event/ConvertMaidEvent.java	44	实�
 com/github/tartaricacid/touhoulittlemaid/api/event/MaidAfterEatEvent.java	36	女仆进食后的事件	未找到	待定	子代理报「未找到」，**主模型尚未复核**；与 ConvertFoodEatenEvent/RemainFoodEatenEvent 同一簇
 com/github/tartaricacid/touhoulittlemaid/api/event/RegisterKubeJSEvent.java	33	KubeJS 注册事件（原文已大段注释）	未找到	生态	KubeJS 的 26.x 仅 NeoForge；且 2026-07-28 已裁决放弃
 com/github/tartaricacid/touhoulittlemaid/api/event/client/RenderMaidEvent.java	40	女仆渲染事件（供其它 mod 扩展）	未找到	待定	子代理报「未找到」，**主模型尚未复核**
-com/github/tartaricacid/touhoulittlemaid/api/game/gomoku/GomokuCodec.java	120	五子棋棋局的编解码	已补回（api/game/gomoku/GomokuCodec）	丢失	**已修复**：残局编解码是「残局道具」这条链路的地基，先补它并加往返测试
+com/github/tartaricacid/touhoulittlemaid/api/game/gomoku/GomokuCodec.java	120	五子棋棋局的编解码	已补回（api/game/gomoku/GomokuCodec）	丢失	【已补回 e778676cc】**已修复**：残局编解码是「残局道具」这条链路的地基，先补它并加往返测试
 cn/sh1rocu/touhoulittlemaid/api/event/AddPackFindersEvent.java	41	资源包查找器事件	PackRepositoryMixin+CustomPackLoader	替换	已复核：fork 自造的 Forge 风格事件总线整体被换掉，靶点类在 26.1.2 仍存在
 cn/sh1rocu/touhoulittlemaid/api/event/EntityJoinLevelEvent.java	43	实体加入世界事件	ServerEntityEvents.ENTITY_LOAD 等	替换	已复核：fork 自造的 Forge 风格事件总线整体被换掉，靶点类在 26.1.2 仍存在
 cn/sh1rocu/touhoulittlemaid/api/event/ExplosionEvents.java	38	爆炸事件框架	26.1 事件体系	替换	已复核：fork 自造的 Forge 风格事件总线整体被换掉，靶点类在 26.1.2 仍存在
