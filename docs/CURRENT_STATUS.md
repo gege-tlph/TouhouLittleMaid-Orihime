@@ -29,11 +29,13 @@
 | 配置菜单三种身份的可见性 | Cloth 菜单要真实客户端才能构造 | 单人 / 局域网客机 / 专服非 OP 各开一次菜单，看「玩法设置 / 高级设置」两栏在不在 |
 | 专服保存 → `/tlm config reload` | 需要真专服 + 真客户端 | 改一项保存，确认提示出现且值未生效；跑 reload 后生效并同步 |
 
-棋局簇与背包两刀（含审计修复）同样零实机，入世时顺带验：
+棋局簇与背包四刀（含审计修复）同样零实机，入世时顺带验：
 残局道具右键三种棋盘载入；**按住 Shift 的提示框棋盘预览与松开时的提示行**（`d78f1ba29`，
 客户端渲染路径，GameTest 够不着）；末影箱/工作台背包穿脱、开箱、女仆背上模型；
-制图师村屋箱/要塞图书馆开出残局道具、**要塞走廊开出末影箱背包**、祭坛能合成两种新背包（`d3bc262b9`）；
-创造栏顺序 = 工作台背包在末影箱背包前（`59821b556`）。
+制图师村屋箱/要塞图书馆开出残局道具、**要塞走廊开出末影箱背包**、祭坛能合成四种新背包
+（`d3bc262b9` `40b8cfde0` `ff7ee685d`）；创造栏顺序 = 工作台→末影箱→熔炉→储罐（`59821b556`）；
+熔炉背包 GUI 火焰/箭头进度与随身烧炼（`40b8cfde0`）；储罐背包 GUI 流体渲染与
+tooltip、桶灌取、穿脱携带流体、地牢/下界要塞开出熔炉合成台/储罐背包（`ff7ee685d`）。
 
 **O2 · 反向缺口：宿主迁移时丢掉的东西（判定已完成，进入实施排期）**
 
@@ -50,7 +52,7 @@
 
 | # | 簇 | 条数 | 后果 | 备注 |
 |---|---|---|---|---|
-| 1 | **女仆背包四型**（工作台/末影箱/熔炉/液体） | 15 | 四种背包玩法整个没了 | **已补 3/4**（末影箱 `8efc995d4`、工作台 `60aa8dcc6`、熔炉 `40b8cfde0`）。熔炉那刀立起了 `IBackpackData` 的宿主机制（`BackpackStateData` 附件 persistent 不同步 + manager 惰性绑定/tick），**液体背包沿用该机制**，剩余成本在流体侧：储罐、`MaidFluidUtil/MaidFluidRender`、`SyncFluidAmountPackage`、`SetTankCountFunction`、`ItemTankBackpack`，以及 `tank_backpack` 战利品表（配比已抄进账本对应行） |
+| 1 | ~~**女仆背包四型**~~ | ~~15~~ | **已补完 4/4**（末影箱 `8efc995d4`、工作台 `60aa8dcc6`、熔炉 `40b8cfde0`、液体 `ff7ee685d`） | 见已关闭表 |
 | 2 | ~~**棋局存档与记录层**~~ | ~~8~~ | **已补完**（`e778676cc`…`ba5b8af65`） | 见已关闭表 |
 | 3 | **REI 集成** | 5 | 祭坛配方在 REI 里查不到 | ⚠️ **必须排在背包四型之后**（读码确认：插件要给工作台/熔炉背包容器注册点击区与转移处理器）。且不是「搬」是「重写」——基准取配方走我们未搬的 §3.K，宿主已有 `ClientRecipeEvent.ALTAR_RECIPES` 可用。依赖已实测可下载 |
 | 4 | **原版替换功能** | 4 | Yukkuri 史莱姆 / 点符经验球没了 | 与已知的 `VanillaConfig` 删除同批，闭环 |
@@ -89,6 +91,26 @@
 ---
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-14：液体背包补回（`ff7ee685d`）——背包四型 15 条全簇清零
+
+沿用熔炉刀的附件机制，本刀的量全在流体侧。**三处 26.1.2/Fabric 8.0.x 真实漂移**（实查）：
+
+- `SingleFluidStorage.writeData/readData` 实例方法 → 静态 `SingleVariantStorage.writeValue/readValue`
+  （仍写 `variant`+`amount`，与基准存档兼容，GameTest 往返钉着）
+- `FluidVariantRendering.getSprite` 已删（Fabric 流体渲染并进原版 FluidModel）→
+  `ModelManager.getFluidStateModelSet().get(state).stillMaterial().sprite()`，
+  与 JEI 29.5 Fabric 版同款（其 FluidHelper 字节码实查——`MaidFluidRender` 本就抄自 JEI）
+- 桶↔储罐的背包插入 Forge `ItemHandlerHelper` → 宿主 `ItemsUtil.insertItemStacked`
+
+同步三通道照基准：`BACKPACK_FLUID` 实体数据（流体 id）+ 容器 data slot（int 低位）+
+`SyncFluidAmountPackage`（精确 long，变化发主人、开 GUI 发打开者）。
+`TANK_BACKPACK_TAG` 数据组件**宿主删功能时留了下来**，直接用（又一处宿主半吊子删除，这次是顺风）。
+槽位空图标走宿主 back_show 同款 idiom（gui/sprites png + blocks.json 双保险）。
+获取路径随刀齐：祭坛配方 + `chest/tank_backpack`（岩浆 9/4/3 桶，产物与基准 hash 相同）注入下界要塞。
+
+GameTest 四条 + 红测（摘登记行三条当场红）。JUnit 44/0、GameTest 27/0。
+⚠️ 零实机：GUI 流体渲染与 tooltip、背上模型、穿脱携带流体，见 O1。
 
 ## 2026-08-14：熔炉背包补回，IBackpackData 机制立起（`40b8cfde0`）
 

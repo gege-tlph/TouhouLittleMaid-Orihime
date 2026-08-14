@@ -42,7 +42,7 @@ com/github/tartaricacid/touhoulittlemaid/client/gui/entity/cache/CacheScreen.jav
 com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/CraftingTableBackpackContainerScreen.java	54	工作台背包容器屏	未找到	丢失	【已补回 60aa8dcc6】已确认丢失（背包四型），见 entity/backpack 那批
 com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/EnderChestBackpackContainerScreen.java	54	末影箱背包容器屏	未找到	丢失	【已补回 8efc995d4】已确认丢失（背包四型），见 entity/backpack 那批
 com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/FurnaceBackpackContainerScreen.java	57	熔炉背包容器屏	未找到	丢失	【已补回 40b8cfde0】extractBackground + GuiTools.guiBlit，火焰/箭头 uv 与基准逐字相同，贴图实测 256×256。已确认丢失（背包四型），见 entity/backpack 那批
-com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/TankBackpackContainerScreen.java	77	液体背包容器屏	未找到	丢失	已确认丢失（背包四型），见 entity/backpack 那批
+com/github/tartaricacid/touhoulittlemaid/client/gui/entity/maid/backpack/TankBackpackContainerScreen.java	77	液体背包容器屏	未找到	丢失	【已补回 ff7ee685d】extractBackground + MaidFluidRender.drawFluid，贴图实测 256×256。已确认丢失（背包四型），见 entity/backpack 那批
 com/github/tartaricacid/touhoulittlemaid/client/gui/widget/button/MaidAIChatConfigButton.java	101	女仆 AI 聊天配置按钮	未找到	待定	子代理报「未找到」，**主模型尚未复核**；26.1 有 AI 聊天体系，多半是重构
 com/github/tartaricacid/touhoulittlemaid/client/init/InitSpecialItemRender.java	109	特殊物品自定义模型渲染的初始化	client/event/RegisterSpecialModelEvent	替换	
 com/github/tartaricacid/touhoulittlemaid/client/model/AbstractModel.java	25	EntityModel 的抽象基类	未找到	待定	子代理报「未找到」，**主模型尚未复核**
@@ -82,8 +82,8 @@ cn/sh1rocu/touhoulittlemaid/mixin/common/PlayerListMixin.java	19	玩家加入触
 cn/sh1rocu/touhoulittlemaid/mixin/common/ServerPacksSourceMixin.java	29	数据包加载触发 AddPackFindersEvent	PackRepositoryMixin+CustomPackLoader	替换	已复核：自定义资源包发现改由 PackRepositoryMixin + PackRepositoryExtension + CustomPackLoader/ServerCustomPackLoader 承担
 com/github/tartaricacid/touhoulittlemaid/mixin/client/ItemPropertiesMixin.java	22	女仆持钓竿时的钓鱼状态谓词	client/mixin/FishingRodCastMixin	替换	**已复核，子代理报错**：26.1 有 client.FishingRodCastMixin 且已登记进 mixins.json
 com/github/tartaricacid/touhoulittlemaid/util/IconCache.java	48	模型图标缓存的截图导出	未找到	丢失	与模型图标缓存同簇（CacheIconManager 等），MiscConfig.MODEL_ICON_CACHE 开关一并消失
-com/github/tartaricacid/touhoulittlemaid/util/MaidFluidRender.java	119	把流体纹理画进 GUI（源自 JEI）	未找到	丢失	与背包四型同批（液体背包），见 entity/backpack 那批
-com/github/tartaricacid/touhoulittlemaid/util/MaidFluidUtil.java	54	流体与桶的交互处理	未找到	丢失	与背包四型同批（液体背包），见 entity/backpack 那批
+com/github/tartaricacid/touhoulittlemaid/util/MaidFluidRender.java	119	把流体纹理画进 GUI（源自 JEI）	未找到	丢失	【已补回 ff7ee685d】26.1.2 漂移：FluidVariantRendering.getSprite 已删 → ModelManager.getFluidStateModelSet 链（JEI 29.5 Fabric 同款，字节码实查）。与背包四型同批（液体背包），见 entity/backpack 那批
+com/github/tartaricacid/touhoulittlemaid/util/MaidFluidUtil.java	54	流体与桶的交互处理	未找到	丢失	【已补回 ff7ee685d】Forge ItemHandlerHelper → 宿主 ItemsUtil.insertItemStacked（SlottedStorage）。与背包四型同批（液体背包），见 entity/backpack 那批
 com/github/tartaricacid/touhoulittlemaid/util/ResourceLocationUtil.java	27	资源 id 字符串的校验与分解	util/IdentifierUtil	替换	**已复核，子代理报错**：MiscConfig 的 import 从 ResourceLocationUtil.isValidResourceLocation 改成了 IdentifierUtil.isValid
 com/github/tartaricacid/touhoulittlemaid/util/ShapeDraw.java	27	画扇形等 2D 几何	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 cn/sh1rocu/touhoulittlemaid/util/entity/PlayerUtil.java	20	玩家交互距离计算	未找到	待定	子代理报「未找到」，**主模型尚未复核**
@@ -91,9 +91,9 @@ cn/sh1rocu/touhoulittlemaid/util/recipe/ItemStackShapelessRecipeBuilder.java	91	
 com/github/tartaricacid/touhoulittlemaid/entity/backpack/CraftingTableBackpack.java	110	工作台背包：随身合成	未找到	丢失	【已补回 60aa8dcc6+审计 a08bf30e8（tip 译文）/59821b556（创造栏顺序）/d3bc262b9（祭坛配方，生存获取路径）】背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/entity/backpack/EnderChestBackpack.java	111	末影箱背包：随身末影箱	未找到	丢失	【已补回 8efc995d4+审计 615375eb0（删误入库空文件）/59821b556（创造栏顺序）/d3bc262b9（祭坛配方+STRONGHOLD_CORRIDOR 战利品，生存获取路径）】背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/entity/backpack/FurnaceBackpack.java	141	熔炉背包：随身烧炼	未找到	丢失	【已补回 40b8cfde0】丢物走宿主 VanillaContainerWrapper（transfer），获取路径（祭坛配方+SIMPLE_DUNGEON 战利品）随刀齐。⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种。⚠️ 落地时别漏获取路径：基准的战利品表 furnace_or_crafting_table_backpack（注入 SIMPLE_DUNGEON）/ tank_backpack（注入 NETHER_BRIDGE）与祭坛配方（熔炉=中背包+#c:player_workstations/furnaces；液体=中背包+桶，均 power 0.2）——审计时因引用未搬物品顺延至此
-com/github/tartaricacid/touhoulittlemaid/entity/backpack/TankBackpack.java	157	液体背包：随身流体储存	未找到	丢失	⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种。⚠️ 落地时别漏获取路径：基准的战利品表 furnace_or_crafting_table_backpack（注入 SIMPLE_DUNGEON）/ tank_backpack（注入 NETHER_BRIDGE）与祭坛配方（熔炉=中背包+#c:player_workstations/furnaces；液体=中背包+桶，均 power 0.2）——审计时因引用未搬物品顺延至此
+com/github/tartaricacid/touhoulittlemaid/entity/backpack/TankBackpack.java	157	液体背包：随身流体储存	未找到	丢失	【已补回 ff7ee685d】沿用熔炉刀的附件机制；储罐内容随物品走（getTakeOffItemStack/onPutOn）。⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种。⚠️ 落地时别漏获取路径：基准的战利品表 furnace_or_crafting_table_backpack（注入 SIMPLE_DUNGEON）/ tank_backpack（注入 NETHER_BRIDGE）与祭坛配方（熔炉=中背包+#c:player_workstations/furnaces；液体=中背包+桶，均 power 0.2）——审计时因引用未搬物品顺延至此
 com/github/tartaricacid/touhoulittlemaid/entity/backpack/data/FurnaceBackpackData.java	241	熔炉背包的数据与烧炼逻辑	未找到	丢失	【已补回 40b8cfde0】含 #1053 稀疏槽位修复与三处 26.1.2 漂移（assemble 单参 / ItemStackTemplate 燃料残留 / canInsertItem 挪进 MaidItemManager），GameTest 四条钉着。⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
-com/github/tartaricacid/touhoulittlemaid/entity/backpack/data/TankBackpackData.java	115	液体背包的数据与流体操作	未找到	丢失	⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
+com/github/tartaricacid/touhoulittlemaid/entity/backpack/data/TankBackpackData.java	115	液体背包的数据与流体操作	未找到	丢失	【已补回 ff7ee685d】8.0.x 漂移：writeData/readData → 静态 SingleVariantStorage.writeValue/readValue（格式兼容，GameTest 往返钉着）。⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/entity/chatbubble/ChatBubbleManger.java	30	旧聊天气泡管理器（类名拼写有误）	entity/chatbubble/ChatBubbleManager	替换	只是改掉了拼错的类名
 com/github/tartaricacid/touhoulittlemaid/entity/data/MaidTaskDataMaps.java	103	女仆任务数据的映射缓存	未找到	待定	子代理报「未找到」，**主模型尚未复核**；1.21.1 里被 EntityMaid/TaskDataRegister/InitTaskData 引用
 com/github/tartaricacid/touhoulittlemaid/entity/data/TaskDataRegister.java	81	任务数据类型的注册表与编解码	未找到	待定	子代理报「未找到」，**主模型尚未复核**；同上，是一整套任务数据机制
@@ -107,7 +107,7 @@ com/github/tartaricacid/touhoulittlemaid/inventory/chest/VanillaChestType.java	3
 com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/CraftingTableBackpackContainer.java	134	工作台背包的容器与合成逻辑	未找到	丢失	【已补回 60aa8dcc6】背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/EnderChestBackpackContainer.java	33	末影箱背包的容器	未找到	丢失	【已补回 8efc995d4】背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/FurnaceBackpackContainer.java	97	熔炉背包的容器与烧炼进度	未找到	丢失	【已补回 40b8cfde0】进度条走 addDataSlots(ContainerData)（26.1.2 仍在，与基准同路）。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
-com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/TankBackpackContainer.java	104	液体背包的容器与流体操作	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
+com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/TankBackpackContainer.java	104	液体背包的容器与流体操作	未找到	丢失	【已补回 ff7ee685d】data slot 载 int 低位 + SyncFluidAmountPackage 载精确 long，行为基准同款。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/inventory/handler/MaidHandsInvWrapper.java	19	女仆手持栏的物品栏包装与校验	未找到	待定	子代理报「未找到」，**主模型尚未复核**；可能随 itemhandler→transfer 整包替换一起走了
 com/github/tartaricacid/touhoulittlemaid/inventory/tooltip/BoardStateTooltip.java	20	棋盘状态的提示框内容	未找到	丢失	【已补回 be630452f】棋局系统一簇：26.1 仍有 BlockGomoku/BlockCChess/BlockWChess 三种棋盘方块，但棋盘状态物品与对战记录这一层没了。**需确认棋盘方块在 26.1 上还能不能正常玩**
 com/github/tartaricacid/touhoulittlemaid/inventory/tooltip/YsmMaidInfo.java	7	女仆模型信息（YSM 用）	未找到	生态	YSM 在 26.1.2 Fabric 上不存在
@@ -116,7 +116,7 @@ com/github/tartaricacid/touhoulittlemaid/item/ItemEntityPlaceholder.java	110	祭
 com/github/tartaricacid/touhoulittlemaid/item/ItemFairySpawnEgg.java	46	小妖精刷怪蛋	未找到	待定	子代理报「未找到」，**主模型尚未复核**；1.21.1 里由 InitItems 注册
 com/github/tartaricacid/touhoulittlemaid/item/ItemHakureiGohei.java	129	博丽御币武器与多方块交互	item/ItemGohei	替换	26.1 改名为 ItemGohei
 com/github/tartaricacid/touhoulittlemaid/item/ItemMonsterList.java	20	怪物列表物品（1.21.1 上已弃用）	未找到	无关	1.21.1 里已无引用者
-com/github/tartaricacid/touhoulittlemaid/item/ItemTankBackpack.java	79	液体背包物品与流体显示	未找到	丢失	背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
+com/github/tartaricacid/touhoulittlemaid/item/ItemTankBackpack.java	79	液体背包物品与流体显示	未找到	丢失	【已补回 ff7ee685d】TANK_BACKPACK_TAG 数据组件宿主删功能时留了下来，直接用。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/ai/service/function/FunctionCallRegister.java	30	旧工具函数注册（1.5.1 起弃用）	Skill 机制（SkillBean/SkillLoader）	替换	
 com/github/tartaricacid/touhoulittlemaid/ai/service/function/IFunctionCall.java	65	旧工具函数接口（1.5.1 起弃用）	Skill 机制	替换	
 com/github/tartaricacid/touhoulittlemaid/ai/service/function/response/ToolResponse.java	5	旧工具函数返回值（1.5.1 起弃用）	Skill 机制	替换	
@@ -146,8 +146,8 @@ com/github/tartaricacid/touhoulittlemaid/datapack/pojo/BoardStateRecord.java	17	
 com/github/tartaricacid/touhoulittlemaid/datapack/resources/BoardStateDataReloadListener.java	63	棋局数据的重载监听	未找到	丢失	【已补回 bbd3b6f45】棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
 com/github/tartaricacid/touhoulittlemaid/loot/LootTableTypeCondition.java	57	按战利品表类型过滤的条件	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 com/github/tartaricacid/touhoulittlemaid/loot/RandomBoardStateFunction.java	100	随机棋局作为战利品	未找到	丢失	【已补回 ba5b8af65+b4fc6feff】棋局系统一簇（见 ItemBoardState / MaidGameRecordManager）
-com/github/tartaricacid/touhoulittlemaid/loot/SetTankCountFunction.java	89	设定液体背包容量的战利品函数	未找到	丢失	液体背包一簇（见背包四型）
-com/github/tartaricacid/touhoulittlemaid/network/message/SyncFluidAmountPackage.java	36	液体量同步包	未找到	丢失	液体背包一簇（见背包四型）
+com/github/tartaricacid/touhoulittlemaid/loot/SetTankCountFunction.java	89	设定液体背包容量的战利品函数	未找到	丢失	【已补回 ff7ee685d】按宿主 MapCodec 形态（getType→codec）；chest/tank_backpack 产物与基准 hash 相同，注入 NETHER_BRIDGE。液体背包一簇（见背包四型）
+com/github/tartaricacid/touhoulittlemaid/network/message/SyncFluidAmountPackage.java	36	液体量同步包	未找到	丢失	【已补回 ff7ee685d】S2C 注册 + 客户端接收器 + MaidMiscManager.openMaidGui 发包点三处接线齐。液体背包一簇（见背包四型）
 com/github/tartaricacid/touhoulittlemaid/network/message/SyncYsmMaidDataPackage.java	63	YSM 女仆数据同步包	未找到	生态	YSM 在 26.1.2 Fabric 上不存在（审计 §2.2），且 YSM 移植本身是独立前置项目
 com/github/tartaricacid/touhoulittlemaid/network/message/YsmMaidModelPackage.java	56	YSM 女仆模型同步包	未找到	生态	YSM 在 26.1.2 Fabric 上不存在（审计 §2.2），且 YSM 移植本身是独立前置项目
 com/github/tartaricacid/touhoulittlemaid/config/GeneralConfig.java	21	实例级配置入口	config/CommonConfig	替换	**已复核，子代理报错**：26.1 把 GeneralConfig 改名成了 CommonConfig
