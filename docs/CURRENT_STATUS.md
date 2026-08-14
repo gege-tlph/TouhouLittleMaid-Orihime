@@ -81,7 +81,14 @@
 
 ⚠️ **还有一批「待定」**（实时数跑 `--ledger`）：子代理报「未找到」而我尚未复核，一律不写成结论
 （上一轮子代理判定被逐条推翻过）。`--ledger` 会一直提示，忘不掉。
-待定里已看出三簇值得优先复核：**箱子类型（5）、任务数据（4）、战利品扩展（6）**。
+
+**优先三簇已复核完（2026-08-15，16 条全部改判「替换」，证据在账本各行）**：
+箱子类型 5 条 → WirelessIO 改走 Fabric transfer `ItemStorage.SIDED`（覆盖为超集）；
+任务数据 4 条 → 唯一内部注册项 `maid_attack_list` 由 `AttackListData` + Fabric attachment 全链路承接；
+战利品 7 条 → fork 自制 GLM 管道被 Fabric loot v3 `LootTableEvents.MODIFY` 承接，
+`loot_table_type` 全仓 JSON/源码零引用。
+「唯一可能再藏整块玩法丢失的地方」**排除**——但代价是宿主取消了 `ILittleMaid` 的
+`addChestType` / `registerTaskData` 两个第三方扩展点，第三方需求出现时再评估（账本行有锚点）。
 
 **O3 · §3.A 剩余两项（世界规则那一层已闭合）**
 
