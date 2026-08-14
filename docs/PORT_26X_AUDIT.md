@@ -92,7 +92,9 @@
 | KubeJS | 26.1.2 有，**仅 NeoForge** | Fabric 侧不可能；且 2026-07-28 已裁决放弃 |
 | Aquaculture | 26.1.x 有，**仅 NeoForge** | 与 1.21.11 结论一致 |
 | EMI · Iron Chests · The One Probe · Embeddium | **无任何 26.x** | |
-| Immersive Melodies · Simple Hats · Ponder · Improved Mobs · Just More Cakes · TACZ · SlashBlade · Superb Warfare | **无任何 26.x** | |
+| Immersive Melodies · Simple Hats · Ponder · Improved Mobs · Just More Cakes · SlashBlade | **无任何 26.x** | |
+| **TACZ（TaCZ Refabricated）** | `q14433686-arch/TaCZ_Refabricated_Unofficial` 有 **26.1.2 分支**，release `26.1.2_R1`（2026-08-12）——**2026-08-14 改判：可用**（1.21.11 分支同日用同仓库 `1.21.11_R1` 实测接通）。无 Maven 坐标（Modrinth 的 tacz-refabricated 停在 1.21.1），做法照 1.21.11：`modCompileOnly files(libs/compile_only/…)` + 缺件守卫，jar 不入库（55 MB、GPL-3.0） | ⚠️ 上游明说 **1.21.11 与 26.x 是两套实现**（网络/资源加载/GUI/渲染各写各的），凡涉 TACZ 内部（mixin 注入点、数据组件）必须按 26.1.2 那份 jar 重验；硬依赖下限也按其 fabric.mod.json 重读。移植清单见 `docs/archive/PORT_TACZ_AND_RANGED_AI.md` |
+| Superb Warfare | **无 Fabric 端** | 基准 `GunCommonUtil/GunClientUtil` 是 TaCZ/SBW 两路分发，恢复时剥掉 SBW 一路（未安装时那些分支恒 false，删除与基准行为一致） |
 | ProxLib | `0.2.4+26.1` 有 Fabric，**但无 26.1.2 标签** | 当初不做是我们自己的裁决，不是生态问题 |
 
 > ⚠️ **两条判据教训（本轮各栽一次）**
@@ -127,6 +129,7 @@
 | 瞬态应战 Activity 仲裁 | `f7ea486bf` | 新增 |
 | 每女仆响应策略（关闭 / 自卫 / 护主）+ 持久化 | `604927e30` `9dd7783f2` | 新增 |
 | 任意手持物近战 | `bb5f847d4` | 已有 |
+| **远程应战批（基准 2026-08-14 轮新增，行为基准已前移）**：应战活动接入三条远程行为（两件本 fork 早写好却零调用点的 `MaidAttackStrafingAnyItemTask`/`MaidShootTargetAnyItemTask` + `GunShootTargetTask`）、`MaidEmergencyWalkToTarget` 持远程武器站定不贴脸、`isHoldingUsableRangedWeapon` 唯一判据、**弓弩解绑工作任务**（`IRangedAttackTask.resolveImplementation` 按手中武器找开火实现，用户裁决）、三个射击任务 `stop()` 清 `swingingArms`（换武器不再保持拉弓姿势）。刻意不动：近战闸门 `emergency \|\| !isHoldingUsableProjectileWeapon`（既有用例钉着，用户 2026-08-14 明确不改） | `2e605d5c8` 及后续（基准区间 `373ad95f2..b0ca8ff47`）；配套 `MaidRangedEmergencyGameTest` 6 条 | 新增；**未决项随迁**：持远程武器时 BFS 寻路半径吃任务索敌半径（64）——弩兵/弹幕与枪同档，**26.1.2 现树的 `TaskBowAttack.searchRadius` 同构，大概率同在**，判据=拿弩兵女仆复现 |
 | **女仆配置屏重做**：`MaidConfigLayout` 布局引擎 + 重写 `MaidConfigContainerGui`（较宿主版 +64/−139 行），响应策略的配置行就住在这屏里 | `1f1b72105` `9dd7783f2`；`MaidConfigLayoutTest`（§9 台账 A 组，未搬） | 宿主是旧版屏，**无 `MaidConfigLayout`**。⚠️ 玩家可见（用户 2026-08-14 实机点名）；**必须与本簇同刀**——先搬屏就是绑不上后端的纸面界面 |
 
 ⚠️ **新基有一个同名不同物的 `MaidCombatManager`**：基准把 `EntityMaid` 的战斗逻辑抽进了
@@ -343,11 +346,15 @@ git diff --shortstat origin/26.1 origin/26.2 -- src
 ### 7.3 范围外 —— 生态不允许（§2.2 实查，非我们选择）
 
 EMI · Accessories（连带 Sophisticated Backpacks / Traveler's Backpack / ExtraContainer 三项）·
-Immersive Melodies · Simple Hats · Ponder · Improved Mobs · Just More Cakes · TACZ · SlashBlade ·
+Immersive Melodies · Simple Hats · Ponder · Improved Mobs · Just More Cakes · SlashBlade ·
 Superb Warfare · Iron Chests · The One Probe · Embeddium · KubeJS · Aquaculture。
 
+**2026-08-14 移出一项：TACZ**——TaCZ Refabricated 有 26.1.2 分支构件（§2.2 专门行），
+兼容恢复回到范围内，账本 20 行枪械条目中 14 行已改判「丢失」（swarfare 6 行维持生态）。
+
 **重要更正**：「1.21.11 上放弃的兼容现在很多重新可用」这个前提**经实查不成立**。
-逐条查到加载器粒度后，这批里**没有任何一个**在 26.1.2 的 Fabric 上可用；
+逐条查到加载器粒度后，这批里当时**没有任何一个**在 26.1.2 的 Fabric 上可用
+（**2026-08-14 更新：TACZ 成为唯一例外**，经非官方 Refabricated 仓库的 26.1.2 分支）；
 KubeJS / Aquaculture / Sophisticated Backpacks 确有 26.x，但**全是 NeoForge**。
 真正"重新可用"的是那些我们**本来就已经兼容**的（Carry On、PatPat、Kaleidoscope Tavern、
 Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
@@ -412,7 +419,7 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 
 `origin/1.21.1` 1578 个 java 文件 → `origin/26.1` 1635 个。路径级消失 318 个，
 扣掉「同名类换包」40 个与「`TileEntity*`→`BlockEntity*` 改名」16 个，**残余 262 个**。
-其中 37 个属 §2.2 已裁决的生态不允许（TACZ / 枪械 / EMI / Immersive Melodies / Ponder 等），
+其中 37 个属 §2.2 当时裁决的生态不允许（枪械 / EMI / Immersive Melodies / Ponder 等；**TACZ 14 行已于 2026-08-14 改判回「丢失」**，见 §2.2），
 **剩 225 个需人工逐条判定**。
 
 ⚠️ **225 不等于 225 处回归。**已抽样确认至少三种「不是回归」的形态：
