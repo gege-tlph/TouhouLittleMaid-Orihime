@@ -5,6 +5,7 @@ import com.github.tartaricacid.touhoulittlemaid.client.renderer.texture.CacheIco
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.IModelInfo;
 import com.github.tartaricacid.touhoulittlemaid.util.IconCache;
 import com.github.tartaricacid.touhoulittlemaid.util.migrate.ScreenUtil;
+import com.mojang.blaze3d.platform.NativeImage;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
@@ -36,16 +37,22 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
      * 且渲染线程上 {@code Minecraft.execute} 是<b>内联立即执行</b>（{@code scheduleExecutables()} =
      * {@code runningTask() || !isSameThread()}，帧循环里两者皆否）——1.21.11 版注释设想的
      * 「execute 延迟到下一帧回读」在此并不成立，照搬会把每个图标错位成前一个模型的画面。
+     * 故在帧 k 的 extract 里发起的截图，读到的是<b>帧 k-1</b> 的完整画面。
      * <p>
-     * 故改为显式帧计数：模型 M 的第 1 个 extract 帧只提交绘制；第 2 个 extract 帧<b>内联</b>发起截图——
-     * 此刻主 RenderTarget 恰好完整持有上一帧（绿幕 + 模型 M + GUI）画面，且拷贝命令先于本帧渲染命令
-     * 进入 GPU 命令流。回读回调经 RenderSystem.executePendingTasks 在渲染线程执行，
-     * 满足 registerAndLoad 的渲染线程约束。等待回读期间每帧重复提交同一模型，画面内容保持稳定。
-     * 观察行为（全部模型生成绿幕抠像图标）与 origin 一致，仅节奏为每模型约两帧 + fence 延迟。
+     * 双背景差分抠像（2026-08-15 用户批准的超基准改进，动机见 {@link IconCache}）按此排帧：
+     * 帧 0 绘绿幕 + 模型；帧 1 起改绘品红幕 + 模型，并发起第一张捕获（读到帧 0 = 绿幕像）；
+     * 帧 2 发起第二张捕获（读到帧 1 = 品红像）。两张相邻帧的姿态差只有 1 帧，
+     * 把呼吸/眨眼类持续动画造成的差分误读压到最低。两张都经 fence 回调
+     * （RenderSystem.executePendingTasks，渲染线程）送达后差分合成、registerAndLoad、进入下一个模型。
      */
     private E processingInfo = null;
-    private boolean modelSubmittedLastFrame = false;
-    private boolean captureIssued = false;
+    private int framesDrawn = 0;
+    private NativeImage greenShot = null;
+    private NativeImage magentaShot = null;
+    /**
+     * 屏关闭后仍可能有 fence 回调迟到，据此丢弃并释放，防止 NativeImage 泄漏
+     */
+    private boolean closed = false;
 
     public CacheScreen(Screen parent, Queue<E> modelInfos, Function<Level, T> entityFactory, EntityRender<T, E> entityRender) {
         super(Component.literal("Cache Screen"));
@@ -88,8 +95,7 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
     protected void doCacheIcon(GuiGraphicsExtractor graphics) {
         if (this.processingInfo == null) {
             this.processingInfo = modelInfos.poll();
-            this.modelSubmittedLastFrame = false;
-            this.captureIssued = false;
+            this.framesDrawn = 0;
         }
         E modelInfo = this.processingInfo;
         if (modelInfo == null) {
@@ -99,23 +105,60 @@ public class CacheScreen<T extends LivingEntity, E extends IModelInfo> extends S
         int guiScale = Screens.getMinecraft(this).getWindow().getGuiScale();
         int scaleModified = (int) Math.ceil(256.0 / guiScale);
 
-        // 等待回读期间每帧重复提交同一模型的绘制，保证截图落点帧的画面内容正确
-        graphics.fill(0, 0, scaleModified, scaleModified + 2, IconCache.BACKGROUND_COLOR);
+        // 帧 0 绿幕，帧 1 起品红幕；两张捕获各读前一帧，见类头时序注释
+        int background = this.framesDrawn == 0 ? IconCache.BACKGROUND_GREEN : IconCache.BACKGROUND_MAGENTA;
+        graphics.fill(0, 0, scaleModified, scaleModified + 2, background);
         this.drawEntity(graphics, 0, 0, modelInfo, scaleModified);
 
-        if (this.modelSubmittedLastFrame && !this.captureIssued) {
-            this.captureIssued = true;
-            IconCache.exportImageFromScreenshot(256, IconCache.BACKGROUND_COLOR_SHIFTED, nativeImage -> {
-                CacheIconTexture cacheIconTexture = new CacheIconTexture(modelInfo.getModelId(), nativeImage);
-                // 26.1.2 的 register 只入表不上传（TextureManager 反编译实查），
-                // ReloadableTexture 必须走 registerAndLoad 当场 load + 上传；
-                // 本回调在渲染线程（executePendingTasks）执行，满足其渲染线程约束
-                Minecraft.getInstance().getTextureManager().registerAndLoad(modelInfo.getCacheIconId(), cacheIconTexture);
-                CacheIconManager.markIconCached(modelInfo.getCacheIconId());
-                this.processingInfo = null;
-            });
+        if (this.framesDrawn == 1) {
+            IconCache.captureScreenshot(256, image -> acceptShot(modelInfo, image, true));
+        } else if (this.framesDrawn == 2) {
+            IconCache.captureScreenshot(256, image -> acceptShot(modelInfo, image, false));
+        }
+        if (this.framesDrawn < 3) {
+            this.framesDrawn++;
+        }
+    }
+
+    private void acceptShot(E modelInfo, NativeImage image, boolean isGreen) {
+        // fence 回调在渲染线程执行（executePendingTasks），与 extract 无并发
+        if (this.closed) {
+            image.close();
+            return;
+        }
+        if (isGreen) {
+            this.greenShot = image;
         } else {
-            this.modelSubmittedLastFrame = true;
+            this.magentaShot = image;
+        }
+        if (this.greenShot == null || this.magentaShot == null) {
+            return;
+        }
+        NativeImage combined = IconCache.combine(this.greenShot, this.magentaShot);
+        this.greenShot.close();
+        this.magentaShot.close();
+        this.greenShot = null;
+        this.magentaShot = null;
+
+        CacheIconTexture cacheIconTexture = new CacheIconTexture(modelInfo.getModelId(), combined);
+        // 26.1.2 的 register 只入表不上传（TextureManager 反编译实查），
+        // ReloadableTexture 必须走 registerAndLoad 当场 load + 上传；本回调已在渲染线程，满足其线程约束
+        Minecraft.getInstance().getTextureManager().registerAndLoad(modelInfo.getCacheIconId(), cacheIconTexture);
+        CacheIconManager.markIconCached(modelInfo.getCacheIconId());
+        this.processingInfo = null;
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        this.closed = true;
+        if (this.greenShot != null) {
+            this.greenShot.close();
+            this.greenShot = null;
+        }
+        if (this.magentaShot != null) {
+            this.magentaShot.close();
+            this.magentaShot = null;
         }
     }
 
