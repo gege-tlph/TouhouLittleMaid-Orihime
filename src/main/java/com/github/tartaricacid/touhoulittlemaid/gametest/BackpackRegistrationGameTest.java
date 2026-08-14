@@ -43,6 +43,24 @@ public class BackpackRegistrationGameTest {
         helper.succeed();
     }
 
+    @GameTest
+    public void craftingTableBackpackIsFullyRegistered(GameTestHelper helper) {
+        if (BackpackManager.findBackpack(
+                com.github.tartaricacid.touhoulittlemaid.entity.backpack.CraftingTableBackpack.ID).isEmpty()) {
+            helper.fail("工作台背包没登记进 BackpackManager");
+            return;
+        }
+        if (BackpackManager.findBackpack(InitItems.CRAFTING_TABLE_BACKPACK.getDefaultInstance()).isEmpty()) {
+            helper.fail("按物品反查不到工作台背包");
+            return;
+        }
+        if (BuiltInRegistries.MENU.getKey(InitContainer.MAID_CRAFTING_TABLE_BACKPACK_CONTAINER) == null) {
+            helper.fail("工作台背包的容器类型没注册");
+            return;
+        }
+        helper.succeed();
+    }
+
     /** 末影箱背包不开放女仆自己的格子——它装的是玩家的末影箱，容量语义与其它背包不同。 */
     @GameTest
     public void enderChestBackpackExposesNoMaidSlots(GameTestHelper helper) {
