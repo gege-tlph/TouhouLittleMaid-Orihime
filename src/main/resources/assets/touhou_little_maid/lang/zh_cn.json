@@ -1182,5 +1182,9 @@
   "item.touhou_little_maid.crafting_table_backpack": "工作台背包",
   "item.touhou_little_maid.crafting_table_backpack.tip": "将女仆的背包拓展到 18 格，同时提供一个便携式的合成台。",
   "item.touhou_little_maid.furnace_backpack": "熔炉背包",
-  "item.touhou_little_maid.furnace_backpack.tip": "将女仆的背包拓展到 18 格，同时提供一个便携式的熔炉。"
+  "item.touhou_little_maid.furnace_backpack.tip": "将女仆的背包拓展到 18 格，同时提供一个便携式的熔炉。",
+  "item.touhou_little_maid.tank_backpack": "储罐背包",
+  "tooltips.touhou_little_maid.tank_backpack.empty_fluid": "空",
+  "tooltips.touhou_little_maid.tank_backpack.fluid": "%s：%dmB",
+  "tooltips.touhou_little_maid.tank_backpack.capacity": "容量：%dmB"
 }

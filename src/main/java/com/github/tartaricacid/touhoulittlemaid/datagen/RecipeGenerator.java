@@ -296,6 +296,12 @@ public class RecipeGenerator extends RecipeProvider {
                 .requires(2, ConventionalItemTags.REDSTONE_DUSTS)
                 .save(recipeOutput);
 
+        AltarRecipeBuilder.shapeless(items, InitItems.TANK_BACKPACK)
+                .power(0.2F)
+                .requires(InitItems.MAID_BACKPACK_MIDDLE)
+                .requires(Items.BUCKET)
+                .save(recipeOutput);
+
         AltarRecipeBuilder.shapeless(items, InitItems.TRUMPET)
                 .power(0.2F)
                 .requires(2, ConventionalItemTags.GOLD_INGOTS)

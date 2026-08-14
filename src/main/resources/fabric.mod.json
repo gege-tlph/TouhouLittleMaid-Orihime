@@ -20,7 +20,8 @@
       "com.github.tartaricacid.touhoulittlemaid.gametest.BoardStateItemGameTest",
       "com.github.tartaricacid.touhoulittlemaid.gametest.BoardStateLootGameTest",
       "com.github.tartaricacid.touhoulittlemaid.gametest.BackpackRegistrationGameTest",
-      "com.github.tartaricacid.touhoulittlemaid.gametest.FurnaceBackpackGameTest"
+      "com.github.tartaricacid.touhoulittlemaid.gametest.FurnaceBackpackGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.gametest.TankBackpackGameTest"
     ],
     "fabric-datagen": [
       "com.github.tartaricacid.touhoulittlemaid.datagen.DataGenerator"

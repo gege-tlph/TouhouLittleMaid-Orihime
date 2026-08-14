@@ -7,6 +7,8 @@ import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
 import com.github.tartaricacid.touhoulittlemaid.loot.RandomBoardStateFunction;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
 import com.github.tartaricacid.touhoulittlemaid.loot.SetInitMaidOwnerFunction;
+import com.github.tartaricacid.touhoulittlemaid.loot.SetTankCountFunction;
+import net.minecraft.world.level.material.Fluids;
 import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootSubProvider;
@@ -53,9 +55,8 @@ public class LootTableGenerator {
     public static final ResourceKey<LootTable> RANDOM_BOARD_STATE = getLootTableKey("chest/random_board_state");
     public static final ResourceKey<LootTable> SPAWN_BONUS = getLootTableKey("chest/spawn_bonus");
     public static final ResourceKey<LootTable> NORMAL_BACKPACK = getLootTableKey("chest/normal_backpack");
-    // tank_backpack 那张表引用尚未补回的液体背包物品与 SetTankCountFunction，随液体那一刀落地；
-    // 账本 host_gap_ledger 的对应行有标注。
     public static final ResourceKey<LootTable> FURNACE_OR_CRAFTING_TABLE_BACKPACK = getLootTableKey("chest/furnace_or_crafting_table_backpack");
+    public static final ResourceKey<LootTable> TANK_BACKPACK = getLootTableKey("chest/tank_backpack");
     public static final ResourceKey<LootTable> ENDER_CHEST_BACKPACK = getLootTableKey("chest/ender_chest_backpack");
 
     public static final ResourceKey<LootTable> NORMAL_BAUBLE = getLootTableKey("chest/normal_bauble");
@@ -133,6 +134,15 @@ public class LootTableGenerator {
                     .add(LootItem.lootTableItem(InitItems.FURNACE_BACKPACK))
                     .add(LootItem.lootTableItem(InitItems.CRAFTING_TABLE_BACKPACK))
                     .add(EmptyLootItem.emptyItem().setWeight(8))));
+
+            var tank1 = LootItem.lootTableItem(InitItems.TANK_BACKPACK).apply(new SetTankCountFunction.Builder(Fluids.LAVA, 9));
+            var tank2 = LootItem.lootTableItem(InitItems.TANK_BACKPACK).apply(new SetTankCountFunction.Builder(Fluids.LAVA, 4));
+            var tank3 = LootItem.lootTableItem(InitItems.TANK_BACKPACK).apply(new SetTankCountFunction.Builder(Fluids.LAVA, 3));
+
+            consumer.accept(TANK_BACKPACK, LootTable.lootTable().withPool(LootPool.lootPool()
+                    .setRolls(ConstantValue.exactly(1))
+                    .add(tank1).add(tank2).add(tank3)
+                    .add(EmptyLootItem.emptyItem().setWeight(12))));
 
             consumer.accept(ENDER_CHEST_BACKPACK, LootTable.lootTable().withPool(LootPool.lootPool()
                     .setRolls(ConstantValue.exactly(1))

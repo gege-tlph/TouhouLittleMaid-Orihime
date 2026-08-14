@@ -21,6 +21,7 @@ public final class InitContainerGui {
         MenuScreens.register(InitContainer.MAID_ENDER_CHEST_CONTAINER, EnderChestBackpackContainerScreen::new);
         MenuScreens.register(InitContainer.MAID_CRAFTING_TABLE_BACKPACK_CONTAINER, CraftingTableBackpackContainerScreen::new);
         MenuScreens.register(InitContainer.MAID_FURNACE_CONTAINER, FurnaceBackpackContainerScreen::new);
+        MenuScreens.register(InitContainer.MAID_TANK_CONTAINER, TankBackpackContainerScreen::new);
 
         MenuScreens.register(InitContainer.MAID_BAUBLE_CONTAINER, BaubleContainerScreen::new);
         MenuScreens.register(InitContainer.MAID_CONFIG_CONTAINER, MaidConfigContainerGui::new);

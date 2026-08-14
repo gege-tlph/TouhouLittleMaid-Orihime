@@ -5,6 +5,7 @@ import cn.sh1rocu.touhoulittlemaid.util.neoforge.network.AdvancedAddEntityPayloa
 import com.github.tartaricacid.touhoulittlemaid.network.message.*;
 import com.github.tartaricacid.touhoulittlemaid.network.message.ai.*;
 import com.github.tartaricacid.touhoulittlemaid.network.message.config.SaveServerRulesPacket;
+import com.github.tartaricacid.touhoulittlemaid.network.message.SyncFluidAmountPackage;
 import com.github.tartaricacid.touhoulittlemaid.network.message.config.SyncServerRulesPacket;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -69,6 +70,7 @@ public class NetworkHandler {
         ClientPlayNetworking.registerGlobalReceiver(SyncAISitesPacket.TYPE, SyncAISitesPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncMaidAIDataPacket.TYPE, SyncMaidAIDataPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncServerRulesPacket.TYPE, SyncServerRulesPacket::handle);
+        ClientPlayNetworking.registerGlobalReceiver(SyncFluidAmountPackage.TYPE, SyncFluidAmountPackage::handle);
     }
 
     public static void registerS2CPackets() {
@@ -101,6 +103,7 @@ public class NetworkHandler {
         registerS2CPacket(SyncAISitesPacket.TYPE, SyncAISitesPacket.STREAM_CODEC);
         registerS2CPacket(SyncMaidAIDataPacket.TYPE, SyncMaidAIDataPacket.STREAM_CODEC);
         registerS2CPacket(SyncServerRulesPacket.TYPE, SyncServerRulesPacket.STREAM_CODEC);
+        registerS2CPacket(SyncFluidAmountPackage.TYPE, SyncFluidAmountPackage.STREAM_CODEC);
 
 
     }

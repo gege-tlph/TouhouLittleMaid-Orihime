@@ -25,6 +25,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import com.github.tartaricacid.touhoulittlemaid.entity.backpack.data.TankBackpackData;
+import com.github.tartaricacid.touhoulittlemaid.network.message.SyncFluidAmountPackage;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -120,6 +123,10 @@ public class MaidMiscManager {
             maid.getRawNavigation().stop();
             MenuProvider guiProvider = getGuiProvider(tabIndex);
             serverPlayer.openMenu(guiProvider);
+            // 液体背包：打开 GUI 时发包同步储罐量（行为基准同款——data slot 只载 int 低位，精确 long 走这条）
+            if (maid.getBackpackData() instanceof TankBackpackData tankBackpackData) {
+                ServerPlayNetworking.send(serverPlayer, new SyncFluidAmountPackage(tankBackpackData.getTank().getAmount()));
+            }
         }
         return true;
     }

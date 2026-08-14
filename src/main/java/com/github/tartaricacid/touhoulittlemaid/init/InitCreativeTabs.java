@@ -48,6 +48,7 @@ public class InitCreativeTabs {
                 output.accept(CRAFTING_TABLE_BACKPACK);
                 output.accept(ENDER_CHEST_BACKPACK);
                 output.accept(FURNACE_BACKPACK);
+                output.accept(TANK_BACKPACK);
                 output.accept(SUBSTITUTE_JIZO);
                 output.accept(ULTRAMARINE_ORB_ELIXIR);
                 output.accept(EXPLOSION_PROTECT_BAUBLE);

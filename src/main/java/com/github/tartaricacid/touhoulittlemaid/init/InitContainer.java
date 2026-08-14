@@ -29,6 +29,7 @@ public final class InitContainer {
     public static final MenuType<EnderChestBackpackContainer> MAID_ENDER_CHEST_CONTAINER = register("maid_ender_chest_container", EnderChestBackpackContainer.TYPE);
     public static final MenuType<CraftingTableBackpackContainer> MAID_CRAFTING_TABLE_BACKPACK_CONTAINER = register("maid_crafting_table_backpack_container", CraftingTableBackpackContainer.TYPE);
     public static final MenuType<FurnaceBackpackContainer> MAID_FURNACE_CONTAINER = register("maid_furnace_container", FurnaceBackpackContainer.TYPE);
+    public static final MenuType<TankBackpackContainer> MAID_TANK_CONTAINER = register("maid_tank_container", TankBackpackContainer.TYPE);
     public static final MenuType<BaubleContainer> MAID_BAUBLE_CONTAINER = register("maid_bauble_container", BaubleContainer.TYPE);
 
     public static final MenuType<MaidConfigContainer> MAID_CONFIG_CONTAINER = register("maid_config_container", MaidConfigContainer.TYPE);

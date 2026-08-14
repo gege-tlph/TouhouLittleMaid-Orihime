@@ -92,6 +92,8 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
      */
     private static final EntityDataAccessor<Boolean> DATA_SYNC_INVULNERABLE = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<ItemStack> BACKPACK_ITEM_SHOW = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.ITEM_STACK);
+    /** 液体背包储罐里的流体 id（行为基准同款）：GUI 画流体贴图与名字要用，客户端要随时拿得到 */
+    private static final EntityDataAccessor<String> BACKPACK_FLUID = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<ChatBubbleDataCollection> CHAT_BUBBLE = SynchedEntityData.defineId(EntityMaid.class, ChatBubbleRegister.INSTANCE);
 
     /**
@@ -145,6 +147,7 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
         super.defineSynchedData(builder);
         builder.define(DATA_SYNC_INVULNERABLE, this.isInvulnerable());
         builder.define(BACKPACK_ITEM_SHOW, ItemStack.EMPTY);
+        builder.define(BACKPACK_FLUID, "");
         builder.define(CHAT_BUBBLE, ChatBubbleDataCollection.getEmptyCollection());
     }
 
@@ -715,6 +718,14 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
 
     public void setBackpackShowItem(ItemStack stack) {
         this.entityData.set(BACKPACK_ITEM_SHOW, stack);
+    }
+
+    public String getBackpackFluid() {
+        return this.entityData.get(BACKPACK_FLUID);
+    }
+
+    public void setBackpackFluid(String fluidId) {
+        this.entityData.set(BACKPACK_FLUID, fluidId);
     }
 
     public boolean getSyncInvulnerable() {

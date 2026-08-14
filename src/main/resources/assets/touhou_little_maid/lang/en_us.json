@@ -1182,5 +1182,9 @@
   "item.touhou_little_maid.crafting_table_backpack": "Crafting Table Backpack",
   "item.touhou_little_maid.crafting_table_backpack.tip": "Expands your maid's inventory slots up to 18. Makes your maid a portable Crafting Table.",
   "item.touhou_little_maid.furnace_backpack": "Furnace Backpack",
-  "item.touhou_little_maid.furnace_backpack.tip": "Expands your maid's inventory slots up to 18. Makes your maid a portable Furnace."
+  "item.touhou_little_maid.furnace_backpack.tip": "Expands your maid's inventory slots up to 18. Makes your maid a portable Furnace.",
+  "item.touhou_little_maid.tank_backpack": "Tank Backpack",
+  "tooltips.touhou_little_maid.tank_backpack.empty_fluid": "Empty",
+  "tooltips.touhou_little_maid.tank_backpack.fluid": "%s: %d mB",
+  "tooltips.touhou_little_maid.tank_backpack.capacity": "Capacity: %d mB"
 }
