@@ -64,7 +64,7 @@ com/github/tartaricacid/touhoulittlemaid/client/renderer/tileentity/TileEntityIt
 com/github/tartaricacid/touhoulittlemaid/client/resource/BedrockModelLoader.java	113	Bedrock 模型资源加载与注册	client/resource/bedrock/InternalBedrockModelManager	替换	
 com/github/tartaricacid/touhoulittlemaid/client/resource/GeckoModelLoader.java	163	Gecko 模型/动画 json 的加载解析	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 com/github/tartaricacid/touhoulittlemaid/client/resource/LegacyPackRepositorySource.java	45	遗留资源包仓库源	未找到	待定	子代理报「未找到」，**主模型尚未复核**
-com/github/tartaricacid/touhoulittlemaid/client/tooltip/ClientBoardStateTooltip.java	190	棋局状态（五子棋/象棋）的物品提示渲染	未找到	丢失	【已补回 be630452f】已复核：26.1 无任何承接者，本轮已按 26.1.2 的 extractImage/GuiGraphicsExtractor 形态补回
+com/github/tartaricacid/touhoulittlemaid/client/tooltip/ClientBoardStateTooltip.java	190	棋局状态（五子棋/象棋）的物品提示渲染	未找到	丢失	【已补回 be630452f+d78f1ba29】已复核：26.1 无任何承接者，已按 26.1.2 的 extractImage/GuiGraphicsExtractor 形态补回。审计发现 be630452f 只落了渲染半边（ofGomoku 三工厂零调用者），生产者 getTooltipImage 与 Shift 提示行由 d78f1ba29 补回
 cn/sh1rocu/touhoulittlemaid/mixin/accessor/DimensionDataStorageAccessor.java	13	暴露 DimensionDataStorage.dataFolder	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 cn/sh1rocu/touhoulittlemaid/mixin/accessor/ItemRendererAccessor.java	15	暴露 ItemRenderer.renderModelLists	ChairItemRenderer/InitEntitiesRender 直接实现	替换	
 cn/sh1rocu/touhoulittlemaid/mixin/accessor/TextureSheetParticleAccessor.java	15	暴露 TextureSheetParticle.setSprite	SingleQuadParticleAccessor	替换	26.1 的 mixins.json 里有 accessor.SingleQuadParticleAccessor
@@ -88,10 +88,10 @@ com/github/tartaricacid/touhoulittlemaid/util/ResourceLocationUtil.java	27	资�
 com/github/tartaricacid/touhoulittlemaid/util/ShapeDraw.java	27	画扇形等 2D 几何	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 cn/sh1rocu/touhoulittlemaid/util/entity/PlayerUtil.java	20	玩家交互距离计算	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 cn/sh1rocu/touhoulittlemaid/util/recipe/ItemStackShapelessRecipeBuilder.java	91	支持 ItemStack 结果的无序合成配方构建器	未找到	待定	子代理报「未找到」，**主模型尚未复核**；datagen 用，玩家不可见
-com/github/tartaricacid/touhoulittlemaid/entity/backpack/CraftingTableBackpack.java	110	工作台背包：随身合成	未找到	丢失	【已补回 60aa8dcc6】背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
-com/github/tartaricacid/touhoulittlemaid/entity/backpack/EnderChestBackpack.java	111	末影箱背包：随身末影箱	未找到	丢失	【已补回 8efc995d4】背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
-com/github/tartaricacid/touhoulittlemaid/entity/backpack/FurnaceBackpack.java	141	熔炉背包：随身烧炼	未找到	丢失	⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
-com/github/tartaricacid/touhoulittlemaid/entity/backpack/TankBackpack.java	157	液体背包：随身流体储存	未找到	丢失	⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
+com/github/tartaricacid/touhoulittlemaid/entity/backpack/CraftingTableBackpack.java	110	工作台背包：随身合成	未找到	丢失	【已补回 60aa8dcc6+审计 a08bf30e8（tip 译文）/59821b556（创造栏顺序）/d3bc262b9（祭坛配方，生存获取路径）】背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
+com/github/tartaricacid/touhoulittlemaid/entity/backpack/EnderChestBackpack.java	111	末影箱背包：随身末影箱	未找到	丢失	【已补回 8efc995d4+审计 615375eb0（删误入库空文件）/59821b556（创造栏顺序）/d3bc262b9（祭坛配方+STRONGHOLD_CORRIDOR 战利品，生存获取路径）】背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
+com/github/tartaricacid/touhoulittlemaid/entity/backpack/FurnaceBackpack.java	141	熔炉背包：随身烧炼	未找到	丢失	⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种。⚠️ 落地时别漏获取路径：基准的战利品表 furnace_or_crafting_table_backpack（注入 SIMPLE_DUNGEON）/ tank_backpack（注入 NETHER_BRIDGE）与祭坛配方（熔炉=中背包+#c:player_workstations/furnaces；液体=中背包+桶，均 power 0.2）——审计时因引用未搬物品顺延至此
+com/github/tartaricacid/touhoulittlemaid/entity/backpack/TankBackpack.java	157	液体背包：随身流体储存	未找到	丢失	⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种。⚠️ 落地时别漏获取路径：基准的战利品表 furnace_or_crafting_table_backpack（注入 SIMPLE_DUNGEON）/ tank_backpack（注入 NETHER_BRIDGE）与祭坛配方（熔炉=中背包+#c:player_workstations/furnaces；液体=中背包+桶，均 power 0.2）——审计时因引用未搬物品顺延至此
 com/github/tartaricacid/touhoulittlemaid/entity/backpack/data/FurnaceBackpackData.java	241	熔炉背包的数据与烧炼逻辑	未找到	丢失	⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/entity/backpack/data/TankBackpackData.java	115	液体背包的数据与流体操作	未找到	丢失	⚠️ **比末影箱/工作台贵一档**：依赖 IBackpackData（同簇，也丢了）与 cn.sh1rocu 的 Forge InvWrapper，后者在 26.1 已整包换成 util/transfer 的资源句柄 API，是**重写不是搬运**。背包四型：工作台/末影箱/熔炉/液体，行为基准上是 9 种背包，宿主只剩 5 种
 com/github/tartaricacid/touhoulittlemaid/entity/chatbubble/ChatBubbleManger.java	30	旧聊天气泡管理器（类名拼写有误）	entity/chatbubble/ChatBubbleManager	替换	只是改掉了拼错的类名
@@ -111,7 +111,7 @@ com/github/tartaricacid/touhoulittlemaid/inventory/container/backpack/TankBackpa
 com/github/tartaricacid/touhoulittlemaid/inventory/handler/MaidHandsInvWrapper.java	19	女仆手持栏的物品栏包装与校验	未找到	待定	子代理报「未找到」，**主模型尚未复核**；可能随 itemhandler→transfer 整包替换一起走了
 com/github/tartaricacid/touhoulittlemaid/inventory/tooltip/BoardStateTooltip.java	20	棋盘状态的提示框内容	未找到	丢失	【已补回 be630452f】棋局系统一簇：26.1 仍有 BlockGomoku/BlockCChess/BlockWChess 三种棋盘方块，但棋盘状态物品与对战记录这一层没了。**需确认棋盘方块在 26.1 上还能不能正常玩**
 com/github/tartaricacid/touhoulittlemaid/inventory/tooltip/YsmMaidInfo.java	7	女仆模型信息（YSM 用）	未找到	生态	YSM 在 26.1.2 Fabric 上不存在
-com/github/tartaricacid/touhoulittlemaid/item/ItemBoardState.java	115	棋盘状态物品：存棋局数据	未找到	丢失	【已补回 c47fd7572】棋局系统一簇：26.1 仍有 BlockGomoku/BlockCChess/BlockWChess 三种棋盘方块，但棋盘状态物品与对战记录这一层没了。**需确认棋盘方块在 26.1 上还能不能正常玩**
+com/github/tartaricacid/touhoulittlemaid/item/ItemBoardState.java	115	棋盘状态物品：存棋局数据	未找到	丢失	【已补回 c47fd7572+d78f1ba29（审计补 getTooltipImage/Shift 提示行）+a08bf30e8（zh_cn 基准译文）】棋局系统一簇：26.1 仍有 BlockGomoku/BlockCChess/BlockWChess 三种棋盘方块，但棋盘状态物品与对战记录这一层没了。**需确认棋盘方块在 26.1 上还能不能正常玩**
 com/github/tartaricacid/touhoulittlemaid/item/ItemEntityPlaceholder.java	110	祭坛配方的结果物品与其可视化	未找到	待定	子代理报「未找到」，**主模型尚未复核**；26.1 仍有祭坛，需确认配方产物现在是什么
 com/github/tartaricacid/touhoulittlemaid/item/ItemFairySpawnEgg.java	46	小妖精刷怪蛋	未找到	待定	子代理报「未找到」，**主模型尚未复核**；1.21.1 里由 InitItems 注册
 com/github/tartaricacid/touhoulittlemaid/item/ItemHakureiGohei.java	129	博丽御币武器与多方块交互	item/ItemGohei	替换	26.1 改名为 ItemGohei
