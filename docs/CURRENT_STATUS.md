@@ -50,7 +50,7 @@
 
 | # | 簇 | 条数 | 后果 | 备注 |
 |---|---|---|---|---|
-| 1 | **女仆背包四型**（工作台/末影箱/熔炉/液体） | 15 | 四种背包玩法整个没了 | **已补 2/4**（末影箱 `8efc995d4`、工作台 `60aa8dcc6`，一种背包 = 九个登记点 + 贴图/模型/lang/创造栏）。**熔炉/液体贵一档**：依赖 `IBackpackData`（同簇丢失）与 Forge `InvWrapper`→Fabric `transfer` 重写，且 26.1 的背包状态已改走数据附件（`InitDataAttachment.BACKPACK`），正确做法是并进附件而非照抄基准的 `EntityMaid` 字段路线 |
+| 1 | **女仆背包四型**（工作台/末影箱/熔炉/液体） | 15 | 四种背包玩法整个没了 | **已补 3/4**（末影箱 `8efc995d4`、工作台 `60aa8dcc6`、熔炉 `40b8cfde0`）。熔炉那刀立起了 `IBackpackData` 的宿主机制（`BackpackStateData` 附件 persistent 不同步 + manager 惰性绑定/tick），**液体背包沿用该机制**，剩余成本在流体侧：储罐、`MaidFluidUtil/MaidFluidRender`、`SyncFluidAmountPackage`、`SetTankCountFunction`、`ItemTankBackpack`，以及 `tank_backpack` 战利品表（配比已抄进账本对应行） |
 | 2 | ~~**棋局存档与记录层**~~ | ~~8~~ | **已补完**（`e778676cc`…`ba5b8af65`） | 见已关闭表 |
 | 3 | **REI 集成** | 5 | 祭坛配方在 REI 里查不到 | ⚠️ **必须排在背包四型之后**（读码确认：插件要给工作台/熔炉背包容器注册点击区与转移处理器）。且不是「搬」是「重写」——基准取配方走我们未搬的 §3.K，宿主已有 `ClientRecipeEvent.ALTAR_RECIPES` 可用。依赖已实测可下载 |
 | 4 | **原版替换功能** | 4 | Yukkuri 史莱姆 / 点符经验球没了 | 与已知的 `VanillaConfig` 删除同批，闭环 |
@@ -89,6 +89,28 @@
 ---
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-14：熔炉背包补回，IBackpackData 机制立起（`40b8cfde0`）
+
+背包四型第三种。与前两种不同，熔炉带持久化、tick 驱动的数据对象，本刀把这层机制
+按宿主形态立起来（液体背包直接沿用）：
+
+- **`BackpackStateData` 附件：persistent 但有意不 syncWith**——GUI 进度条走容器
+  `addDataSlots(ContainerData)`（26.1.2 javap 证仍在，与基准同一条路），物品走菜单槽位同步；
+  烧炼进度每 tick 在变，挂 `syncWith(all)` 会对所有追踪者每 tick 重发
+- **附件值是可变 holder**：codec 编码时从 runtime 拉活状态（存档那刻快照，无须保存前刷新钩子）；
+  解码只得待恢复 NBT，由 `MaidBackpackManager` 惰性绑定（解码时拿不到 maid/level）。
+  tag 内部格式与基准逐字相同（含 #1053 稀疏槽位修复），基准存档可互认
+- serverTick 挂 `manager.tick()`（baseTick 服务端分支），节奏同基准 aiStep
+- 三处 26.1.2 漂移（对照原版 `AbstractFurnaceBlockEntity` 反编译源实查）：`assemble` 单参、
+  燃料残留改 `Item.getCraftingRemainder()` 返回 `ItemStackTemplate`（shrink 后空则 create，
+  真实燃料下行为等价）、`canInsertItem` 挪进 `MaidItemManager`
+- 获取路径随刀齐：祭坛配方 + `furnace_or_crafting_table_backpack` 战利品表
+  （datagen 产物与基准 hash 相同）注入 SIMPLE_DUNGEON
+
+GameTest 四条：注册三点 / 附件惰性绑定 / 210 tick 烧熟牛肉全链路 / 稀疏槽位存取往返。
+红测：摘 BackpackManager 登记行 → 四条当场红 → 还原回绿。JUnit 44/0、GameTest 23/0。
+⚠️ 零实机：GUI 火焰/箭头、背上模型、穿脱丢物需入世验证（见 O1）。
 
 ## 2026-08-14：上一会话 15 刀全量审计（审计结论与修复分开，一缺陷一提交）
 
