@@ -55,7 +55,7 @@ com/github/tartaricacid/touhoulittlemaid/client/renderer/item/PerspectiveBakedMo
 com/github/tartaricacid/touhoulittlemaid/client/renderer/item/ReplaceableBakedModel.java	87	可替换内部烘焙模型的代理	未找到	丢失	【已补回 6cbe559ba】2026-08-14 改判 待定→丢失：图腾/经验瓶两开关的唯一消费者（配置项与消费者同批落地）；Unbaked.bake 增 Matrix4fc 参已适配。子代理报「未找到」，**主模型尚未复核**
 com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/CacheIconTexture.java	43	缓存图标纹理加载	未找到	丢失	【已补回 e45ea33a6】整簇整刀补回（4 文件+5 处丢分支+队列接线+配置菜单 lang）。⚠️ 基准分支同型接线（addPack/clearCache 登记队列）在其重构时也丢了，缓存屏在 1.21.11 从不弹出——本刀按 origin/1.21.1 行为补全并加 CacheIconWiringContractTest 看守；截图时序按 26.1.2 帧循环第三次重推导（execute 内联，改显式帧计数），零实机项在 O1
 com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/FilePackTexture.java	66	从文件系统加载自定义包纹理	client/renderer/texture/CustomPackTexture	替换	
-com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/GifTexture.java	107	GIF 动画纹理支持	未找到	丢失	已复核：GIF 表情气泡，1.21.11 注释记载这正是实机「有的只剩气泡框」的根因
+com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/GifTexture.java	107	GIF 动画纹理支持	未找到	丢失	【已补回 b70145a20】GIF 表情气泡；宿主以 FIXME 注释掉注册调用（同款搁置手法）。26.1.2 适配与图标缓存刀同源：registerAndLoad + 自持注册集合；GifEmojiWiringContractTest 三形态看守，红测过。零实机项在 O1
 com/github/tartaricacid/touhoulittlemaid/client/renderer/texture/ZipPackTexture.java	77	从 ZIP 包加载纹理	未找到	待定	子代理报「未找到」，**主模型尚未复核**
 com/github/tartaricacid/touhoulittlemaid/client/renderer/tileentity/PicnicBasketRender.java	55	野餐篮的自定义渲染	client/renderer/blockentity/PicnicMatRender	待定	子代理报「未找到」，**主模型尚未复核**（承接者名字不同，需确认是不是同一个东西）
 com/github/tartaricacid/touhoulittlemaid/client/renderer/tileentity/TileEntityEntityPlaceholderRenderer.java	103	实体占位符方块的渲染	未找到	待定	子代理报「未找到」，**主模型尚未复核**
