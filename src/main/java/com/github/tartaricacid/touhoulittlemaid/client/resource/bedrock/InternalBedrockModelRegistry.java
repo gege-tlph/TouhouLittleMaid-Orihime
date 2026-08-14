@@ -64,6 +64,7 @@ public final class InternalBedrockModelRegistry {
     // 注：模型文件名是 end_chest，贴图是 ender_chest——上游本来就不一致，照抄不改
     public static final Identifier END_CHEST_BACKPACK = addEntityModel("backpack/end_chest_backpack");
     public static final Identifier CRAFTING_TABLE_BACKPACK = addEntityModel("backpack/crafting_table_backpack");
+    public static final Identifier FURNACE_BACKPACK = addEntityModel("backpack/furnace_backpack");
 
     public static Identifier addModel(String name) {
         Identifier location = IdentifierUtil.modLoc("bedrock/block/" + name);

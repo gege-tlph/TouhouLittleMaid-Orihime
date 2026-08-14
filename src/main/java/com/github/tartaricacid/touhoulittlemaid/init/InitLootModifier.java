@@ -55,6 +55,8 @@ public class InitLootModifier {
                         );
                     else if (key.equals(BuiltInLootTables.ABANDONED_MINESHAFT))
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.NORMAL_BACKPACK)));
+                    else if (key.equals(BuiltInLootTables.SIMPLE_DUNGEON))
+                        builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.FURNACE_OR_CRAFTING_TABLE_BACKPACK)));
                     else if (key.equals(BuiltInLootTables.STRONGHOLD_CORRIDOR))
                         builder.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(LootTableGenerator.ENDER_CHEST_BACKPACK)));
                     else if (key.equals(BuiltInLootTables.STRONGHOLD_LIBRARY))

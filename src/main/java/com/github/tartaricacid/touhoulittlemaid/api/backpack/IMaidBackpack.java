@@ -100,6 +100,31 @@ public abstract class IMaidBackpack {
     public abstract MaidBackpackRenderData getRenderData();
 
     /**
+     * 该背包是否携带需要持久化与 tick 的数据对象（熔炉的烧炼状态、液体背包的储罐）。
+     * <p>
+     * 返回 {@code true} 的背包必须同时覆写 {@link #getBackpackData(EntityMaid)}。
+     *
+     * @return 是否携带背包数据
+     */
+    public boolean hasBackpackData() {
+        return false;
+    }
+
+    /**
+     * 为指定女仆创建一份全新的背包数据对象。
+     * <p>
+     * 只在穿上背包与读档恢复两个时机被调用（由 {@code MaidBackpackManager} 驱动），
+     * 每次调用都应返回新实例；不携带数据的背包返回 {@code null}。
+     *
+     * @param maid 携带该背包的女仆
+     * @return 新的背包数据对象；无数据的背包为 {@code null}
+     */
+    @Nullable
+    public IBackpackData getBackpackData(EntityMaid maid) {
+        return null;
+    }
+
+    /**
      * 丢出女仆背包物品栏中的全部物品。
      *
      * @param maid 需要丢出背包物品的女仆

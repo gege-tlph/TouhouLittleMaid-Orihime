@@ -61,6 +61,24 @@ public class BackpackRegistrationGameTest {
         helper.succeed();
     }
 
+    @GameTest
+    public void furnaceBackpackIsFullyRegistered(GameTestHelper helper) {
+        if (BackpackManager.findBackpack(
+                com.github.tartaricacid.touhoulittlemaid.entity.backpack.FurnaceBackpack.ID).isEmpty()) {
+            helper.fail("熔炉背包没登记进 BackpackManager");
+            return;
+        }
+        if (BackpackManager.findBackpack(InitItems.FURNACE_BACKPACK.getDefaultInstance()).isEmpty()) {
+            helper.fail("按物品反查不到熔炉背包");
+            return;
+        }
+        if (BuiltInRegistries.MENU.getKey(InitContainer.MAID_FURNACE_CONTAINER) == null) {
+            helper.fail("熔炉背包的容器类型没注册");
+            return;
+        }
+        helper.succeed();
+    }
+
     /** 末影箱背包不开放女仆自己的格子——它装的是玩家的末影箱，容量语义与其它背包不同。 */
     @GameTest
     public void enderChestBackpackExposesNoMaidSlots(GameTestHelper helper) {

@@ -32,6 +32,8 @@ public interface InitDataAttachment {
     AttachmentType<AttackListData> ATTACK_LIST = AttackListData.TYPE;
     // 背包类型
     AttachmentType<BackpackData> BACKPACK = BackpackData.TYPE;
+    // 熔炉/液体背包的持久状态（persistent 不同步：GUI 进度走容器 data slot，物品走菜单槽位）
+    AttachmentType<BackpackStateData> BACKPACK_STATE = BackpackStateData.TYPE;
     // 对弈记录和当前对弈状态
     AttachmentType<GameData> GAME = GameData.TYPE;
 }

@@ -45,6 +45,7 @@ public class BackpackManager {
         manager.add(new BigBackpack());
         manager.add(new EnderChestBackpack());
         manager.add(new CraftingTableBackpack());
+        manager.add(new FurnaceBackpack());
 
         for (ILittleMaid littleMaid : TouhouLittleMaid.EXTENSIONS) {
             littleMaid.addMaidBackpack(manager);

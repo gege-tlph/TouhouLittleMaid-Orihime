@@ -100,6 +100,12 @@ public class RecipeGenerator extends RecipeProvider {
                 .requires(ConventionalItemTags.RED_DYES)
                 .save(recipeOutput);
 
+        AltarRecipeBuilder.shapeless(items, InitItems.FURNACE_BACKPACK)
+                .power(0.2F)
+                .requires(InitItems.MAID_BACKPACK_MIDDLE)
+                .requires(ConventionalItemTags.PLAYER_WORKSTATIONS_FURNACES)
+                .save(recipeOutput);
+
         AltarRecipeBuilder.shapeless(items, InitItems.FALL_PROTECT_BAUBLE)
                 .power(0.2F)
                 .requires(ConventionalItemTags.NETHER_WART_CROPS)
