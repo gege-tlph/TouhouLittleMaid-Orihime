@@ -36,11 +36,16 @@
     "common.PlayerMixin",
     "common.RedStoneWireBlockMixin",
     "common.ServerEntityMixin",
+    "common.ServerExplosionMixin",
     "common.ServerLevelMixin",
     "common.ServerLevelMixin$EntityCallbacksMixin",
     "common.ShulkerBulletMixin",
     "common.ThrowableProjectileMixin",
-    "compat.improvedmobs.EventHandlerMixin"
+    "compat.improvedmobs.EventHandlerMixin",
+    "compat.tacz.AbstractGunItemMixin",
+    "compat.tacz.GunAnimationStateContextMixin",
+    "compat.tacz.LivingEntityShootMixin",
+    "compat.tacz.ModernKineticGunScriptAPIMixin"
   ],
   "client": [
     "accessor.AbstractContainerScreenAccessor",
@@ -55,6 +60,7 @@
     "client.EntityRenderStateMixin",
     "client.ItemInHandRendererMixin",
     "client.KeyboardHandlerMixin",
+    "client.RemotePlayerMixin",
     "client.SoundEngineMixin"
   ],
   "injectors": {

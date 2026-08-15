@@ -49,6 +49,11 @@ public class EntityMaidRenderState extends HumanoidRenderState {
     private static final BlockDisplayContext BLOCK_DISPLAY_CONTEXT = BlockDisplayContext.create();
 
     /**
+     * 活实体引用，只服务原版渲染状态管线覆盖不到的渲染桥（现有消费者：TACZ 背部枪械层，
+     * 需要 IGunOperator 等实体挂载数据）。常规渲染路径一律读本类的抽取字段，不得读它。
+     */
+    public @Nullable EntityMaid maid;
+    /**
      * 渲染类型，决定是 Simple Bedrock Model 模型还是 GeckoLib 模型
      */
     public ModelType modelType = ModelType.NONE;
@@ -180,6 +185,12 @@ public class EntityMaidRenderState extends HumanoidRenderState {
      */
     public final ItemStackRenderState backItem = new ItemStackRenderState();
     /**
+     * 背部展示物的原始 ItemStack（抽取期写入）。{@code backItem} 只在物品带 TOOL 组件时才被填充，
+     * 枪械不满足——背部枪械渲染读本字段。渲染期不得回实体取（submit 跑在渲染线程，
+     * 服务端线程正在改背包）。
+     */
+    public ItemStack backpackShowItem = ItemStack.EMPTY;
+    /**
      * 游戏时间，用于一些仅根据时间变化的动画或渲染效果
      */
     public long gameTime;
@@ -197,6 +208,7 @@ public class EntityMaidRenderState extends HumanoidRenderState {
     public boolean thundering;
 
     public void clear() {
+        maid = null;
         modelType = ModelType.NONE;
 
         modelId = null;
@@ -234,6 +246,7 @@ public class EntityMaidRenderState extends HumanoidRenderState {
         headBlock.clear();
         simpleHat.clear();
         backItem.clear();
+        backpackShowItem = ItemStack.EMPTY;
 
         gameTime = 0;
         dimension = null;
@@ -249,6 +262,7 @@ public class EntityMaidRenderState extends HumanoidRenderState {
             ItemModelResolver itemModelResolver,
             @Nullable GeckoMaidEntity<? extends EntityMaid> geckoEntity
     ) {
+        state.maid = maid;
         extractEnvironmentState(maid, state);
         extractAttributeState(maid, state);
         extractBehaviorState(maid, state);
@@ -390,6 +404,7 @@ public class EntityMaidRenderState extends HumanoidRenderState {
         state.backpack = state.showBackpack ? maid.getMaidBackpackType() : BackpackManager.getEmptyBackpack();
 
         ItemStack showItem = maid.getBackpackShowItem();
+        state.backpackShowItem = showItem;
         // 只有工具类物品才会显示在背部
         if (showItem.has(DataComponents.TOOL)) {
             itemModelResolver.updateForLiving(state.backItem, showItem, ItemDisplayContext.FIXED, maid);

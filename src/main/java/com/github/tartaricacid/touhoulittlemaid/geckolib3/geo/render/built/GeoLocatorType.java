@@ -11,11 +11,12 @@ public class GeoLocatorType {
     public static final GeoLocatorType RIGHT_HAND = new GeoLocatorType("RightHandLocator");
     public static final GeoLocatorType BACKPACK = new GeoLocatorType("BackpackLocator");
     public static final GeoLocatorType HEAD = new GeoLocatorType("Head");
+    // TACZ 兼容刀取消注释（B7）：背部枪械按枪种挂到这两组定位骨骼
+    public static final GeoLocatorType TAC_PISTOL = new GeoLocatorType("PistolLocator");
+    public static final GeoLocatorType TAC_RIFLE = new GeoLocatorType("RifleLocator");
 /*
     public static final GeoLocatorType LEFT_WAIST = new GeoLocatorType("LeftWaistLocator");
     public static final GeoLocatorType RIGHT_WAIST = new GeoLocatorType("RightWaistLocator");
-    public static final GeoLocatorType TAC_PISTOL = new GeoLocatorType("PistolLocator");
-    public static final GeoLocatorType TAC_RIFLE = new GeoLocatorType("RifleLocator");
 */
 
     private final String name;

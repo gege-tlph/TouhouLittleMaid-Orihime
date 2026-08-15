@@ -193,6 +193,21 @@ sourceSets.main {
     }
 }
 
+// TACZ 的编译期 jar。不入库，故可能缺席——缺席时让 compileJava 直接说清楚怎么补，
+// 而不是让 javac 抛出几十条「找不到程序包 com.tacz」把人引向别处。
+def taczCompileJar = file("libs/compile_only/TACZ-Refabricated-26.1.2-1.1.8+fabric.26.1.2.R1.jar")
+tasks.named('compileJava').configure {
+    doFirst {
+        if (!taczCompileJar.exists()) {
+            throw new GradleException(
+                    "缺少 TACZ 编译期依赖：${taczCompileJar}\n" +
+                    "从 https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases/tag/26.1.2_R1\n" +
+                    "下载 TACZ-Refabricated-26.1.2-1.1.8+fabric.26.1.2.R1.jar 放到 libs/compile_only/ 下。\n" +
+                    "该 jar 体积大且许可证与本仓库不同，按约定不入库。")
+        }
+    }
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
 
@@ -276,18 +291,15 @@ dependencies {
 //    compileOnly "maven.modrinth:improved-mobs:1.21.1-1.14.2-fabric"
 //    compileOnly "maven.modrinth:tenshilib:1.21.1-2.1.1-fabric"
 
-    // TACZ
-//    compileOnly("maven.modrinth:TACZ-Refabricated:1.21.1-0.6.0-forge1.1.8")
-//    implementation(minecraftLibraries('org.apache.commons:commons-math3:3.6.1'))
-//    implementation('com.github.FiguraMC.luaj:luaj-core:3.0.8-figura') {
-//        exclude group: 'org.apache.commons', module: 'commons-lang3'
-//    }
-//    implementation('com.github.FiguraMC.luaj:luaj-jse:3.0.8-figura') {
-//        exclude group: 'org.apache.commons', module: 'commons-lang3'
-//    }
-//    implementation('org.apache.bcel:bcel:6.6.1') {
-//        exclude group: 'org.apache.commons', module: 'commons-lang3'
-//    }
+    // TACZ（枪械）—— 非官方 Fabric 移植 q14433686-arch/TaCZ_Refabricated_Unofficial 分支 26.1.2。
+    // 只在 GitHub Releases 发布，没有 Maven 坐标（Modrinth 的 tacz-refabricated 停在 1.21.1），
+    // 故按本地 jar 引入；jar **不入库**（55 MB，且它是 GPL-3.0 而本仓库 MIT+CC）。
+    // 缺文件时由下方 compileJava 守卫给出可执行提示。luaj/bcel/commons-math3 等运行库
+    // 该 jar 已 JiJ 自带（META-INF/jars），编译期不需要单列。
+    // 裸 compileOnly 而非 1.21.11 的 modCompileOnly：26.x 无混淆，loom 1.16 已无 mod* 配置
+    //（宿主全部依赖同样是裸 implementation/compileOnly）。我们不编译期引用其注入接口成员，
+    // mixin 的 @At target 字符串不参与编译解析，故无需 loom 的接口注入处理。
+    compileOnly files(taczCompileJar)
 //    implementation "curse.maven:nonconflictkeys-fabric-865546:4572953"
 
     // PatPat

@@ -3,6 +3,8 @@ package com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.gecko.la
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.MaidBackpackRenderData;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.gecko.GeckoMaidRenderData;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.state.EntityMaidRenderState;
+import com.github.tartaricacid.touhoulittlemaid.compat.gun.common.GunClientUtil;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.GeoLayerRenderer;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.render.built.GeoLocatorType;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -19,6 +21,13 @@ public class GeckoLayerMaidBackItem implements GeoLayerRenderer<EntityMaidRender
     public void submit(SubmitNodeCollector submitNode, PoseStack poseStack, EntityMaidRenderState state,
                        GeckoMaidRenderData data, CameraRenderState camera) {
         if (state.backItem.isEmpty() || state.backpack == null) {
+            // 背部枪械渲染。基准是「背包展示物不是 TieredItem 就走枪械分支」，
+            // 本树等价的判据是 backItem 为空——它只在物品带 TOOL 组件时才被填充，枪不带。
+            EntityMaid gunMaid = state.maid;
+            if (state.backpack != null && gunMaid != null) {
+                GunClientUtil.renderBackGun(state.backpackShowItem, data.modelState, gunMaid,
+                        poseStack, submitNode, state.lightCoords);
+            }
             return;
         }
         if (data.modelState.locatorGroupSize(GeoLocatorType.BACKPACK) > 0) {

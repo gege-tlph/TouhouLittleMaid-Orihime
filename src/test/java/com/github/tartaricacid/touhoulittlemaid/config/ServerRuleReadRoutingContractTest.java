@@ -98,9 +98,15 @@ class ServerRuleReadRoutingContractTest {
      * 名单里的文件仍然受下面第一条（禁止直接 {@code .get()}）看管，只是豁免第二条。</p>
      *
      * <p>白名单按**路径**匹配：文件改名会让它落回严格检查而不是继续豁免——失效方向是安全的那一侧。</p>
+     *
+     * <p>{@code GunRecognitionRange}：枪种 → 距离档位的**唯一映射口**，只返回规则值引用、
+     * 自己从不 {@code get()}（映射刻意脱离 TaCZ 类型，好被 {@code GunRecognitionRangeTest} 覆盖）。
+     * 两个消费者（{@code TaskGunAttack.searchRadius} / {@code TacInnerCompat.canSee}）
+     * 都在调用点经 {@code ServerRuleConfig.get(...)} 解析，仍受第一条看管。</p>
      */
     private static final List<String> REFERENCE_HOLDERS_ALLOWED = List.of(
-            "compat/cloth/MenuIntegration.java");
+            "compat/cloth/MenuIntegration.java",
+            "compat/gun/common/GunRecognitionRange.java");
 
     /** 第一层：任何地方都不许直接 {@code XXX.get()}——这才是运行期真正会抛的那个写法。 */
     @Test

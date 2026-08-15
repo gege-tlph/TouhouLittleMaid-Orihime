@@ -1,9 +1,11 @@
 package cn.sh1rocu.touhoulittlemaid.mixin.common;
 
+import cn.sh1rocu.touhoulittlemaid.api.event.LivingAttackEvent;
 import cn.sh1rocu.touhoulittlemaid.util.neoforge.EventHooks;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityReference;
@@ -66,4 +68,17 @@ public abstract class LivingEntityMixin extends Entity {
         }
     }
 
+    // 服务端伤害入口 hurtServer HEAD 触发 LivingAttackEvent（Forge 形态壳，消费者：TACZ 兼容层
+    // 「女仆子弹不伤主人/队友」）。玩家由 PlayerMixin 单独承接，此处排除避免双发。
+    // 注入点与 1.21.11 分支同款，26.1.2 javap 复验 hurtServer(ServerLevel,DamageSource,float) 仍在。
+    @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
+    public void tlm$attackEvent(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        LivingEntity self = (LivingEntity) (Object) this;
+        if (!(self instanceof Player)) {
+            LivingAttackEvent event = new LivingAttackEvent(self, source, amount);
+            LivingAttackEvent.CALLBACK.invoker().onLivingAttack(event);
+            if (event.isCanceled())
+                cir.setReturnValue(false);
+        }
+    }
 }

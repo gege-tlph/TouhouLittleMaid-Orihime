@@ -276,11 +276,11 @@ public final class ServerRuleConfig {
      *       而它唯一的消费者是跟随手感调优——属审计 §3.E，本刀未搬。**配置项要和它的消费者同批落地**，
      *       否则就是一个改了没反应的开关。恢复锚点：§3.E 那一刀落地时，连同 {@code ExperimentalConfig}
      *       一起加进本表（本表缺键由 {@code completeMissingValues} 自动补默认值，老存档不会因此报错）。</li>
-     *   <li>{@code MaidConfig.MAID_GUN_LONG/MEDIUM/NEAR_DISTANCE} 三键：随 TaCZ 生态裁决一并未建。
-     *       **2026-08-14 裁决已翻**（TaCZ Refabricated 有 26.1.2 构件，审计 §2.2），TACZ 兼容刀
-     *       落地时三键连同 {@code MaidConfig} 的声明一起回来，且**必须进本表**——
-     *       1.21.11 分支同日实证两次：读口对未认领的键回落到裸 spec，集成服务端 tick 期一读就崩服。
-     *       移植清单：{@code docs/archive/PORT_TACZ_AND_RANGED_AI.md} 第二节 B 表。</li>
+     *   <li>{@code MaidConfig.MAID_GUN_LONG/MEDIUM/NEAR_DISTANCE} 三键：**已随 TACZ 兼容刀入表**
+     *       （2026-08-15）。三键必须在此认领——1.21.11 分支实证两次：读口对未认领的键回落到
+     *       裸 spec，集成服务端 tick 期一读就崩服（{@code TaskGunAttack.searchRadius} 正在寻路路径上）。
+     *       读点：{@code TaskGunAttack.searchRadius} 与 {@code TacInnerCompat.canSee}，
+     *       均经 {@code GunRecognitionRange.configFor} 拿配置对象、经本类唯一读口解析。</li>
      * </ul>
      */
     public static List<ModConfigSpec.ConfigValue<?>> values() {
@@ -312,6 +312,9 @@ public final class ServerRuleConfig {
                 MaidConfig.MAID_HOME_MEALS_BLOCK_LIST_REGEX,
                 MaidConfig.MAID_HEAL_MEALS_BLOCK_LIST_REGEX,
                 MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST,
+                MaidConfig.MAID_GUN_LONG_DISTANCE,
+                MaidConfig.MAID_GUN_MEDIUM_DISTANCE,
+                MaidConfig.MAID_GUN_NEAR_DISTANCE,
                 ChairConfig.CHAIR_CHANGE_MODEL,
                 ChairConfig.CHAIR_CAN_DESTROYED_BY_ANYONE,
                 MiscConfig.MAID_FAIRY_POWER_POINT,

@@ -3,6 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.client.animation.inner;
 import com.github.tartaricacid.simplebedrockmodel.client.bedrock.model.BedrockPart;
 import com.github.tartaricacid.touhoulittlemaid.api.animation.IAnimation;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.state.EntityMaidRenderState;
+import com.github.tartaricacid.touhoulittlemaid.compat.gun.common.GunClientUtil;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
@@ -184,6 +185,13 @@ public final class MaidBaseAnimation {
             float limbSwingAmount = state.walkAnimationSpeed;
             float ageInTicks = state.ageInTicks;
 
+            // 枪械持握姿势优先于默认摆臂。基准把这条判据放在 armRight 的 else 分支里
+            // （坐姿玩具方块 / 骑乘载具两种姿势排在它前面），而本树的 MaidBaseAnimation
+            // 根本没有那两条分支，故等价地提到最前面（与 1.21.11 分支同款适配）。
+            if (GunClientUtil.onHoldGun(state.getMainHandItemStack(), armLeft, armRight)) {
+                return;
+            }
+
             if (armLeft != null) {
                 armLeft.xRot = (float) (-Math.cos(limbSwing * 0.67) * 0.7 * limbSwingAmount);
                 armLeft.zRot = (float) (Math.cos(ageInTicks * 0.05) * 0.05 + armLeft.getInitRotZ());
@@ -217,7 +225,8 @@ public final class MaidBaseAnimation {
             BedrockPart armLeft = models.get("armLeft");
             BedrockPart armRight = models.get("armRight");
 
-            if (!state.rightHandItemStack.isEmpty() && state.swingingArms) {
+            if (!state.rightHandItemStack.isEmpty() && state.swingingArms
+                    && !GunClientUtil.onHoldGun(state.getMainHandItemStack(), armLeft, armRight)) {
                 if (armLeft != null) {
                     armLeft.xRot = -1.396f;
                     armLeft.yRot = 0.785f;
