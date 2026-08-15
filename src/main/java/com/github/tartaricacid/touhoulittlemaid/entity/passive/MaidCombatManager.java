@@ -169,8 +169,13 @@ public class MaidCombatManager {
     }
 
     void performRangedAttack(LivingEntity target, float distanceFactor) {
-        IMaidTask maidTask = maid.getTask();
-        if (maidTask instanceof IRangedAttackTask rangedAttackTask) {
+        // 基准只认当前工作任务，任务不是远程任务时整个方法是空操作。用户 2026-08-14 裁决解绑
+        // （1.21.11 分支定案，行为基准已前移）：按手里的武器找实现（当前任务优先，故弓手/弩手的
+        // 行为逐字不变），这样「农场女仆手持弓有箭」在威胁响应里也打得响，与枪械那条路对齐。
+        // 恢复锚点（§3.B）：1.21.11 分支此处还有 MaidTargetingPolicy.canAttack 敌我判定门，
+        // 随威胁响应簇（审计 §3.B）落地时在此加回。
+        IRangedAttackTask rangedAttackTask = IRangedAttackTask.resolveImplementation(maid, maid.getMainHandItem());
+        if (rangedAttackTask != null) {
             // 调用饰品的攻击
             maid.getMaidBauble().fireEvent((b, s) -> {
                 b.onRangedAttack(maid, s, rangedAttackTask);
