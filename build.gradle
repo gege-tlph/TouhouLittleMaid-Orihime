@@ -262,7 +262,10 @@ dependencies {
     compileOnly "maven.modrinth:iris:1.10.9+26.1-fabric"
 
     // Forge Config API Port
-    implementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:26.1.4"
+    // 26.1.5：TaCZ Refabricated 26.1.2_R1 要求 forgeconfigapiport>=26.1.5（实查其 fabric.mod.json）；
+    // 世界规则层对 FCAP 的字节码取证（ConfigValue.getRaw 抛「before config is loaded」）原是对 26.1.4 做的，
+    // 升级后由既有 JUnit/GameTest 门复验同一行为。
+    implementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:26.1.5"
 
     // ModMenu
     implementation("com.terraformersmc:modmenu:18.0.0-beta.1")
