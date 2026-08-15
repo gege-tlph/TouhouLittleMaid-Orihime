@@ -56,13 +56,16 @@
 主手空时吃工作餐副手物品不消失。均有基准同款修法背书，抽验非必须。
 - **GIF 表情气泡**（`b70145a20`）：让女仆发表情气泡直到抽到 GIF 表情，验显示不空、逐帧在动
 
-**TACZ 兼容刀（`167608ab9`）零实机——需在 mods 里放入
-`TACZ-Refabricated-26.1.2-1.1.8+fabric.26.1.2.R1.jar`（libs/compile_only 里那份，jar 不入库）**：
+**TACZ 兼容刀（`167608ab9`）：单人档实机验收通过（2026-08-15 用户实测，五项全过）**：
 
-- 枪械工作模式（gun_attack）：给枪给弹药，开火 / 换弹（弹药从女仆背包扣）/ 走位 / 狙击瞄准
-- 动画与渲染：持枪手臂姿势（bedrock 与 gecko）、换弹动画、背部枪械（穿背包与不穿两态）
-- 敌我：女仆子弹不伤主人/队友；子弹爆炸不炸女仆（DETONATE 触发点是本树重设计，重点验）
-- 配置菜单：装 TACZ 时 server.combat 段出现三条枪械距离滑块（不装则隐藏）、保存生效
+- ✅ 枪械工作模式（开火 / 背包扣弹换弹 / 走位）；持枪与换弹动画；背部枪械渲染；
+  敌我免伤（子弹不伤主人 + **爆炸不炸女仆**——`ServerExplosionMixin` 重设计触发点实证生效，
+  四个 tacz mixin 对真 jar 零错误织入，两处漂移修正同获实证）；
+  配置菜单三滑块（isModLoaded 显示 + 保存生效）
+- 测试环境：dev 客户端单人档，TACZ jar 放 `run/mods/`（`libs/compile_only` 那份的拷贝，
+  均不入库）；运行期前置 FCAP 升 26.1.5（`7a1c0bce`，TACZ 硬下限）
+- 按「验收连同环境记账」：枪械三键是世界规则，**专服上的同步 / 菜单可见性 / reload
+  未验**——随下表既有专服三项一并开放
 - ⚠️ **弓弩解绑（`c6aa20b24`）本身不构成实机验收项**：`performRangedAttack` 的调用方
   全在远程任务的 brain 行为里（实查），非远程任务女仆在 B1（应战活动）落地前没人调它——
   「农场女仆手持弓被打能还击」要等 §3.B。B2 的判定面由 `RangedResolveGameTest` 三例钉住，
@@ -193,7 +196,8 @@ hurtClient×2，javap 复验）+ `ExplosionEvents` + `ServerExplosionMixin`（26
 
 门禁：compileJava 0 错、JUnit 71/0（新增 GunRecognitionRangeTest 6 例）、
 GameTest 31/0（新增 RangedResolveGameTest 3 例，entrypoint 已登记；服务端启动实证
-新 mixin 织入）。零实机项全集在 O1。
+新 mixin 织入）。**单人档实机验收 2026-08-15 通过**（用户五项实测，见 O1；
+运行期前置 FCAP 26.1.4→26.1.5 随验收补上，`7a1c0bce`）；专服侧仍开放（O1 表）。
 
 ## 2026-08-15：缺陷修复移交清单定案采用（`6f5d8f2a5`）
 
