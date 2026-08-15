@@ -5,7 +5,7 @@
 | 活动开发分支 | `port/26.1.2-fabric`（工作树 `C:\Users\steve\Desktop\MCV_Project\tlm-tsumugi-26.1.2`） |
 | 代码宿主 | `origin/26.1` = `Sh1roCu/TouhouLittleMaid-Orihime` 的 MC 26.1.2 Fabric 分支 |
 | **行为基准** | **`port/1.21.11-fabric`** —— 我们自己那条已实机验收的分支 |
-| 目标 | Minecraft 26.1.2 · Fabric Loader 0.19.2+ · Java 21 |
+| 目标 | Minecraft 26.1.2 · Fabric Loader 0.19.3+ · Java 25 |
 
 ## ⛔ 与 1.21.11 分支的隔离纪律（用户 2026-08-13 定稿）
 

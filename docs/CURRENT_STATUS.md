@@ -56,6 +56,18 @@
 主手空时吃工作餐副手物品不消失。均有基准同款修法背书，抽验非必须。
 - **GIF 表情气泡**（`b70145a20`）：让女仆发表情气泡直到抽到 GIF 表情，验显示不空、逐帧在动
 
+**TACZ 兼容刀（`167608ab9`）零实机——需在 mods 里放入
+`TACZ-Refabricated-26.1.2-1.1.8+fabric.26.1.2.R1.jar`（libs/compile_only 里那份，jar 不入库）**：
+
+- 枪械工作模式（gun_attack）：给枪给弹药，开火 / 换弹（弹药从女仆背包扣）/ 走位 / 狙击瞄准
+- 动画与渲染：持枪手臂姿势（bedrock 与 gecko）、换弹动画、背部枪械（穿背包与不穿两态）
+- 敌我：女仆子弹不伤主人/队友；子弹爆炸不炸女仆（DETONATE 触发点是本树重设计，重点验）
+- 配置菜单：装 TACZ 时 server.combat 段出现三条枪械距离滑块（不装则隐藏）、保存生效
+- ⚠️ **弓弩解绑（`c6aa20b24`）本身不构成实机验收项**：`performRangedAttack` 的调用方
+  全在远程任务的 brain 行为里（实查），非远程任务女仆在 B1（应战活动）落地前没人调它——
+  「农场女仆手持弓被打能还击」要等 §3.B。B2 的判定面由 `RangedResolveGameTest` 三例钉住，
+  弓手/弩手行为逐字不变（当前任务优先）
+
 **仍开放（都需要专服/局域网或旧存档，单人档验不到）**：
 
 | 待验 | 为什么这轮验不到 | 怎么验 |
@@ -75,7 +87,8 @@
 动手补的过程中已改判三条：`ClientBoardStateTooltip` 待定→丢失并已补、`MaidGameRecordManager` 丢失→替换、
 `IBackpackData` 替换→丢失——**判定的最终校验是真去补它**。
 
-「丢失」归成五簇，**五簇与零散均已清零**（2026-08-14），剩余待补只有 TACZ 批（归 O6）：
+「丢失」归成五簇，**五簇、零散与 TACZ 批全部清零**（TACZ 批 2026-08-15，`167608ab9`）——
+「丢失」58 条已全部补回，实时数跑 `--ledger` 核对：
 
 | # | 簇 | 条数 | 后果 | 备注 |
 |---|---|---|---|---|
@@ -84,7 +97,8 @@
 | 3 | ~~**REI 集成**~~ | ~~5~~ | **已补完**（`30d0d2795`：四件逐字 + Maker 重写走宿主 `ClientRecipeEvent.ALTAR_RECIPES`；REI 实证加载且 GameTest 28/0） | 见已关闭表 |
 | 4 | ~~**原版替换功能**~~ | ~~4+2~~ | **已补完**（`6cbe559ba`，含两处改判：InitSpecialItemRender 替换→丢失、ReplaceableBakedModel 待定→丢失） | 见已关闭表 |
 | 5 | ~~**模型图标缓存**~~ | ~~4+分支~~ | **已补完**（`e45ea33a6`：4 文件 + 5 处丢分支 + 队列接线 + 配置菜单 lang，契约测试三形态红测过） | 见已关闭表；⚠️ 零实机项在 O1 |
-| — | ~~零散~~ | ~~2~~ | **已清零**：`GifTexture` 补回 `b70145a20`（宿主 FIXME 搁置还原）；`RenderFixer` **改判 丢失→无关**——origin 那个补丁是 1.21.1 时代 Carry On 附魔渲染 bug 的绕行，判据载体（`BufferSource.fixedBuffers`）在 26.1.2 submit 管线不存在，且行为基准在 render-state 重写时已放弃它、无等价承接（renderer 树零命中实查）。现存 Carry On 兼容 = tag + molang 纯数据层，与基准一致，依赖不接回（零消费者不留空壳）。若实机复现同类 bug → 修上游，属超基准新决策 | 至此**「丢失」待补只剩 TACZ 批（归 O6）**，实时数跑 `--ledger` |
+| — | ~~零散~~ | ~~2~~ | **已清零**：`GifTexture` 补回 `b70145a20`（宿主 FIXME 搁置还原）；`RenderFixer` **改判 丢失→无关**——origin 那个补丁是 1.21.1 时代 Carry On 附魔渲染 bug 的绕行，判据载体（`BufferSource.fixedBuffers`）在 26.1.2 submit 管线不存在，且行为基准在 render-state 重写时已放弃它、无等价承接（renderer 树零命中实查）。现存 Carry On 兼容 = tag + molang 纯数据层，与基准一致，依赖不接回（零消费者不留空壳）。若实机复现同类 bug → 修上游，属超基准新决策 | — |
+| — | ~~TACZ 批~~ | ~~14~~ | **已补完**（`167608ab9`，见已关闭表）——至此「丢失」58 条全部清零 | 零实机项在 O1 |
 
 ⚠️ **还有一批「待定」**（实时数跑 `--ledger`）：子代理报「未找到」而我尚未复核，一律不写成结论
 （上一轮子代理判定被逐条推翻过）。`--ledger` 会一直提示，忘不掉。
@@ -109,39 +123,21 @@
 
 ⚠️ 上表每一条在代码里都有对应注释，**不要只靠本表**——本表会过时，注释在改到时才会被看见。
 
-**O6 · TACZ 兼容 + 远程应战批（2026-08-14 新开，两份清单已收齐）**
+**O6 · TACZ 兼容 + 远程应战批 —— 代码面已闭合（2026-08-15，`167608ab9` + `c6aa20b24`），余两项挂在别处**
 
-1.21.11 分支同日完成这轮并送来两份清单：专题版
-[archive/PORT_TACZ_AND_RANGED_AI.md](archive/PORT_TACZ_AND_RANGED_AI.md)（TACZ+远程 AI 操作指引）
-与全量版 [archive/PORT_TACZ_AND_RANGED_AI_FULL.md](archive/PORT_TACZ_AND_RANGED_AI_FULL.md)
-（27 笔 67 文件按 A 恢复基准/B 超基准逐条决定/C 门禁 分三类 + 1.21.11 API 事实表）。
-蒸馏结论已入审计 §2.2/§3.B，动手时**两份都过一遍**：
+TACZ 14 条与 B2–B7 已落地（见已关闭表），本项只剩：
 
-- **生态裁决已翻**：TaCZ Refabricated 有 26.1.2 分支构件（审计 §2.2 专门行），
-  账本 14 行枪械条目改判「丢失」；⚠️ 上游明说 1.21.11 与 26.x 是**两套实现**，
-  凡涉 TACZ 内部（mixin 注入点、数据组件）必须按 26.1.2 的 jar 重验；Fabric API 下限也按其
-  fabric.mod.json 重读（1.21.11 那次升 API 就是被 TACZ 逼的）
-- **远程应战批与 TACZ 无关、26.1.2 同样需要**（行为基准已前移，精确参数与陷阱全在审计
-  §3.B 那一行：速度 0.5、站定距离 16、resolveImplementation 不加 isWeapon、
-  canUseNonMeleeWeapon 陷阱、swingingArms 修复已随基准定案）
-- **B 类超基准项逐条显式决定**（全量清单 B1–B7）：除上述外还有
-  `GunRecognitionRange` 按枪种取值（基准无此文件，基准的扫描/交战半径本就不一致）、
-  渲染期不读实体（`EntityMaidRenderState.backpackShowItem` 字段，26.1.2 渲染架构同源直接适用）、
-  `GeoLocatorType` 的 TAC_PISTOL/RIFLE 取消注释、**菜单三个枪械滑块要包 `isModLoaded`**
-  （⚠️ 26.1.2 现树的三个滑块是裸露的，TACZ 刀时对齐）、66 条枪械 lang×11 语言文件
-  （`.desc` 按只有 TaCZ 重写，基准原文提到的 SBW 未恢复）
-- **「持枪寻路异常」降级**：基准分支六组受控对照（平地/地形×静止/慢走×四种武器）
-  复现不出——枪每组都不比其它武器差、交战组最稳；等用户给复现现场再立案。
-  半径耦合确认是真实性能面但非该症状成因，BFS 解耦属超基准候选未做
-- 恢复锚点已埋：`ServerRuleConfig.values()` javadoc（枪械三键必须进认领清单，
-  1.21.11 两次崩服实证「用对访问器 ≠ 读得到」）
-- 1.21.11 API 事实表（AbstractArrow 挪包、getBaseDamage 删除、药水箭组件拷贝、
-  不死系毒/再生免疫是原版规则等）在全量清单尾部，26.1.2 动到箭/远程时先查它
-- 取证纪律两条随单收下：**创造模式玩家不被怪物索敌**（战斗类取证先证明触发条件成立）；
-  **比值型聚合指标分母趋零会爆炸**（两数不自洽就回看原始序列）
+| 余项 | 归属 |
+|---|---|
+| B1 威胁响应远程行为（应战活动接三条远程行为 + MaidEmergencyWalkToTarget 站定 + isHoldingUsableRangedWeapon）+ `MaidRangedEmergencyGameTest` 其余用例 | **§3.B 大簇**——应战框架（EMERGENCY_COMBAT 活动、ai.combat.MaidCombatManager 等）本树尚不存在，B1 没处挂。精确参数与陷阱在审计 §3.B 行：速度 0.5、站定 16、canUseNonMeleeWeapon 陷阱；敌我判定门锚点在 `entity.passive.MaidCombatManager.performRangedAttack` 注释 |
+| 「持枪寻路异常」 | 维持降级：1.21.11 六组受控对照复现不出，等用户给复现现场再立案；半径耦合是真实性能面但非该症状成因，BFS 解耦属超基准候选未做 |
 
-**排序**：反向缺口五簇已清零，本批在零散两条与待定复核之后、§3.B/§3.C 大簇之前或同批，
-届时由用户定夺。
+动手 §3.B 时仍**两份归档清单都过一遍**：
+[archive/PORT_TACZ_AND_RANGED_AI.md](archive/PORT_TACZ_AND_RANGED_AI.md)（专题）与
+[archive/PORT_TACZ_AND_RANGED_AI_FULL.md](archive/PORT_TACZ_AND_RANGED_AI_FULL.md)
+（全量，尾部有 1.21.11 API 事实表——26.1.2 动到箭/远程时先查它）。
+取证纪律两条随单收下且长期有效：**创造模式玩家不被怪物索敌**（战斗类取证先证明触发条件成立）；
+**比值型聚合指标分母趋零会爆炸**（两数不自洽就回看原始序列）。
 
 **O4 · 前置项目未决**
 - **YSM**：Fabric 26.1.2 上不存在任何实现（本体仅 NeoForge 且闭源，OpenYSM 无 26.x）。
@@ -156,6 +152,48 @@
 ---
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-15：TACZ 兼容整刀 + 弓弩解绑（`167608ab9` `c6aa20b24`）——「丢失」58 条全部清零
+
+账本 14 条 TACZ 件全部补回。依赖 TaCZ Refabricated 26.1.2_R1（compileOnly + 缺件守卫，
+jar 不入库）；fabric-api 0.149.1→0.155.2、loader 0.19.2→0.19.3（其 fabric.mod.json 实查下限，
+与 1.21.11 同型「升 API 被 TACZ 逼的」）。
+
+**26.1.2 jar 重验（上游明说与 1.21.11 是两套实现）**：18 个引用类全在、六个注入锚点
+javap -c 逐个证实；两处真实漂移——`GunAnimationStateContext` 目标 lambda `$8→$0`、
+`AbstractGunItem.canReload/hasInventoryAmmo` 去 static 化。`tacz$getItemHandler`
+描述符两版一致。
+
+**宿主残件盘点让实际工作面比交接清单小得多**：分发器两件是宿主留的空壳 stub 且
+调用点全活着（TaskManager/AnimationManager/ConditionManager.tac）、五个 tacz 资源与
+66 条枪械 lang 宿主全留着（只按 B7 把 `.desc`/`.condition.has_gun` 六语言去 SBW 字样）、
+InitItems/InitAttribute/三键声明也在。真正新建的是 tacz 内层 7 件 + common/ai 3 件 +
+4 mixin + GunRecognitionRange + 事件基础设施。
+
+**宿主写法适配（行为不变）**：IMaid→EntityMaid；IGeoLocatorSource→`GeoModelState`；
+背包位移走 RENDER_DATA_CACHE；库存按 Fabric transfer 遍历——⚠️ `ItemUtil.getStack` 是
+拷贝而非 Forge 活引用，弹药盒改完必须 `setStackInSlot` 回写；`targetConditionsTest`
+宿主收已解析 int，调用点经 `ServerRuleConfig.get` 解析。
+
+**配置所有权**：三键 initCommon→initServerRule（世界规则，TOML 键名不变），入
+`values()` 认领（JUnit 钉子红测过：摘键当场红）；`ConfigFileMigration` 按 `values()`
+全枚举自动随迁；Cloth 三滑块从个人配置段裸读写移入 server.combat 段走 session +
+isModLoaded（**两处不可并存**，否则菜单写 TOML 绕过服务器权威通道）。
+
+**事件基础设施随刀补齐（HEAD 原缺）**：`LivingAttackEvent` 四触发点（hurtServer×2 /
+hurtClient×2，javap 复验）+ `ExplosionEvents` + `ServerExplosionMixin`（26.1.2 爆炸
+重构后 DETONATE 触发点重设计：WrapOperation 包 `hurtEntities` 的 getEntities 取表，
+列表可变即免疫语义）。⚠️ **回传情报（告知用户转达 1.21.11 分支，勿跨分支写文档）**：
+1.21.11 迁移期把 origin 的 `ExplosionMixin` 触发点丢了——事件类在、零触发点，
+「女仆免疫子弹爆炸」在那边从不生效。
+
+**弓弩解绑（B2，`c6aa20b24`）**：`resolveImplementation` 当前任务优先且不加 isWeapon；
+`MaidCombatManager.performRangedAttack` 改用它，敌我判定门（MaidTargetingPolicy）
+留 §3.B 锚点。红测：注入 isWeapon 要求 → 「当前任务胜出」红报「实得 crossbow_attack」。
+
+门禁：compileJava 0 错、JUnit 71/0（新增 GunRecognitionRangeTest 6 例）、
+GameTest 31/0（新增 RangedResolveGameTest 3 例，entrypoint 已登记；服务端启动实证
+新 mixin 织入）。零实机项全集在 O1。
 
 ## 2026-08-15：缺陷修复移交清单定案采用（`6f5d8f2a5`）
 
