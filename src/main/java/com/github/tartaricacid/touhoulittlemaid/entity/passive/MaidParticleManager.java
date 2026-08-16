@@ -32,8 +32,14 @@ public class MaidParticleManager {
     }
 
     void tick() {
-        // 女仆无敌状态时，随机散发末影人粒子
-        if (maid.getSyncInvulnerable()
+        // 女仆无敌状态时，随机散发末影人粒子。
+        // ⚠️ isClient() 必须排在**最前面**：INVULNERABLE_PARTICLE_EFFECT 是个人配置，住在只在
+        // 客户端注册的 spec 里（config/touhou_little_maid-global.toml）。本方法挂在 baseTick 上
+        // 两侧都跑，短路没了专服每 tick 就抛「Cannot get config value before config is loaded」。
+        // 行为不变——spawnPortalParticle() 内本就有同一道判据，服务端从来什么也没做。
+        // 结构照行为基准 port/1.21.11-fabric 的 EntityMaid（那边同样是 isClientSide 打头）。
+        if (isClient()
+            && maid.getSyncInvulnerable()
             && MiscConfig.INVULNERABLE_PARTICLE_EFFECT.get()
             && maid.getOwner() != null
         ) {
