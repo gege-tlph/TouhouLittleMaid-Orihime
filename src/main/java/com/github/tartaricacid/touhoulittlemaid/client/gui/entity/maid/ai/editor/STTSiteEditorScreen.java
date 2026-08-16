@@ -4,7 +4,6 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.stt.STTSite;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.FormField;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.layout.FieldDescriptor;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.layout.STTSiteFormLayout;
-import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.settings.AIChatSettingsSTTSiteScreen;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.FlatColorButton;
 import com.github.tartaricacid.touhoulittlemaid.util.migrate.I18nUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.migrate.ScreenUtil;
@@ -18,17 +17,19 @@ import net.minecraft.util.FormattedCharSequence;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import static com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.Translations.SAVE_NAME;
 import static com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.Translations.sttEditorTitle;
 import static net.minecraft.network.chat.CommonComponents.GUI_BACK;
 
 public class STTSiteEditorScreen extends Screen {
-    private static final int BASE_WIDTH = 400;
+    private static final int BASE_WIDTH = SiteEditorLayout.PANEL_WIDTH;
     private static final int BASE_HEIGHT = 230;
     private static final int FIELD_ROW_HEIGHT = 35;
 
-    private final AIChatSettingsSTTSiteScreen parent;
+    private final Screen parent;
+    private final Consumer<STTSite> saveConsumer;
     private final STTSiteFormLayout layout;
     private final String siteDisplayName;
 
@@ -43,9 +44,17 @@ public class STTSiteEditorScreen extends Screen {
     private long tipTimestamp = -1;
     private Component statusMessage = Component.empty();
 
-    public STTSiteEditorScreen(AIChatSettingsSTTSiteScreen parent, STTSite sourceSite) {
+    /**
+     * 唯一入口是「语音输入设置」页每行的齿轮：返回/保存都回那一屏（parent），
+     * 保存动作由调用方注入——STT 站点数据是**本机文件**，屏本身不该知道落盘细节。
+     *
+     * <p>parent 因此收窄成 {@code Screen}：STT 由「每女仆选站」改成「全局单选」后，
+     * 原先那个专属的 {@code AIChatSettingsSTTSiteScreen} 整个撤掉了。</p>
+     */
+    public STTSiteEditorScreen(Screen parent, STTSite sourceSite, Consumer<STTSite> saveConsumer) {
         super(Component.literal("STT Site Editor"));
         this.parent = parent;
+        this.saveConsumer = saveConsumer;
         this.layout = sourceSite.formLayout();
 
         String nameKey = sourceSite.getNameKey();
@@ -94,8 +103,10 @@ public class STTSiteEditorScreen extends Screen {
         }
 
         int bottomY = this.startY + BASE_HEIGHT - 24;
-        this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 200, bottomY, 90, 20, SAVE_NAME, b -> this.saveSite()));
-        this.addRenderableWidget(new FlatColorButton(this.startX + BASE_WIDTH - 102, bottomY, 90, 20, GUI_BACK, b -> this.onClose()));
+        this.addRenderableWidget(new FlatColorButton(this.startX + SiteEditorLayout.SAVE_X, bottomY,
+                SiteEditorLayout.SAVE_WIDTH, 20, SAVE_NAME, b -> this.saveSite()));
+        this.addRenderableWidget(new FlatColorButton(this.startX + SiteEditorLayout.BACK_X, bottomY,
+                SiteEditorLayout.BACK_WIDTH, 20, GUI_BACK, b -> this.onClose()));
     }
 
     private void createFieldWidget(FormField field, int left, int y, int width) {
@@ -122,6 +133,7 @@ public class STTSiteEditorScreen extends Screen {
         // 文本框
         for (FormField field : this.fields) {
             this.renderInputField(graphics, field.box, mouseX, mouseY, partialTick);
+            this.renderSecretPlaceholder(graphics, field);
         }
 
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
@@ -132,6 +144,21 @@ public class STTSiteEditorScreen extends Screen {
             int y = this.startY + BASE_HEIGHT - 35;
             graphics.centeredText(this.font, this.statusMessage, x, y, 0xFFFF7777);
         }
+    }
+
+    /**
+     * 密钥框空着的时候，用灰字说明它到底是「已配置」还是「未配置」。
+     *
+     * <p>STT 站点的密钥其实是可回显的（它从不离开本机），但这一屏与服务端编辑器共用
+     * {@link FormField}，统一处理成本更低；本地站点走到这里时 secretAlreadySet 恒为假，
+     * 显示的就是「未配置」或真实内容，行为不变。</p>
+     */
+    private void renderSecretPlaceholder(GuiGraphicsExtractor graphics, FormField field) {
+        if (!field.secret || field.box == null || !field.box.getValue().isEmpty()) {
+            return;
+        }
+        graphics.text(this.font, field.secretPlaceholder(),
+                field.box.getX(), field.box.getY(), 0xFF808080, false);
     }
 
     private void renderInputField(GuiGraphicsExtractor graphics, EditBox box, int mouseX, int mouseY, float partialTick) {
@@ -164,7 +191,7 @@ public class STTSiteEditorScreen extends Screen {
         if (site == null) {
             return;
         }
-        this.parent.saveLocalSTTSite(site);
+        this.saveConsumer.accept(site);
         this.onClose();
     }
 

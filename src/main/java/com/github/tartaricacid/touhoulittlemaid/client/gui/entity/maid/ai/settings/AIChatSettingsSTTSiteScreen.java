@@ -66,7 +66,7 @@ public class AIChatSettingsSTTSiteScreen extends AIChatSettingsHubScreen {
             return;
         }
         this.state.selectedSttSiteId = siteId;
-        ScreenUtil.setScreen(new STTSiteEditorScreen(this, site));
+        ScreenUtil.setScreen(new STTSiteEditorScreen(this, site, this::saveLocalSTTSite));
     }
 
     public void toggleSTTSite(String siteId) {
