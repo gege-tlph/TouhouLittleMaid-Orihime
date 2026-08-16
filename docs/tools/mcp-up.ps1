@@ -137,6 +137,44 @@ function Test-EulaAccepted {
     return ($line.Matches[0].Groups[1].Value -eq 'true')
 }
 
+# ---------------------------------------------------------------- MCP mod 前置
+# 2026-08-16 实测：run-dedicated-client\mods 是**空的** —— MCP mod 只被放进过服务端的
+# run\mods，客户端那份 runDir 从来没人布置。于是 runClientDedicated 一切正常地启动、
+# 8766 从头到尾没监听过，Wait-ForMcp 干等满 300 秒才报一句「没有完成 MCP 握手」——
+# 那句话把人指向网络/时序，而真因是少了一个文件。与 EULA 那道闸同型。
+#
+# 判据按 **runDir** 定而不是按「客户端/服务端」定：服务端侧缺件是 HANDOFF 记过的同一个坑
+# （「8765 无人监听 → run/mods/ 缺 minecraft-fabric-mcp」），两侧同吃这一道。
+# 同一个 jar 两侧通用：其 fabric.mod.json 是 environment "*"，client 入口
+# com.chapmanjw.minecraft.fabric.mcp.McpClientMod 就是 8766 那半。
+function Initialize-McpMod([string]$RunDir, [string]$Label) {
+    $modsDir = Join-Path $repo "$RunDir\mods"
+    if (-not (Test-Path $modsDir)) {
+        New-Item -ItemType Directory -Path $modsDir -Force | Out-Null
+    }
+    $present = Get-ChildItem $modsDir -Filter 'minecraft-fabric-mcp*.jar' -ErrorAction SilentlyContinue
+    if ($present) { return $true }
+
+    $source = $null
+    foreach ($candidate in @('run\mods', 'run-dedicated-client\mods')) {
+        $dir = Join-Path $repo $candidate
+        if (-not (Test-Path $dir)) { continue }
+        $hit = Get-ChildItem $dir -Filter 'minecraft-fabric-mcp*.jar' -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+        if ($hit) { $source = $hit; break }
+    }
+    if (-not $source) {
+        Write-Bad "$Label 未启动：$RunDir\mods 里没有 minecraft-fabric-mcp，端口永远不会监听"
+        Write-Host '         上游 chapmanjw/minecraft-java-fabric-mcp-server。' -ForegroundColor Yellow
+        Write-Host '         必须用与 MC 版本精确匹配的构件（26.1.2）——它的版本约束写作' -ForegroundColor Yellow
+        Write-Host '         minecraft:">=1.21" 开区间无上界，装错版本 loader 照收，运行时才炸。' -ForegroundColor Yellow
+        return $false
+    }
+    Copy-Item $source.FullName $modsDir -Force
+    Write-Host "  已把 $($source.Name) 补进 $RunDir\mods" -ForegroundColor DarkGray
+    return $true
+}
+
 # ---------------------------------------------------------------- 1. 专服 8765
 Write-Step '专服 minecraft-java (8765)'
 if (Test-McpEndpoint -Port 8765) {
@@ -148,6 +186,8 @@ if (Test-McpEndpoint -Port 8765) {
     Write-Bad '专服 minecraft-java (8765) 未启动：run\eula.txt 里 eula=false'
     Write-Host '         服务端会打印一行 EULA 提示后立即退出，端口永远不会监听。' -ForegroundColor Yellow
     Write-Host '         同意 https://aka.ms/MinecraftEULA 后，把该文件改成 eula=true 再跑本脚本。' -ForegroundColor Yellow
+} elseif (-not (Initialize-McpMod 'run' '专服 minecraft-java (8765)')) {
+    # Initialize-McpMod 已记入 failures，这里什么都不做
 } elseif (Test-CanLaunch -Port 8765 -Label '专服 minecraft-java') {
     Write-Host '  启动 runServer（独立窗口，本脚本不会杀它）...' -ForegroundColor DarkGray
     Start-Process -FilePath $gradlew -ArgumentList 'runServer' -WorkingDirectory $repo | Out-Null
@@ -163,6 +203,8 @@ if (Test-McpEndpoint -Port 8766) {
     Write-Bad '客户端 minecraft-java-client (8766) 未运行（-CheckOnly 不会启动它）'
 } elseif (-not $WithClient) {
     Write-Skip '未指定 -WithClient，本轮不需要客户端只读工具'
+} elseif (-not (Initialize-McpMod 'run-dedicated-client' '客户端 minecraft-java-client (8766)')) {
+    # Initialize-McpMod 已记入 failures，这里什么都不做
 } elseif (-not (Test-CanLaunch -Port 8766 -Label '客户端 minecraft-java-client')) {
     # Test-CanLaunch 已记入 failures，这里什么都不做
 } else {
