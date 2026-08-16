@@ -25,6 +25,30 @@ curl.exe -L -o "$d\gradle-9.4.0-bin.zip" https://mirrors.cloud.tencent.com/gradl
 放好后 wrapper 会直接解包。⚠️ **失败的下载会在缓存里留下 0 字节的 `.part` 与 `.lck`**，
 换镜像重试前先删掉它们，否则一次抖动会被固化成"一直坏"。
 
+## 环境陷阱：MCP rig（8765 专服 / 8766 客户端）
+
+`docs/tools/mcp-up.ps1` 负责拉起并等到**握手成功**（端口在听不算数：MC 先绑端口、后注册
+handler）。2026-08-16 实跑一遍，踩到并已固化的五条：
+
+| 症状 | 真因 | 判据 / 做法 |
+|---|---|---|
+| 脚本干等 300 秒后报「没有完成 MCP 握手」 | `run/eula.txt` 是 `eula=false`，服务端打印一行 EULA 提示后**立即自行退出**，端口从未监听 | 已加前置闸，现在 1 秒报真因。**同意 EULA 是使用者本人的法律行为，脚本不代改** |
+| 服务端启动完成（日志到 `Done`）但 8765 仍无人监听 | `run/mods/` 里没装提供 MCP 的 mod | 需要 `minecraft-fabric-mcp`，上游 `chapmanjw/minecraft-java-fabric-mcp-server`，**必须用与 MC 版本精确匹配的构件**（v1.1.0 起同时发 1.21.11 / 26.1.1 / 26.1.2 / 26.2） |
+| 装了 mod 却崩在 `NoClassDefFoundError: net.minecraft.class_1255` | 装成了 1.21.11 那份。它的约束写作 `minecraft: ">=1.21"`——**开区间没有上界**，26.1.2 的 loader 照收不误，运行时才炸 | **装得上 ≠ 能用**。26.1.2 那份的约束是 `minecraft: "26.1.2"` 精确锁版 |
+| `/summon` 报 `successCount: 1`，实体却查不到 | 目标区块未加载，实体不留存 | **`successCount` 只代表命令执行成功，不代表实体存在**。先 `forceload add`，注意它收的是**方块坐标**、一格之差就是另一个区块 |
+| 无人在线时 rig 半瘫 | `server.properties` 的 `pause-when-empty-seconds` 默认 60，满 60 秒后整个世界停 tick | 本树已改为 `0`（1.21.11 那边早就是 0） |
+
+其它两条长期有效：
+
+- **不必重开会话**：HTTP MCP 的连接窗口只有开头约 6 秒，但**专服在跑就能直接对
+  `http://127.0.0.1:8765/mcp` 说 JSON-RPC**（initialize → notifications/initialized → tools/call），
+  实测可用；`/mcp` 面板手动重连同样有效。所以 rig 可以由会话内部自己拉起。
+- **读数据不要靠 `command_execute` 的返回**：它只捕获 tellraw / feedback，`/data get` 的回显拿不到，
+  `save-all` 的正常回显还会被当成 `error`。读实体与 attachment 用
+  `entity_get_nbt` / `data_attachment_get` 这类专用工具。
+
+⚠️ **rig 跑着的时候禁止再跑任何 gradle 任务**——两个 gradle 同写 `build/` 崩过一次。
+
 ## 分支与工作树
 
 | 角色 | ref / 路径 |

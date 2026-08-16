@@ -84,9 +84,25 @@ dev 客户端存档「新的世界」，全程无崩溃、无 mixin 失败、无
 - ✅ 近战武器耐久正常下降（此前永不损耗，本簇顺带修掉的宿主回归）
 
 ⚠️ **按「验收通过要连同环境一起记账」：以上仅覆盖单人档**——它是「客户端与服务端共用同一份
-数据」的特例。本簇有两处在专服上才会分叉，**仍开放**：① `ConfigData` attachment 的
-`syncWith(all)` 同步（响应策略要随实体同步给追踪者）；② 配置屏经 `MaidSubConfigPackage`
-发到服务端的往返。随下表既有专服三项一并验。
+数据」的特例。本簇在专服上才会分叉的部分另行验证如下。
+
+**专服侧（2026-08-16 用 MCP rig 实测，真 dedicated server）**：
+
+- ✅ **`ConfigData` 的 `combat_response_policy` 三态全部验证通过**（判据是 rig 读回的是
+  `ConfigData[...]` 对象而非原始 SNBT，即确实经 codec 解码）：
+  ① 默认值 `PROTECT_OWNER` **不写入 NBT**（`optionalFieldOf(name, default)` 的标准行为），
+  读回靠缺键回落——旧档兼容因此成立，且默认策略不占存档空间；
+  ② 非默认值 `"self_defense"` 写入后解码为 `SELF_DEFENSE`；
+  ③ 坏值 `"future_invalid_value"` 回落 `PROTECT_OWNER` **且其余字段完好**
+  （509 / ALL / 1.0）——宽容解码不会把整份配置打回默认。
+- ⬜ 配置屏经 `MaidSubConfigPackage` 的往返：**需要真客户端连入**，rig 是服务端侧工具，验不到。
+- ⚠️ **应战触发未能在 rig 上复现，证据不足以定因，不作结论**。已排除：伤害确实生效
+  （女仆 20→18）、距离 1.66 格在近战范围内、策略为 `SELF_DEFENSE`、僵尸 `NoAI` 满血不自燃
+  （判据干净）。未排除：`/damage ... by <entity>` 造出的 `DamageSource` 与真实攻击是否等价、
+  未驯服女仆是否影响、传感器是否扫得到 `NoAI` 实体。
+  **下一步取证**：应战状态（`EMERGENCY_COMBAT_ACTIVE` / `ATTACK_TARGET`）有意不持久化，
+  rig 读不到，必须插 `[TLM-QA-*]` 诊断桩才能定案——而插桩要编译，**与 rig 同时跑 gradle 是禁止的**，
+  须先停 rig。⚠️ 单人档已由用户实测三档策略全部生效，故这条**不是**「功能不工作」的证据。
 
 **仍开放（都需要专服/局域网或旧存档，单人档验不到）**：
 
