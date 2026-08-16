@@ -80,6 +80,11 @@ public class STTAliyunSite implements STTSite {
     }
 
     @Override
+    public boolean hasUsableCredentials() {
+        return StringUtils.isNotBlank(secretKey) && StringUtils.isNotBlank(appKey);
+    }
+
+    @Override
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }

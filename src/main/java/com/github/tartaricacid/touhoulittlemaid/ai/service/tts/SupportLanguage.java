@@ -1,5 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.ai.service.tts;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.LanguageInfo;
 import net.minecraft.client.resources.language.LanguageManager;
@@ -44,6 +46,7 @@ public final class SupportLanguage {
         return SUPPORTED_LANGUAGES.get(index);
     }
 
+    @Environment(EnvType.CLIENT)
     public static Component getLanguageName(String language) {
         if (StringUtils.isBlank(language)) {
             return Component.literal("English (US)");

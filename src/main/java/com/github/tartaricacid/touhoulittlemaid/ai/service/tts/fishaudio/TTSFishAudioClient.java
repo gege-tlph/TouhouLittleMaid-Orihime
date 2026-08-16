@@ -1,6 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.ai.service.tts.fishaudio;
 
-import com.github.tartaricacid.touhoulittlemaid.ai.manager.entity.TTSCallback;
+import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSResponse;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.Format;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSClient;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSConfig;
@@ -27,7 +27,7 @@ public class TTSFishAudioClient implements TTSClient {
     }
 
     @Override
-    public void play(String message, TTSConfig config, TTSCallback callback) {
+    public void play(String message, TTSConfig config, TTSResponse callback) {
         URI url = URI.create(this.site.url());
         String apiKey = this.site.secretKey();
         String model = config.model();

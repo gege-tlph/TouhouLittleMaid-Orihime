@@ -71,6 +71,11 @@ public class STTTencentSite implements STTSite {
     }
 
     @Override
+    public boolean hasUsableCredentials() {
+        return StringUtils.isNotBlank(secretId) && StringUtils.isNotBlank(secretKey);
+    }
+
+    @Override
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }

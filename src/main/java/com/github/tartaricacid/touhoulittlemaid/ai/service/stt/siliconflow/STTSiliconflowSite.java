@@ -81,6 +81,11 @@ public class STTSiliconflowSite implements STTSite {
     }
 
     @Override
+    public boolean hasUsableCredentials() {
+        return StringUtils.isNotBlank(secretKey);
+    }
+
+    @Override
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }

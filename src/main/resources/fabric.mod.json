@@ -26,7 +26,8 @@
       "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidEmergencyCombatGameTest",
       "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidRangedEmergencyGameTest",
       "com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicyGameTest",
-      "com.github.tartaricacid.touhoulittlemaid.gametest.TankBackpackGameTest"
+      "com.github.tartaricacid.touhoulittlemaid.gametest.TankBackpackGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.ai.manager.site.DedicatedSiteFilesGameTest"
     ],
     "fabric-datagen": [
       "com.github.tartaricacid.touhoulittlemaid.datagen.DataGenerator"

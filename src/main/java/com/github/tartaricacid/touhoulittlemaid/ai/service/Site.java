@@ -31,6 +31,55 @@ public interface Site {
     String HOT_WORD = "hot_word";
 
     /**
+     * 全部密钥字段。**新增带密钥的站点类型时必须把新字段名加进来**，
+     * 脱敏与「保持原密钥」都以这张表为准；漏加不会报错，只会安静地把明文发出去。
+     */
+    String[] SECRET_FIELDS = {SECRET_KEY, SECRET_ID};
+
+    /**
+     * 哨兵值：下行时代替真实密钥，上行时表示「这一项别动」。
+     *
+     * <p>取一个真实密钥不可能取到的值——首字符是 NUL，任何服务商的密钥都不会长这样。</p>
+     *
+     * <p>⚠️ 这里用 Java 转义 {@code \0} 而不是把裸 NUL 字节写进源文件。行为基准
+     * {@code port/1.21.11-fabric} 的同名常量嵌的是真字节，代价是 <b>git 把整个
+     * {@code Site.java} 判成 binary</b>——不出 diff、不能合并，任何按文本读它的工具都可能改坏它。
+     * 运行期值逐字节相同。</p>
+     */
+    String SECRET_KEPT = "\0tlm:secret-kept";
+
+    /**
+     * 把 tag 里所有**非空**的密钥字段换成哨兵；空的保持为空（那是「未配置」，客户端要能区分）。
+     */
+    static net.minecraft.nbt.CompoundTag redactSecrets(net.minecraft.nbt.CompoundTag tag) {
+        for (String field : SECRET_FIELDS) {
+            tag.getString(field)
+                    .filter(value -> !value.isBlank())
+                    .ifPresent(value -> tag.putString(field, SECRET_KEPT));
+        }
+        return tag;
+    }
+
+    /**
+     * 把 tag 里的哨兵密钥换回 {@code existing} 里的真实值；{@code existing} 为 null 时落为空串。
+     *
+     * @return 是否存在过哨兵（无哨兵时调用方可以跳过一次解码）
+     */
+    static boolean restoreKeptSecrets(net.minecraft.nbt.CompoundTag tag,
+                                      @javax.annotation.Nullable net.minecraft.nbt.CompoundTag existing) {
+        boolean found = false;
+        for (String field : SECRET_FIELDS) {
+            if (!SECRET_KEPT.equals(tag.getString(field).orElse(null))) {
+                continue;
+            }
+            found = true;
+            String previous = existing == null ? "" : existing.getString(field).orElse("");
+            tag.putString(field, previous);
+        }
+        return found;
+    }
+
+    /**
      * 用于控制 JSON 序列化的字段顺序
      */
     ToIntFunction<String> FIXED_ORDER_FIELDS = Util.make(new Object2IntOpenHashMap<>(), map -> {
