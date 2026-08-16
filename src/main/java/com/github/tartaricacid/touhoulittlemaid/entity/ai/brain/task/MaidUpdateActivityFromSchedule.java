@@ -22,6 +22,10 @@ public class MaidUpdateActivityFromSchedule extends Behavior<EntityMaid> {
 
     @Override
     protected void start(ServerLevel level, EntityMaid maid, long gameTime) {
+        // 应战活动由应战管理器独占调度，日程更新不得把它切走
+        if (maid.isEmergencyCombatActive()) {
+            return;
+        }
         Brain<EntityMaid> brain = maid.getBrain();
         long dayTime = level.getGameTime();
 
@@ -43,6 +47,9 @@ public class MaidUpdateActivityFromSchedule extends Behavior<EntityMaid> {
     }
 
     public static void updateActivityFromSchedule(EntityMaid maid, Brain<EntityMaid> brain) {
+        if (maid.isEmergencyCombatActive()) {
+            return;
+        }
         if (maid.level instanceof ServerLevel serverLevel) {
             long gameTime = serverLevel.getGameTime();
             updateActivityFromSchedule(serverLevel, maid, brain, gameTime);
@@ -50,6 +57,9 @@ public class MaidUpdateActivityFromSchedule extends Behavior<EntityMaid> {
     }
 
     public static void updateActivityFromSchedule(EntityMaid maid) {
+        if (maid.isEmergencyCombatActive()) {
+            return;
+        }
         if (maid.level instanceof ServerLevel serverLevel) {
             long gameTime = serverLevel.getGameTime();
             Brain<EntityMaid> brain = maid.getBrain();

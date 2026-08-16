@@ -29,6 +29,10 @@ public class MaidPanicTask extends Behavior<EntityMaid> {
 
     @Override
     protected void start(ServerLevel worldIn, EntityMaid maid, long gameTimeIn) {
+        // 应战期间威胁由应战管理器全权接管，PANIC 不得抢走活动
+        if (maid.isEmergencyCombatActive()) {
+            return;
+        }
         boolean hurtOrHostile = isHurt(maid) || hasHostile(maid);
         if (canPanic(maid) && hurtOrHostile) {
             Brain<?> brain = maid.getBrain();

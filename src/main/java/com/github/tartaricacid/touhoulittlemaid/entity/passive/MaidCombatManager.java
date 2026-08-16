@@ -9,6 +9,7 @@ import com.github.tartaricacid.touhoulittlemaid.api.event.MaidHurtTarget;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IAttackTask;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IMaidTask;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IRangedAttackTask;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.init.InitAttribute;
 import com.github.tartaricacid.touhoulittlemaid.util.ItemsUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.functional.TriFunction;
@@ -83,6 +84,11 @@ public class MaidCombatManager {
     }
 
     boolean doHurtTarget(ServerLevel level, Entity target, BiPredicate<ServerLevel, Entity> superHurtTarget) {
+        // 最终直击守卫：统一目标策略在事件与横扫之前先行裁决（硬安全集对一切出手路径生效）
+        if (target instanceof LivingEntity livingTarget && !MaidTargetingPolicy.canAttack(
+                maid, livingTarget, maid.getEmergencyCombatManager().getTargetingContext())) {
+            return false;
+        }
         MaidHurtTarget.Pre event = new MaidHurtTarget.Pre(maid, target);
         MaidHurtTarget.PRE.invoker().onPre(event);
         if (event.isCanceled()) {
@@ -99,12 +105,13 @@ public class MaidCombatManager {
         if (result) {
             // 尝试使用横扫之刃
             this.doSweepHurt(target);
-            // 调用 hurtEnemy 来实现耐久消耗和部分其他功能
+            // 武器耐久由 WEAPON 组件驱动的 ItemStack.postHurtEnemy 承担：Item.postHurtEnemy 在
+            // 26.1.2 的字节码就是一行 return（javap -c 实查），照它调等于什么都没做——女仆近战
+            // 武器因此永不损耗。stack.hurtEnemy 已由 super.doHurtTarget 调用，这里只补 vanilla
+            // 仅为玩家调用的耐久与破坏那半边。
             ItemStack mainHandItem = maid.getMainHandItem();
-            Item item = mainHandItem.getItem();
             if (target instanceof LivingEntity livingEntity) {
-                item.hurtEnemy(mainHandItem, livingEntity, maid);
-                item.postHurtEnemy(mainHandItem, livingEntity, maid);
+                mainHandItem.postHurtEnemy(livingEntity, maid);
             }
         }
 
@@ -172,10 +179,9 @@ public class MaidCombatManager {
         // 基准只认当前工作任务，任务不是远程任务时整个方法是空操作。用户 2026-08-14 裁决解绑
         // （1.21.11 分支定案，行为基准已前移）：按手里的武器找实现（当前任务优先，故弓手/弩手的
         // 行为逐字不变），这样「农场女仆手持弓有箭」在威胁响应里也打得响，与枪械那条路对齐。
-        // 恢复锚点（§3.B）：1.21.11 分支此处还有 MaidTargetingPolicy.canAttack 敌我判定门，
-        // 随威胁响应簇（审计 §3.B）落地时在此加回。
         IRangedAttackTask rangedAttackTask = IRangedAttackTask.resolveImplementation(maid, maid.getMainHandItem());
-        if (rangedAttackTask != null) {
+        if (rangedAttackTask != null && MaidTargetingPolicy.canAttack(
+                maid, target, maid.getEmergencyCombatManager().getTargetingContext())) {
             // 调用饰品的攻击
             maid.getMaidBauble().fireEvent((b, s) -> {
                 b.onRangedAttack(maid, s, rangedAttackTask);

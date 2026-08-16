@@ -1,33 +1,23 @@
 package com.github.tartaricacid.touhoulittlemaid.api.task;
 
-import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
-import com.github.tartaricacid.touhoulittlemaid.entity.data.AttackListData;
-import com.github.tartaricacid.touhoulittlemaid.entity.item.AbstractEntityFromItem;
-import com.github.tartaricacid.touhoulittlemaid.entity.misc.DefaultMonsterType;
-import com.github.tartaricacid.touhoulittlemaid.entity.misc.MonsterType;
+import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.AbstractMaidContainer;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.task.AttackTaskConfigContainer;
 import com.github.tartaricacid.touhoulittlemaid.util.TaskEquipUtil;
 import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Optional;
-
-import static com.github.tartaricacid.touhoulittlemaid.init.InitDataAttachment.ATTACK_LIST;
-import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 
 public interface IAttackTask extends IMaidTask {
     String MAID_NO_ATTACK_TAG = "MaidNoAttack";
@@ -51,36 +41,10 @@ public interface IAttackTask extends IMaidTask {
      * @return 能否攻击？
      */
     default boolean canAttack(EntityMaid maid, LivingEntity target) {
-        // 获取实体 ID
-        Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
-
-        // 排除一些盔甲架，还有本模组的实体，以及玩家
-        if (target instanceof ArmorStand || target instanceof AbstractEntityFromItem || target instanceof Player) {
-            return false;
-        }
-        // 有主的宠物也不攻击
-        if (target instanceof TamableAnimal tamableAnimal && tamableAnimal.getOwnerReference() != null) {
-            return false;
-        }
-        // 特殊命名的怪物，因为有的玩家会使用怪物做刷怪塔，会被女仆误杀
-        if (target.getCustomName() != null && target.getCustomName().getString().startsWith(MAID_NO_ATTACK_TAG)) {
-            return false;
-        }
-
-        // 判断配置文件的
-        if (ServerRuleConfig.get(MaidConfig.MAID_ATTACK_IGNORE).contains(id.toString())) {
-            return false;
-        }
-
-        MonsterType monsterType;
-        AttackListData attackListData = maid.getAttachedOrCreate(ATTACK_LIST);
-        if (attackListData.attackGroups().containsKey(id)) {
-            monsterType = attackListData.attackGroups().get(id);
-        } else {
-            // 那如果没有呢？走默认配置
-            monsterType = DefaultMonsterType.getMonsterType(target);
-        }
-        return DefaultMonsterType.canAttack(maid, target, monsterType);
+        // 硬安全集、条件敌意适配器、攻击清单与默认敌意统一收拢在目标策略里（§3.B），
+        // 各处出手路径共用同一条判定链，任务只需按需覆写本方法追加自己的额外条件
+        return MaidTargetingPolicy.canAttackByDefaultRules(
+                maid, target, MaidTargetingContext.PLANNED_ATTACK);
     }
 
     /**

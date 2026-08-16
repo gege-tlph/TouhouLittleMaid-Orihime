@@ -14,6 +14,10 @@ public class MaidAwaitTask extends Behavior<EntityMaid> {
 
     @Override
     protected void start(ServerLevel worldIn, EntityMaid maid, long gameTimeIn) {
+        // 应战期间不得擦掉应战行为设置的 WALK_TARGET
+        if (maid.isEmergencyCombatActive()) {
+            return;
+        }
         Brain<?> brain = maid.getBrain();
         if (brain.hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
             boolean result = brain.getMemory(MemoryModuleType.WALK_TARGET)

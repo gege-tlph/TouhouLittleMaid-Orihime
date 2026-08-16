@@ -32,6 +32,16 @@ public class MaidTaskManager {
     }
 
     public void setTask(IMaidTask task) {
+        // 换任务是显式玩家指令：先取消瞬态应战并开重入抑制窗口（同值指令同样算指令）
+        this.maid.getEmergencyCombatManager().onPlayerCommand();
+        this.setTaskWithoutPlayerCommand(task);
+    }
+
+    /**
+     * Updates the persistent task after combat cleanup has already happened,
+     * or while restoring internal state that is not a player command.
+     */
+    public void setTaskWithoutPlayerCommand(IMaidTask task) {
         TaskData oldTask = this.getData();
         String taskNewId = task.getUid().toString();
         if (taskNewId.equals(oldTask.taskId())) {
@@ -48,6 +58,16 @@ public class MaidTaskManager {
     }
 
     public void setSchedule(MaidSchedule schedule) {
+        this.maid.getEmergencyCombatManager().onPlayerCommand();
+        this.setScheduleWithoutPlayerCommand(schedule);
+    }
+
+    /**
+     * Updates the persistent schedule without canceling transient combat as a
+     * player command. Internal restoration must not create a fresh re-entry
+     * suppression window.
+     */
+    public void setScheduleWithoutPlayerCommand(MaidSchedule schedule) {
         TaskData data = this.getData();
         this.setData(data.withSchedule(schedule));
         if (this.maid.level instanceof ServerLevel serverLevel) {
@@ -114,6 +134,10 @@ public class MaidTaskManager {
 
         default void setTask(IMaidTask task) {
             getTaskManager().setTask(task);
+        }
+
+        default void setTaskWithoutPlayerCommand(IMaidTask task) {
+            getTaskManager().setTaskWithoutPlayerCommand(task);
         }
 
         default MaidSchedule getSchedule() {

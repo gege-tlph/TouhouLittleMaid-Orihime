@@ -4,6 +4,7 @@ import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBrains;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
@@ -31,9 +32,20 @@ public class MaidFollowOwnerTask extends Behavior<EntityMaid> {
             if (maid.getSwimManager().isGoingToBreath()) {
                 return !owner.isUnderWater();
             }
-            return true;
+            return !hasCompetingGoal(maid, owner);
         }
         return false;
+    }
+
+    /**
+     * Only genuine combat stops a follow-mode maid from coming to its owner. Pending work
+     * (TARGET_POS), item use, or a stray non-owner walk target must NOT block following —
+     * players read that as "the maid won't come when I call it". Emergency threat response
+     * still interrupts following by design. 两种跟随实现共用这一条守卫。
+     */
+    static boolean hasCompetingGoal(EntityMaid maid, Entity... allowedFollowTargets) {
+        return maid.isEmergencyCombatActive()
+                || maid.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET);
     }
 
     @Override

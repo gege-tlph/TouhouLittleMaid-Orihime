@@ -27,7 +27,8 @@ public class MaidRunAwayTask<T> extends SetWalkTargetAwayFrom<T> {
     protected void start(ServerLevel worldIn, PathfinderMob entityIn, long gameTimeIn) {
         if (entityIn instanceof EntityMaid maid && maid.shouldLeaveMountOrSitForDanger()) {
             if (maid.isMaidInSittingPose()) {
-                maid.setInSittingPose(false);
+                // 险情自主起身不是玩家指令，不得触发应战取消与重入抑制
+                maid.setInSittingPoseWithoutPlayerCommand(false);
             }
             if (maid.isPassenger()) {
                 maid.stopRiding();

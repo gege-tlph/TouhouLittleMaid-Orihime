@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.data;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.combat.MaidCombatResponsePolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.PickType;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -12,7 +13,8 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 
-public record ConfigData(long booleanValue, PickType pickupType, float soundFreq) {
+public record ConfigData(long booleanValue, PickType pickupType, float soundFreq,
+                         MaidCombatResponsePolicy combatResponsePolicy) {
     private static final int PICKUP_FLAG = 0;
     private static final int HOME_MODE_FLAG = 1;
     private static final int RIDEABLE_FLAG = 2;
@@ -36,16 +38,27 @@ public record ConfigData(long booleanValue, PickType pickupType, float soundFreq
 
     private static final float DEFAULT_SOUND_FREQ = 1.0f;
 
+    /**
+     * 威胁响应策略按稳定序列化名存字符串，且解码必须宽容：缺键（旧档）与坏值（未来值/手改档）
+     * 都回落到护主，绝不能让整个 ConfigData 解码失败——那会把其余配置一并打回默认。
+     */
+    private static final Codec<MaidCombatResponsePolicy> RESPONSE_POLICY_CODEC = Codec.STRING.xmap(
+            MaidCombatResponsePolicy::fromSerializedName, MaidCombatResponsePolicy::serializedName);
+
     private static final Codec<ConfigData> CODEC = RecordCodecBuilder.create(ins -> ins.group(
             Codec.LONG.fieldOf("boolean_value").forGetter(ConfigData::booleanValue),
             PickType.CODEC.fieldOf("pickup_type").forGetter(ConfigData::pickupType),
-            Codec.FLOAT.fieldOf("sound_freq").forGetter(ConfigData::soundFreq)
+            Codec.FLOAT.fieldOf("sound_freq").forGetter(ConfigData::soundFreq),
+            RESPONSE_POLICY_CODEC.optionalFieldOf("combat_response_policy",
+                    MaidCombatResponsePolicy.PROTECT_OWNER).forGetter(ConfigData::combatResponsePolicy)
     ).apply(ins, ConfigData::new));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, ConfigData> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.LONG, ConfigData::booleanValue,
             PickType.STREAM_CODEC, ConfigData::pickupType,
             ByteBufCodecs.FLOAT, ConfigData::soundFreq,
+            ByteBufCodecs.idMapper(MaidCombatResponsePolicy::fromOrdinal, MaidCombatResponsePolicy::ordinal),
+            ConfigData::combatResponsePolicy,
             ConfigData::new
     );
 
@@ -56,7 +69,8 @@ public record ConfigData(long booleanValue, PickType pickupType, float soundFreq
                     .syncWith(STREAM_CODEC, AttachmentSyncPredicate.all()));
 
     private static ConfigData defaultConfig() {
-        return new ConfigData(DEFAULT_BOOLEAN_VALUE, PickType.ALL, DEFAULT_SOUND_FREQ);
+        return new ConfigData(DEFAULT_BOOLEAN_VALUE, PickType.ALL, DEFAULT_SOUND_FREQ,
+                MaidCombatResponsePolicy.PROTECT_OWNER);
     }
 
     public ConfigData {
@@ -66,7 +80,7 @@ public record ConfigData(long booleanValue, PickType pickupType, float soundFreq
     private ConfigData setFlag(int flag, boolean enabled) {
         long mask = 1L << flag;
         long newBooleanValue = enabled ? (booleanValue | mask) : (booleanValue & ~mask);
-        return new ConfigData(newBooleanValue, pickupType, soundFreq);
+        return new ConfigData(newBooleanValue, pickupType, soundFreq, combatResponsePolicy);
     }
 
     private boolean hasFlag(int flag) {
@@ -146,7 +160,7 @@ public record ConfigData(long booleanValue, PickType pickupType, float soundFreq
     }
 
     public ConfigData setPickupType(PickType pickupType) {
-        return new ConfigData(booleanValue, pickupType, soundFreq);
+        return new ConfigData(booleanValue, pickupType, soundFreq, combatResponsePolicy);
     }
 
     public PickType getPickupType() {
@@ -154,6 +168,10 @@ public record ConfigData(long booleanValue, PickType pickupType, float soundFreq
     }
 
     public ConfigData setSoundFreq(float soundFreq) {
-        return new ConfigData(booleanValue, pickupType, soundFreq);
+        return new ConfigData(booleanValue, pickupType, soundFreq, combatResponsePolicy);
+    }
+
+    public ConfigData setCombatResponsePolicy(MaidCombatResponsePolicy combatResponsePolicy) {
+        return new ConfigData(booleanValue, pickupType, soundFreq, combatResponsePolicy);
     }
 }

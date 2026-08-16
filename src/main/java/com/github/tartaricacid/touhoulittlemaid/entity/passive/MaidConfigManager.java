@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.passive;
 
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.combat.MaidCombatResponsePolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.data.ConfigData;
 
 import static com.github.tartaricacid.touhoulittlemaid.init.InitDataAttachment.CONFIG;
@@ -20,6 +21,9 @@ public class MaidConfigManager {
     }
 
     public void setHomeModeEnable(boolean enable) {
+        // Home/跟随切换是显式玩家指令（GUI、河童罗盘、女仆铃、LLM 工具、装进照片都算），
+        // 同值指令同样取消瞬态应战；attachment 的 NBT 恢复不经此 setter，无恢复期误报
+        this.maid.getEmergencyCombatManager().onPlayerCommand();
         this.setConfigData(this.getConfigData().setHomeModeEnable(enable));
     }
 
@@ -101,6 +105,14 @@ public class MaidConfigManager {
 
     public void setActiveClimbing(boolean activeClimbing) {
         this.setConfigData(this.getConfigData().setActiveClimbing(activeClimbing));
+    }
+
+    public MaidCombatResponsePolicy getCombatResponsePolicy() {
+        return this.getConfigData().combatResponsePolicy();
+    }
+
+    public void setCombatResponsePolicy(MaidCombatResponsePolicy policy) {
+        this.setConfigData(this.getConfigData().setCombatResponsePolicy(policy));
     }
 
     private ConfigData getConfigData() {

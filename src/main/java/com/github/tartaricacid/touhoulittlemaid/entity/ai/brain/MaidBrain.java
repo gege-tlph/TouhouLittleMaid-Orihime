@@ -14,11 +14,13 @@ import net.minecraft.world.entity.ai.ActivityData;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.behavior.*;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.sensing.Sensor;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.schedule.Activity;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public final class MaidBrain {
@@ -42,7 +44,8 @@ public final class MaidBrain {
                 MemoryModuleType.ATTACK_TARGET,
                 MemoryModuleType.ATTACK_COOLING_DOWN,
                 InitBrains.TARGET_POS,
-                InitBrains.MAID_EDIBLE_BLOCK_ACTION
+                InitBrains.MAID_EDIBLE_BLOCK_ACTION,
+                InitBrains.EMERGENCY_COMBAT_ACTIVE
         );
         ExtraMaidBrainManager.EXTRA_MAID_BRAINS.forEach(extra ->
                 defaultTypes.addAll(extra.getExtraMemoryTypes())
@@ -67,6 +70,7 @@ public final class MaidBrain {
         return List.of(
                 initCoreActivity(),
                 initPanicActivity(),
+                initEmergencyCombatActivity(),
                 initRideIdleActivity(),
                 initRideWorkActivity(maid),
                 initRideRestActivity(),
@@ -200,6 +204,25 @@ public final class MaidBrain {
         );
 
         return ActivityData.create(Activity.PANIC, ImmutableList.copyOf(behaviors));
+    }
+
+    /**
+     * 瞬态应战活动：由 {@code MaidEmergencyCombatManager} 经
+     * {@code EMERGENCY_COMBAT_ACTIVE} 记忆开关激活，覆盖日程活动但不改常驻任务。
+     * B1（远程应战行为三件 + 站定走位）随 §3.B 第二刀接入，锚点即本方法。
+     */
+    private static ActivityData<EntityMaid> initEmergencyCombatActivity() {
+        Pair<Integer, BehaviorControl<? super EntityMaid>> extinguish = Pair.of(0, new MaidExtinguishingTask(0.6f));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> useShield = Pair.of(4, new MaidUseShieldTask());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> walkToTarget = Pair.of(5, MaidEmergencyWalkToTarget.create(0.7f));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> meleeAttack = Pair.of(6, MaidMeleeAttack.create(20));
+
+        List<Pair<Integer, BehaviorControl<? super EntityMaid>>> behaviors = Lists.newArrayList(
+                extinguish, useShield, walkToTarget, meleeAttack
+        );
+
+        return ActivityData.create(InitBrains.EMERGENCY_COMBAT, ImmutableList.copyOf(behaviors),
+                Set.of(Pair.of(InitBrains.EMERGENCY_COMBAT_ACTIVE, MemoryStatus.VALUE_PRESENT)));
     }
 
     private static ActivityData<EntityMaid> initRideIdleActivity() {

@@ -23,6 +23,7 @@ public interface InitBrains {
     Activity RIDE_IDLE = registerActivity("ride_idle", new Activity("tlm_ride_idle"));
     Activity RIDE_WORK = registerActivity("ride_work", new Activity("tlm_ride_work"));
     Activity RIDE_REST = registerActivity("ride_rest", new Activity("tlm_ride_rest"));
+    Activity EMERGENCY_COMBAT = registerActivity("emergency_combat", new Activity("tlm_emergency_combat"));
 
     MemoryModuleType<List<Entity>> VISIBLE_PICKUP_ENTITIES = registerMemoryModuleType(
             "visible_pickup_entities",
@@ -36,6 +37,16 @@ public interface InitBrains {
 
     MemoryModuleType<MaidEdibleBlockAction> MAID_EDIBLE_BLOCK_ACTION = registerMemoryModuleType(
             "maid_edible_block_action",
+            new MemoryModuleType<>(Optional.empty())
+    );
+
+    /**
+     * 瞬态应战活动的进入条件位。⚠️ 注册在此还不够：必须同时进
+     * {@code MaidBrain.getMemoryTypes()}，否则 {@code setMemory} 静默无效（证伪表既有条目）。
+     * 有意不给 codec：应战状态不持久化，跨存档恒从头开始。
+     */
+    MemoryModuleType<Boolean> EMERGENCY_COMBAT_ACTIVE = registerMemoryModuleType(
+            "emergency_combat_active",
             new MemoryModuleType<>(Optional.empty())
     );
 

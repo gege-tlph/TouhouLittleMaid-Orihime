@@ -67,6 +67,10 @@ public class MaidFollowOwnerVehicleTask extends Behavior<EntityMaid> {
             return false;
         }
 
+        if (MaidFollowOwnerTask.hasCompetingGoal(maid, owner, ownerControlledVehicle)) {
+            return false;
+        }
+
         // 玩家和女仆同坐一艘船，不需要判断
         if (maidVehicle != null && maidVehicle == ownerControlledVehicle) {
             return false;

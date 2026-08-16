@@ -31,8 +31,20 @@ public record MaidSubConfigPackage(int id, ConfigData configData) implements Cus
             ServerPlayer sender = context.player();
             Entity entity = sender.level.getEntity(message.id);
             if (entity instanceof EntityMaid maid && maid.isOwnedBy(sender)) {
-                maid.setAttached(CONFIG, message.configData);
+                apply(maid, message.configData);
             }
         });
+    }
+
+    /**
+     * 服务端应用一份子配置。威胁响应策略的**变更**是显式玩家指令：
+     * 经应战管理器路由（取消当前应战 + 开重入抑制窗口）；其余子配置项不触碰应战状态。
+     */
+    public static void apply(EntityMaid maid, ConfigData configData) {
+        var oldPolicy = maid.getAttachedOrCreate(CONFIG).combatResponsePolicy();
+        maid.setAttached(CONFIG, configData);
+        if (oldPolicy != configData.combatResponsePolicy()) {
+            maid.getEmergencyCombatManager().setResponsePolicy(configData.combatResponsePolicy());
+        }
     }
 }

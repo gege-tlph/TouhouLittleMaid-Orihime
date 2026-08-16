@@ -1,5 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
@@ -27,7 +29,17 @@ public class MaidMeleeAttack {
                           nearestVisibleLivingEntities
         ) -> (level, maid, gameTime) -> {
             LivingEntity target = context.get(attackTarget);
-            if (!isHoldingUsableProjectileWeapon(maid)
+            MaidTargetingContext targetingContext = maid.getEmergencyCombatManager().getTargetingContext();
+            boolean emergency = maid.getEmergencyCombatManager().isEmergencyActive();
+            boolean emergencyReady = !emergency || maid.getEmergencyCombatManager().canRunCombatActions();
+            // 应战仍然放行近战——`usableBowCanMeleeOnlyThroughEmergencyLayer` 钉的就是这条：
+            // 敌人已经贴到脸上时，端着弓也得还手，不能站着挨打。
+            // 用户抱怨的「上去手打」拦在**走位**那一步（MaidEmergencyWalkToTarget 不再主动贴脸），
+            // 而本行为本身就要求目标已在近战距离内，所以两者不冲突。
+            boolean heldItemAllowsMelee = emergency || !isHoldingUsableProjectileWeapon(maid);
+            if (emergencyReady
+                && MaidTargetingPolicy.canContinueTargeting(maid, target, targetingContext)
+                && heldItemAllowsMelee
                 && maid.isWithinMeleeAttackRange(target)
                 && context.get(nearestVisibleLivingEntities).contains(target)
             ) {

@@ -9,6 +9,7 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.function.schema.param
 import com.github.tartaricacid.touhoulittlemaid.api.task.FunctionCallSwitchResult;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IAttackTask;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IMaidTask;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.task.TaskManager;
 import com.mojang.serialization.Codec;
@@ -112,6 +113,9 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
         FunctionCallSwitchResult switchResult;
         int entityId = result.entityId();
 
+        // 主人经 LLM 下达的模式切换是显式玩家指令，同任务指令也要取消瞬态应战
+        // （setTask 内部也会触发，但仅在任务确实变化的分支走到；此处补齐同任务分支）
+        maid.getEmergencyCombatManager().onPlayerCommand();
         if (task != currentTask) {
             maid.setTask(task);
         }
@@ -170,15 +174,17 @@ public class SwitchWorkTaskTool implements ITool<SwitchWorkTaskTool.Result> {
         }
 
         String targetName = target.getName().getString();
-        LivingEntity previousTarget = maid.getLastHurtByMob();
-        maid.setLastHurtByMob(target);
-
-        if (!attackTask.canAttack(maid, target)) {
-            maid.setLastHurtByMob(previousTarget);
+        // 主人点名的目标只受硬安全集与 PROTECTED 适配器约束——可以是和平/未激怒的中立生物。
+        // 不再用 setLastHurtByMob 伪造「打过玩家」来说服默认敌意规则（那会随时间失效且污染仇恨记录）
+        if (!MaidTargetingPolicy.canAttackOnOwnerCommand(maid, target)) {
             return TARGET_NOT_ALLOWED.formatted(targetName);
         }
 
         maid.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
+        // Mark this as an explicit owner order so execution keeps attacking it even if it is a
+        // peaceful / non-angry neutral mob that autonomous targeting would otherwise drop.
+        // 注意先后：setTask 已触发 onPlayerCommand（会清掉旧的点名目标），本标记必须在其后写入
+        maid.getEmergencyCombatManager().setOwnerCommandedAttackTarget(target.getUUID());
         return TARGET_SUCCESS.formatted(targetName);
     }
 

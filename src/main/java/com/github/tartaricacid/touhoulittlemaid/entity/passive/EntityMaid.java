@@ -7,8 +7,8 @@ import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
 import com.github.tartaricacid.touhoulittlemaid.api.client.render.MaidRenderState;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidEquipEvent;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidTickEvent;
-import com.github.tartaricacid.touhoulittlemaid.api.task.IAttackTask;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IRangedAttackTask;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.client.entity.GeckoMaidEntity;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
 import com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagEntity;
@@ -101,6 +101,11 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
      */
     public boolean guiOpening = false;
     /**
+     * NBT 恢复期间为 true：TamableAnimal 经虚方法 {@code setInSittingPose} 还原坐姿，
+     * 那是持久化恢复而非玩家指令，不得触发应战取消与重入抑制窗口
+     */
+    private boolean restoringPersistentState;
+    /**
      * 女仆钓鱼实体的引用
      */
     public @Nullable MaidFishingHook fishing = null;
@@ -170,6 +175,8 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
     }
 
     public void refreshBrain(ServerLevel serverWorldIn) {
+        // 应战状态是瞬态执行状态，随 brain 重建一并清零（否则旧 brain 的记忆经 pack() 带进新 brain）
+        this.emergencyCombatManager.onBrainRefresh();
         Brain<EntityMaid> oldBrain = this.getBrain();
         oldBrain.stopAll(serverWorldIn, this);
         this.brain = makeBrain(oldBrain.pack());
@@ -178,6 +185,8 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
     @Override
     protected void customServerAiStep(ServerLevel level) {
         long timeRecord = Util.getNanos();
+
+        this.emergencyCombatManager.tick(level);
 
         // 当玩家打开女仆的 GUI 时，暂停女仆的 Brain 执行
         if (!guiOpening) {
@@ -413,10 +422,10 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
 
     @Override
     public boolean canAttack(LivingEntity target) {
-        if (this.getTask() instanceof IAttackTask attackTask) {
-            return attackTask.canAttack(this, target);
-        }
-        return super.canAttack(target);
+        // 统一目标策略：PLANNED_ATTACK 语境下仍会把最终判定委派给当前攻击任务的 canAttack，
+        // 但硬安全集（玩家/宠物/盟友/女仆/受保护类型）与条件敌意在此前先行裁决
+        return MaidTargetingPolicy.canAttack(
+                this, target, this.emergencyCombatManager.getTargetingContext());
     }
 
     @Override
@@ -433,7 +442,15 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
 
     @Override
     public void readAdditionalSaveData(ValueInput input) {
-        super.readAdditionalSaveData(input);
+        this.restoringPersistentState = true;
+        try {
+            // TamableAnimal restores OrderedToSit through the virtual
+            // setInSittingPose method. That write is persistence restoration,
+            // not fresh player intent.
+            super.readAdditionalSaveData(input);
+        } finally {
+            this.restoringPersistentState = false;
+        }
 
         this.statsManager.read(input);
         this.itemManager.read(input);
@@ -744,8 +761,26 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
 
     @Override
     public void setInSittingPose(boolean inSittingPose) {
+        if (this.restoringPersistentState) {
+            this.setInSittingPoseWithoutPlayerCommand(inSittingPose);
+            return;
+        }
+        this.emergencyCombatManager.onPlayerCommand();
+        this.setInSittingPoseWithoutPlayerCommand(inSittingPose);
+    }
+
+    /**
+     * Updates the physical sit state for autonomous safety logic or internal
+     * restoration without suppressing a subsequent real threat response.
+     */
+    public void setInSittingPoseWithoutPlayerCommand(boolean inSittingPose) {
         super.setInSittingPose(inSittingPose);
         this.setOrderedToSit(inSittingPose);
+    }
+
+    public boolean isEmergencyCombatActive() {
+        // brain 构建发生在 super 构造器里、早于 initMaidManagers，此窗口内 manager 仍为 null
+        return this.emergencyCombatManager != null && this.emergencyCombatManager.isEmergencyActive();
     }
 
     @Override

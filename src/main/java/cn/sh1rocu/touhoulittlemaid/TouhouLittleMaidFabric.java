@@ -13,6 +13,7 @@ import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.debug.event.DebugStickClickEvent;
 import com.github.tartaricacid.touhoulittlemaid.debug.target.SendMaidDebugDataEvent;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.combat.MaidCombatDamageListener;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.RandomEmoji;
 import com.github.tartaricacid.touhoulittlemaid.event.*;
 import com.github.tartaricacid.touhoulittlemaid.event.maid.*;
@@ -22,6 +23,7 @@ import fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -120,6 +122,8 @@ public class TouhouLittleMaidFabric implements ModInitializer {
         });
         EntityDeathEvent.onEntityDeath();
         EntityDeathEvent.onPlayerCloned();
+        // 威胁响应（§3.B）：只认「最终生效的正伤害」，女仆侧由 passive.MaidCombatManager.actuallyHurt 手动 invoke
+        ServerLivingEntityEvents.AFTER_DAMAGE.register(MaidCombatDamageListener::onAfterDamage);
         PotentialSpawnsEvent.CALLBACK.register(MobSpawnInfoRegistry::addMobSpawnInfo);
         UseItemCallback.EVENT.register(CancelSaddleMaidEvent::onItemRightClick);
         UseEntityCallback.EVENT.register(CopyEntityIdEvent::copyEntityId);
