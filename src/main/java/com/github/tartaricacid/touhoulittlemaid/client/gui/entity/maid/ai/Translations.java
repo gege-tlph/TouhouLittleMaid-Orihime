@@ -10,6 +10,8 @@ public interface Translations {
     MutableComponent SECRET_ID_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.secret_id");
     MutableComponent SECRET_KEY_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.secret_key");
     MutableComponent ADD_MODEL_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.add_model");
+    /** 「检查配置」按钮的常态标签；收到回执时会被短判词临时顶替，超时后还原成它 */
+    MutableComponent CHECK_CONFIG_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.check_config");
     MutableComponent MODEL_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.model");
     MutableComponent MODELS_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.models");
     MutableComponent VOICES_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.voices");
@@ -30,6 +32,15 @@ public interface Translations {
     MutableComponent SITE_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.site").withStyle(ChatFormatting.UNDERLINE);
     MutableComponent SITE_LLM_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.site.llm");
     MutableComponent SITE_TTS_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.site.tts");
+
+    /**
+     * 侧栏三栏的组标题。分栏判据是**权限边界**，不是服务种类：
+     * 「语音输入」作用于本机、人人可见；「AI 服务配置」与「用量管理」是服务器权威、仅管理员可见。
+     */
+    MutableComponent VOICE_INPUT_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.voice_input").withStyle(ChatFormatting.UNDERLINE);
+    MutableComponent SERVICE_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.service").withStyle(ChatFormatting.UNDERLINE);
+    MutableComponent USAGE_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.usage").withStyle(ChatFormatting.UNDERLINE);
+    MutableComponent USAGE_QUOTA_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.usage.quota");
 
     MutableComponent STT_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.stt").withStyle(ChatFormatting.UNDERLINE);
     MutableComponent STT_CONFIG_NAME = Component.translatable("ai.touhou_little_maid.chat.settings.hub.stt.config");
