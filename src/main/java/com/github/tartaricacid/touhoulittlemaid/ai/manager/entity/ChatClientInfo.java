@@ -5,6 +5,8 @@ import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelIn
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.util.ParseI18n;
 import com.google.common.collect.Lists;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -33,6 +35,7 @@ public record ChatClientInfo(String language, String name, List<String> descript
         return new ChatClientInfo(language, name, description);
     }
 
+    @Environment(EnvType.CLIENT)
     public static ChatClientInfo fromMaid(EntityMaid maid) {
         String language = getClientLanguage();
         String name = getMaidName(maid);
@@ -40,17 +43,22 @@ public record ChatClientInfo(String language, String name, List<String> descript
         return new ChatClientInfo(language, name, description);
     }
 
+    @Environment(EnvType.CLIENT)
     private static String getClientLanguage() {
         return Minecraft.getInstance().getLanguageManager().getSelected();
     }
 
+    @Environment(EnvType.CLIENT)
     private static String getMaidName(EntityMaid maid) {
         return maid.getName().getString();
     }
 
+    @Environment(EnvType.CLIENT)
     private static List<String> getMaidDescription(EntityMaid maid) {
         List<String> description = Lists.newArrayList();
-        // 然后才是默认描述文本
+        // 行为基准这里还有一条「YSM 模型不带描述」的短路。**26.1.2 的 Fabric 上不存在任何 YSM 实现**
+        // （本体仅 NeoForge 且闭源，OpenYSM 无 26.x），整块 YSM 兼容按审计 §7.2 在移植范围之外，
+        // 故本树没有 YsmCompat。YSM 前置就绪时连同那块兼容一起补回这条短路。
         Optional<MaidModelInfo> info = CustomPackLoader.MAID_MODELS.getInfo(maid.getModelId());
         if (info.isPresent()) {
             MaidModelInfo maidModelInfo = info.get();

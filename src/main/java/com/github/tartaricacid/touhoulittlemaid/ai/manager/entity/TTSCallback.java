@@ -4,7 +4,6 @@ import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.ErrorCode;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.ResponseCallback;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.ServiceType;
-import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSResponse;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.network.message.ai.TTSAudioToClientPackage;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -17,12 +16,7 @@ import net.minecraft.world.entity.LivingEntity;
 
 import java.net.http.HttpRequest;
 
-/**
- * 女仆对话链路上的 TTS 回调。实现 {@link TTSResponse} 而不是让 client 直接吃本类——
- * 「结果还有没有意义」在这条链路上是「女仆还活着吗」，在音色试听那条链路上是别的语义，
- * 各自答各自的（{@link TTSResponse#isObsolete()} 的默认实现正是本链路的答案）。
- */
-public class TTSCallback implements TTSResponse {
+public class TTSCallback implements com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSResponse {
     private final EntityMaid maid;
     private final String chatText;
     private final long waitingChatBubbleId;
@@ -46,7 +40,9 @@ public class TTSCallback implements TTSResponse {
                 maid.getChatBubbleManager().addLLMChatText(chatText, waitingChatBubbleId);
             });
         }
-        TouhouLittleMaid.LOGGER.error("LLM request failed: {}, error is {}", request, throwable.getMessage());
+        // 这里是 TTS 的失败，原先却记成 "LLM request failed"——按日志找故障的人会被送去查错误的服务，
+        // 而「文案指向哪里故障就在哪里」正是本项目栽过的坑
+        TouhouLittleMaid.LOGGER.error("TTS request failed: {}, error is {}", request, throwable.getMessage());
     }
 
     @Override

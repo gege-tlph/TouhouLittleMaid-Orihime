@@ -4,8 +4,8 @@ import com.github.tartaricacid.touhoulittlemaid.ai.agent.context.AbstractMaidCon
 import com.github.tartaricacid.touhoulittlemaid.ai.agent.context.GameContextRegister;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 
@@ -14,6 +14,9 @@ import static com.github.tartaricacid.touhoulittlemaid.ai.manager.setting.papi.S
 public final class WorldContexts {
     public static final String CATEGORY = "world";
     private static final String SUMMARY = "Time, weather, dimension, and biome around";
+
+    private WorldContexts() {
+    }
 
     public static void registerAll(GameContextRegister register) {
         register.registerCategory(CATEGORY, SUMMARY, true);
@@ -30,7 +33,9 @@ public final class WorldContexts {
 
         @Override
         public String getValue(EntityMaid maid) {
-            long time = maid.level.getGameTime() % 24000;
+            // 26.1.2 把日间时间挪进了 world clock：Level.getDayTime() 已删，
+            // 新基一律用 getDefaultClockTime()（本树 SoundUtil 同款）。取值语义不变。
+            long time = maid.level.getDefaultClockTime();
             long hours = (time / 1000 + 6) % 24;
             long minutes = (time % 1000) / (50 / 3);
             return TIME_FORMAT.formatted(hours, minutes);
@@ -72,7 +77,7 @@ public final class WorldContexts {
             if (dimension == Level.END) {
                 return END;
             }
-            return dimension.identifier().toString();
+            return dimension.toString();
         }
     }
 

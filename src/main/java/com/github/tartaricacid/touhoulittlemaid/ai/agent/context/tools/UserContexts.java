@@ -3,19 +3,19 @@ package com.github.tartaricacid.touhoulittlemaid.ai.agent.context.tools;
 import com.github.tartaricacid.touhoulittlemaid.ai.agent.context.AbstractMaidContext;
 import com.github.tartaricacid.touhoulittlemaid.ai.agent.context.GameContextRegister;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-import com.google.common.collect.Lists;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import org.apache.commons.lang3.StringUtils;
-
-import java.util.List;
 
 import static com.github.tartaricacid.touhoulittlemaid.ai.manager.setting.papi.StringConstant.*;
 
 public final class UserContexts {
     public static final String CATEGORY = "user";
     private static final String SUMMARY = "User identity, health, and equipment information.";
+
+    private UserContexts() {
+    }
 
     public static void registerAll(GameContextRegister register) {
         register.registerCategory(CATEGORY, SUMMARY, false);
@@ -87,13 +87,12 @@ public final class UserContexts {
             if (owner == null) {
                 return EMPTY;
             }
-            List<String> names = Lists.newArrayList();
-            for (EquipmentSlot slot : EquipmentSlot.values()) {
+            java.util.List<String> names = com.google.common.collect.Lists.newArrayList();
+            for (EquipmentSlot slot : EquipmentSlot.VALUES) {
                 if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
                     ItemStack stack = owner.getItemBySlot(slot);
                     if (!stack.isEmpty()) {
-                        String itemName = stack.getDisplayName().getString();
-                        names.add(ITEM_AND_COUNT_FORMAT.formatted(itemName, stack.getCount()));
+                        names.add(ITEM_AND_COUNT_FORMAT.formatted(stack.getDisplayName().getString(), stack.getCount()));
                     }
                 }
             }

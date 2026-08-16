@@ -24,7 +24,6 @@ public class AutoGenSettingCallback extends LLMCallback {
     public AutoGenSettingCallback(MaidAIChatManager chatManager, List<LLMMessage> messages) {
         super(chatManager, messages, true);
         this.needAddTools = false;
-        // 添加自己的提示聊天气泡
         MutableComponent component = Component.translatable("ai.touhou_little_maid.chat.llm.role_no_setting_and_gen_setting");
         TextChatBubbleData bubbleData = TextChatBubbleData.create(30 * 20, component, TYPE_2, DEFAULT_PRIORITY);
         this.waitingChatBubbleId = this.getMaid().getChatBubbleManager().addChatBubble(bubbleData);

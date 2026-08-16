@@ -1,8 +1,8 @@
 package com.github.tartaricacid.touhoulittlemaid.ai.agent.context.tools;
 
-import cn.sh1rocu.touhoulittlemaid.util.transfer.ItemUtil;
 import com.github.tartaricacid.touhoulittlemaid.ai.agent.context.AbstractMaidContext;
 import com.github.tartaricacid.touhoulittlemaid.ai.agent.context.GameContextRegister;
+import cn.sh1rocu.touhoulittlemaid.util.transfer.ItemUtil;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.Lists;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -16,6 +16,9 @@ import static com.github.tartaricacid.touhoulittlemaid.ai.manager.setting.papi.S
 public final class EquipmentMaidContexts {
     public static final String CATEGORY = "equipment";
     private static final String SUMMARY = "Held items, backpack inventory, and equipped armor.";
+
+    private EquipmentMaidContexts() {
+    }
 
     public static void registerAll(GameContextRegister register) {
         register.registerCategory(CATEGORY, SUMMARY, false);
@@ -56,7 +59,9 @@ public final class EquipmentMaidContexts {
         public String getValue(EntityMaid maid) {
             List<String> names = Lists.newArrayList();
             var backpack = maid.getAvailableBackpackInv();
-            for (int i = 0; i < backpack.size(); i++) {
+            // 代码宿主的背包走 Fabric transfer：getSlots()/getStackInSlot() → getSlotCount()/ItemUtil.getStack()。
+            // ⚠️ ItemUtil.getStack 返回**拷贝**而非活引用，这里只读所以无妨；要写回得 setStackInSlot。
+            for (int i = 0; i < backpack.getSlotCount(); i++) {
                 ItemStack stack = ItemUtil.getStack(backpack, i);
                 if (!stack.isEmpty()) {
                     String itemName = stack.getDisplayName().getString();
@@ -79,13 +84,14 @@ public final class EquipmentMaidContexts {
         @Override
         public String getValue(EntityMaid maid) {
             List<String> names = Lists.newArrayList();
-            var armor = maid.getArmorInvWrapper();
-            for (int i = 0; i < armor.size(); i++) {
-                ItemStack stack = ItemUtil.getStack(armor, i);
-                if (!stack.isEmpty()) {
-                    String itemName = stack.getDisplayName().getString();
-                    int count = stack.getCount();
-                    names.add(ITEM_AND_COUNT_FORMAT.formatted(itemName, count));
+            for (EquipmentSlot slot : EquipmentSlot.VALUES) {
+                if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
+                    ItemStack stack = maid.getItemBySlot(slot);
+                    if (!stack.isEmpty()) {
+                        String itemName = stack.getDisplayName().getString();
+                        int count = stack.getCount();
+                        names.add(ITEM_AND_COUNT_FORMAT.formatted(itemName, count));
+                    }
                 }
             }
             if (names.isEmpty()) {

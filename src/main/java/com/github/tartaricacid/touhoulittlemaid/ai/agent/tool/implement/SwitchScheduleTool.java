@@ -13,13 +13,16 @@ import net.minecraft.network.chat.Component;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public class SwitchScheduleTool implements ITool<String> {
     public static final String TOOL_ID = "switch_schedule";
 
     private static final String TOOL_DESC = """
-            Use this when user wants to change the schedule.
-            Before using this tool, Should first obtain the context of game time and self schedule.
+            Use this for an explicit player command that changes the maid's persistent schedule.
+            Before using this tool, first obtain the latest game-time and maid-schedule context.
+            This changes the planned schedule, not the current active activity or a temporary emergency state.
+            A valid explicit command stops any current temporary threat response.
             """.trim();
 
     private static final String SCHEDULE_PARAM_ID = "schedule";
@@ -59,41 +62,56 @@ public class SwitchScheduleTool implements ITool<String> {
 
     @Override
     public LLMCallback onCall(String toolId, String result, LLMCallback callback) {
-        MaidSchedule target;
-        try {
-            target = MaidSchedule.valueOf(result.toUpperCase());
-        } catch (IllegalArgumentException e) {
+        Optional<MaidSchedule> parsed = parseSchedule(result);
+        if (parsed.isEmpty()) {
             List<String> values = Arrays.stream(MaidSchedule.values()).map(Enum::name).toList();
             String text = "Unknown schedule '%s'".formatted(result);
             return callback.addToolResult(ITool.invalidParam(SCHEDULE_PARAM_ID, values, text), toolId);
         }
+        MaidSchedule target = parsed.get();
 
         EntityMaid maid = callback.getMaid();
+        boolean emergencyStopped = maid.isEmergencyCombatActive();
+        maid.getEmergencyCombatManager().onPlayerCommand();
         MaidSchedule current = maid.getSchedule();
         if (current == target) {
-            return callback.addToolResult("Already on %s schedule.".formatted(target.name()), toolId);
+            return callback.addToolResult(withThreatResult(
+                    "Already on %s schedule.".formatted(target.name()), emergencyStopped), toolId);
         }
 
-        maid.setSchedule(target);
-        return callback.addToolResult("Schedule switched to %s.".formatted(target.name()), toolId);
+        // 代码宿主把日程收进了 MaidTaskManager，EntityMaid 不代理这个 setter（getSchedule 则代理）
+        maid.getTaskManager().setScheduleWithoutPlayerCommand(target);
+        return callback.addToolResult(withThreatResult(
+                "Schedule switched to %s.".formatted(target.name()), emergencyStopped), toolId);
     }
 
     @Override
     public Component invocationSummaryComponent(String result) {
-        MaidSchedule target = MaidSchedule.valueOf(result.toUpperCase());
-        switch (target) {
+        return parseSchedule(result).map(target -> switch (target) {
             case DAY -> {
-                return Component.translatable("ai.touhou_little_maid.chat.tool_call.switch_schedule.day")
+                yield Component.translatable("ai.touhou_little_maid.chat.tool_call.switch_schedule.day")
                         .withStyle(ChatFormatting.GRAY);
             }
             case NIGHT -> {
-                return Component.translatable("ai.touhou_little_maid.chat.tool_call.switch_schedule.night")
+                yield Component.translatable("ai.touhou_little_maid.chat.tool_call.switch_schedule.night")
                         .withStyle(ChatFormatting.GRAY);
             }
             default -> {
-                return Component.translatable("ai.touhou_little_maid.chat.tool_call.switch_schedule.all")
+                yield Component.translatable("ai.touhou_little_maid.chat.tool_call.switch_schedule.all")
                         .withStyle(ChatFormatting.GRAY);
             }
+        }).orElse(Component.empty());
+    }
+
+    private static Optional<MaidSchedule> parseSchedule(String value) {
+        try {
+            return Optional.of(MaidSchedule.valueOf(value.toUpperCase()));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
         }
+    }
+
+    private static String withThreatResult(String result, boolean stopped) {
+        return stopped ? result + " Temporary threat response stopped." : result;
     }
 }
