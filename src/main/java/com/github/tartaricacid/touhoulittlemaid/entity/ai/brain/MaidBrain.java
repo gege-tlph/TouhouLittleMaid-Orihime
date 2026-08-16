@@ -3,7 +3,9 @@ package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain;
 import com.github.tartaricacid.touhoulittlemaid.api.entity.ai.IExtraMaidBrain;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IMaidTask;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.ride.MaidRideBegTask;
+import com.github.tartaricacid.touhoulittlemaid.compat.gun.common.ai.GunShootTargetTask;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.*;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.combat.MaidEmergencyCombatManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBrains;
 import com.github.tartaricacid.touhoulittlemaid.util.migrate.EntityTypeUtil;
@@ -206,19 +208,31 @@ public final class MaidBrain {
         return ActivityData.create(Activity.PANIC, ImmutableList.copyOf(behaviors));
     }
 
+    /** 走位速度。基准 {@code MaidAttackStrafingTask} 里硬编码为 0.5，应战沿用同一手感。 */
+    private static final float STRAFE_SPEED = 0.5f;
+
     /**
      * 瞬态应战活动：由 {@code MaidEmergencyCombatManager} 经
      * {@code EMERGENCY_COMBAT_ACTIVE} 记忆开关激活，覆盖日程活动但不改常驻任务。
-     * B1（远程应战行为三件 + 站定走位）随 §3.B 第二刀接入，锚点即本方法。
      */
     private static ActivityData<EntityMaid> initEmergencyCombatActivity() {
         Pair<Integer, BehaviorControl<? super EntityMaid>> extinguish = Pair.of(0, new MaidExtinguishingTask(0.6f));
         Pair<Integer, BehaviorControl<? super EntityMaid>> useShield = Pair.of(4, new MaidUseShieldTask());
         Pair<Integer, BehaviorControl<? super EntityMaid>> walkToTarget = Pair.of(5, MaidEmergencyWalkToTarget.create(0.7f));
         Pair<Integer, BehaviorControl<? super EntityMaid>> meleeAttack = Pair.of(6, MaidMeleeAttack.create(20));
+        // 远程应战：手上是什么就用什么，不再端着弓/弩/枪冲上去肉搏。
+        // 判据统一走 MaidEmergencyCombatManager.isHoldingUsableRangedWeapon（含弹药），没弹药时自然回落到近战。
+        // 走位排在射击前，与工作模式下弓箭那套的相对次序一致。
+        Pair<Integer, BehaviorControl<? super EntityMaid>> rangedStrafing = Pair.of(5,
+                new MaidAttackStrafingAnyItemTask(MaidEmergencyCombatManager::isHoldingUsableRangedWeapon,
+                        (float) MaidEmergencyCombatManager.LOCAL_PROTECTION_RANGE, STRAFE_SPEED));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> rangedShoot = Pair.of(6,
+                new MaidShootTargetAnyItemTask(2, 20, MaidEmergencyCombatManager::isHoldingUsableRangedWeapon));
+        // 枪械走 TaCZ 自己的射击链（弹道、换弹、瞄准都在那边）；未装 TaCZ 时它的进入条件恒 false。
+        Pair<Integer, BehaviorControl<? super EntityMaid>> gunShoot = Pair.of(6, new GunShootTargetTask());
 
         List<Pair<Integer, BehaviorControl<? super EntityMaid>>> behaviors = Lists.newArrayList(
-                extinguish, useShield, walkToTarget, meleeAttack
+                extinguish, useShield, walkToTarget, rangedStrafing, rangedShoot, gunShoot, meleeAttack
         );
 
         return ActivityData.create(InitBrains.EMERGENCY_COMBAT, ImmutableList.copyOf(behaviors),

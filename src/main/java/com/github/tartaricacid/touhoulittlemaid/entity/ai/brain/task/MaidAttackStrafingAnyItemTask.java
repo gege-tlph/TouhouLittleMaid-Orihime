@@ -1,15 +1,16 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.function.Predicate;
 
@@ -17,14 +18,14 @@ import java.util.function.Predicate;
  * MaidAttackStrafingTask 的升级版本，不限制手持物品必须是 ProjectileWeaponItem
  */
 public class MaidAttackStrafingAnyItemTask extends Behavior<EntityMaid> {
-    private final Predicate<ItemStack> weaponTest;
+    private final Predicate<EntityMaid> weaponTest;
     private final float projectileRange;
     private final float strafeSpeed;
     private boolean strafingClockwise;
     private boolean strafingBackwards;
     private int strafingTime = -1;
 
-    public MaidAttackStrafingAnyItemTask(Predicate<ItemStack> weaponTest, float projectileRange, float strafeSpeed) {
+    public MaidAttackStrafingAnyItemTask(Predicate<EntityMaid> weaponTest, float projectileRange, float strafeSpeed) {
         super(ImmutableMap.of(MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT,
                         MemoryModuleType.LOOK_TARGET, MemoryStatus.REGISTERED,
                         MemoryModuleType.ATTACK_TARGET, MemoryStatus.VALUE_PRESENT,
@@ -37,15 +38,16 @@ public class MaidAttackStrafingAnyItemTask extends Behavior<EntityMaid> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel worldIn, EntityMaid owner) {
-        return weaponTest.test(owner.getMainHandItem()) &&
+        return weaponTest.test(owner) &&
                 owner.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET)
-                        .filter(Entity::isAlive)
+                        .filter(target -> MaidTargetingPolicy.canContinueTargeting(
+                                owner, target, MaidTargetingContext.PLANNED_ATTACK))
                         .isPresent();
     }
 
     @Override
     protected void tick(ServerLevel worldIn, EntityMaid owner, long gameTime) {
-        if (!weaponTest.test(owner.getMainHandItem())) {
+        if (!weaponTest.test(owner)) {
             return;
         }
         owner.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).ifPresent((target) -> {
@@ -78,8 +80,15 @@ public class MaidAttackStrafingAnyItemTask extends Behavior<EntityMaid> {
                     this.strafingBackwards = true;
                 }
 
-                // 应用走位
-                owner.getMoveControl().strafe(this.strafingBackwards ? -strafeSpeed : strafeSpeed, this.strafingClockwise ? strafeSpeed : -strafeSpeed);
+                // 应用走位，但需要考虑玩家位置（与 MaidAttackStrafingTask 同款刹车：
+                // 没有 home 且离主人超过 home 半径时停在原地，免得她一路平移着越走越远）
+                if (!owner.hasHome() && owner.getOwner() instanceof Player player
+                        && owner.distanceTo(player) >= owner.getHomeRadius()) {
+                    owner.stopInPlace();
+                } else {
+                    owner.getMoveControl().strafe(this.strafingBackwards ? -strafeSpeed : strafeSpeed,
+                            this.strafingClockwise ? strafeSpeed : -strafeSpeed);
+                }
                 owner.setYRot(Mth.rotateIfNecessary(owner.getYRot(), owner.yHeadRot, 0.0F));
                 BehaviorUtils.lookAtEntity(owner, target);
             } else {

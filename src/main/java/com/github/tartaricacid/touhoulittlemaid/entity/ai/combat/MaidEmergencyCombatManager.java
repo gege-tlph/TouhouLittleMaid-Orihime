@@ -1,6 +1,8 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.combat;
 
 import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
+import com.github.tartaricacid.touhoulittlemaid.api.task.IRangedAttackTask;
+import com.github.tartaricacid.touhoulittlemaid.compat.gun.common.GunCommonUtil;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidUpdateActivityFromSchedule;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -13,6 +15,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ProjectileWeaponItem;
 
 import javax.annotation.Nullable;
 import java.util.Iterator;
@@ -215,6 +219,32 @@ public final class MaidEmergencyCombatManager {
             brain.lastScheduleUpdate = maid.level().getGameTime() - 21L;
             MaidUpdateActivityFromSchedule.updateActivityFromSchedule(maid, brain);
         }
+    }
+
+    /**
+     * 女仆手上是不是一把「现在就能用」的远程武器。
+     *
+     * <p>威胁响应的三个消费者共用这一条判据：近战行为据它决定要不要放行、应战走位据它决定
+     * 贴脸还是站定、应战远程行为据它决定能不能进入。<b>不许各写各的</b>——判据分叉的那天，
+     * 就会出现「站定不动却又不开枪」这种自相矛盾的行为。</p>
+     *
+     * <p>「能用」含弹药：弓弩没箭、枪没子弹时返回 false，让她回落到近战，
+     * 而不是端着空枪站在原地挨打。</p>
+     */
+    public static boolean isHoldingUsableRangedWeapon(EntityMaid maid) {
+        ItemStack held = maid.getMainHandItem();
+        // 三个条件缺一不可，少任何一个都会让她「站定却打不出去」：
+        //   ① 手里确实是远程武器；
+        //   ② 她真的开得出火——即这把武器能找到一个远程任务实现来执行射击。
+        //      **不要用 canUseNonMeleeWeapon**：女仆把它覆写成了「当前工作任务是不是远程任务」，
+        //      而射击实现已于弓弩解绑那刀改为按武器解析，两者不再等价；
+        //   ③ 有弹药——getProjectile 是女仆自己的取弹逻辑，会翻手持与背包，
+        //      canUseNonMeleeWeapon 不看这一层。
+        boolean vanillaRanged = held.getItem() instanceof ProjectileWeaponItem
+                && IRangedAttackTask.resolveImplementation(maid, held) != null
+                && !maid.getProjectile(held).isEmpty();
+        // 枪械不经 performRangedAttack（TaCZ 有自己的射击链），故不受任务类型限制
+        return vanillaRanged || GunCommonUtil.hasUsableGun(maid);
     }
 
     public boolean isEmergencyActive() {

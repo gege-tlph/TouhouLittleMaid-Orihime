@@ -1,5 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
@@ -9,7 +11,6 @@ import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.item.BowItem;
-import net.minecraft.world.item.ItemStack;
 
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -20,12 +21,12 @@ import java.util.function.Predicate;
 public class MaidShootTargetAnyItemTask extends Behavior<EntityMaid> {
     private final int attackCooldown;
     private final int chargeDurationTick;
-    private final Predicate<ItemStack> weaponTest;
+    private final Predicate<EntityMaid> weaponTest;
     private int attackTime = -1;
     private int seeTime;
     private int swingTime;
 
-    public MaidShootTargetAnyItemTask(int attackCooldown, int chargeDurationTick, Predicate<ItemStack> weaponTest) {
+    public MaidShootTargetAnyItemTask(int attackCooldown, int chargeDurationTick, Predicate<EntityMaid> weaponTest) {
         super(ImmutableMap.of(MemoryModuleType.LOOK_TARGET, MemoryStatus.REGISTERED,
                 MemoryModuleType.ATTACK_TARGET, MemoryStatus.VALUE_PRESENT), 1200);
         this.attackCooldown = attackCooldown;
@@ -38,7 +39,8 @@ public class MaidShootTargetAnyItemTask extends Behavior<EntityMaid> {
         Optional<LivingEntity> memory = owner.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET);
         if (memory.isPresent()) {
             LivingEntity target = memory.get();
-            return owner.isHolding(weaponTest) && owner.canSee(target);
+            return MaidTargetingPolicy.canContinueTargeting(owner, target, MaidTargetingContext.PLANNED_ATTACK)
+                    && weaponTest.test(owner) && owner.canSee(target);
         }
         return false;
     }
