@@ -25,8 +25,17 @@ public final class MiscConfig {
     public static ModConfigSpec.BooleanValue MODEL_ICON_CACHE;
     public static ModConfigSpec.BooleanValue INVULNERABLE_PARTICLE_EFFECT;
 
-    /** 实例级个人配置，进 COMMON spec。对应行为基准 {@code port/1.21.11-fabric} 的 {@code initClient}。 */
-    public static void initCommon(ModConfigSpec.Builder builder) {
+    /**
+     * 玩家个人偏好，进 {@code GeneralConfig} 的 CLIENT spec
+     * （{@code config/touhou_little_maid-global.toml}），**只在客户端建立与注册**。
+     * 与行为基准 {@code port/1.21.11-fabric} 的同名方法一一对应。
+     *
+     * <p>⚠️ {@code INVULNERABLE_PARTICLE_EFFECT} 有一个不在 {@code client/} 包里的消费点
+     * （{@code entity/passive/MaidParticleManager#tick}，挂在两侧都跑的 {@code baseTick} 上）。
+     * 那里的 {@code isClient()} 短路**是这条归属成立的前提**，不是可有可无的优化——
+     * 短路没了专服每 tick 就抛「Cannot get config value before config is loaded」。</p>
+     */
+    public static void initClient(ModConfigSpec.Builder builder) {
         builder.translation(TRANSLATE_KEY).push("misc");
 
         builder.comment("Whether to turn off the Optifine warning")

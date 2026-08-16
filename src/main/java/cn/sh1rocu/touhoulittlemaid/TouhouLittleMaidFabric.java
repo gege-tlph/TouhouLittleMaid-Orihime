@@ -11,6 +11,7 @@ import com.github.tartaricacid.touhoulittlemaid.config.AiClientConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.AiServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.CommonConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ConfigFileMigration;
+import com.github.tartaricacid.touhoulittlemaid.config.GeneralConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.debug.event.DebugStickClickEvent;
@@ -87,21 +88,35 @@ public class TouhouLittleMaidFabric implements ModInitializer {
         // AI 规则的 spec 同理只建不注册（它由 AiServerRuleConfig 独占那个文件），
         // 且必须在任何 ServerRuleConfig.get 路由调用之前建好——归属表是在这里登记的。
         AiServerRuleConfig.init();
-        ModConfigSpec aiClientSpec = AiClientConfig.getConfigSpec();
 
-        // 以下三条迁移**必须全部先于 COMMON spec 注册**：这些键原属 COMMON spec，
+        // 以下四条迁移**必须全部先于 COMMON spec 注册**：这些键原属代码宿主的 COMMON spec，
         // 注册那一刻 correct() 会把「已不在 spec 里」的它们整批剥掉，旧值就没了。
         ConfigFileMigration.migrateServerFileIfNeeded(ServerRuleConfig.values(), ServerConfig.CONFIG);
-        ConfigFileMigration.migrateAiFileIfNeeded(AiClientConfig.values(), aiClientSpec);
-        // 旧文件缺岩浆怪独立开关时继承史莱姆开关的旧值
-        ConfigFileMigration.inheritMagmaCubeFromSlime();
+
+        // 玩家个人配置整段只在**物理客户端**建立与注册，专服上一个字都不写。
+        // 判据用物理端而非 MinecraftServer#isDedicatedServer：这里还没有服务器实例，
+        // 而物理端也正是要的语义——**开了局域网的客户端仍是 CLIENT**，它自己就要用这两份文件。
+        // （与 AvailableSites#managesSttSites 同一条判据。）
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+            ModConfigSpec globalSpec = GeneralConfig.getConfigSpec();
+            ModConfigSpec aiClientSpec = AiClientConfig.getConfigSpec();
+            // 必须先于 global 迁移：本方法作用在**迁移源** -common.toml 上，不是目标（见其注释）
+            ConfigFileMigration.inheritMagmaCubeFromSlime();
+            ConfigFileMigration.migrateGlobalFileIfNeeded(GeneralConfig.values(), globalSpec);
+            ConfigFileMigration.migrateAiFileIfNeeded(AiClientConfig.values(), aiClientSpec);
+            ConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.CLIENT,
+                    globalSpec, ConfigFileMigration.GLOBAL_FILE_NAME);
+            ConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.CLIENT,
+                    aiClientSpec, ConfigFileMigration.AI_FILE_NAME);
+        } else {
+            // 不删管理员的文件，但要让升级后的残留物可解释——否则下一个人看到 config/ 里躺着
+            // 一份 -global.toml，又会以为渲染偏好能在服务端配。与 AvailableSites 对 stt.json 同款。
+            ConfigFileMigration.logUnusedClientFilesOnServer();
+        }
 
         ServerRuleConfig.initializeDefaults();
         AiServerRuleConfig.initializeDefaults();
         ConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.COMMON, CommonConfig.init());
-        // 个人 AI 配置是独立文件，正常交给 FCAP 管（与上面那份 COMMON 同类型、不同文件名）
-        ConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.COMMON,
-                aiClientSpec, ConfigFileMigration.AI_FILE_NAME);
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             if (!ServerRuleConfig.loadForServer(server)) {

@@ -97,10 +97,13 @@ class CacheIconWiringContractTest {
 
     @Test
     void modelIconCacheIsPersonalConfigNotWorldRule() throws IOException {
-        // 个人配置进 COMMON spec（initCommon），绝不能进 SERVER spec：
-        // 声明在哪一侧决定读法（裸 get 还是 ServerRuleConfig 读口），放错侧会被 ArchUnit 闸拦或运行期炸
+        // 个人配置进只在客户端注册的 CLIENT spec（initClient → GeneralConfig → -global.toml），
+        // 绝不能进 SERVER spec：声明在哪一侧决定读法（裸 get 还是 ServerRuleConfig 读口），
+        // 放错侧会被 ArchUnit 闸拦或运行期炸。
+        // 2026-08-17：本键随「个人配置整层搬回 -global.toml」从 initCommon 改到 initClient；
+        // 图标缓存是纯客户端行为，专服连这个键都不该有。
         String misc = PKG + "/config/subconfig/MiscConfig.java";
-        assertBodyContains(misc, "void initCommon", "MODEL_ICON_CACHE = builder.define(\"EnableModelIconCache\", false)");
+        assertBodyContains(misc, "void initClient", "MODEL_ICON_CACHE = builder.define(\"EnableModelIconCache\", false)");
         String serverRuleBody = methodBody(misc, "void initServerRule");
         assertTrue(!serverRuleBody.contains("MODEL_ICON_CACHE"),
                 "MODEL_ICON_CACHE 出现在 initServerRule——个人配置被declared成了世界规则");

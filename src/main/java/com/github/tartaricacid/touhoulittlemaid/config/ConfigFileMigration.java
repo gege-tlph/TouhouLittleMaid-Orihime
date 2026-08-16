@@ -23,7 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 配置文件的建立与迁移，三个目标各一条：
+ * 配置文件的建立与迁移，四个目标各一条。源头都是代码宿主 {@code origin/26.1} 的那一个
+ * {@code config/touhou_little_maid-common.toml}——它把世界规则、AI 两半与玩家个人偏好混在一起：
  *
  * <ul>
  *   <li>**存档级**世界规则 {@code <world>/serverconfig/touhou_little_maid-server.toml}
@@ -32,9 +33,11 @@ import java.util.List;
  *       —— {@link #migrateAiServerFileIfNeeded}</li>
  *   <li>**个人** AI 配置 {@code config/touhou_little_maid-ai.toml}
  *       —— {@link #migrateAiFileIfNeeded}</li>
+ *   <li>**个人**偏好 {@code config/touhou_little_maid-global.toml}
+ *       —— {@link #migrateGlobalFileIfNeeded}</li>
  * </ul>
  *
- * <p>三条都是<b>一次性</b>的：目标文件已存在就绝不再动。三条也都<b>必须在对应 spec 注册之前</b>
+ * <p>四条都是<b>一次性</b>的：目标文件已存在就绝不再动。四条也都<b>必须在对应 spec 注册之前</b>
  * 调用——注册加载那一刻 {@code correct()} 会把「已不在 spec 里」的键整批剥掉，旧值当场消失。</p>
  */
 public final class ConfigFileMigration {
@@ -46,6 +49,8 @@ public final class ConfigFileMigration {
     public static final String AI_SERVER_FILE_NAME = TouhouLittleMaid.MOD_ID + "-ai-server.toml";
     /** 个人 AI 配置文件名，由 Forge Config API Port 正常管理（{@link AiClientConfig}）。 */
     public static final String AI_FILE_NAME = TouhouLittleMaid.MOD_ID + "-ai.toml";
+    /** 玩家个人偏好文件名，由 Forge Config API Port 正常管理（{@link GeneralConfig}），**只在客户端建立**。 */
+    public static final String GLOBAL_FILE_NAME = TouhouLittleMaid.MOD_ID + "-global.toml";
     /** 这些规则值在代码宿主 origin/26.1 上原属 COMMON spec，即实例级的这个文件。 */
     private static final String LEGACY_FILE_NAME = TouhouLittleMaid.MOD_ID + "-common.toml";
 
@@ -141,6 +146,53 @@ public final class ConfigFileMigration {
     }
 
     /**
+     * 玩家个人偏好从 {@code -common.toml} 迁往专属的 {@code -global.toml}。
+     *
+     * <p><b>必须在 COMMON spec 注册之前调用</b>，与其余三条同一个陷阱：注册加载那一刻
+     * {@code correct()} 会把「已不在 COMMON spec 里」的 {@code [misc]}/{@code [vanilla]}/
+     * {@code [render]} 三节与 {@code [maid]} 的两个键**整批剥掉**，玩家调过的值当场消失。</p>
+     *
+     * <p>⚠️ 行为基准 {@code port/1.21.11-fabric} 的源链是 {@code -client.toml → -common.toml}
+     * 两级——那边宿主曾以 {@code Type.CLIENT} 的默认名建过 {@code -client.toml}。
+     * <b>本分支没有那一层</b>（代码宿主 {@code origin/26.1} 一直用 {@code Type.COMMON}），
+     * 故源链只有 {@code -common.toml} 一处。<b>别照抄成两级</b>：一个从不存在的源会让
+     * 「逐键取第一处命中」多一次无谓的读盘，也会让下一个人以为本树有过 client 层。</p>
+     */
+    public static void migrateGlobalFileIfNeeded(List<ModConfigSpec.ConfigValue<?>> globalValues,
+                                                 ModConfigSpec globalSpec) {
+        migrateGlobalFileIfNeeded(FabricLoader.getInstance().getConfigDir(), globalValues, globalSpec);
+    }
+
+    static void migrateGlobalFileIfNeeded(Path configDir,
+                                          List<ModConfigSpec.ConfigValue<?>> globalValues,
+                                          ModConfigSpec globalSpec) {
+        seedFromFirstHit(configDir.resolve(GLOBAL_FILE_NAME), List.of(configDir.resolve(LEGACY_FILE_NAME)),
+                globalValues, globalSpec, "player config");
+    }
+
+    /**
+     * 专服上把「从旧版本升上来、如今无人读」的两份客户端配置文件点名说清楚。
+     *
+     * <p>不删——那是管理员的文件。但也不能让它们默不作声地躺着：
+     * {@code -global.toml} 里全是渲染与界面偏好，{@code -ai.toml} 里是麦克风与语音识别，
+     * 服主看见它们只会得到一个错误结论「这些能在服务端配」。<b>载体的存在会被读成语义。</b>
+     * 与 {@code AvailableSites} 对残留 {@code stt.json} 的处理同款。</p>
+     */
+    public static void logUnusedClientFilesOnServer() {
+        logUnusedClientFilesOnServer(FabricLoader.getInstance().getConfigDir());
+    }
+
+    static void logUnusedClientFilesOnServer(Path configDir) {
+        for (String name : List.of(GLOBAL_FILE_NAME, AI_FILE_NAME)) {
+            Path file = configDir.resolve(name);
+            if (Files.isRegularFile(file)) {
+                LOGGER.info("{} is not used on a dedicated server and can be deleted: "
+                        + "it holds each player's own client-side preferences", file);
+            }
+        }
+    }
+
+    /**
      * 一次性播种：目标不存在时按 spec 建默认值，再逐键从源链第一处命中处取旧值覆盖。
      * 源链里读不出来的文件跳过而不是整批放弃——一个坏文件不该让其余的旧值全丢。
      */
@@ -193,9 +245,17 @@ public final class ConfigFileMigration {
      * 让玩家的 ReplaceSlimeModel 选择顺延到岩浆怪，而不是被 spec 默认值静默盖掉。
      * 已带新键的文件、第三方未知键与注释一律不动。
      *
-     * <p>行为基准的同名方法作用于它的 global 文件；本分支无 global 层，
-     * {@code VanillaConfig} 落在 COMMON（{@code touhou_little_maid-common.toml}），
-     * 故迁移目标同为此文件，语义不变（{@code MagmaCubeConfigInheritanceTest} 钉着）。</p>
+     * <p>⚠️ <b>本方法作用于迁移源 {@code -common.toml}，不是目标 {@code -global.toml}</b>，
+     * 因此它<b>必须排在 {@link #migrateGlobalFileIfNeeded} 之前</b>：先把旧值补进源文件，
+     * 再由 global 迁移逐键搬走。次序反了就没救了——global 迁移会先按 spec 铺一份默认值
+     * （{@code ReplaceMagmaCubeModel=true}），源里没有这个键便不覆盖，随后本方法看到目标里
+     * <b>已经有</b>该键就直接返回，玩家的旧选择被默认值静默吃掉。
+     * {@code ConfigBootstrapOrderContractTest} 钉着这条次序。</p>
+     *
+     * <p>行为基准 {@code port/1.21.11-fabric} 的同名方法作用于目标 global 文件，另在
+     * {@code migrateGlobalFileIfNeeded} 里对源文件重做一次同样的判断。本分支把两处合成一处：
+     * {@code -global.toml} 是本次（2026-08-17）才引入的，不可能存在「早于拆分的旧 global 文件」，
+     * 那一半没有适用对象（{@code MagmaCubeConfigInheritanceTest} 钉着源侧语义）。</p>
      */
     static void inheritMagmaCubeFromSlime(Path configDir) {
         Path common = configDir.resolve(LEGACY_FILE_NAME);

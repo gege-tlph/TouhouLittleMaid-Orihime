@@ -57,17 +57,14 @@ public final class MaidConfig {
     public static ModConfigSpec.IntValue MAID_GUN_NEAR_DISTANCE;
 
     /**
-     * 实例级个人配置，进 {@link com.github.tartaricacid.touhoulittlemaid.config.CommonConfig} 的 COMMON spec。
+     * 玩家个人偏好，进 {@link com.github.tartaricacid.touhoulittlemaid.config.GeneralConfig} 的
+     * CLIENT spec（{@code config/touhou_little_maid-global.toml}），**只在客户端建立与注册**。
      *
-     * <p>对应行为基准 {@code port/1.21.11-fabric} 的 {@code initClient}——那边宿主的实例级 spec 是
-     * {@code Type.CLIENT}，本分支代码宿主用的是 {@code Type.COMMON}，故按新基改名，别照抄 {@code initClient}。</p>
-     *
-     * <p>{@code ENABLE_MAID_CURIOS} 是新基自己新增的，在 1.21.11 上没有对应物，
-     * 按「无症状不改」留在新基放它的位置。~~三项 {@code MAID_GUN_*} 同理~~——**此句已过时**：
-     * 1.21.11 分支 2026-08-14 的 TACZ 批把三键定为世界规则（键名与默认值与新基相同，TOML 兼容），
-     * 本树 TACZ 兼容刀随行为基准迁入 {@code initServerRule} 并进 {@code ServerRuleConfig.values()} 认领。</p>
+     * <p>与行为基准 {@code port/1.21.11-fabric} 的同名方法一一对应。这两个键专服一行都不读——
+     * 消费点是 {@code client/event/MaidSoundFreqEvent} 与 {@code client/renderer/…/EntityMaidRenderState}，
+     * 外加 Cloth 菜单（只经 modmenu entrypoint 与客户端 GUI 到达）。</p>
      */
-    public static void initCommon(ModConfigSpec.Builder builder) {
+    public static void initClient(ModConfigSpec.Builder builder) {
         builder.translation(TRANSLATE_KEY).push("maid");
 
         builder.comment("This is a global config that applies to all maids: how often maids speak")
@@ -77,6 +74,28 @@ public final class MaidConfig {
         builder.comment("This is a global config that applies to all maids: Whether or not to display chat bubbles")
                 .translation(translateKey("global_maid_show_chat_bubble"));
         GLOBAL_MAID_SHOW_CHAT_BUBBLE = builder.define("GlobalMaidShowChatBubble", true);
+
+        builder.pop();
+    }
+
+    /**
+     * 实例级、**两侧都要读**的配置，进 {@link com.github.tartaricacid.touhoulittlemaid.config.CommonConfig}
+     * 的 COMMON spec（{@code config/touhou_little_maid-common.toml}），专服上照样生成。
+     *
+     * <p>只放真正两侧都读的键。判据是「它的消费点里有没有一处会在专服上执行」——
+     * 不是「它看起来像不像玩法设置」。目前唯一的一项：</p>
+     *
+     * <p>{@code ENABLE_MAID_CURIOS} 是代码宿主 {@code origin/26.1} 自己新增的，1.21.11 上没有对应物。
+     * 它经 {@code CuriosCompat.isLoadedOrEnable()} 被 {@code compat/curios/CuriosEvent}、
+     * {@code compat/extracontainer/ExtraContainerManager} 与 {@code MaidContainerCache} 读（实查），
+     * 这三处都在服务端跑，故**不能**跟着其余个人配置搬进 CLIENT spec——搬了专服每次触碰即 NPE。</p>
+     *
+     * <p>~~三项 {@code MAID_GUN_*} 同理~~——**此句已过时**：1.21.11 分支 2026-08-14 的 TACZ 批把三键
+     * 定为世界规则（键名与默认值与新基相同，TOML 兼容），本树 TACZ 兼容刀随行为基准迁入
+     * {@code initServerRule} 并进 {@code ServerRuleConfig.values()} 认领。</p>
+     */
+    public static void initCommon(ModConfigSpec.Builder builder) {
+        builder.translation(TRANSLATE_KEY).push("maid");
 
         builder.comment("When installed Curios mod, whether to enable maid curios slot support");
         ENABLE_MAID_CURIOS = builder.define("EnableMaidCurios", true);
