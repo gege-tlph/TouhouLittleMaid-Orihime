@@ -11,6 +11,7 @@ import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import com.github.tartaricacid.touhoulittlemaid.client.ClientLocalChat;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.MutableComponent;
 
@@ -56,6 +57,11 @@ public class TTSPlayer2Client implements TTSClient, TTSSystemServices {
         this.site.headers().forEach(builder::header);
         HttpRequest httpRequest = builder.build();
 
+        // ⚠️ 两处错误提示走 ClientLocalChat 而非 player.sendSystemMessage：
+        // javap 实证 26.1.2 的 LocalPlayer.sendSystemMessage 直接调
+        // ChatListener.handleSystemMessage → guessChatUUID → Minecraft.isBlocked →
+        // PlayerSocialManager.pendingBlockListRefresh.join()，在调用线程上硬等 Mojang 屏蔽名单。
+        // 这里还在 HTTP 回调线程上，但同一条链在渲染线程上就是 C2③ 那次 4.5 秒冻结。
         // 本地运行的时候，直接使用 APP 播放音频，故不会使用回调
         httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofByteArray()).whenComplete((response, throwable) -> {
             LocalPlayer player = Minecraft.getInstance().player;
@@ -65,14 +71,14 @@ public class TTSPlayer2Client implements TTSClient, TTSSystemServices {
             if (throwable != null) {
                 String cause = throwable.getLocalizedMessage();
                 MutableComponent errorMessage = ErrorCode.getErrorMessage(ServiceType.TTS, ErrorCode.REQUEST_SENDING_ERROR, cause);
-                player.sendSystemMessage(errorMessage.withStyle(ChatFormatting.RED));
+                ClientLocalChat.show(errorMessage.withStyle(ChatFormatting.RED));
                 TouhouLittleMaid.LOGGER.error("TTS request failed: {}, error is {}", request, throwable.getMessage());
             }
             if (!isSuccessful(response)) {
                 String string = new String(response.body(), StandardCharsets.UTF_8);
                 String cause = String.format("HTTP Error Code: %d, Response %s", response.statusCode(), string);
                 MutableComponent errorMessage = ErrorCode.getErrorMessage(ServiceType.TTS, ErrorCode.REQUEST_RECEIVED_ERROR, cause);
-                player.sendSystemMessage(errorMessage.withStyle(ChatFormatting.RED));
+                ClientLocalChat.show(errorMessage.withStyle(ChatFormatting.RED));
                 TouhouLittleMaid.LOGGER.error("TTS request failed: {}, error is {}", request, cause);
             }
         });

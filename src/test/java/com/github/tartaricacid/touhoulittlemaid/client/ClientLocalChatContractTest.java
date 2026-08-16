@@ -30,6 +30,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>这条按「客户端 AI/声音相关源文件」枚举，因此以后新加的客户端提示会自动被纳入。
  * 服务端的 {@code ServerPlayer.displayClientMessage} 不在此列：那是发包，不碰渲染线程。</p>
+ *
+ * <h3>2026-08-17 两处收紧（各由一次真实漏网逼出来）</h3>
+ * <ol>
+ *   <li><b>扫描面加 {@code client/gui}</b>：AI 聊天屏回显玩家自己那行也走这条链，
+ *       而它在 GUI 目录里，原先的 SCOPE 根本够不着。</li>
+ *   <li><b>判据加 {@code sendSystemMessage}</b>：26.1.2 删掉 {@code displayClientMessage} 后，
+ *       宿主机械改写成了 {@code sendSystemMessage}，而 javap 实证
+ *       {@code LocalPlayer.sendSystemMessage} 的字节码就是
+ *       {@code getChatListener().handleSystemMessage(component, true)}——<b>同一条链，换了个名字</b>。
+ *       判据要按「谁把文本送进了 ChatListener」这个成因定，不是按某个方法名的写法定。</li>
+ * </ol>
  */
 class ClientLocalChatContractTest {
     private static final Path ROOT = Path.of("..", "..");
@@ -40,6 +51,8 @@ class ClientLocalChatContractTest {
     /** 只查真正在客户端跑的那几处：整类标了 CLIENT，或用的是 LocalPlayer */
     private static final List<Path> SCOPE = List.of(
             Path.of("client", "sound"),
+            // 聊天屏回显玩家自己那行同样命中 guessChatUUID 的 <...> 解析
+            Path.of("client", "gui", "entity", "maid", "ai"),
             Path.of("ai", "manager", "entity"),
             Path.of("ai", "service", "tts", "player2"),
             Path.of("ai", "service", "stt")
@@ -59,7 +72,11 @@ class ClientLocalChatContractTest {
                     String source = activeSource(file);
                     scanned++;
                     boolean clientSide = source.contains("EnvType.CLIENT") || source.contains("LocalPlayer");
-                    if (clientSide && source.contains("displayClientMessage")) {
+                    // 两个名字同一条链：26.1.2 的 LocalPlayer.sendSystemMessage 字节码
+                    // 就是 getChatListener().handleSystemMessage(component, true)
+                    if (clientSide && (source.contains("displayClientMessage")
+                            || source.contains("player.sendSystemMessage")
+                            || source.contains("Player.sendSystemMessage"))) {
                         offenders.add(file.getFileName().toString());
                     }
                 }
@@ -67,7 +84,8 @@ class ClientLocalChatContractTest {
         }
         assertTrue(scanned > 0, "一个文件都没扫到，这条断言已失去看守对象");
         assertTrue(offenders.isEmpty(),
-                "这些客户端文件用 displayClientMessage 打本地提示，会让渲染线程等一次 Mojang 屏蔽名单请求，"
+                "这些客户端文件把本地提示送进了 ChatListener（displayClientMessage / "
+                        + "LocalPlayer.sendSystemMessage 是同一条链），会让渲染线程等一次 Mojang 屏蔽名单请求，"
                         + "应改用 ClientLocalChat.show：" + String.join(", ", offenders));
     }
 
