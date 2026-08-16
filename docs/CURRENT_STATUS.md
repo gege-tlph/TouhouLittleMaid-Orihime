@@ -9,6 +9,7 @@
 
 当前树 = `origin/26.1`（MC 26.1.2 Fabric）+ 一层工程设施 + **审计 §3.A「服务器规则体系与配置所有权」已整块落地**
 （配置事务写盘 → 世界规则本体与文件层 → 读点改道 → 网络层与配置菜单 → op/deop 重发）
++ **§3.B「智能应战 / 威胁响应」已整簇落地**（统一目标策略 → 瞬态应战 → 每女仆响应策略与配置屏 → B1 远程应战）
 + **§3.F 的一处宿主回归已修**（扛女仆时玩家手臂摆抱姿）。
 **除此之外，代码行为等同于代码宿主，不等同于我们 1.21.11 的行为。**
 构建、JUnit、GameTest 三条链路均已实跑验证；**2026-08-14 起有了单人档实机验收**
@@ -71,6 +72,19 @@
   「农场女仆手持弓被打能还击」要等 §3.B。B2 的判定面由 `RangedResolveGameTest` 三例钉住，
   弓手/弩手行为逐字不变（当前任务优先）
 
+**§3.B 威胁响应大簇（`5fc0baf4f` `be9c15fff`）：整簇零实机，全部待验**：
+
+| 待验 | 怎么验 |
+|---|---|
+| 三档响应策略 | 女仆配置屏首行「威胁响应」切关闭/自卫/护主：关闭＝挨打也不还手；自卫＝只在自己被打时应战；护主＝主人被打或主人打了敌对生物也应战 |
+| 应战不改常驻任务 | 应战打完回到原来的工作模式与日程，不该变成攻击模式 |
+| 远程站定（B1 主症状） | 女仆手持**上了箭的弓/弩**被怪打：应站定射击，不再冲上去肉搏；**没箭时**应照旧走过去打近战，不许端着空弓站桩 |
+| 农场女仆手持弓还击 | 工作模式设成非远程（如农场），手持弓且背包有箭，被怪打——应能开火（弓弩解绑 + B1 合流后的效果） |
+| 玩家指令打断应战 | 应战中切任务/切日程/开关 home/让她坐下：应立刻脱离应战，且 1 秒内不会被同一目标重新拉回 |
+| 敌我判定 | 已驯服的狼/其他玩家的宠物/命名 `MaidNoAttack` 的怪：任何情况下不该被打（含横扫波及） |
+| 配置屏滚动 | 配置项超过 10 行时滚轮翻页，且滚轮只在配置面板区域生效 |
+| 近战武器耐久 | 女仆用铁剑/斧近战若干次，武器耐久应下降（此前永不损耗） |
+
 **仍开放（都需要专服/局域网或旧存档，单人档验不到）**：
 
 | 待验 | 为什么这轮验不到 | 怎么验 |
@@ -126,16 +140,15 @@
 
 ⚠️ 上表每一条在代码里都有对应注释，**不要只靠本表**——本表会过时，注释在改到时才会被看见。
 
-**O6 · TACZ 兼容 + 远程应战批 —— 代码面已闭合（2026-08-15，`167608ab9` + `c6aa20b24`），余两项挂在别处**
+**O6 · TACZ 兼容 + 远程应战批 —— 代码面全部闭合（B1 于 2026-08-16 随 §3.B 落地），余一项**
 
-TACZ 14 条与 B2–B7 已落地（见已关闭表），本项只剩：
+TACZ 14 条与 B1–B7 已全部落地（见已关闭表）。本项只剩：
 
 | 余项 | 归属 |
 |---|---|
-| B1 威胁响应远程行为（应战活动接三条远程行为 + MaidEmergencyWalkToTarget 站定 + isHoldingUsableRangedWeapon）+ `MaidRangedEmergencyGameTest` 其余用例 | **§3.B 大簇**——应战框架（EMERGENCY_COMBAT 活动、ai.combat.MaidCombatManager 等）本树尚不存在，B1 没处挂。精确参数与陷阱在审计 §3.B 行：速度 0.5、站定 16、canUseNonMeleeWeapon 陷阱；敌我判定门锚点在 `entity.passive.MaidCombatManager.performRangedAttack` 注释 |
 | 「持枪寻路异常」 | 维持降级：1.21.11 六组受控对照复现不出，等用户给复现现场再立案；半径耦合是真实性能面但非该症状成因，BFS 解耦属超基准候选未做 |
 
-动手 §3.B 时仍**两份归档清单都过一遍**：
+再动 §3.B 相关件时仍**两份归档清单都过一遍**：
 [archive/PORT_TACZ_AND_RANGED_AI.md](archive/PORT_TACZ_AND_RANGED_AI.md)（专题）与
 [archive/PORT_TACZ_AND_RANGED_AI_FULL.md](archive/PORT_TACZ_AND_RANGED_AI_FULL.md)
 （全量，尾部有 1.21.11 API 事实表——26.1.2 动到箭/远程时先查它）。
@@ -155,6 +168,40 @@ TACZ 14 条与 B2–B7 已落地（见已关闭表），本项只剩：
 ---
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-16：§3.B 威胁响应大簇整簇落地（`5fc0baf4f` `be9c15fff`）
+
+审计 §3.B 的框架层与 B1 一并闭合，`origin/26.1` 上**无同名文件**，属可直接搬那一档，
+但全部按宿主结构重做（manager codegen / attachment / ActivityData 声明式活动）。
+
+| 刀 | 内容 |
+|---|---|
+| `5fc0baf4f` | 统一目标策略 `MaidTargetingPolicy` + 瞬态应战 `MaidEmergencyCombatManager` + 每女仆响应策略（关闭/自卫/护主，落 `ConfigData` attachment）+ 配置屏重做（`MaidConfigLayout` + 可滚动列表，响应策略作首行）+ 周边七处应战护栏 |
+| `be9c15fff` | B1：应战活动接三条远程行为（走位 0.5 / 射击 (2,20) / `GunShootTargetTask`）+ `MaidEmergencyWalkToTarget` 站定 + 唯一判据 `isHoldingUsableRangedWeapon` + 两件 AnyItem 任务判据改 `Predicate<EntityMaid>` |
+
+**宿主同名冲突按管理器约定化解**：新基已有同名不同物的 `entity.passive.MaidCombatManager`
+（战斗执行层，且占着 `getCombatManager` 访问器），故我们的类命名
+`entity.ai.combat.MaidEmergencyCombatManager`、alias `emergencyCombatManager`——
+**不按名字合并**（审计早有警示，本轮照办）。
+
+**顺带修一处宿主回归**（本簇新测试照出，与威胁响应无关）：女仆近战武器**永不损耗**。
+宿主 `doHurtTarget` 调 `Item.hurtEnemy` / `Item.postHurtEnemy`，而 26.1.2 这两个方法的
+字节码就是一行 `return`（javap -c 实证），耐久实际由 WEAPON 组件驱动的
+`ItemStack.postHurtEnemy` 承担。已改调 `ItemStack` 版。
+
+**四处 26.1.2 实查漂移**：`Brain.addActivityWithConditions` 已无 → `ActivityData.create(
+activity, pairs, conditions)` 声明式；`ServerLevel.setDayTime` 已删（日程改
+`EnvironmentAttribute` 驱动）；`Mob.setTarget` 与 `getTarget` **双重**经 `asValidTarget`
+过滤（创造/旁观玩家一律滤成 null）；`Item.postHurtEnemy` 空壳化（见上）。
+
+门禁：compileJava 0 错、JUnit 75/0（新增 `MaidConfigLayoutTest` 4 例）、
+GameTest 64/0（新增 33 例，四个类的 `fabric-gametest` entrypoint 均已登记）。
+**三轮红测各红在正确断言上**：① 摘 `EMERGENCY_COMBAT_ACTIVE` 出 `MaidBrain` 记忆列表
+→ 19 条红在「应战进不去」；② 摘 `restoringPersistentState` 分支 → 精确 1 条红在
+「NBT 恢复被误判为玩家指令」；③ 判据换成 `canUseNonMeleeWeapon` → 精确 2 条红，
+分别是「非远程任务应判为可用远程武器」与「没有箭时不应判为可用远程武器」。
+
+⚠️ **零实机**：本簇全部凭据来自自动化门，实机验收项见 O1。
 
 ## 2026-08-15：TACZ 兼容整刀 + 弓弩解绑（`167608ab9` `c6aa20b24`）——「丢失」58 条全部清零
 

@@ -129,12 +129,16 @@
 | 瞬态应战 Activity 仲裁 | `f7ea486bf` | 新增 |
 | 每女仆响应策略（关闭 / 自卫 / 护主）+ 持久化 | `604927e30` `9dd7783f2` | 新增 |
 | 任意手持物近战 | `bb5f847d4` | 已有 |
-| **远程应战批（基准 2026-08-14 轮新增，行为基准已前移）**：应战活动接入三条远程行为（两件本 fork 早写好却零调用点的 `MaidAttackStrafingAnyItemTask`/`MaidShootTargetAnyItemTask` + `GunShootTargetTask`）、`MaidEmergencyWalkToTarget` 持远程武器 + 16 格内看得见目标即站定不贴脸、`isHoldingUsableRangedWeapon` 唯一判据（vanilla=`ProjectileWeaponItem`+能解析实现+`getProjectile` 非空）、**弓弩解绑工作任务**（`resolveImplementation` 第一步只认 `IRangedAttackTask` **不额外要求 isWeapon**——多要求会让「弓兵任务+手持弩」落错实现、模组远程武器全哑，基准分支红测实证）、三个射击任务 `stop()` 清 `swingingArms`（**该缺陷 origin 也有，此修复超出 origin，但在我们的行为基准上已定案带上**）。**手感参数照抄勿改**：走位速度 **0.5** 非 0.6、保留主人距离刹车（基准分支改错过被用户实测退回）。陷阱：`canUseNonMeleeWeapon` 实为「当前任务是不是远程任务」，不看物品弹药。刻意不动：近战闸门（既有用例钉着，用户明确不改）。**本树进度（2026-08-15）：B2 弓弩解绑已落地（`c6aa20b24`，RangedResolveGameTest 3 例 + 红测），B3/B4/B6/B7 已随 TACZ 刀落地；B1（应战活动接线）与 GameTest 其余用例等本簇框架落地时一并做——敌我判定门锚点在 `entity.passive.MaidCombatManager.performRangedAttack` 注释** | `2e605d5c8` 及后续（基准区间 `373ad95f2..4c5bfe402` 全量 27 笔）；配套 `MaidRangedEmergencyGameTest` 6 条；全量清单 `archive/PORT_TACZ_AND_RANGED_AI_FULL.md` | 新增；「持枪寻路异常」**基准分支六组受控对照复现不出**（枪每组都不比其它武器差、交战组最稳），降级为「等用户复现现场」；半径耦合（索敌半径流进 BFS 与传感器盒）确认是**真实性能面**但非该症状成因，解耦属超基准候选未做 |
+| **远程应战批（基准 2026-08-14 轮新增，行为基准已前移）**：应战活动接入三条远程行为（两件本 fork 早写好却零调用点的 `MaidAttackStrafingAnyItemTask`/`MaidShootTargetAnyItemTask` + `GunShootTargetTask`）、`MaidEmergencyWalkToTarget` 持远程武器 + 16 格内看得见目标即站定不贴脸、`isHoldingUsableRangedWeapon` 唯一判据（vanilla=`ProjectileWeaponItem`+能解析实现+`getProjectile` 非空）、**弓弩解绑工作任务**（`resolveImplementation` 第一步只认 `IRangedAttackTask` **不额外要求 isWeapon**——多要求会让「弓兵任务+手持弩」落错实现、模组远程武器全哑，基准分支红测实证）、三个射击任务 `stop()` 清 `swingingArms`（**该缺陷 origin 也有，此修复超出 origin，但在我们的行为基准上已定案带上**）。**手感参数照抄勿改**：走位速度 **0.5** 非 0.6、保留主人距离刹车（基准分支改错过被用户实测退回）。陷阱：`canUseNonMeleeWeapon` 实为「当前任务是不是远程任务」，不看物品弹药。刻意不动：近战闸门（既有用例钉着，用户明确不改）。**本树进度（2026-08-16）：整簇已落地。** B2 弓弩解绑 `c6aa20b24`；B3/B4/B6/B7 随 TACZ 刀；框架层（统一目标策略 / 瞬态应战 / 每女仆响应策略 / 配置屏）`5fc0baf4f`；B1 应战接线与 `MaidRangedEmergencyGameTest` 6 例 `be9c15fff`。敌我判定门已装回 `entity.passive.MaidCombatManager` 的 `doHurtTarget` 与 `performRangedAttack`。⚠️ 我们的应战管理器命名为 `entity.ai.combat.MaidEmergencyCombatManager`（不叫 MaidCombatManager）——宿主的同名类占着 `getCombatManager` 访问器，见下方警告 | `2e605d5c8` 及后续（基准区间 `373ad95f2..4c5bfe402` 全量 27 笔）；配套 `MaidRangedEmergencyGameTest` 6 条；全量清单 `archive/PORT_TACZ_AND_RANGED_AI_FULL.md` | 新增；「持枪寻路异常」**基准分支六组受控对照复现不出**（枪每组都不比其它武器差、交战组最稳），降级为「等用户复现现场」；半径耦合（索敌半径流进 BFS 与传感器盒）确认是**真实性能面**但非该症状成因，解耦属超基准候选未做 |
 | **女仆配置屏重做**：`MaidConfigLayout` 布局引擎 + 重写 `MaidConfigContainerGui`（较宿主版 +64/−139 行），响应策略的配置行就住在这屏里 | `1f1b72105` `9dd7783f2`；`MaidConfigLayoutTest`（§9 台账 A 组，未搬） | 宿主是旧版屏，**无 `MaidConfigLayout`**。⚠️ 玩家可见（用户 2026-08-14 实机点名）；**必须与本簇同刀**——先搬屏就是绑不上后端的纸面界面 |
 
 ⚠️ **新基有一个同名不同物的 `MaidCombatManager`**：基准把 `EntityMaid` 的战斗逻辑抽进了
 `entity.passive.MaidCombatManager`，与我们的 `entity.ai.combat.MaidCombatManager` **只是重名**。
 移植时必须先读它，再决定我们的策略层挂在哪，**不要按名字合并**。
+**2026-08-16 的处理结果**：宿主那个不仅重名，还占着 `getCombatManager()` 这个访问器名，
+故我们的类落地为 `entity.ai.combat.MaidEmergencyCombatManager`（alias `emergencyCombatManager`，
+经 `@MaidManagerDef` 生成 `getEmergencyCombatManager()`）。两者职责正交：宿主那个是战斗**执行**层
+（盾牌、横扫、伤害事件、耐久），我们这个是威胁响应的**瞬态状态机**。
 
 交叉验证：`archive/2026-07/CLOSED_2026-07-23_TO_07-27.md`（T1–T5）、
 `archive/2026-07/POST_BETA_OVERRESTRICTION_AUDIT.md`。
