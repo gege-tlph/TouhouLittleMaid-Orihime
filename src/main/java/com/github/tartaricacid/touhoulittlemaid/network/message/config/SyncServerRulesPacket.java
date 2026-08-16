@@ -1,9 +1,12 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message.config;
 
 import com.github.tartaricacid.touhoulittlemaid.client.download.ClientPackDownloadManager;
+import com.github.tartaricacid.touhoulittlemaid.config.AiServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.network.client.config.ServerRulesClientCache;
 import com.github.tartaricacid.touhoulittlemaid.util.GameModeUtil;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.netty.buffer.ByteBuf;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -26,10 +29,9 @@ import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLo
  * **文件里的待编辑值**，只发给有编辑权的人，配置菜单拿它做编辑基线。
  * 专服上两者会不同——保存只写文件，要等 {@code /tlm config reload} 才激活。</p>
  *
- * <p>行为基准 {@code port/1.21.11-fabric} 的同名类还会把实例级 AI 规则合流进这两份 JSON
- * （{@code mergeJson}）。**AI 规则那一店属审计 §3.C，尚未搬入**，故本类只装世界规则一半。
- * 恢复锚点：§3.C 那一刀落地时，两处 JSON 都要改成合流，客户端 {@code handle} 里也要加一行
- * 喂给 AI 店——键名两店不重叠，合流是安全的。</p>
+ * <p>世界规则与实例级 AI 规则（{@link AiServerRuleConfig}）在网络上仍是**一张**扁平 kv 快照
+ * ——客户端缓存、Session 与全部 GUI 因此零改动。键名两店不重叠（各自的 {@code values()} 表），
+ * 合流与分拣都是安全的。</p>
  */
 public record SyncServerRulesPacket(String runtimeRulesJson, boolean integratedServer,
                                     boolean canEdit, String editableRulesJson) implements CustomPacketPayload {
@@ -64,9 +66,11 @@ public record SyncServerRulesPacket(String runtimeRulesJson, boolean integratedS
     @Environment(EnvType.CLIENT)
     public static void handle(SyncServerRulesPacket message, ClientPlayNetworking.Context context) {
         context.client().execute(() -> {
+            // 合流快照喂两个店：各自只认领自己的键，互不干扰
             if (ServerRuleConfig.applyRuntimeJson(message.runtimeRulesJson())) {
                 ClientPackDownloadManager.downloadClientPack();
             }
+            AiServerRuleConfig.applyRuntimeJson(message.runtimeRulesJson());
             ServerRulesClientCache.update(message);
         });
     }
@@ -75,11 +79,19 @@ public record SyncServerRulesPacket(String runtimeRulesJson, boolean integratedS
         boolean canEdit = GameModeUtil.canEditSite(player);
         MinecraftServer server = player.level().getServer();
         ServerPlayNetworking.send(player, new SyncServerRulesPacket(
-                ServerRuleConfig.runtimeSnapshotJson(),
+                mergeJson(ServerRuleConfig.runtimeSnapshotJson(), AiServerRuleConfig.runtimeSnapshotJson()),
                 server == null || !server.isDedicatedServer(),
                 canEdit,
-                canEdit ? ServerRuleConfig.snapshotJson() : "{}"
+                canEdit ? mergeJson(ServerRuleConfig.snapshotJson(), AiServerRuleConfig.snapshotJson()) : "{}"
         ));
+    }
+
+    /** 两店的快照拼成一张扁平 kv；键名不重叠，后者不会覆盖前者的任何键。 */
+    private static String mergeJson(String first, String second) {
+        JsonObject merged = JsonParser.parseString(first).getAsJsonObject();
+        JsonObject extra = JsonParser.parseString(second).getAsJsonObject();
+        extra.entrySet().forEach(entry -> merged.add(entry.getKey(), entry.getValue()));
+        return merged.toString();
     }
 
     public static void syncToEditors(MinecraftServer server) {

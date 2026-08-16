@@ -6,22 +6,29 @@ import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
-import me.shedaniel.clothconfig2.gui.entries.DropdownBoxEntry;
 import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.language.LanguageInfo;
 import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.SortedMap;
-
+/**
+ * Cloth 菜单里的 AI 页，**只剩个人配置那一组**（语音识别）。
+ *
+ * <p>LLM / TTS 那两组已删：它们现在是<b>实例级 AI 规则</b>（{@code AiServerRuleConfig}，
+ * 服务器权威），而本页是客户端直接读写 TOML 的通道。两者不可并存——菜单写 TOML 就绕过了
+ * 服务器权威通道，专服上会出现「客户端显示已改、服务端根本不知道」的分叉；
+ * 且 AI 规则的 spec 有意不注册，这里的裸 {@code XXX.get()} 会当场抛
+ * {@code Cannot get config value before config is loaded}。
+ * 这与 TACZ 三滑块当初从个人配置段搬进服务器规则段是同一处教训。</p>
+ *
+ * <p>⚠️ <b>本类是过渡态</b>：行为基准 {@code port/1.21.11-fabric} 上整个文件都不存在——
+ * AI 的一切（含这里剩下的语音识别项）都收进了游戏内的 AI 设置屏五页
+ * （{@code AIChatSettingsSTTConfigScreen} 保存时只写 {@code AiClientConfig.CONFIG}）。
+ * 那屏属审计 §3.C 的 GUI 那一刀；<b>它落地时本文件连同 {@code MenuIntegration} 里的调用点
+ * 一并删除</b>。在此之前保留这一组，否则个人语音配置在这一轮里会无处可改。</p>
+ */
 public class GlobalAIIntegration {
-    private static final String DEFAULT_LANGUAGE = "en_us";
-
     public static void aiChat(ConfigBuilder root, ConfigEntryBuilder entryBuilder) {
         ConfigCategory aiChat = root.getOrCreateCategory(Component.translatable("config.touhou_little_maid.global_ai"));
-        llmConfig(entryBuilder, aiChat);
-        ttsConfig(entryBuilder, aiChat);
         sttConfig(entryBuilder, aiChat);
     }
 
@@ -68,87 +75,5 @@ public class GlobalAIIntegration {
                 }).build());
 
         aiChat.addEntry(builder.build());
-    }
-
-    private static void ttsConfig(ConfigEntryBuilder entryBuilder, ConfigCategory aiChat) {
-        SubCategoryBuilder builder = entryBuilder.startSubCategory(Component.translatable("config.touhou_little_maid.global_ai.tts"));
-        builder.setExpanded(true);
-
-        builder.add(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.global_ai.tts_enable"), AIConfig.TTS_ENABLED.get())
-                .setDefaultValue(true).setTooltip(Component.translatable("config.touhou_little_maid.global_ai.tts_enable.tooltip"))
-                .setSaveConsumer(s -> {
-                    AIConfig.TTS_ENABLED.set(s);
-                    AIConfig.TTS_ENABLED.save();
-                }).build());
-
-        builder.add(entryBuilder.startStrField(Component.translatable("config.touhou_little_maid.global_ai.tts_proxy_address"), AIConfig.TTS_PROXY_ADDRESS.get())
-                .setDefaultValue(StringUtils.EMPTY)
-                .setTooltip(Component.translatable("config.touhou_little_maid.global_ai.tts_proxy_address.tooltip"))
-                .setSaveConsumer(s -> {
-                    AIConfig.TTS_PROXY_ADDRESS.set(s);
-                    AIConfig.TTS_PROXY_ADDRESS.save();
-                }).build());
-
-        SortedMap<String, LanguageInfo> languages = Minecraft.getInstance().getLanguageManager().getLanguages();
-        builder.add(entryBuilder.startStringDropdownMenu(Component.translatable("config.touhou_little_maid.global_ai.tts_language"),
-                        AIConfig.TTS_LANGUAGE.get(), Component::literal, cell(languages)).setSelections(languages.keySet())
-                .setDefaultValue(DEFAULT_LANGUAGE).setTooltip(Component.translatable("config.touhou_little_maid.global_ai.tts_language.tooltip"))
-                .setSaveConsumer(s -> {
-                    AIConfig.TTS_LANGUAGE.set(s);
-                    AIConfig.TTS_LANGUAGE.save();
-                }).build());
-
-        aiChat.addEntry(builder.build());
-    }
-
-    private static void llmConfig(ConfigEntryBuilder entryBuilder, ConfigCategory aiChat) {
-        SubCategoryBuilder builder = entryBuilder.startSubCategory(Component.translatable("config.touhou_little_maid.global_ai.llm"));
-        builder.setExpanded(true);
-
-        builder.add(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.global_ai.llm_enable"), AIConfig.LLM_ENABLED.get())
-                .setDefaultValue(true).setTooltip(Component.translatable("config.touhou_little_maid.global_ai.llm_enable.tooltip"))
-                .setSaveConsumer(s -> {
-                    AIConfig.LLM_ENABLED.set(s);
-                    AIConfig.LLM_ENABLED.save();
-                }).build());
-
-        builder.add(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.global_ai.auto_gen_setting_enabled"), AIConfig.AUTO_GEN_SETTING_ENABLED.get())
-                .setDefaultValue(true).setTooltip(Component.translatable("config.touhou_little_maid.global_ai.auto_gen_setting_enabled.tooltip"))
-                .setSaveConsumer(s -> {
-                    AIConfig.AUTO_GEN_SETTING_ENABLED.set(s);
-                    AIConfig.AUTO_GEN_SETTING_ENABLED.save();
-                }).build());
-
-        builder.add(entryBuilder.startStrField(Component.translatable("config.touhou_little_maid.global_ai.llm_proxy_address"), AIConfig.LLM_PROXY_ADDRESS.get())
-                .setDefaultValue(StringUtils.EMPTY)
-                .setTooltip(Component.translatable("config.touhou_little_maid.global_ai.llm_proxy_address.tooltip"))
-                .setSaveConsumer(s -> {
-                    AIConfig.LLM_PROXY_ADDRESS.set(s);
-                    AIConfig.LLM_PROXY_ADDRESS.save();
-                }).build());
-
-        builder.add(entryBuilder.startIntField(Component.translatable("config.touhou_little_maid.global_ai.maid_history_compress_token_limit"),
-                        AIConfig.MAID_HISTORY_COMPRESS_TOKEN_LIMIT.get())
-                .setDefaultValue(48).setMin(8).setMax(1024)
-                .setTooltip(Component.translatable("config.touhou_little_maid.global_ai.maid_history_compress_token_limit.tooltip"))
-                .setSaveConsumer(s -> {
-                    AIConfig.MAID_HISTORY_COMPRESS_TOKEN_LIMIT.set(s);
-                    AIConfig.MAID_HISTORY_COMPRESS_TOKEN_LIMIT.save();
-                }).build());
-
-        builder.add(entryBuilder.startIntField(Component.translatable("config.touhou_little_maid.global_ai.max_tokens_per_player"), AIConfig.MAX_TOKENS_PER_PLAYER.get())
-                .setDefaultValue(Integer.MAX_VALUE)
-                .setTooltip(Component.translatable("config.touhou_little_maid.global_ai.max_tokens_per_player.tooltip"))
-                .setSaveConsumer(s -> {
-                    AIConfig.MAX_TOKENS_PER_PLAYER.set(s);
-                    AIConfig.MAX_TOKENS_PER_PLAYER.save();
-                }).build());
-
-        aiChat.addEntry(builder.build());
-    }
-
-    private static DropdownBoxEntry.SelectionCellCreator<String> cell(SortedMap<String, LanguageInfo> languages) {
-        LanguageInfo defaultLanguage = languages.get(DEFAULT_LANGUAGE);
-        return new DropdownBoxEntry.DefaultSelectionCellCreator<>(i -> languages.getOrDefault(i, defaultLanguage).toComponent());
     }
 }

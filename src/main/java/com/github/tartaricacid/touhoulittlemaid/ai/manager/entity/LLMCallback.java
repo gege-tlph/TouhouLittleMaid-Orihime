@@ -13,6 +13,7 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.response.F
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.response.Message;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.response.ToolCall;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSSite;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.Lists;
@@ -180,7 +181,7 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
         chatManager.addAssistantHistory(responseChat.toString());
 
         TTSSite site = chatManager.getTTSSite();
-        if (AIConfig.TTS_ENABLED.get() && site != null && site.enabled()) {
+        if (ServerRuleConfig.get(AIConfig.TTS_ENABLED) && site != null && site.enabled()) {
             // TODO 部分多模态模型，是直接在 LLM 回应的 JSON 里添加 TTS 信息
             // TODO 故需要考虑这种情况
             chatManager.tts(site, chatText, ttsText, waitingChatBubbleId);

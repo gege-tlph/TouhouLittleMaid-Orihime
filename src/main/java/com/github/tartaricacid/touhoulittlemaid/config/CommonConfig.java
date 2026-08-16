@@ -8,6 +8,11 @@ import net.neoforged.neoforge.common.ModConfigSpec;
  *
  * <p>玩法规则**不在这里**：它们是存档级的服务器权威规则，归 {@link ServerConfig} 的 SERVER spec
  * 与 {@link ServerRuleConfig}。原本代码宿主 {@code origin/26.1} 把两者混放在本文件里。</p>
+ *
+ * <p>**AI 那一组也不在这里**：实例级 AI 规则归 {@link AiServerRuleConfig}，个人 AI 配置归
+ * {@link AiClientConfig}（各有专属文件）。宿主同样把这两半一起塞在本文件的 {@code [ai]} 节里，
+ * 旧值由 {@link ConfigFileMigration#migrateAiServerFileIfNeeded} 与
+ * {@link ConfigFileMigration#migrateAiFileIfNeeded} 各自搬走。</p>
  */
 public final class CommonConfig {
     public static ModConfigSpec CONFIG;
@@ -20,7 +25,6 @@ public final class CommonConfig {
         // 本分支无 global 层，落在 common 同为个人所有权，语义不变）
         VanillaConfig.init(builder);
         RenderConfig.init(builder);
-        AIConfig.init(builder);
         CONFIG = builder.build();
         return CONFIG;
     }

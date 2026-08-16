@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,30 +21,73 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 故在源码层断言接线次序。</p>
  */
 class ServerRulesSaveAuthorityContractTest {
+    /** 会改写配置文件的两个店。加第三家店时这张表必须同步，否则下面那条总数断言当场红。 */
+    private static final List<String> MUTATION_ENTRY_POINTS = List.of("ServerRuleConfig", "AiServerRuleConfig");
+
     /** 测试的 workingDir 是 build/test-working，回两级才是项目根。 */
     private static final Path ROOT = Path.of("..", "..");
     private static final Path SAVE_PACKET = ROOT.resolve(Path.of("src", "main", "java", "com", "github",
             "tartaricacid", "touhoulittlemaid", "network", "message", "config", "SaveServerRulesPacket.java"));
 
+    /**
+     * 变更入口有两个（世界规则店与 AI 店），守卫必须早于**每一个**。
+     *
+     * <p>⚠️ 判据用带词边界的正则而不是 {@code indexOf}：{@code "ServerRuleConfig.applyJson"}
+     * 作为子串同样命中 {@code AiServerRuleConfig.applyJson}，用 {@code indexOf} 会把两个入口
+     * 读成一个，次序断言随之只覆盖其中先出现的那个。</p>
+     */
     @Test
-    void permissionIsCheckedBeforeAnyConfigMutation() throws IOException {
+    void permissionIsCheckedBeforeEveryConfigMutation() throws IOException {
         String active = activeSource(SAVE_PACKET);
         int guard = active.indexOf("GameModeUtil.canEditSite");
-        int mutation = active.indexOf("ServerRuleConfig.applyJson");
-
         assertTrue(guard >= 0, "保存处理必须调用 GameModeUtil.canEditSite 判定权限");
-        assertTrue(mutation >= 0, "保存处理必须经由 ServerRuleConfig.applyJson 落盘世界规则");
-        assertTrue(guard < mutation,
-                "权限判据必须早于 applyJson：次序颠倒时未授权玩家的载荷会先写进配置文件再被拒绝");
-        assertTrue(active.substring(guard, mutation).contains("return"),
-                "权限不足时必须提前 return，仅提示而继续执行等于没有守卫");
+
+        for (String store : MUTATION_ENTRY_POINTS) {
+            Matcher matcher = Pattern.compile("\\b" + store + "\\.applyJson").matcher(active);
+            assertTrue(matcher.find(), "保存处理必须经由 " + store + ".applyJson 落盘");
+            int mutation = matcher.start();
+            assertTrue(guard < mutation,
+                    "权限判据必须早于 " + store + ".applyJson：次序颠倒时未授权玩家的载荷会先写进配置文件再被拒绝");
+            assertTrue(active.substring(guard, mutation).contains("return"),
+                    "权限不足时必须提前 return，仅提示而继续执行等于没有守卫");
+        }
     }
 
+    /**
+     * 每个店恰好一个变更调用点，上面基于首次出现位置的次序断言才够用。
+     *
+     * <p>本用例是「新增入口必须回来更新断言」的强制装置：任一店多出第二个 {@code applyJson}
+     * 调用点就当场红。<b>同时钉住入口总数</b>——出现第三家店时 {@link #MUTATION_ENTRY_POINTS}
+     * 没跟上，这条也会红，而不是让那家店的载荷绕过次序断言。</p>
+     */
     @Test
-    void exactlyOneMutationCallSiteSoTheOrderingAssertionIsSufficient() throws IOException {
-        assertEquals(1, countMatches(activeSource(SAVE_PACKET), "ServerRuleConfig\\.applyJson"),
-                "出现第二个 applyJson 调用点时，上面基于首次出现位置的次序断言就不再覆盖全部变更入口，"
-                        + "新增入口必须自带权限守卫并在此更新断言");
+    void exactlyOneMutationCallSitePerStoreSoTheOrderingAssertionIsSufficient() throws IOException {
+        String active = activeSource(SAVE_PACKET);
+        for (String store : MUTATION_ENTRY_POINTS) {
+            assertEquals(1, countMatches(active, "\\b" + store + "\\.applyJson"),
+                    store + " 出现第二个 applyJson 调用点：新增入口必须自带权限守卫并在此更新断言");
+        }
+        assertEquals(MUTATION_ENTRY_POINTS.size(), countMatches(active, "\\b\\w*ServerRuleConfig\\.applyJson"),
+                "出现了不在 MUTATION_ENTRY_POINTS 里的配置店——它的载荷没有被次序断言覆盖");
+    }
+
+    /**
+     * AI 店<b>没有</b> activate 参数：它保存即激活，专服也一样（见 {@code AiServerRuleConfig} 类注释）。
+     * 而激活后必须告知在线玩家默认值变了，否则出现「配置已生效但玩家完全不知情」的半条路。
+     */
+    @Test
+    void theAiStoreActivatesImmediatelyAndAnnouncesDefaultChanges() throws IOException {
+        String active = activeSource(SAVE_PACKET);
+        assertTrue(Pattern.compile("AiServerRuleConfig\\.applyJson\\([^,)]*\\)").matcher(active).find(),
+                "AI 店的 applyJson 只收一个实参：它没有「写文件但不激活」这条路");
+
+        int capture = active.indexOf("DefaultAiSnapshot.capture()");
+        int mutation = active.indexOf("AiServerRuleConfig.applyJson");
+        int notify = active.indexOf("diffAndNotify");
+        assertTrue(capture >= 0, "激活前必须先 capture 默认值快照，否则无从判断它变没变");
+        assertTrue(notify >= 0, "AI 默认值变更必须广播给在线玩家");
+        assertTrue(capture < mutation, "capture 必须早于 applyJson：晚了就永远比较不出差异");
+        assertTrue(mutation < notify, "diffAndNotify 必须晚于 applyJson：早了比较的是旧值与旧值");
     }
 
     /**
@@ -58,7 +102,7 @@ class ServerRulesSaveAuthorityContractTest {
         String active = activeSource(SAVE_PACKET);
         assertTrue(active.contains("isDedicatedServer()"),
                 "激活与否必须按服务器形态判定：专服写文件等重载，单人/局域网保存即生效");
-        assertTrue(Pattern.compile("applyJson\\(.*,\\s*activate\\s*\\)").matcher(active).find(),
+        assertTrue(Pattern.compile("applyJson\\(.*,\\s*activateWorld\\s*\\)").matcher(active).find(),
                 "applyJson 的 activate 实参必须是那个判定出来的变量，不能是写死的 true/false");
     }
 

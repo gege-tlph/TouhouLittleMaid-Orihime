@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.data;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -61,7 +62,7 @@ public class ChatTokensAttachment {
     }
 
     public int getMaxNum() {
-        return AIConfig.MAX_TOKENS_PER_PLAYER.get();
+        return ServerRuleConfig.get(AIConfig.MAX_TOKENS_PER_PLAYER);
     }
 
     public int get() {

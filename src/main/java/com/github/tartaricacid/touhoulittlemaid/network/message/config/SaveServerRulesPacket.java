@@ -1,5 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message.config;
 
+import com.github.tartaricacid.touhoulittlemaid.config.AiServerRuleConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.DefaultAiSnapshot;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.util.GameModeUtil;
 import com.google.gson.JsonObject;
@@ -61,34 +63,56 @@ public record SaveServerRulesPacket(String rulesJson) implements CustomPacketPay
                 return;
             }
 
-            // 按键归属分拣，未知键丢弃。行为基准那边这里分拣到「世界规则」与「实例级 AI 规则」两个店；
-            // AI 店属审计 §3.C 尚未搬入，故本刀只有一个店。恢复锚点：SyncServerRulesPacket 的类注释。
+            // 按键归属分拣到两个店，未知键丢弃。键名两店不重叠，故顺序只影响可读性。
             JsonObject worldPart = new JsonObject();
+            JsonObject aiPart = new JsonObject();
+            var aiKeys = AiServerRuleConfig.jsonKeys();
             var worldKeys = ServerRuleConfig.jsonKeys();
             root.entrySet().forEach(entry -> {
-                if (worldKeys.contains(entry.getKey())) {
+                if (aiKeys.contains(entry.getKey())) {
+                    aiPart.add(entry.getKey(), entry.getValue());
+                } else if (worldKeys.contains(entry.getKey())) {
                     worldPart.add(entry.getKey(), entry.getValue());
                 }
             });
-            if (worldPart.isEmpty()) {
+            if (worldPart.isEmpty() && aiPart.isEmpty()) {
                 rejectInvalid(context);
                 return;
             }
 
-            // 专服上保存只写文件、不激活，要等 /tlm config reload；单人/局域网保存即生效。
+            // 专服上世界规则保存只写文件、不激活，要等 /tlm config reload；单人/局域网保存即生效。
             // 这条差异是有意的：专服的运行期值切换会影响所有在线玩家，交给管理员显式触发。
-            boolean activate = !context.server().isDedicatedServer();
-            if (!ServerRuleConfig.applyJson(worldPart.toString(), activate)) {
+            // **AI 店没有这条差异**：它保存即激活，专服也一样（见 AiServerRuleConfig 的类注释）。
+            //
+            // 世界半先行：它失败时整包拒绝，AI 半一个字也没落。反向（AI 失败于世界之后）无法回滚
+            // 世界半——跨文件没有原子性；界面提交的值都过了本地校验，走到那一步只剩伪造包。
+            boolean activateWorld = !context.server().isDedicatedServer();
+            if (!worldPart.isEmpty() && !ServerRuleConfig.applyJson(worldPart.toString(), activateWorld)) {
                 rejectInvalid(context);
                 return;
             }
 
-            if (activate) {
+            // 激活前先记住四条默认值：变更告知的另一半在 AIChatCommand 的 reload 路径（手改文件），
+            // 两条路缺一条都会出现「配置已生效但玩家不知情」。
+            DefaultAiSnapshot defaults = DefaultAiSnapshot.capture();
+            boolean aiApplied = false;
+            if (!aiPart.isEmpty()) {
+                if (!AiServerRuleConfig.applyJson(aiPart.toString())) {
+                    rejectInvalid(context);
+                    return;
+                }
+                aiApplied = true;
+            }
+
+            if (aiApplied || (!worldPart.isEmpty() && activateWorld)) {
                 SyncServerRulesPacket.syncToAll(context.server());
             } else {
-                // 纯写文件的那条路只回发给编辑者：其余玩家的运行期值没有变，发了反而是噪音。
+                // 专服的纯世界规则保存只写文件，回发只给编辑者：其余玩家的运行期值没有变，发了反而是噪音。
                 // 「保存了但还没生效」的提示由菜单的 server_rules.dedicated_reload 承担。
                 SyncServerRulesPacket.syncToEditors(context.server());
+            }
+            if (aiApplied) {
+                defaults.diffAndNotify(context.server());
             }
         });
     }

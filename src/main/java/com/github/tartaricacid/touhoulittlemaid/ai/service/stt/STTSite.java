@@ -25,7 +25,9 @@ import java.util.Map;
 public interface STTSite extends Site {
     HttpClient STT_HTTP_CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
-            .proxy(new ConfigProxySelector(AIConfig.STT_PROXY_ADDRESS))
+            // 个人配置（AiClientConfig），spec 正常注册，直接读——**不要**经 ServerRuleConfig.get，
+            // 它不在任何认领清单里，走读口会静默退回默认值
+            .proxy(new ConfigProxySelector(AIConfig.STT_PROXY_ADDRESS::get))
             .version(HttpClient.Version.HTTP_1_1)
             .build();
 

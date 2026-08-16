@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message.ai;
 
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.ClientAvailableSitesSync;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitDataAttachment;
@@ -50,7 +51,7 @@ public record SyncMaidAIDataPacket(int entityId, CompoundTag configData, int cur
         maid.getAiChatManager().save(output);
         this(maid.getId(), output.buildResult(),
                 player.getAttachedOrCreate(InitDataAttachment.CHAT_TOKENS).get(),
-                AIConfig.MAX_TOKENS_PER_PLAYER.get()
+                ServerRuleConfig.get(AIConfig.MAX_TOKENS_PER_PLAYER)
         );
     }
 

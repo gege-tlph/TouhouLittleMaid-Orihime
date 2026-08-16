@@ -131,7 +131,9 @@ public abstract class MaidAIChatData extends MaidAIChatSerializable {
         if (StringUtils.isNotBlank(ttsLanguage)) {
             return ttsLanguage;
         }
-        return AIConfig.TTS_LANGUAGE.get();
+        // 语种是纯女仆属性（T 屏语种按钮是唯一编辑点）。空值只出现在从未打开过聊天屏的女仆身上，
+        // 兜底与 T 屏强填的取值一致——「世界默认语种」因与之重合且实际管不到人，已按用户定案删除
+        return "en_us";
     }
 
     public String getChatLanguage() {

@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.arch;
 
+import com.github.tartaricacid.touhoulittlemaid.config.AiServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -24,10 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 架构级不变量，判据取自**字节码**。自 1.21.11 分支照搬的门禁工具副本（隔离纪律允许共享），
- * 按本分支适配两处：认领清单只有世界规则一份（AI 店属审计 §3.C 未搬，落地时
- * {@link #claimedWorldRuleFields} 要加回 {@code AiServerRuleConfig.values()} 那一半——
- * 只取一份会把 AI 键的正当读法误报成未认领，1.21.11 分支首跑实证过）；
- * 引导走本分支的 {@code ServerConfig.init()}（与 {@code ServerRuleReadRoutingContractTest} 同款）。
+ * 按本分支适配一处：引导走本分支的 {@code ServerConfig.init()} 与
+ * {@code AiServerRuleConfig.init()}（与 {@code ServerRuleReadRoutingContractTest} 同款）。
+ * 认领清单是两店的并集，见 {@link #claimedWorldRuleFields}。
  *
  * <p>为什么在既有源码扫描契约测试之外还要这层：源码文本扫描已两次栽在识别依据上
  * （剥注释剥漏 javadoc、按字面量识别改成常量后静默零覆盖）。ArchUnit 读编译产物的
@@ -55,6 +55,8 @@ class ArchitectureRulesTest {
         net.minecraft.SharedConstants.tryDetectVersion();
         net.minecraft.server.Bootstrap.bootStrap();
         ServerConfig.init();
+        // AI 店的 spec 也要建：values() 会解引用那些字段，不建就是一片 null
+        AiServerRuleConfig.init();
 
         production = new ClassFileImporter()
                 // 测试源集与产品代码同包前缀，不排掉会把契约测试自己算进违规
@@ -173,12 +175,14 @@ class ArchitectureRulesTest {
     /**
      * 被认领的规则 spec，反查回它们的声明字段。
      *
-     * <p>⚠️ 恢复锚点（审计 §3.C）：AI 店 {@code AiServerRuleConfig} 落地时，这里必须加回
-     * {@code claimed.addAll(AiServerRuleConfig.values())}——只取一份会把 AI 键的正当读法
-     * 误报成未认领，1.21.11 分支首跑实证过。</p>
+     * <p>⚠️ <b>认领清单必须是两店的并集</b>：服务器权威的规则住在 {@code ServerRuleConfig}
+     * （存档级世界规则）与 {@code AiServerRuleConfig}（实例级 AI 规则）两处，而读点一律经
+     * {@code ServerRuleConfig.get} 这一个口进。只取一份会把另一店的正当读法整批误报成未认领
+     * ——1.21.11 分支首跑实证过。</p>
      */
     private static Set<String> claimedWorldRuleFields() {
         List<ModConfigSpec.ConfigValue<?>> claimed = new ArrayList<>(ServerRuleConfig.values());
+        claimed.addAll(AiServerRuleConfig.values());
         Set<String> names = new LinkedHashSet<>();
         for (JavaClass clazz : production) {
             if (!clazz.getPackageName().startsWith(CONFIG_PACKAGE)) {

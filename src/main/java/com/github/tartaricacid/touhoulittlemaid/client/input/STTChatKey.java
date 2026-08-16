@@ -4,6 +4,7 @@ import com.github.tartaricacid.touhoulittlemaid.ai.manager.entity.STTCallback;
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.AvailableSites;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.stt.STTConfig;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.stt.STTSite;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitSounds;
@@ -36,7 +37,7 @@ public class STTChatKey {
 
     public static void onSttChatPress(int action, KeyEvent event) {
         if (keyIsMatch(event)) {
-            if (!AIConfig.LLM_ENABLED.get()) {
+            if (!ServerRuleConfig.get(AIConfig.LLM_ENABLED)) {
                 return;
             }
             if (!AIConfig.STT_ENABLED.get()) {

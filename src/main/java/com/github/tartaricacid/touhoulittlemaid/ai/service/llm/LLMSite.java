@@ -5,6 +5,7 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.ConfigProxySelector;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializerRegister;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.ServiceType;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.Site;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import com.google.common.collect.Maps;
 import com.google.gson.JsonElement;
@@ -24,7 +25,8 @@ import java.util.Map;
 public interface LLMSite extends Site {
     HttpClient LLM_HTTP_CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
-            .proxy(new ConfigProxySelector(AIConfig.LLM_PROXY_ADDRESS))
+            // 实例级 AI 规则，经唯一读口路由到 AI 店
+            .proxy(new ConfigProxySelector(() -> ServerRuleConfig.get(AIConfig.LLM_PROXY_ADDRESS)))
             .version(HttpClient.Version.HTTP_1_1)
             .build();
 

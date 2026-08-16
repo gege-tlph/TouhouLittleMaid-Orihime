@@ -23,16 +23,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 世界规则文件的建立与迁移。
+ * 配置文件的建立与迁移，三个目标各一条：
  *
- * <p>本类只负责**存档级**世界规则文件（{@code <world>/serverconfig/touhou_little_maid-server.toml}）。
- * 个人配置与实例级 AI 规则的迁移随各自功能一起搬，不在此处预留空壳。</p>
+ * <ul>
+ *   <li>**存档级**世界规则 {@code <world>/serverconfig/touhou_little_maid-server.toml}
+ *       —— {@link #migrateServerFileIfNeeded} / {@link #prepareWorldFile}</li>
+ *   <li>**实例级** AI 规则 {@code config/touhou_little_maid-ai-server.toml}
+ *       —— {@link #migrateAiServerFileIfNeeded}</li>
+ *   <li>**个人** AI 配置 {@code config/touhou_little_maid-ai.toml}
+ *       —— {@link #migrateAiFileIfNeeded}</li>
+ * </ul>
+ *
+ * <p>三条都是<b>一次性</b>的：目标文件已存在就绝不再动。三条也都<b>必须在对应 spec 注册之前</b>
+ * 调用——注册加载那一刻 {@code correct()} 会把「已不在 spec 里」的键整批剥掉，旧值当场消失。</p>
  */
 public final class ConfigFileMigration {
     private static final Logger LOGGER = LogManager.getLogger(ConfigFileMigration.class);
 
     /** 世界规则文件名。与 Forge Config API Port 给 {@code Type.SERVER} 用的名字一致，见 {@link #migrateServerFileIfNeeded}。 */
     public static final String SERVER_FILE_NAME = TouhouLittleMaid.MOD_ID + "-server.toml";
+    /** 实例级 AI 规则文件名，由 {@link AiServerRuleConfig} 独占读写。 */
+    public static final String AI_SERVER_FILE_NAME = TouhouLittleMaid.MOD_ID + "-ai-server.toml";
+    /** 个人 AI 配置文件名，由 Forge Config API Port 正常管理（{@link AiClientConfig}）。 */
+    public static final String AI_FILE_NAME = TouhouLittleMaid.MOD_ID + "-ai.toml";
     /** 这些规则值在代码宿主 origin/26.1 上原属 COMMON spec，即实例级的这个文件。 */
     private static final String LEGACY_FILE_NAME = TouhouLittleMaid.MOD_ID + "-common.toml";
 
@@ -80,6 +93,94 @@ public final class ConfigFileMigration {
             LOGGER.info("Migrated {} server rule values from {} to {}", migrated, legacy, serverFile);
         } catch (RuntimeException | IOException exception) {
             LOGGER.error("Failed to snapshot server rule values from {}", legacy, exception);
+        }
+    }
+
+    /**
+     * 实例级 AI 规则从 {@code -common.toml} 的 {@code [ai]} 节迁往专属的 {@code -ai-server.toml}。
+     *
+     * <p><b>必须在 COMMON spec 注册之前调用</b>，与 {@link #migrateServerFileIfNeeded} 同一个陷阱。</p>
+     *
+     * <p>源链逐键取第一处命中，而不是整文件二选一——「某个源是被上一轮迁移新建的、AI 值还留在
+     * 更老的文件里」这条升级路径会栽在整文件选择上。链序：<b>本次启动的存档</b>的世界文件 →
+     * 实例模板 {@code -server.toml} → {@code -common.toml}。多存档时以升级后第一个进入的存档为准
+     * （AI 规则本就是实例级的，不同存档配不同值的情形近零）。</p>
+     */
+    public static void migrateAiServerFileIfNeeded(Path configDir, @Nullable Path worldServerFile,
+                                                   List<ModConfigSpec.ConfigValue<?>> aiValues,
+                                                   ModConfigSpec aiSpec) {
+        List<Path> candidates = new ArrayList<>();
+        if (worldServerFile != null) {
+            candidates.add(worldServerFile);
+        }
+        candidates.add(configDir.resolve(SERVER_FILE_NAME));
+        candidates.add(configDir.resolve(LEGACY_FILE_NAME));
+        seedFromFirstHit(configDir.resolve(AI_SERVER_FILE_NAME), candidates, aiValues, aiSpec, "AI rule config");
+    }
+
+    /**
+     * 个人 AI 配置从 {@code -common.toml} 的 {@code [ai]} 节迁往专属的 {@code -ai.toml}。
+     *
+     * <p><b>必须在两个 spec 注册之前调用</b>：注册加载那一刻 {@code -common.toml} 会被
+     * {@code correct()} 剥掉已不在其 spec 里的 {@code [ai]} 节，旧值就没了。</p>
+     *
+     * <p>⚠️ 行为基准 {@code port/1.21.11-fabric} 的源链是 {@code -global.toml → -client.toml →
+     * -common.toml} 三级；<b>本分支没有前两层</b>（无 global 层，个人配置一律在 common），
+     * 故源链只有 {@code -common.toml} 一处。逐键取第一处命中的形状保留，将来加源不必改结构。</p>
+     */
+    public static void migrateAiFileIfNeeded(List<ModConfigSpec.ConfigValue<?>> aiValues,
+                                             ModConfigSpec aiSpec) {
+        migrateAiFileIfNeeded(FabricLoader.getInstance().getConfigDir(), aiValues, aiSpec);
+    }
+
+    static void migrateAiFileIfNeeded(Path configDir,
+                                      List<ModConfigSpec.ConfigValue<?>> aiValues,
+                                      ModConfigSpec aiSpec) {
+        seedFromFirstHit(configDir.resolve(AI_FILE_NAME), List.of(configDir.resolve(LEGACY_FILE_NAME)),
+                aiValues, aiSpec, "AI player config");
+    }
+
+    /**
+     * 一次性播种：目标不存在时按 spec 建默认值，再逐键从源链第一处命中处取旧值覆盖。
+     * 源链里读不出来的文件跳过而不是整批放弃——一个坏文件不该让其余的旧值全丢。
+     */
+    private static void seedFromFirstHit(Path target, List<Path> candidates,
+                                         List<ModConfigSpec.ConfigValue<?>> values,
+                                         ModConfigSpec spec, String label) {
+        if (Files.exists(target)) {
+            return;
+        }
+        try {
+            CommentedConfig seeded = emptyConfig();
+            spec.correct(seeded);
+
+            List<CommentedConfig> sources = new ArrayList<>();
+            for (Path candidate : candidates) {
+                if (!Files.isRegularFile(candidate)) {
+                    continue;
+                }
+                try {
+                    sources.add(read(candidate));
+                } catch (RuntimeException | IOException exception) {
+                    LOGGER.error("Skipped unreadable migration source {}", candidate, exception);
+                }
+            }
+
+            int migrated = 0;
+            for (ModConfigSpec.ConfigValue<?> value : values) {
+                List<String> path = value.getPath();
+                for (CommentedConfig source : sources) {
+                    if (source.contains(path)) {
+                        seeded.set(path, copyValue(source.getRaw(path)));
+                        migrated++;
+                        break;
+                    }
+                }
+            }
+            writeAtomically(seeded, target);
+            LOGGER.info("Created {} {} ({} values migrated)", label, target, migrated);
+        } catch (RuntimeException | IOException exception) {
+            LOGGER.error("Failed to create {} {}", label, target, exception);
         }
     }
 

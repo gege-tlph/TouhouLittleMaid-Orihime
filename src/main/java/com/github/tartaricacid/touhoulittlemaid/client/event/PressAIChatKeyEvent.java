@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.client.event;
 
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.network.message.ai.OpenMaidAIChatPacket;
@@ -16,7 +17,7 @@ import org.lwjgl.glfw.GLFW;
 
 public class PressAIChatKeyEvent {
     public static void onOpenConfig(int action, KeyEvent event) {
-        if (isInGame() && AIConfig.LLM_ENABLED.get() && keyIsMatch(action, event)) {
+        if (isInGame() && ServerRuleConfig.get(AIConfig.LLM_ENABLED) && keyIsMatch(action, event)) {
             EntityMaid maid = maidCheck();
             if (maid == null) {
                 return;

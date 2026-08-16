@@ -34,6 +34,12 @@ import java.util.Set;
  *
  * <p><b>唯一读口是 {@link #get}</b>。{@link ServerConfig} 的 spec 有意不注册，规则值上的
  * {@code XXX.get()} 会当场抛异常——这是有意的机制性保证，见该类的注释。</p>
+ *
+ * <p>⚠️ <b>镜像契约</b>：{@link AiServerRuleConfig} 是本类状态机的镜像（AI 规则拆去实例级的
+ * 另一个文件）。凡改动这里的快照簿记 / 加载恢复 / {@link #applyJson} 语义，
+ * <b>必须同步检查那边</b>（反向亦然）。两店的有意差异只有三条，列在那个类的注释里。
+ * 编解码三件套（{@link #key} / {@link #decode} / {@link #copyValue} / {@link #readUnchecked}）
+ * 开放给它复用（同包）：两店一套语义，别各写各的。</p>
  */
 public final class ServerRuleConfig {
     private static final Gson GSON = new Gson();
@@ -234,16 +240,14 @@ public final class ServerRuleConfig {
     }
 
     /**
-     * 唯一读口。
-     *
-     * <p>⚠️ 行为基准 {@code port/1.21.11-fabric} 在这里还有一条按键归属路由到
-     * {@code AiServerRuleConfig}（实例级 AI 规则）的分支。**那一店随 AI 聊天那一刀一起搬**，
-     * 本刀不预留空壳：装了空壳而没有实现，就是本仓库反复栽过的「纸面接口」。
-     * 恢复锚点：审计 §3.C 与 §9 的 {@code AiServerRuleMigrationTest} / {@code AiServerRuleAttackTest}
-     * 两条用例——它们搬进来的那一轮，必须同时在此加回路由分支。</p>
+     * 唯一读口。AI 规则住在 {@link AiServerRuleConfig}（实例级的另一店），但全仓几十处读点
+     * 仍从这里进——**按键归属路由**，调用方不必知道自己读的是哪一店。
      */
     @SuppressWarnings("unchecked")
     public static <T> T get(ModConfigSpec.ConfigValue<T> value) {
+        if (AiServerRuleConfig.owns(value)) {
+            return AiServerRuleConfig.get(value);
+        }
         Object active = activeValues.get(value);
         return active == null ? (T) value.getDefault() : (T) active;
     }

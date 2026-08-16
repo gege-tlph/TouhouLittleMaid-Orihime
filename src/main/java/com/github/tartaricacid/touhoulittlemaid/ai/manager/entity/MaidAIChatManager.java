@@ -12,6 +12,7 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSClient;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSConfig;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSSystemServices;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import com.github.tartaricacid.touhoulittlemaid.data.ChatTokensAttachment;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleManager;
@@ -55,13 +56,13 @@ public final class MaidAIChatManager extends MaidAIChatData {
     }
 
     public void chat(String message, ChatClientInfo clientInfo, ServerPlayer sender) {
-        if (!AIConfig.LLM_ENABLED.get()) {
+        if (!ServerRuleConfig.get(AIConfig.LLM_ENABLED)) {
             sender.sendSystemMessage(Component.translatable("ai.touhou_little_maid.chat.disable")
                     .withStyle(ChatFormatting.RED));
             return;
         }
         ChatTokensAttachment chatTokens = sender.getAttachedOrCreate(InitDataAttachment.CHAT_TOKENS);
-        if (chatTokens.get() >= AIConfig.MAX_TOKENS_PER_PLAYER.get()) {
+        if (chatTokens.get() >= ServerRuleConfig.get(AIConfig.MAX_TOKENS_PER_PLAYER)) {
             sender.sendSystemMessage(Component.translatable("message.touhou_little_maid.ai_chat.max_tokens_limit")
                     .withStyle(ChatFormatting.RED));
             return;
@@ -132,7 +133,7 @@ public final class MaidAIChatManager extends MaidAIChatData {
 
     private void onSettingIsEmpty(ChatClientInfo clientInfo, LLMClient chatClient) {
         ChatBubbleManager bubbleManager = this.maid.getChatBubbleManager();
-        if (AIConfig.AUTO_GEN_SETTING_ENABLED.get()) {
+        if (ServerRuleConfig.get(AIConfig.AUTO_GEN_SETTING_ENABLED)) {
             List<LLMMessage> messages = this.autoGenSetting(maid, clientInfo);
             AutoGenSettingCallback callback = new AutoGenSettingCallback(this, messages);
             chatClient.chat(callback);

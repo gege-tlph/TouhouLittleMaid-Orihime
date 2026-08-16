@@ -7,6 +7,8 @@ import com.github.tartaricacid.touhoulittlemaid.api.event.InteractMaidEvent;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidDamageEvent;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidDeathEvent;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidFavorabilityLevelChangeEvent;
+import com.github.tartaricacid.touhoulittlemaid.config.AiClientConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.AiServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.CommonConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ConfigFileMigration;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
@@ -37,6 +39,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
@@ -81,20 +84,38 @@ public class TouhouLittleMaidFabric implements ModInitializer {
         // Forge Config API Port 自己去管 <world>/serverconfig/touhou_little_maid-server.toml，
         // 与 ServerRuleConfig 争同一个文件。详见 ServerConfig 的类注释。
         ServerConfig.init();
-        // 必须先于 COMMON spec 注册：这些键原属 COMMON spec，注册那一刻 correct() 会把
-        // 「已不在 spec 里」的它们整批剥掉，旧值就没了。
+        // AI 规则的 spec 同理只建不注册（它由 AiServerRuleConfig 独占那个文件），
+        // 且必须在任何 ServerRuleConfig.get 路由调用之前建好——归属表是在这里登记的。
+        AiServerRuleConfig.init();
+        ModConfigSpec aiClientSpec = AiClientConfig.getConfigSpec();
+
+        // 以下三条迁移**必须全部先于 COMMON spec 注册**：这些键原属 COMMON spec，
+        // 注册那一刻 correct() 会把「已不在 spec 里」的它们整批剥掉，旧值就没了。
         ConfigFileMigration.migrateServerFileIfNeeded(ServerRuleConfig.values(), ServerConfig.CONFIG);
-        // 同样先于 COMMON 注册：旧文件缺岩浆怪独立开关时继承史莱姆开关的旧值
+        ConfigFileMigration.migrateAiFileIfNeeded(AiClientConfig.values(), aiClientSpec);
+        // 旧文件缺岩浆怪独立开关时继承史莱姆开关的旧值
         ConfigFileMigration.inheritMagmaCubeFromSlime();
+
         ServerRuleConfig.initializeDefaults();
+        AiServerRuleConfig.initializeDefaults();
         ConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.COMMON, CommonConfig.init());
+        // 个人 AI 配置是独立文件，正常交给 FCAP 管（与上面那份 COMMON 同类型、不同文件名）
+        ConfigRegistry.INSTANCE.register(TouhouLittleMaid.MOD_ID, ModConfig.Type.COMMON,
+                aiClientSpec, ConfigFileMigration.AI_FILE_NAME);
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             if (!ServerRuleConfig.loadForServer(server)) {
                 throw new IllegalStateException("Failed to load Touhou Little Maid world config");
             }
+            // AI 规则是实例级文件；首次启动会先从本存档的旧世界文件与 common 播种老值
+            if (!AiServerRuleConfig.loadForServer(server)) {
+                throw new IllegalStateException("Failed to load Touhou Little Maid AI rule config");
+            }
         });
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> ServerRuleConfig.unloadWorld());
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            ServerRuleConfig.unloadWorld();
+            AiServerRuleConfig.unload();
+        });
     }
 
     private void subscribeEvents() {
