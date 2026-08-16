@@ -24,5 +24,12 @@
   "patchouli.touhou_little_maid.book.entries.maid.backpack.name": "Mochila",
   "patchouli.touhou_little_maid.book.entries.maid.substitute_jizo.name": "Substituto de Jizo",
   "patchouli.touhou_little_maid.book.entries.other.extinguisher.name": "Extintor",
-  "patchouli.touhou_little_maid.book.entries.other.maid_bed.name": "Cama de Maid"
+  "patchouli.touhou_little_maid.book.entries.other.maid_bed.name": "Cama de Maid",
+  "ai.touhou_little_maid.chat.settings.hub.check_config": "Verificar",
+  "ai.touhou_little_maid.chat.settings.hub.check_pass": "Validado",
+  "ai.touhou_little_maid.chat.settings.hub.check_error": "Erro",
+  "ai.touhou_little_maid.chat.settings.hub.check_unreachable": "Sem ligação",
+  "ai.touhou_little_maid.chat.settings.hub.check_busy": "Espere",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_hint": "O narrador do sistema é fornecido pelo sistema operativo e não tem nada para configurar.",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_language_hint": "Nota: a voz e o idioma são decididos inteiramente pelo sistema operativo. O idioma de síntese definido no ecrã de conversação não se aplica a este site."
 }

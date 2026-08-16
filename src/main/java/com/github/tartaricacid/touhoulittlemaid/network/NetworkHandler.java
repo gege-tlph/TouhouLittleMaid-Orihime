@@ -69,6 +69,8 @@ public class NetworkHandler {
 
         ClientPlayNetworking.registerGlobalReceiver(SyncAISitesPacket.TYPE, SyncAISitesPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncMaidAIDataPacket.TYPE, SyncMaidAIDataPacket::handle);
+        ClientPlayNetworking.registerGlobalReceiver(VoicePreviewResultPackage.TYPE, VoicePreviewResultPackage::handle);
+        ClientPlayNetworking.registerGlobalReceiver(SiteCheckResultPackage.TYPE, SiteCheckResultPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncServerRulesPacket.TYPE, SyncServerRulesPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncFluidAmountPackage.TYPE, SyncFluidAmountPackage::handle);
     }
@@ -102,6 +104,8 @@ public class NetworkHandler {
 
         registerS2CPacket(SyncAISitesPacket.TYPE, SyncAISitesPacket.STREAM_CODEC);
         registerS2CPacket(SyncMaidAIDataPacket.TYPE, SyncMaidAIDataPacket.STREAM_CODEC);
+        registerS2CPacket(VoicePreviewResultPackage.TYPE, VoicePreviewResultPackage.STREAM_CODEC);
+        registerS2CPacket(SiteCheckResultPackage.TYPE, SiteCheckResultPackage.STREAM_CODEC);
         registerS2CPacket(SyncServerRulesPacket.TYPE, SyncServerRulesPacket.STREAM_CODEC);
         registerS2CPacket(SyncFluidAmountPackage.TYPE, SyncFluidAmountPackage.STREAM_CODEC);
 
@@ -142,6 +146,10 @@ public class NetworkHandler {
         registerC2SPacket(OpenMaidAIChatPacket.TYPE, OpenMaidAIChatPacket.STREAM_CODEC, OpenMaidAIChatPacket::handle);
         registerC2SPacket(SaveLLMSitePacket.TYPE, SaveLLMSitePacket.STREAM_CODEC, SaveLLMSitePacket::handle);
         registerC2SPacket(SaveTTSSitePacket.TYPE, SaveTTSSitePacket.STREAM_CODEC, SaveTTSSitePacket::handle);
+        registerC2SPacket(CheckSiteConfigPackage.TYPE, CheckSiteConfigPackage.STREAM_CODEC,
+                CheckSiteConfigPackage::handle);
+        registerC2SPacket(RequestVoicePreviewPackage.TYPE, RequestVoicePreviewPackage.STREAM_CODEC,
+                RequestVoicePreviewPackage::handle);
         registerC2SPacket(SaveServerRulesPacket.TYPE, SaveServerRulesPacket.STREAM_CODEC, SaveServerRulesPacket::handle);
     }
 

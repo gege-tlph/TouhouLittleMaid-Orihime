@@ -29,7 +29,8 @@
       "com.github.tartaricacid.touhoulittlemaid.gametest.TankBackpackGameTest",
       "com.github.tartaricacid.touhoulittlemaid.ai.manager.site.DedicatedSiteFilesGameTest",
       "com.github.tartaricacid.touhoulittlemaid.ai.agent.context.prompts.MaidContextsGameTest",
-      "com.github.tartaricacid.touhoulittlemaid.ai.agent.tool.implement.MaidControlToolsGameTest"
+      "com.github.tartaricacid.touhoulittlemaid.ai.agent.tool.implement.MaidControlToolsGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.command.TlmCommandSmokeGameTest"
     ],
     "fabric-datagen": [
       "com.github.tartaricacid.touhoulittlemaid.datagen.DataGenerator"

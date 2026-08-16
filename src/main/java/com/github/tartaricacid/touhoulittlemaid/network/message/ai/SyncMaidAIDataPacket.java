@@ -1,20 +1,20 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message.ai;
 
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.ClientAvailableSitesSync;
-import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitDataAttachment;
 import com.github.tartaricacid.touhoulittlemaid.network.client.ai.SyncMaidAIDataPacketProxy;
 import io.netty.buffer.ByteBuf;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.ProblemReporter;
-import net.minecraft.world.level.storage.TagValueOutput;
 
 import java.util.Objects;
 
@@ -47,9 +47,9 @@ public record SyncMaidAIDataPacket(int entityId, CompoundTag configData, int cur
     };
 
     public SyncMaidAIDataPacket(EntityMaid maid, ServerPlayer player) {
-        var output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, player.level.registryAccess());
-        maid.getAiChatManager().save(output);
-        this(maid.getId(), output.buildResult(),
+        // 还原 HEAD 形态：writeToTag(CompoundTag) 仍存在（MaidAIChatData:75）。移植期改成 save(TagValueOutput) +
+        //   this() 非首语句 = Java 21 非法且 save 不存在 → 复原为单表达式 this()。行为对齐 HEAD。
+        this(maid.getId(), maid.getAiChatManager().writeToTag(new CompoundTag()),
                 player.getAttachedOrCreate(InitDataAttachment.CHAT_TOKENS).get(),
                 ServerRuleConfig.get(AIConfig.MAX_TOKENS_PER_PLAYER)
         );
@@ -60,6 +60,7 @@ public record SyncMaidAIDataPacket(int entityId, CompoundTag configData, int cur
         return TYPE;
     }
 
+    @Environment(EnvType.CLIENT)
     public static void handle(SyncMaidAIDataPacket message, ClientPlayNetworking.Context context) {
         context.client().execute(() -> SyncMaidAIDataPacketProxy.handle(message));
     }

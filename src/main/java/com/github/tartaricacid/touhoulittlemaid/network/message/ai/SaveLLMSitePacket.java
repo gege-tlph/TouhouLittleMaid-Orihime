@@ -1,6 +1,10 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message.ai;
 
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.AvailableSites;
+import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.SiteConfigStorage;
+import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.SiteRuntimeActivation;
+import com.github.tartaricacid.touhoulittlemaid.command.subcommand.AIChatCommand;
+import java.util.Map;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializableSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializerRegister;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.ServiceType;
@@ -90,48 +94,79 @@ public record SaveLLMSitePacket(Action action, @Nullable String siteId, boolean 
             return;
         }
 
+        final Map<String, LLMSite> sites;
+        try {
+            sites = SiteConfigStorage.readLLM();
+        } catch (IllegalStateException exception) {
+            return;
+        }
+        // 磁盘上被严格读取跳过的未知站点不在 sites 里，但那个 id **是被占用的**——
+        // 只看 sites 判重会让新建的内置站点顶掉别人的扩展配置，装回扩展也回不去
+        if (message.action == Action.CREATE && message.site != null
+                && SiteConfigStorage.foreignLLMIds().contains(message.site.id())) {
+            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                            "ai.touhou_little_maid.chat.settings.hub.site_id_reserved_by_extension",
+                            message.site.id())
+                    .withStyle(net.minecraft.ChatFormatting.RED));
+            return;
+        }
         boolean changed = switch (message.action) {
-            case CREATE -> createSite(message.site);
-            case UPDATE -> updateSite(message.site);
-            case DELETE -> deleteSite(message.siteId);
-            case TOGGLE -> toggleSite(message.siteId, message.enabled);
+            case CREATE -> createSite(sites, message.site);
+            case UPDATE -> updateSite(sites, message.site);
+            case DELETE -> deleteSite(sites, message.siteId);
+            case TOGGLE -> toggleSite(sites, message.siteId, message.enabled);
         };
         if (!changed) {
             return;
         }
 
-        AvailableSites.saveSites();
-        ServerPlayNetworking.send(player, new SyncAISitesPacket(AvailableSites.LLM_SITES, AvailableSites.TTS_SITES, false));
+        if (!SiteConfigStorage.writeLLM(sites)) {
+            return;
+        }
+        SiteRuntimeActivation.activate(player);
     }
 
-    private static boolean createSite(@Nullable LLMSite site) {
-        if (site == null || StringUtils.isBlank(site.id()) || AvailableSites.LLM_SITES.containsKey(site.id())) {
+    private static boolean createSite(Map<String, LLMSite> sites, @Nullable LLMSite site) {
+        if (site == null || StringUtils.isBlank(site.id()) || sites.containsKey(site.id())) {
             return false;
         }
-        AvailableSites.LLM_SITES.put(site.id(), site);
+        sites.put(site.id(), restoreSecrets(site, null));
         return true;
     }
 
-    private static boolean updateSite(@Nullable LLMSite site) {
+    /**
+     * 更新一个已有站点。**密钥哨兵在这里被换回服务端现有的值。**
+     *
+     * <p>客户端拿到的密钥永远是哨兵（明文不下行），所以管理员只改地址、根本没碰密钥框时，
+     * 回传的还是哨兵——不填回去就等于把密钥清空了。这正是「只改一个 URL 却让 LLM 失效」
+     * 那类回归的成因，故填回动作必须紧贴写盘，不能散在调用方。</p>
+     */
+    private static boolean updateSite(Map<String, LLMSite> sites, @Nullable LLMSite site) {
         if (site == null || StringUtils.isBlank(site.id())) {
             return false;
         }
-        AvailableSites.LLM_SITES.put(site.id(), site);
+        sites.put(site.id(), restoreSecrets(site, sites.get(site.id())));
         return true;
     }
 
-    private static boolean deleteSite(@Nullable String siteId) {
-        if (StringUtils.isBlank(siteId)) {
-            return false;
-        }
-        return AvailableSites.LLM_SITES.remove(siteId) != null;
+    @SuppressWarnings("unchecked")
+    private static LLMSite restoreSecrets(LLMSite incoming, @Nullable LLMSite existing) {
+        SerializableSite<LLMSite> serializer = (SerializableSite<LLMSite>) incoming.serializer();
+        return serializer == null ? incoming : serializer.restoreKeptSecrets(incoming, existing);
     }
 
-    private static boolean toggleSite(@Nullable String siteId, boolean enabled) {
+    private static boolean deleteSite(Map<String, LLMSite> sites, @Nullable String siteId) {
         if (StringUtils.isBlank(siteId)) {
             return false;
         }
-        LLMSite site = AvailableSites.LLM_SITES.get(siteId);
+        return sites.remove(siteId) != null;
+    }
+
+    private static boolean toggleSite(Map<String, LLMSite> sites, @Nullable String siteId, boolean enabled) {
+        if (StringUtils.isBlank(siteId)) {
+            return false;
+        }
+        LLMSite site = sites.get(siteId);
         if (site == null) {
             return false;
         }

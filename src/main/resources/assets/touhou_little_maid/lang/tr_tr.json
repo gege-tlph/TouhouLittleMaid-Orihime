@@ -52,5 +52,12 @@
   "patchouli.touhou_little_maid.book.entries.maid.maid_sound.name": "Maid Sesi",
   "patchouli.touhou_little_maid.book.entries.maid.maid_task.name": "Maid Görevi",
   "patchouli.touhou_little_maid.book.entries.maid.mute_bauble.name": "Bauble Aksesuarını Sustur",
-  "patchouli.touhou_little_maid.book.entries.maid.naming_eggs.name": "Yumurtaları İsimlendirmek"
+  "patchouli.touhou_little_maid.book.entries.maid.naming_eggs.name": "Yumurtaları İsimlendirmek",
+  "ai.touhou_little_maid.chat.settings.hub.check_config": "Kontrol et",
+  "ai.touhou_little_maid.chat.settings.hub.check_pass": "Başarılı",
+  "ai.touhou_little_maid.chat.settings.hub.check_error": "Hata",
+  "ai.touhou_little_maid.chat.settings.hub.check_unreachable": "Erişilemiyor",
+  "ai.touhou_little_maid.chat.settings.hub.check_busy": "Bekleyin",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_hint": "Sistem seslendiricisi işletim sisteminiz tarafından sağlanır ve yapılandırılacak hiçbir ayarı yoktur.",
+  "ai.touhou_little_maid.chat.settings.hub.system_tts_language_hint": "Not: ses ve dil tamamen işletim sistemi tarafından belirlenir. Sohbet ekranında ayarlanan sentez dili bu site için geçerli değildir."
 }

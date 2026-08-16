@@ -2,6 +2,8 @@ package com.github.tartaricacid.touhoulittlemaid.network.message.ai;
 
 import com.github.tartaricacid.touhoulittlemaid.network.client.ai.TTSAudioToClientPackageProxy;
 import io.netty.buffer.ByteBuf;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -24,6 +26,7 @@ public record TTSAudioToClientPackage(int maidId, byte[] data) implements Custom
         return TYPE;
     }
 
+    @Environment(EnvType.CLIENT)
     public static void handle(TTSAudioToClientPackage message, ClientPlayNetworking.Context context) {
         context.client().execute(() -> TTSAudioToClientPackageProxy.handle(message));
     }

@@ -1,6 +1,11 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message.ai;
 
 import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.AvailableSites;
+import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.SiteConfigStorage;
+import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.SiteRuntimeActivation;
+import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializableSite;
+import com.github.tartaricacid.touhoulittlemaid.command.subcommand.AIChatCommand;
+import java.util.Map;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializableSite;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.SerializerRegister;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.ServiceType;
@@ -79,31 +84,52 @@ public record SaveTTSSitePacket(Action action, @Nullable String siteId, boolean 
             return;
         }
 
+        final Map<String, TTSSite> sites;
+        try {
+            sites = SiteConfigStorage.readTTS();
+        } catch (IllegalStateException exception) {
+            return;
+        }
         boolean changed = switch (message.action) {
-            case UPDATE -> updateSite(message.site);
-            case TOGGLE -> toggleSite(message.siteId, message.enabled);
+            case UPDATE -> updateSite(sites, message.site);
+            case TOGGLE -> toggleSite(sites, message.siteId, message.enabled);
         };
         if (!changed) {
             return;
         }
 
-        AvailableSites.saveSites();
-        ServerPlayNetworking.send(player, new SyncAISitesPacket(AvailableSites.LLM_SITES, AvailableSites.TTS_SITES, false));
+        if (!SiteConfigStorage.writeTTS(sites)) {
+            return;
+        }
+        SiteRuntimeActivation.activate(player);
     }
 
-    private static boolean updateSite(@Nullable TTSSite site) {
+    /**
+     * 更新一个已有站点。**密钥哨兵在这里被换回服务端现有的值。**
+     *
+     * <p>客户端拿到的密钥永远是哨兵（明文不下行），所以管理员只改地址、根本没碰密钥框时，
+     * 回传的还是哨兵——不填回去就等于把密钥清空了。这正是「只改一个 URL 却让服务失效」
+     * 那类回归的成因，故填回动作必须紧贴写盘，不能散在调用方。</p>
+     */
+    private static boolean updateSite(Map<String, TTSSite> sites, @Nullable TTSSite site) {
         if (site == null || StringUtils.isBlank(site.id())) {
             return false;
         }
-        AvailableSites.TTS_SITES.put(site.id(), site);
+        sites.put(site.id(), restoreSecrets(site, sites.get(site.id())));
         return true;
     }
 
-    private static boolean toggleSite(@Nullable String siteId, boolean enabled) {
+    @SuppressWarnings("unchecked")
+    private static TTSSite restoreSecrets(TTSSite incoming, @Nullable TTSSite existing) {
+        SerializableSite<TTSSite> serializer = (SerializableSite<TTSSite>) incoming.serializer();
+        return serializer == null ? incoming : serializer.restoreKeptSecrets(incoming, existing);
+    }
+
+    private static boolean toggleSite(Map<String, TTSSite> sites, @Nullable String siteId, boolean enabled) {
         if (StringUtils.isBlank(siteId)) {
             return false;
         }
-        TTSSite site = AvailableSites.TTS_SITES.get(siteId);
+        TTSSite site = sites.get(siteId);
         if (site == null) {
             return false;
         }
