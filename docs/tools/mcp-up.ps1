@@ -121,6 +121,22 @@ function Test-CanLaunch([int]$Port, [string]$Label) {
     return $false
 }
 
+# ---------------------------------------------------------------- EULA 前置
+# 2026-08-16 实测：eula=false 时 runServer 会打印一行 "You need to agree to the EULA"
+# 然后**立刻自行退出**，8765 从头到尾没监听过。此时 Wait-ForMcp 只能干等满 300 秒，
+# 再报一句「没有完成 MCP 握手」——那句话把人指向网络/时序，而真因在日志第一行。
+# 故在启动前先判，让这种失败 1 秒内就说清自己是谁。
+function Test-EulaAccepted {
+    $eula = Join-Path $repo 'run\eula.txt'
+    if (-not (Test-Path $eula)) {
+        # 首次启动会由服务端自己生成（生成后同样是 false，仍需人工同意）
+        return $true
+    }
+    $line = Select-String -Path $eula -Pattern '^\s*eula\s*=\s*(\w+)' | Select-Object -First 1
+    if (-not $line) { return $true }
+    return ($line.Matches[0].Groups[1].Value -eq 'true')
+}
+
 # ---------------------------------------------------------------- 1. 专服 8765
 Write-Step '专服 minecraft-java (8765)'
 if (Test-McpEndpoint -Port 8765) {
@@ -128,6 +144,10 @@ if (Test-McpEndpoint -Port 8765) {
     Show-PortOwner 8765
 } elseif ($CheckOnly) {
     Write-Bad '专服 minecraft-java (8765) 未运行（-CheckOnly 不会启动它）'
+} elseif (-not (Test-EulaAccepted)) {
+    Write-Bad '专服 minecraft-java (8765) 未启动：run\eula.txt 里 eula=false'
+    Write-Host '         服务端会打印一行 EULA 提示后立即退出，端口永远不会监听。' -ForegroundColor Yellow
+    Write-Host '         同意 https://aka.ms/MinecraftEULA 后，把该文件改成 eula=true 再跑本脚本。' -ForegroundColor Yellow
 } elseif (Test-CanLaunch -Port 8765 -Label '专服 minecraft-java') {
     Write-Host '  启动 runServer（独立窗口，本脚本不会杀它）...' -ForegroundColor DarkGray
     Start-Process -FilePath $gradlew -ArgumentList 'runServer' -WorkingDirectory $repo | Out-Null
