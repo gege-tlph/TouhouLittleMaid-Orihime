@@ -42,7 +42,7 @@ public class HistoryAIChatScreen extends Screen {
     private static final int TOOL_TEXT_WIDTH = 180;
 
     private static final int SUMMARY_WIDTH = 120;
-    private static final float SUMMARY_TEXT_SCALE = 0.5f;
+    private static final float SUMMARY_TEXT_SCALE = 0.70f;
     private static final int SUMMARY_TOP = 24;
     private static final int RIGHT_COLUMN_BOTTOM_MARGIN = 24;
     private static final int BUTTON_HEIGHT = 20;
@@ -282,8 +282,11 @@ public class HistoryAIChatScreen extends Screen {
 
     private int getHistoryLineHeight(Component message, boolean isTool) {
         if (isTool) {
-            int lineCount = font.split(message, TOOL_TEXT_WIDTH).size();
-            return lineCount * font.lineHeight / 5;
+            // 行数要按缩放后的逻辑宽度算，高度再按缩放折回屏幕坐标。
+            // origin 的 `/ 5` 是配 0.5 字号硬凑的魔数，与实际行高无关——换字号立刻错位。
+            int logicalWidth = HistoryChatWidget.getToolTextWidth(TOOL_TEXT_WIDTH);
+            int lineCount = font.split(message, logicalWidth).size();
+            return Math.max(1, (int) Math.ceil(lineCount * font.lineHeight * HistoryChatWidget.TOOL_TEXT_SCALE));
         } else {
             int lineCount = font.split(message, CHAT_TEXT_WIDTH).size();
             return 10 + lineCount * font.lineHeight;

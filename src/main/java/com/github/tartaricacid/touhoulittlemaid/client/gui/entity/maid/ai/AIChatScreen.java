@@ -10,7 +10,11 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.LLMMessage;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.Role;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.SupportLanguage;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.system.TTSSystemSite;
+import com.github.tartaricacid.touhoulittlemaid.client.ClientLocalChat;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.FlatColorButton;
+import com.github.tartaricacid.touhoulittlemaid.client.sound.VoicePreviewClient;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.network.message.SendUserChatPackage;
 import com.github.tartaricacid.touhoulittlemaid.network.message.ai.OpenAIConfigPacket;
@@ -28,6 +32,7 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import org.apache.commons.lang3.StringUtils;
@@ -42,6 +47,13 @@ import static com.github.tartaricacid.touhoulittlemaid.ai.manager.entity.MaidAIC
 
 public class AIChatScreen extends Screen {
     private static final int POPUP_ROW_HEIGHT = 16;
+    // 六颗图标按钮的字形在 20px 方钮里既不居中也偏小，逐颗量出的微调值。
+    // 数值本身没有推导，是照着屏幕挪出来的——改字形或改钮宽都要重新量。
+    private static final float CONFIG_ICON_SCALE = 1.12f;
+    private static final float TTS_ICON_SCALE = 1.25f;
+    private static final float LLM_SUMMARY_TEXT_SCALE = 0.70f;
+    private static final float TTS_SUMMARY_TEXT_SCALE = 0.65f;
+    private static final float TOKEN_TEXT_SCALE = 0.70f;
 
     private final EntityMaid maid;
     private final MaidAIChatManager manager;
@@ -123,31 +135,69 @@ public class AIChatScreen extends Screen {
         this.historyButton = this.addRenderableWidget(new FlatColorButton(leftX, y, size, size, Component.literal("🕑"), b -> {
             HistoryAIChatScreen screen = new HistoryAIChatScreen(this, this.maid);
             ScreenUtil.setScreen(screen);
-        }).setTooltips("ai.touhou_little_maid.chat.button.history.tip"));
+        }).setTextTransform(1.0f, 0.5f, 0.5f)
+                .setTooltips("ai.touhou_little_maid.chat.button.history.tip"));
 
         leftX = leftX + size + gap;
         this.settingButton = this.addRenderableWidget(new FlatColorButton(leftX, y, size, size, Component.literal("✎"), b -> {
             SettingEditScreen editScreen = new SettingEditScreen(this, this.maid);
             ScreenUtil.setScreen(editScreen);
-        }).setTooltips("ai.touhou_little_maid.chat.button.setting.tip"));
+        }).setTextTransform(1.0f, 0.5f, 1.0f)
+                .setTooltips("ai.touhou_little_maid.chat.button.setting.tip"));
 
         leftX = leftX + size + gap;
         this.configButton = this.addRenderableWidget(new FlatColorButton(leftX, y, size, size, Component.literal("⚙"), b -> {
             OpenAIConfigPacket.sendToServer();
-        }).setTooltips("ai.touhou_little_maid.chat.button.config.tip"));
+        }).setTextTransform(CONFIG_ICON_SCALE, 0.0f, 0.25f)
+                .setTooltips("ai.touhou_little_maid.chat.button.config.tip"));
     }
 
     private void addRightButtons(int rightX, int y, int size, int gap) {
         this.llmButton = this.addRenderableWidget(new FlatColorButton(rightX, y, size, size, Component.literal("✦"),
-                b -> this.togglePopup(PopupType.LLM)).setTooltips("ai.touhou_little_maid.chat.button.llm.tip"));
+                b -> this.togglePopup(PopupType.LLM)).setTextTransform(1.0f, 0.75f, 0.5f)
+                .setTooltips("ai.touhou_little_maid.chat.button.llm.tip"));
 
         rightX = rightX + size + gap;
         this.ttsButton = this.addRenderableWidget(new FlatColorButton(rightX, y, size, size, Component.literal("🔊"),
-                b -> this.togglePopup(PopupType.TTS)).setTooltips("ai.touhou_little_maid.chat.button.tts.tip"));
+                b -> this.togglePopup(PopupType.TTS)).setTextTransform(TTS_ICON_SCALE, 0.5f, 0.0f)
+                .setTooltips("ai.touhou_little_maid.chat.button.tts.tip"));
 
         rightX = rightX + size + gap;
         this.langButton = this.addRenderableWidget(new FlatColorButton(rightX, y, size, size, Component.literal("🌐"),
-                b -> this.togglePopup(PopupType.LANGUAGE)).setTooltips("ai.touhou_little_maid.chat.button.language.tip"));
+                b -> this.togglePopup(PopupType.LANGUAGE)).setTextTransform(1.0f, 0.75f, 0.5f)
+                .setTooltips("ai.touhou_little_maid.chat.button.language.tip"));
+    }
+
+    /**
+     * 合成语种按钮在系统站点上是个**无效开关**，必须在它自己身上说出来。
+     *
+     * <p>{@code TTSSystemClient.play} 把 {@code TTSConfig}（含语种与音色）整个丢掉，
+     * 原版朗读器接口也不接受这两个参数——语音完全由操作系统决定。而这个按钮看得见、点得动、
+     * 存得下：<b>一个能设置却不起作用的选项，比没有这个选项更糟</b>。站点编辑屏那两行说明只有
+     * 打开编辑屏的人看得到，而绝大多数玩家是在这里改语种的，所以这一处才是要紧的。</p>
+     *
+     * <p>不禁用按钮：玩家可能正准备换到别的站点，那时这个设置又有效了。</p>
+     */
+    private void refreshLanguageTooltip() {
+        if (this.effectiveTtsSiteIsSystem()) {
+            this.langButton.setTooltips(List.of(
+                    Component.translatable("ai.touhou_little_maid.chat.button.language.tip"),
+                    Component.translatable("ai.touhou_little_maid.chat.settings.hub.system_tts_language_hint")
+                            .withStyle(ChatFormatting.YELLOW)));
+        } else {
+            this.langButton.setTooltips("ai.touhou_little_maid.chat.button.language.tip");
+        }
+    }
+
+    /** 与 {@link #resolvedDefaultTtsSiteId()} 同一套镜像解析：跟随默认时要看默认解析成了谁 */
+    private boolean effectiveTtsSiteIsSystem() {
+        if (MaidAIChatSerializable.isNoTTSSite(this.manager.ttsSite)) {
+            return false;
+        }
+        String siteId = StringUtils.isBlank(this.manager.ttsSite)
+                ? this.resolvedDefaultTtsSiteId()
+                : this.manager.ttsSite;
+        return TTSSystemSite.API_TYPE.equals(siteId);
     }
 
     private void togglePopup(PopupType type) {
@@ -168,6 +218,7 @@ public class AIChatScreen extends Screen {
         this.llmButton.active = !ClientAvailableSitesSync.getClientLLMSites().isEmpty();
         this.ttsButton.active = !this.getPopupEntries(PopupType.TTS).isEmpty();
         this.langButton.active = !SupportLanguage.SUPPORTED_LANGUAGES.isEmpty();
+        this.refreshLanguageTooltip();
 
         if (this.openPopup == null) {
             this.popupGeometry = null;
@@ -208,18 +259,21 @@ public class AIChatScreen extends Screen {
         List<PopupEntry> entries = Lists.newArrayList();
         if (Objects.requireNonNull(type) == PopupType.LLM) {
             var llmSites = ClientAvailableSitesSync.getClientLLMSites();
+            entries.add(this.followDefaultEntry(this.defaultLlmLabel(llmSites), StringUtils.isBlank(this.manager.llmSite)));
             this.addSiteModelEntries(entries, llmSites, this.manager.llmSite, this.manager.llmModel);
             return entries;
         }
 
         if (type == PopupType.TTS) {
+            var ttsSites = ClientAvailableSitesSync.getClientTTSSites();
+            entries.add(this.followDefaultEntry(this.defaultTtsLabel(ttsSites), StringUtils.isBlank(this.manager.ttsSite)));
+
             boolean selected = MaidAIChatSerializable.isNoTTSSite(this.manager.ttsSite);
             MutableComponent noneName = Component.translatable("ai.touhou_little_maid.chat.site.none.name");
             entries.add(new PopupEntry(noneName, false, selected, NO_TTS_SITE, StringUtils.EMPTY, null));
 
-            var ttsSites = ClientAvailableSitesSync.getClientTTSSites();
-            String selectedSite = StringUtils.isBlank(this.manager.ttsSite) ? TTSSystemSite.API_TYPE : this.manager.ttsSite;
-            this.addSiteModelEntries(entries, ttsSites, selectedSite, this.manager.ttsModel);
+            // 高亮用真实存储值：空值属于上面的「跟随默认」项，不再折算成 system
+            this.addSiteModelEntries(entries, ttsSites, this.manager.ttsSite, this.manager.ttsModel);
             return entries;
         }
 
@@ -235,7 +289,8 @@ public class AIChatScreen extends Screen {
     private void addSiteModelEntries(List<PopupEntry> entries, Map<String, Map<String, String>> sites, String selectedSite, String selectedModel) {
         sites.forEach((site, models) -> {
             // 按站点添加主分类
-            MutableComponent siteName = Component.literal(site);
+            // 分组头给玩家看的是站点名字，不是内部 id（deepseek/system 直接当标题是又一处裸 id）
+            MutableComponent siteName = Component.literal(displaySiteName(site));
             PopupEntry entry = new PopupEntry(siteName, true, false, site, null, null);
             entries.add(entry);
 
@@ -308,32 +363,20 @@ public class AIChatScreen extends Screen {
         };
     }
 
+    /**
+     * 空的站点选择 = 「跟随默认」，是**合法状态**——这里不再把它填成具体站点。
+     *
+     * <p>旧实现开屏就把空值补成默认站点，于是玩家第一次点任何弹出项时，连同这份「补出来的选择」
+     * 一起保存了——「没设过」就此变成「设过了」，这正是跟随语义做不出来的根源。
+     * 覆盖指向的站点/模型失效时也不在这里改写：解析链负责回落，界面负责把「已回落」显示出来，
+     * 静默改写存储会让回落变成永久降级。</p>
+     */
     private void ensureValidSelections() {
-        var llmSites = ClientAvailableSitesSync.getClientLLMSites();
-        var ttsSites = ClientAvailableSitesSync.getClientTTSSites();
-
-        // 站点存在判定
-        if (StringUtils.isBlank(this.manager.llmSite) || !llmSites.containsKey(this.manager.llmSite)) {
-            this.manager.llmSite = this.getDefaultLLMSite(llmSites);
-        }
         if (MaidAIChatSerializable.isNoTTSSite(this.manager.ttsSite)) {
             this.manager.ttsModel = StringUtils.EMPTY;
-        } else if (StringUtils.isNotBlank(this.manager.ttsSite) && !ttsSites.containsKey(this.manager.ttsSite)) {
-            this.manager.ttsSite = ttsSites.keySet().stream().findFirst().orElse(StringUtils.EMPTY);
         }
 
-        // 模型存在判定
-        var llmModels = llmSites.get(this.manager.llmSite);
-        this.manager.llmModel = this.ensureExistingModel(llmModels, this.manager.llmModel);
-        if (MaidAIChatSerializable.isNoTTSSite(this.manager.ttsSite)) {
-            this.manager.ttsModel = StringUtils.EMPTY;
-        } else {
-            String effectiveTtsSite = StringUtils.isBlank(this.manager.ttsSite) ? TTSSystemSite.API_TYPE : this.manager.ttsSite;
-            var ttsModels = ttsSites.get(effectiveTtsSite);
-            this.manager.ttsModel = this.ensureExistingModel(ttsModels, this.manager.ttsModel);
-        }
-
-        // 语言存在判定
+        // 语言存在判定（沿用旧行为）
         if (SupportLanguage.SUPPORTED_LANGUAGES.isEmpty() || StringUtils.isBlank(this.manager.ttsLanguage)) {
             this.manager.ttsLanguage = "en_us";
             return;
@@ -341,23 +384,6 @@ public class AIChatScreen extends Screen {
         if (!SupportLanguage.SUPPORTED_LANGUAGES.contains(this.manager.ttsLanguage)) {
             this.manager.ttsLanguage = "en_us";
         }
-    }
-
-    private String ensureExistingModel(Map<String, String> models, String current) {
-        if (models == null || models.isEmpty()) {
-            return StringUtils.EMPTY;
-        }
-        if (StringUtils.isBlank(current) || !models.containsKey(current)) {
-            return models.keySet().iterator().next();
-        }
-        return current;
-    }
-
-    private String getDefaultLLMSite(Map<String, Map<String, String>> llmSites) {
-        if (llmSites.containsKey(DefaultLLMSite.DEEPSEEK.id())) {
-            return DefaultLLMSite.DEEPSEEK.id();
-        }
-        return llmSites.keySet().stream().findFirst().orElse(StringUtils.EMPTY);
     }
 
     @Override
@@ -410,53 +436,176 @@ public class AIChatScreen extends Screen {
         }
     }
 
+    /**
+     * 底部概要给玩家看的是名字，不是内部 id。原实现把站点 id（"system"）和空值哨兵（"*"）
+     * 原样印在屏上——玩家读到的每一个字都是断言，内部标识不该混在其中。
+     */
+    private static String displaySiteName(String siteId) {
+        if (StringUtils.isBlank(siteId)) {
+            return "—";
+        }
+        String key = "ai.touhou_little_maid.chat.site.%s.name".formatted(siteId);
+        return I18n.exists(key) ? I18n.get(key) : siteId;
+    }
+
+    /** 系统语音这类站点没有「模型」可言，此时只显示站点名，而不是拼一个「 / *」出来 */
+    private static String joinSiteAndModel(String siteName, String modelName) {
+        if (StringUtils.isBlank(modelName) || "*".equals(modelName)) {
+            return siteName;
+        }
+        return siteName + " / " + modelName;
+    }
+
     private void renderSelectionSummaries(GuiGraphicsExtractor graphics) {
         int left = this.input.getX() - 6;
         int right = this.input.getX() + this.input.getInnerWidth() + 6;
         int summaryY = this.input.getY() + 16;
         int halfWidth = (right - left) / 2;
-        float scale = 0.5f;
 
-        graphics.pose().pushMatrix();
-        graphics.pose().scale(scale);
+        // 三态：跟随默认（空值，显示解析出的默认）· 已覆盖（具体值且在目录里）· 已回落（具体值但目录里没有）
+        var llmCatalog = ClientAvailableSitesSync.getClientLLMSites();
+        String llmText;
+        String llmState;
+        if (StringUtils.isBlank(this.manager.llmSite)) {
+            llmText = this.defaultLlmLabel(llmCatalog);
+            llmState = "follow";
+        } else if (llmCatalog.containsKey(this.manager.llmSite)) {
+            llmText = joinSiteAndModel(displaySiteName(this.manager.llmSite),
+                    ClientAvailableSitesSync.getLLMModelName(this.manager.llmSite, this.manager.llmModel));
+            llmState = "override";
+        } else {
+            llmText = this.defaultLlmLabel(llmCatalog);
+            llmState = "fallback";
+        }
+        MutableComponent llmSummary = Component.translatable("ai.touhou_little_maid.chat.summary.llm",
+                withStateSuffix(llmText, llmState));
+        this.drawScaledSummary(graphics, llmSummary.getString(), left, summaryY, halfWidth,
+                LLM_SUMMARY_TEXT_SCALE, false);
 
-        int scaledLeft = Math.round(left / scale);
-        int scaledRight = Math.round(right / scale);
-        int scaledY = Math.round(summaryY / scale);
-        int scaledHalfWidth = Math.round(halfWidth / scale);
-
-        String llmModelSummary = "%s / %s".formatted(
-                StringUtils.defaultIfEmpty(this.manager.llmSite, "*"),
-                ClientAvailableSitesSync.getLLMModelName(this.manager.llmSite, this.manager.llmModel)
-        );
-        MutableComponent llmSummary = Component.translatable("ai.touhou_little_maid.chat.summary.llm", llmModelSummary);
-        String trimmedLeft = this.trimToWidth(llmSummary.getString(), scaledHalfWidth);
-        graphics.text(this.font, trimmedLeft, scaledLeft, scaledY, 0xFFADADAD);
-
+        var ttsCatalog = ClientAvailableSitesSync.getClientTTSSites();
         String ttsModelSummary;
+        String ttsState;
         if (MaidAIChatSerializable.isNoTTSSite(this.manager.ttsSite)) {
             ttsModelSummary = Component.translatable("ai.touhou_little_maid.chat.site.none.name").getString();
+            ttsState = "override";
+        } else if (StringUtils.isBlank(this.manager.ttsSite)) {
+            ttsModelSummary = this.defaultTtsLabel(ttsCatalog);
+            ttsState = "follow";
+        } else if (ttsCatalog.containsKey(this.manager.ttsSite)) {
+            ttsModelSummary = joinSiteAndModel(displaySiteName(this.manager.ttsSite),
+                    ClientAvailableSitesSync.getTTSModelName(this.manager.ttsSite, this.manager.ttsModel));
+            ttsState = "override";
         } else {
-            String effectiveTtsSite = StringUtils.isBlank(this.manager.ttsSite) ? TTSSystemSite.API_TYPE : this.manager.ttsSite;
-            ttsModelSummary = "%s / %s".formatted(
-                    effectiveTtsSite,
-                    ClientAvailableSitesSync.getTTSModelName(effectiveTtsSite, this.manager.ttsModel)
-            );
+            ttsModelSummary = this.defaultTtsLabel(ttsCatalog);
+            ttsState = "fallback";
         }
         MutableComponent ttsSummary = Component.translatable("ai.touhou_little_maid.chat.summary.tts",
-                ttsModelSummary, SupportLanguage.getLanguageName(this.manager.ttsLanguage));
-        String trimmedRight = this.trimToWidth(ttsSummary.getString(), scaledHalfWidth);
-        int rightX = scaledRight - this.font.width(trimmedRight);
-        graphics.text(this.font, trimmedRight, rightX, scaledY, 0xFFADADAD);
+                withStateSuffix(ttsModelSummary, ttsState), SupportLanguage.getLanguageName(this.manager.ttsLanguage));
+        this.drawScaledSummary(graphics, ttsSummary.getString(), right, summaryY, halfWidth,
+                TTS_SUMMARY_TEXT_SCALE, true);
+    }
 
+    /**
+     * 客户端侧镜像解析默认值，只为渲染标签；权威解析在服务端 {@code MaidAIChatData}。
+     * 规则里的默认站点不在目录（没配或被禁）时，标签落到内置兜底——与服务端的滑落一致。
+     */
+    private String defaultLlmLabel(Map<String, Map<String, String>> catalog) {
+        String rule = ServerRuleConfig.get(AIConfig.DEFAULT_LLM_SITE);
+        String siteId = StringUtils.isNotBlank(rule) && catalog.containsKey(rule)
+                ? rule : DefaultLLMSite.DEEPSEEK.id();
+        String model = firstOrRuleModel(catalog.get(siteId),
+                siteId.equals(rule) ? ServerRuleConfig.get(AIConfig.DEFAULT_LLM_MODEL) : StringUtils.EMPTY);
+        return joinSiteAndModel(displaySiteName(siteId), model);
+    }
+
+    private String defaultTtsLabel(Map<String, Map<String, String>> catalog) {
+        String rule = ServerRuleConfig.get(AIConfig.DEFAULT_TTS_SITE);
+        String siteId = StringUtils.isNotBlank(rule) && catalog.containsKey(rule)
+                ? rule : TTSSystemSite.API_TYPE;
+        String model = firstOrRuleModel(catalog.get(siteId),
+                siteId.equals(rule) ? ServerRuleConfig.get(AIConfig.DEFAULT_TTS_MODEL) : StringUtils.EMPTY);
+        return joinSiteAndModel(displaySiteName(siteId), model);
+    }
+
+    private static String firstOrRuleModel(@Nullable Map<String, String> models, String ruleModel) {
+        if (models == null || models.isEmpty()) {
+            return StringUtils.EMPTY;
+        }
+        if (StringUtils.isNotBlank(ruleModel) && models.containsKey(ruleModel)) {
+            return models.get(ruleModel);
+        }
+        return models.values().iterator().next();
+    }
+
+    private static String withStateSuffix(String text, String state) {
+        return text + " · " + I18n.get("ai.touhou_little_maid.chat.summary.state." + state);
+    }
+
+    private PopupEntry followDefaultEntry(String defaultLabel, boolean selected) {
+        MutableComponent label = Component.translatable("ai.touhou_little_maid.chat.popup.follow_default", defaultLabel);
+        return new PopupEntry(label, false, selected, StringUtils.EMPTY, StringUtils.EMPTY, null);
+    }
+
+    private void drawScaledSummary(GuiGraphicsExtractor graphics, String text, int anchorX, int y, int maxWidth,
+                                   float scale, boolean alignRight) {
+        int scaledMaxWidth = Math.round(maxWidth / scale);
+        String trimmed = this.trimToWidth(text, scaledMaxWidth);
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(scale);
+        int scaledX = Math.round(anchorX / scale);
+        if (alignRight) {
+            scaledX -= this.font.width(trimmed);
+        }
+        graphics.text(this.font, trimmed, scaledX, Math.round(y / scale), 0xFFADADAD);
         graphics.pose().popMatrix();
+    }
+
+    /** 与 defaultTtsLabel 同一套镜像解析，但返回 id——网络请求要 id，标签要名字 */
+    private String resolvedDefaultTtsSiteId() {
+        var catalog = ClientAvailableSitesSync.getClientTTSSites();
+        String rule = ServerRuleConfig.get(AIConfig.DEFAULT_TTS_SITE);
+        return StringUtils.isNotBlank(rule) && catalog.containsKey(rule) ? rule : TTSSystemSite.API_TYPE;
+    }
+
+    private String resolvedDefaultTtsModelId() {
+        var catalog = ClientAvailableSitesSync.getClientTTSSites();
+        String siteId = this.resolvedDefaultTtsSiteId();
+        var models = catalog.get(siteId);
+        if (models == null || models.isEmpty()) {
+            return StringUtils.EMPTY;
+        }
+        String rule = ServerRuleConfig.get(AIConfig.DEFAULT_TTS_MODEL);
+        if (siteId.equals(ServerRuleConfig.get(AIConfig.DEFAULT_TTS_SITE))
+                && StringUtils.isNotBlank(rule) && models.containsKey(rule)) {
+            return rule;
+        }
+        return models.keySet().iterator().next();
+    }
+
+    /** 可试听：不是分组头、不是「不说话」。「跟随默认」也可试——试的就是当前默认那一把嗓子 */
+    private boolean isPreviewableEntry(PopupEntry entry) {
+        return !entry.header() && !NO_TTS_SITE.equals(entry.site());
+    }
+
+    private String previewSiteOf(PopupEntry entry) {
+        if (StringUtils.isBlank(entry.site())) {
+            return this.resolvedDefaultTtsSiteId();
+        }
+        return entry.site();
+    }
+
+    private String previewModelOf(PopupEntry entry) {
+        if (StringUtils.isBlank(entry.site())) {
+            return this.resolvedDefaultTtsModelId();
+        }
+        return StringUtils.defaultString(entry.model());
     }
 
     private void renderTokenUsage(GuiGraphicsExtractor graphics) {
         int left = this.input.getX() - 6;
         int right = this.input.getX() + this.input.getInnerWidth() + 6;
         int tokenY = this.input.getY() - 14;
-        float scale = 0.5f;
+        float scale = TOKEN_TEXT_SCALE;
 
         String currentStr = formatTokenCount(this.currentTokens);
         String text;
@@ -604,7 +753,12 @@ public class AIChatScreen extends Screen {
             ChatClientInfo clientInfo = ChatClientInfo.fromMaid(this.maid);
             ClientPlayNetworking.send(new SendUserChatPackage(this.maid.getId(), value, clientInfo));
             String format = "<%s> %s".formatted(player.getScoreboardName(), value);
-            player.sendSystemMessage(Component.literal(format).withStyle(ChatFormatting.GRAY));
+            // ⚠️ 不能用 player.sendSystemMessage：javap 实证它在 26.1.2 直接走
+            // ChatListener.handleSystemMessage，而本行格式恰是 "<玩家名> 文本"，
+            // 正好命中 guessChatUUID 的 <...> 解析 → Minecraft.isBlocked →
+            // PlayerSocialManager.pendingBlockListRefresh.join()，在渲染线程上硬等
+            // Mojang 屏蔽名单。这是 C2③ 那条链在 GUI 层的同一处实例。
+            ClientLocalChat.show(Component.literal(format).withStyle(ChatFormatting.GRAY));
         }
         this.onClose();
     }
@@ -650,6 +804,19 @@ public class AIChatScreen extends Screen {
 
             int textColor = entry.selected() ? 0xFF55ff55 : hover ? 0xFFF3EFE0 : 0xFF989898;
             this.drawPopupText(graphics, entry.label().getString(), x + 12, top + 4, width - 28, textColor);
+
+            // 音色行右缘的试听热区：选音色靠耳朵。
+            // 一次只允许一个在途请求，所以别的行在等待期间必须**看起来**就是点不动的——
+            // 画成正常的 ▶ 却默默吞掉点击，是最难受的那种失灵。
+            if (this.openPopup == PopupType.TTS && this.isPreviewableEntry(entry)) {
+                boolean pending = VoicePreviewClient.isPendingFor(this.previewSiteOf(entry), this.previewModelOf(entry));
+                boolean blocked = !pending && VoicePreviewClient.isBusy();
+                String glyph = pending ? "…" : "▶";
+                int glyphColor = pending ? 0xFFFFAA00
+                        : blocked ? 0xFF3A3A3A
+                        : (hover ? 0xFFF3EFE0 : 0xFF6A6A6A);
+                graphics.text(this.font, glyph, x + width - 14, top + 4, glyphColor, false);
+            }
         }
 
         // 渲染滚动条
@@ -693,8 +860,14 @@ public class AIChatScreen extends Screen {
         }
 
         // 执行点击应用
+        // 音色行右缘 18px 是试听热区——点它出声，不改选择
         PopupEntry entry = entries.get(index);
         if (!entry.header()) {
+            if (this.openPopup == PopupType.TTS && this.isPreviewableEntry(entry) && mouseX >= x + w - 18) {
+                VoicePreviewClient.request(this.previewSiteOf(entry), this.previewModelOf(entry),
+                        VoicePreviewClient.Origin.CHAT);
+                return true;
+            }
             this.applyPopupSelection(this.openPopup, entry);
         }
         return true;

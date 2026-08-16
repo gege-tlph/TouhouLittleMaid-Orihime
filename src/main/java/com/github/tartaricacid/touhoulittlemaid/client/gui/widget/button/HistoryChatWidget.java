@@ -12,6 +12,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.item.component.ResolvableProfile;
 
@@ -21,6 +22,12 @@ public class HistoryChatWidget extends AbstractWidget {
     private static final Identifier TEXTURE = IdentifierUtil.modLoc("textures/gui/maid_history_chat.png");
     private static final long TICKS_PER_DAY = 24000;
     private static final long TICKS_PER_HOUR = 1000;
+    /**
+     * 工具消息与时间戳的字号。origin 用 0.5——在 guiScale 2 以下每个字只有 4 像素高，
+     * 糊成一片读不出。0.65 是目视量出的可读下限，再大就压到气泡上。
+     */
+    public static final float TOOL_TEXT_SCALE = 0.65f;
+    private static final float TIMESTAMP_TEXT_SCALE = 0.65f;
 
     /**
      * 普通的 LLM 返回的聊天消息
@@ -78,8 +85,8 @@ public class HistoryChatWidget extends AbstractWidget {
     }
 
     private void renderToolText(GuiGraphicsExtractor graphics, Font font) {
-        float scale = 0.5f;
-        int width = (int) (this.getWidth() / scale);
+        float scale = TOOL_TEXT_SCALE;
+        int width = getToolTextWidth(this.getWidth());
         float posX = this.getX() / scale + width / 2f;
         float posY = this.getY() / scale;
 
@@ -126,22 +133,29 @@ public class HistoryChatWidget extends AbstractWidget {
             graphics.text(font, lines.get(i), this.getX() + 5, this.getY() + 5 + i * font.lineHeight, color, false);
         }
 
-        float scale = 0.5f;
+        float scale = TIMESTAMP_TEXT_SCALE;
+        // 时间戳按自己的字号让出高度；origin 写死的 -5 是照 0.5 字号凑的，换字号就压进气泡
+        float timeY = this.getY() - font.lineHeight * scale - 2.0f;
         graphics.pose().pushMatrix();
         graphics.pose().scale(scale, scale);
         if (isLeft) {
             graphics.text(font, this.time.getVisualOrderText(),
                     (int) ((this.getX() + 2) / scale),
-                    (int) ((this.getY() - 5) / scale),
+                    Math.round(timeY / scale),
                     0xFF999999, false);
         } else {
             float width = font.width(this.time) * scale;
             graphics.text(font, this.time.getVisualOrderText(),
                     (int) ((this.getX() + this.getWidth() - width - 2) / scale),
-                    (int) ((this.getY() - 5) / scale),
+                    Math.round(timeY / scale),
                     0xFF999999, false);
         }
         graphics.pose().popMatrix();
+    }
+
+    /** 缩放后的逻辑宽度：换行要按缩放后的坐标系算，否则行数与实际渲染不符 */
+    public static int getToolTextWidth(int width) {
+        return Math.max(1, Mth.floor(width / TOOL_TEXT_SCALE));
     }
 
     private int getTextureY() {
