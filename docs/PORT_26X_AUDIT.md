@@ -501,9 +501,9 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 `ServerRuleReadRoutingContractTest`（读点唯一性，3 例）、`WorldRuleGameTest`（世界规则全链路，GameTest）。
 
 **A 配置所有权与持久化**（12）
-- [ ] `AiConfigFileMigrationTest.java`
-- [ ] `AiServerRuleAttackTest.java`
-- [ ] `AiServerRuleMigrationTest.java`
+- [x] `AiConfigFileMigrationTest.java` —— 本树源链只有 -common.toml，回落用例改由服务端侧覆盖（`fbb360d39`）
+- [x] `AiServerRuleAttackTest.java` —— 改用就地引导 + 列表型世界规则验同一条 4096 防线（`fbb360d39`）
+- [x] `AiServerRuleMigrationTest.java` —— 加一条「坏源跳过而非整批放弃」（`fbb360d39`）
 - [x] `AtomicConfigFileWriterTest.java` —— 逐字搬入、零修改（`8c439de1a`）
 - [x] `ConfigPayloadCodecTest.java` —— 搬入并加一条 Sync 包往返（`0e54b51ac`）
 - [ ] `GlobalConfigMigrationTest.java`
@@ -512,7 +512,7 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 - [x] `RuleStagingSessionTest.java` —— 断言对象由 AI 值改为世界规则值，语义不变（`0e54b51ac`）
 - [x] `ServerRuleConfigTransactionTest.java` —— 搬入并加一条运维参数不进公开快照（`9354189d9`）
 - [x] `ServerRulesSaveAuthorityContractTest.java` —— 去掉 AI 店那一半，加一条「激活与否按服务器形态判定」（`0e54b51ac`）
-- [ ] `WorldRuleTestHarness.java`
+- [x] `WorldRuleTestHarness.java` —— 两个店一起搭（`0d5124259`）
 
 **B 战斗 / 威胁响应**（3）
 - [ ] `MaidCombatIntentGameTest.java`（GameTest）
@@ -520,30 +520,30 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 - [ ] `MaidTargetingPolicyGameTest.java`（GameTest）
 
 **C AI 聊天·站点·TTS/STT**（24）
-- [ ] `AvailableSitesTransactionTest.java`
-- [ ] `ClientLocalChatContractTest.java`
-- [ ] `DedicatedSiteFilesGameTest.java`（GameTest）
-- [ ] `GameplayKnowledgeContractTest.java`
+- [x] `AvailableSitesTransactionTest.java` —— 引导改 AiClientConfig/AiServerRuleConfig（`4137ea764`）
+- [x] `ClientLocalChatContractTest.java` —— 判据改 addClientSystemMessage（26.1.2 按来源拆了入口）（`0d5124259`）
+- [x] `DedicatedSiteFilesGameTest.java`（GameTest） —— 逐字搬入，entrypoint 已登记（`4137ea764`）
+- [x] `GameplayKnowledgeContractTest.java` —— 锚点表与数值事实表按已落地范围收窄（`0d5124259`）
 - [ ] `GuiLangKeyCoverageTest.java`
-- [ ] `LLMSitePersistenceRegressionTest.java`
-- [ ] `MaidChatFollowResolutionTest.java`
-- [ ] `MaidChatHistoryNormalizationTest.java`
-- [ ] `MaidContextsGameTest.java`（GameTest）
-- [ ] `MaidControlToolsGameTest.java`（GameTest）
-- [ ] `MaidFarmNavigationGameTest.java`（GameTest）
-- [ ] `MaidFollowOwnerGameTest.java`（GameTest）
-- [ ] `MaidTableFoodGameTest.java`（GameTest）
-- [ ] `MissingTtsPartIsNotSilentContractTest.java`
-- [ ] `ResponseChatSplitTest.java`
-- [ ] `STTSiteCredentialsTest.java`
+- [x] `LLMSitePersistenceRegressionTest.java` —— 逐字搬入（`4137ea764`）
+- [x] `MaidChatFollowResolutionTest.java` —— 逐字搬入（`0d5124259`）
+- [x] `MaidChatHistoryNormalizationTest.java` —— 逐字搬入（`0d5124259`）
+- [x] `MaidContextsGameTest.java`（GameTest） —— setDayTime 已删 → 改断言上下文与真实日程一致；桌上食物三条留锚点（`0d5124259`）
+- [x] `MaidControlToolsGameTest.java`（GameTest） —— 背包走 Fabric transfer；首跑红 5 条照出两个工具类缺三项加固（`0d5124259`）
+- [ ] `MaidFarmNavigationGameTest.java`（GameTest）—— ⚠️ **归类有误，实属 §3.E（在 entity/ai/brain/task，依赖寻路手感，非 AI 聊天）**
+- [ ] `MaidFollowOwnerGameTest.java`（GameTest）—— ⚠️ **归类有误，实属 §3.E（同上）**
+- [ ] `MaidTableFoodGameTest.java`（GameTest）—— ⚠️ **归类有误，实属 §3.I（桌上食物，非 AI 聊天）**
+- [x] `MissingTtsPartIsNotSilentContractTest.java` —— 逐字搬入（`0d5124259`）
+- [x] `ResponseChatSplitTest.java` —— 逐字搬入（`0d5124259`）
+- [x] `STTSiteCredentialsTest.java` —— 逐字搬入（`4137ea764`）
 - [ ] `SettingsPopupWiringContractTest.java`
 - [ ] `SiteCheckResultWiringContractTest.java`
 - [ ] `SiteEditorLayoutTest.java`
-- [ ] `SiteSecretRedactionTest.java`
-- [ ] `SkillLoaderPriorityTest.java`
-- [ ] `ToolDispatchWiringContractTest.java`
-- [ ] `UseSkillToolContractTest.java`
-- [ ] `VoicePreviewRequestValidationTest.java`
+- [x] `SiteSecretRedactionTest.java` —— 补一条独立取证的字段表断言——原用例是自证式的（`4137ea764`）
+- [x] `SkillLoaderPriorityTest.java` —— 逐字搬入（`4137ea764`）
+- [x] `ToolDispatchWiringContractTest.java` —— 逐字搬入（`0d5124259`）
+- [x] `UseSkillToolContractTest.java` —— 逐字搬入（`0d5124259`）
+- [x] `VoicePreviewRequestValidationTest.java` —— 逐字搬入（`f74380bc1`）
 
 **E 寻路·任务·跟随**（2）
 - [ ] `MaidSwimmingGameTest.java`（GameTest）
@@ -560,11 +560,11 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 - [ ] `YsmStandaloneIsolationContractTest.java`
 
 **H 命令**（2）
-- [ ] `AiReloadWiringContractTest.java`
-- [ ] `TlmCommandSmokeGameTest.java`（GameTest）
+- [x] `AiReloadWiringContractTest.java` —— 逐字搬入（`f74380bc1`）
+- [x] `TlmCommandSmokeGameTest.java`（GameTest） —— 逐字搬入，entrypoint 已登记（`f74380bc1`）
 
 **J 通用门禁不变量**（2）
-- [ ] `PayloadRegistrationInvariantTest.java`
+- [x] `PayloadRegistrationInvariantTest.java` —— 四个新 payload 漏登记正是它抓的形态（`f74380bc1`）
 - [ ] `RegistrationInvariantTest.java`
 
 **Z 其它**（4）

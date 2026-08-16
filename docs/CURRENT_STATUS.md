@@ -10,6 +10,9 @@
 当前树 = `origin/26.1`（MC 26.1.2 Fabric）+ 一层工程设施 + **审计 §3.A「服务器规则体系与配置所有权」已整块落地**
 （配置事务写盘 → 世界规则本体与文件层 → 读点改道 → 网络层与配置菜单 → op/deop 重发）
 + **§3.B「智能应战 / 威胁响应」已整簇落地**（统一目标策略 → 瞬态应战 → 每女仆响应策略与配置屏 → B1 远程应战）
++ **§3.C「AI 聊天 · 站点 · TTS/STT」的服务端与链路侧已整块落地**（AI 配置店 → 站点层 →
+聊天管理层与 agent 层含 C2 三笔结构性修复 → 网络层 / 试听 / §3.H 命令面 / 17 个 lang；
+**只余 AI 设置屏五页，见 O7**）
 + **§3.F 的一处宿主回归已修**（扛女仆时玩家手臂摆抱姿）。
 **除此之外，代码行为等同于代码宿主，不等同于我们 1.21.11 的行为。**
 构建、JUnit、GameTest 三条链路均已实跑验证；**2026-08-14 起有了单人档实机验收**
@@ -104,6 +107,21 @@ dev 客户端存档「新的世界」，全程无崩溃、无 mixin 失败、无
   rig 读不到，必须插 `[TLM-QA-*]` 诊断桩才能定案——而插桩要编译，**与 rig 同时跑 gradle 是禁止的**，
   须先停 rig。⚠️ 单人档已由用户实测三档策略全部生效，故这条**不是**「功能不工作」的证据。
 
+**§3.C AI 大簇（`fbb360d39`…`f74380bc1`）：零实机，全部待验**
+
+代码面四刀已闭合（GUI 五页见 O7），但**没有一条实机凭据**——AI 聊天要真站点密钥才能验：
+
+| 待验 | 怎么验 |
+|---|---|
+| AI 配置文件三分（`-ai-server.toml` 实例级 / `-ai.toml` 个人 / `-common.toml` 不再含 `[ai]`） | 用装过 stock 26.1 的存档启一次，看 `[ai]` 旧值有没有各自迁到位、`-common.toml` 里那节是否已被剥掉 |
+| 站点密钥不下发 | 客户端开站点编辑屏，密钥框应显示哨兵而非明文；只改地址保存后密钥不丢 |
+| 站点文件损坏的降级 | 手工把 `sites/llm.json` 改坏再进世界：应只降级 LLM 一家，且服务不消失 |
+| `/tlm ai_chat status` / `sites` / `reload` | 专服上逐条跑，看回执有无裸 lang 键 |
+| `AiChatDevCommand` 驱动一轮对话 | **不需要真客户端**，rig 可直接验 C2① 的动作旁路真的会执行工具 |
+| C2① 长对话后仍执行指令 | 聊满几十轮后说「跟着我」，应真的跟上来而不是只答应 |
+| C2② 切语种后 TTS 不漂回 | 选一个与聊天语言不同的语音语种，连说三轮以上 |
+| C2③ 云端识别不冻结客户端 | 网络不畅时连续识别，渲染线程不应卡住 |
+
 **仍开放（都需要专服/局域网或旧存档，单人档验不到）**：
 
 | 待验 | 为什么这轮验不到 | 怎么验 |
@@ -147,14 +165,14 @@ dev 客户端存档「新的世界」，全程无崩溃、无 mixin 失败、无
 「唯一可能再藏整块玩法丢失的地方」**排除**——但代价是宿主取消了 `ILittleMaid` 的
 `addChestType` / `registerTaskData` 两个第三方扩展点，第三方需求出现时再评估（账本行有锚点）。
 
-**O3 · §3.A 剩余两项（世界规则那一层已闭合）**
+**O3 · §3.A 只剩一项（配置三层已全部闭合）**
 
-配置三层的**世界规则那一层已完整**：本体、文件层、读点改道、网络层、配置菜单、
-`/tlm config reload`、op/deop 重发，全部落地并有测试（见已关闭表三条）。剩下的两项都不属这一层：
+配置三层**全部完整**：世界规则那一层（本体、文件层、读点改道、网络层、配置菜单、
+`/tlm config reload`、op/deop 重发）与 AI 那一店（实例级 `AiServerRuleConfig` + 个人
+`AiClientConfig`，随 §3.C 第一刀 `fbb360d39` 落地，四个恢复锚点全部认领）。剩下一项不属这一层：
 
 | 缺口 | 现状 | 恢复锚点 |
 |---|---|---|
-| `AiServerRuleConfig` 那一店 | 未搬，整体属 §3.C。`ServerRuleConfig.get()` 无路由分支；两个包只装世界规则一半 | `ServerRuleConfig.get()`、`SyncServerRulesPacket` 两处 javadoc |
 | `ExperimentalConfig.SMOOTH_FOLLOW` | 类与值都未建；配置项要与消费者（§3.E 跟随手感）同批落地 | `ServerRuleConfig.values()` 的 javadoc |
 
 ⚠️ 上表每一条在代码里都有对应注释，**不要只靠本表**——本表会过时，注释在改到时才会被看见。
@@ -184,9 +202,70 @@ TACZ 14 条与 B1–B7 已全部落地（见已关闭表）。本项只剩：
 里已经写好了目标 ref 名（`release/26.1.2-clean` / `fork/port/26.1.2-fabric`），
 但**那两个 ref 还不存在**，相关门禁步骤现在必然跳过或报缺失——属预期，不是缺陷。
 
+**O7 · §3.C 的 GUI 五页重做 —— 唯一未落地的一块，方法已重新定案**
+
+§3.C 的服务端与链路侧四刀已全部落地（见已关闭表）。**只剩 AI 设置屏五页**，且它
+**不能照搬**：26.1.2 删掉了整个 `GuiGraphics` 类（渲染改成 `GuiGraphicsExtractor` +
+`extractRenderState` 抽取模型），而行为基准那 18 个屏全是按 1.21.11 的
+`render(GuiGraphics, …)` 写的——整取的结果是 60+ 个「找不到符号 GuiGraphics」。
+
+**正确做法**：把我们的差异**逐个铺到宿主已按 26.1.2 写好的屏上**，而不是反过来。
+代价可量：宿主自己把这批屏从 1.21.1 迁到 26.1.2 只花了 **11 文件 / +224−245**，
+说明那层改写是机械的；真正的量在我们的 **18 文件 / +1763−398** 功能增量。
+
+| 要做的 | 说明 |
+|---|---|
+| 新建三件 | `editor/SiteEditorLayout`、`settings/AIChatSettingsUsageScreen`、`widget/button/MaidAIChatConfigButton` |
+| **删除**一件 | `settings/AIChatSettingsSTTSiteScreen` —— STT 由每女仆选站改**全局单选**；三处引用要改道（`STTSiteEditorScreen` 的 parent 类型、hub 的 `case STT_SITE`、`widget/ai/STTSiteButton`） |
+| 重做 | hub 侧边栏权限边界、`AIChatScreen`、LLM/STT/TTS 三个设置页、三个编辑屏、`FormField`、`SettingEditScreen`、`HistoryAIChatScreen`、`Translations` |
+| **TTS 语种诚实标注** | `layout/TTSSystemFormLayout` 与 `layout/TTSSiteFormLayout` 的 `hints()` 两条键 + 聊天屏 🌐 按钮黄色悬停警告。系统 TTS 的语种开关**实际无效**（语音全由操作系统决定），采取的是诚实标注而非行为修复 |
+| hub 共享暂存契约 | 「任何一页保存都提交全部改动」——落地时必须同时写**按屏枚举**的测试并配「找到了几个看守对象」的下限，否则识别依据一变就静默零覆盖 |
+| 四条用例 | `SettingsPopupWiringContractTest`、`SiteCheckResultWiringContractTest`、`SiteEditorLayoutTest`、`GuiLangKeyCoverageTest` |
+
+⚠️ `SiteCheckResultDisplay` 与 lang 键已随第四刀先落地（网络层与命令面需要它们），
+本刀不必再动这两处。
+
 ---
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-16：§3.C AI 聊天大簇（服务端与链路侧四刀，GUI 五页见 O7）
+
+`fbb360d39` `4137ea764` `0d5124259` `f74380bc1`。**C2 三笔结构性缺陷修复全部落地。**
+
+| 刀 | 内容 |
+|---|---|
+| `fbb360d39` | **AI 配置店**：`AIConfig` 按所有权拆成实例级 AI 规则（`AiServerRuleConfig`，服务器权威、spec 有意不注册）与个人配置（`AiClientConfig`）；`ServerRuleConfig.get()` 按键归属路由；两个规则包合流分拣；ArchUnit 认领清单改两店并集。删 `TTS_LANGUAGE`（语种是纯女仆属性）与 Cloth 的 LLM/TTS 两组（服务器权威值不许经客户端直写 TOML） |
+| `4137ea764` | **站点层**：站点文件损坏不再整批放弃（那个 P0 的根因——表空后 `getSTTSite` 恒 null，玩家被告知「服务器不提供」）；密钥哨兵在编码结果的 tag 上统一处理，明文永不下行；专服不管理 STT 站点因而不生成 `stt.json` |
+| `0d5124259` | **聊天管理层 + agent 层**，含 **C2①**（判定/执行搬出对话通道、先做后说）、**C2②**（待合成文本改由无历史的独立翻译请求产出）、**C2③**（本地提示走 `ClientLocalChat`） |
+| `f74380bc1` | **网络层**（四个新包）、站点保存事务、试听链路、**§3.H 命令面**（`status`/`sites`/reload 收拢 + `AiChatDevCommand`）、17 个 lang 文件并入 |
+
+**C2③ 的前提在 26.1.2 复核成立且更硬**（javap -c）：
+`displayClientMessage → ChatListener.handleSystemMessage → guessChatUUID →
+Minecraft.isBlocked → PlayerSocialManager.isBlocked → pendingBlockListRefresh.join()`
+——在调用线程上**硬等** Mojang 屏蔽名单刷新。26.1.2 还给了个更贴切的落点：
+`ChatComponent.addMessage` 已私有化，按来源拆成 `addServerSystemMessage`（原版走这条）与
+`addClientSystemMessage`（本机自己打的提示），后者正是我们要的语义。
+
+**两处按范围裁剪，各留恢复锚点**（不预留空壳）：`ChatClientInfo` 的 YSM 短路（§7.2 范围外）、
+`table_food` 两个上下文（§3.I 未移植）。**知识文档同步裁剪**：`en_us.md`/`zh_cn.md` 各剔除
+3 段（§3.E 跟随·浅水·农作站位、§3.I 桌上食物），契约测试的锚点表与数值事实表同步收窄——
+知识文档是直接喂给模型当事实的，描述一个本构建做不到的行为比不描述贵得多。
+
+**四处静默故障被闸门当场照出**（都是「编译打包启动全正常、功能从不执行」那一族）：
+① 四个新 payload 一个都没登记进 `NetworkHandler`（J 组 `PayloadRegistrationInvariantTest`
+此前也没搬，一并补上并红测）② `MaidAIChatManager` 漏了 `@MaidManagerDef` 导致
+`EntityMaid.aiChatManager` 整个不存在 ③ 三个新 GameTest 类未登记 `fabric-gametest`
+entrypoint ④ `SiteSecretRedactionTest` 的字段集取自它本该看管的那张表（自证式断言，
+删掉 `SECRET_ID` 原有 7 条用例一条都不红）——补了一条独立取证的断言。
+
+门禁：compileJava 0 错；JUnit 75 → **168** 例 0 失败（新增 19 个测试类）；
+GameTest 64 → **78** 例 0 失败（新增 4 类，用例名逐个实见于 `report.xml`）。
+七轮红测各红在正确断言上（读口路由 / ArchUnit 认领 / 迁移次序 / 脱敏字段表 / 技能优先级 /
+站点降级 / C2 三笔 / payload 登记）。
+
+⚠️ **全部凭据来自自动化门，尚无实机验收**：AI 聊天要真站点密钥才能验，专服两侧分叉
+（站点表、AI 配置文件）单人档按定义测不出来。实机项见 O1。
 
 ## 2026-08-16：§3.B 威胁响应大簇整簇落地（`5fc0baf4f` `be9c15fff`）
 
