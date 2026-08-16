@@ -322,7 +322,7 @@ git diff --shortstat origin/26.1 origin/26.2 -- src
 0. **探路轮**（先做，用来校准工期）：只搬服务器规则体系的最小闭环（§3.A 前两行）+ 一条 GameTest，
    量出真实工时与冲突形态，再排整体计划。
 1. §3.J 测试与门禁设施 → 2. §3.A 配置三层 → 3. §3.B 威胁响应 → 4. §3.H 命令 →
-   5. §3.C AI（最大，依赖 A 与 H）→ 6. §3.D 上游缺陷（**逐条先核对新基是否已修**）→
+   5. ~~§3.C AI（最大，依赖 A 与 H）~~ **已整块落地（2026-08-17，含 GUI 五页）** → 6. §3.D 上游缺陷（**逐条先核对新基是否已修**）→
    7. §3.E 寻路手感 → 8. §3.F 渲染 → 9. §3.G 兼容（YSM / Patchouli 前置就绪后）。
 2. 1.21.11 分支继续维护，直到 26.x 稳定并完成实机验收。
 
@@ -499,6 +499,9 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 
 本分支另有**不在这 55 个里**的新增用例（1.21.11 上没有对应物，故不占台账条目）：
 `ServerRuleReadRoutingContractTest`（读点唯一性，3 例）、`WorldRuleGameTest`（世界规则全链路，GameTest）。
+- [x] `HubSharedStagingContractTest.java` —— O7 新增：hub「任何一页保存都提交全部改动」这条
+  **全称契约**的按屏枚举测试。识别依据取「覆写没覆写 `addFooterButtons`」（结构量），
+  不取按钮标签字面量；自带「认出了几屏」的下限断言，否则识别依据一变就静默零覆盖（`fcbd03296`）
 
 **A 配置所有权与持久化**（12）
 - [x] `AiConfigFileMigrationTest.java` —— 本树源链只有 -common.toml，回落用例改由服务端侧覆盖（`fbb360d39`）
@@ -524,7 +527,7 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 - [x] `ClientLocalChatContractTest.java` —— 判据改 addClientSystemMessage（26.1.2 按来源拆了入口）（`0d5124259`）
 - [x] `DedicatedSiteFilesGameTest.java`（GameTest） —— 逐字搬入，entrypoint 已登记（`4137ea764`）
 - [x] `GameplayKnowledgeContractTest.java` —— 锚点表与数值事实表按已落地范围收窄（`0d5124259`）
-- [ ] `GuiLangKeyCoverageTest.java`
+- [x] `GuiLangKeyCoverageTest.java` —— 首跑报两条假阳性（拼接前缀被当完整键），已改「模板键与以 . 结尾的片段一律跳过」，并写明它给的是**下界**（`fcbd03296`）
 - [x] `LLMSitePersistenceRegressionTest.java` —— 逐字搬入（`4137ea764`）
 - [x] `MaidChatFollowResolutionTest.java` —— 逐字搬入（`0d5124259`）
 - [x] `MaidChatHistoryNormalizationTest.java` —— 逐字搬入（`0d5124259`）
@@ -536,9 +539,9 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 - [x] `MissingTtsPartIsNotSilentContractTest.java` —— 逐字搬入（`0d5124259`）
 - [x] `ResponseChatSplitTest.java` —— 逐字搬入（`0d5124259`）
 - [x] `STTSiteCredentialsTest.java` —— 逐字搬入（`4137ea764`）
-- [ ] `SettingsPopupWiringContractTest.java`
-- [ ] `SiteCheckResultWiringContractTest.java`
-- [ ] `SiteEditorLayoutTest.java`
+- [x] `SettingsPopupWiringContractTest.java` —— 顺序断言缩到方法体（大括号配对截取）（`fcbd03296`）
+- [x] `SiteCheckResultWiringContractTest.java` —— 按「谁发 CheckSiteConfigPackage」枚举（`fcbd03296`）
+- [x] `SiteEditorLayoutTest.java` —— 纯 int 常量，无客户端可跑；红测装回「照抄邻居宽度 96」（`fcbd03296`）
 - [x] `SiteSecretRedactionTest.java` —— 补一条独立取证的字段表断言——原用例是自证式的（`4137ea764`）
 - [x] `SkillLoaderPriorityTest.java` —— 逐字搬入（`4137ea764`）
 - [x] `ToolDispatchWiringContractTest.java` —— 逐字搬入（`0d5124259`）
