@@ -40,6 +40,22 @@ class ServerRuleReadRoutingContractTest {
     private static final Path CONFIG_PACKAGE =
             MAIN_JAVA.resolve("com/github/tartaricacid/touhoulittlemaid/config");
 
+    /**
+     * <b>config 包里全部可反射到的配置字段</b>（世界规则 + 个人偏好 + AI 店，不加区分）。
+     * 只服务 {@link #everyRuleValueIsAccountedFor()}：那条断言要问「{@code values()} 里的每一项
+     * 能不能反射回一个声明字段」，判据必须来自**独立来源**，不能从 {@code values()} 自己筛，
+     * 否则就是自证式断言。
+     */
+    private static Map<ModConfigSpec.ConfigValue<?>, String> allConfigFieldNames;
+
+    /**
+     * 上表里**真正属于世界规则**的那一部分（值出现在 {@code ServerRuleConfig.values()} 里）。
+     * 下面三条扫描只看管它。
+     *
+     * <p>⚠️ 两张表必须分开：曾经用同一张表跑扫描，而扩宽 owner 清单后
+     * {@code RenderConfig}（纯客户端偏好，一条世界规则都不拥有）被算成看管对象，
+     * 它的通配静态导入当场成了假阳性。**「能反射到」与「归它管」是两件事。**</p>
+     */
     private static Map<ModConfigSpec.ConfigValue<?>, String> ruleFieldNames;
 
     @BeforeAll
@@ -68,7 +84,16 @@ class ServerRuleReadRoutingContractTest {
                 }
             }
         }
-        ruleFieldNames = byIdentity;
+        allConfigFieldNames = byIdentity;
+
+        Map<ModConfigSpec.ConfigValue<?>, String> worldRulesOnly = new IdentityHashMap<>();
+        for (ModConfigSpec.ConfigValue<?> value : ServerRuleConfig.values()) {
+            String name = byIdentity.get(value);
+            if (name != null) {
+                worldRulesOnly.put(value, name);
+            }
+        }
+        ruleFieldNames = worldRulesOnly;
     }
 
     /**
@@ -106,7 +131,7 @@ class ServerRuleReadRoutingContractTest {
         assertTrue(values.size() >= 40, "世界规则集意外缩水到 " + values.size() + " 项，先确认是不是搬漏了");
         List<String> unresolved = new ArrayList<>();
         for (ModConfigSpec.ConfigValue<?> value : values) {
-            if (!ruleFieldNames.containsKey(value)) {
+            if (!allConfigFieldNames.containsKey(value)) {
                 unresolved.add(String.join(".", value.getPath()));
             }
         }
@@ -239,11 +264,13 @@ class ServerRuleReadRoutingContractTest {
     @Test
     void ruleValuesAreNeverStaticallyImported() throws IOException {
         List<String> offenders = new ArrayList<>();
+        int inspected = 0;
         try (Stream<Path> files = Files.walk(MAIN_JAVA)) {
             for (Path file : files.filter(path -> path.toString().endsWith(".java")).toList()) {
                 if (file.toAbsolutePath().normalize().startsWith(CONFIG_PACKAGE.toAbsolutePath().normalize())) {
                     continue;
                 }
+                inspected++;
                 String[] lines = Files.readString(file, StandardCharsets.UTF_8).split("\n", -1);
                 for (int i = 0; i < lines.length; i++) {
                     String line = lines[i].strip();
@@ -265,6 +292,11 @@ class ServerRuleReadRoutingContractTest {
                 }
             }
         }
+        // 活性判据与结论正交：本条是**禁止型**断言，「没有违规」与「压根没扫」结果完全一样。
+        // 故分别验「走过了多少个源文件」与「认出了多少个看管对象」——两者会各自独立失效。
+        assertTrue(inspected >= 400, "只走过 " + inspected + " 个源文件，扫描范围可能已失效");
+        assertTrue(ruleFieldNames.size() >= 40,
+                "只认出 " + ruleFieldNames.size() + " 个世界规则字段，识别依据可能已失效");
         assertEquals(List.of(), offenders,
                 "世界规则值不许静态导入：裸名字会让读点绕开 ServerRuleConfig 的扫描");
     }
