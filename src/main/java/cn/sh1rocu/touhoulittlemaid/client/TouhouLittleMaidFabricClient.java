@@ -52,6 +52,8 @@ public class TouhouLittleMaidFabricClient implements ClientModInitializer {
         ClientExtensionsEvent.RegisterClientExtensions();
         InfoGetManager.onClientSetup();
 
+        InitLegacyResourcePack.register();
+
         ClientReloadListenerRegistry.onRegisterClientReloadListeners();
         RegisterSpecialModelEvent.registerSpecialModelRenderers();
 
