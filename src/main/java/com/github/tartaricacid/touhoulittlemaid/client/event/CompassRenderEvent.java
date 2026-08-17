@@ -4,10 +4,8 @@ package com.github.tartaricacid.touhoulittlemaid.client.event;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemKappaCompass;
-import com.github.tartaricacid.touhoulittlemaid.util.RenderHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gizmos.GizmoStyle;
@@ -48,8 +46,7 @@ public class CompassRenderEvent {
             renderArea(workPos, radius, 0xffff0000);
             Vec3 textPos = new Vec3(workPos.getX() + 0.5, workPos.getY() + 2, workPos.getZ() + 0.5);
             String text = I18n.get("message.touhou_little_maid.kappa_compass.work_area");
-            renderText(text, textPos.add(0, -0.75, 0), 0xffff1111);
-            renderText("▼", textPos.add(0, 0.75, 0), 0xffff1111);
+            renderLabel(text, textPos, 0xffff1111);
         }
 
         BlockPos idlePos = ItemKappaCompass.getPoint(Activity.IDLE, stack);
@@ -63,8 +60,7 @@ public class CompassRenderEvent {
                 Gizmos.line(centerPos(idlePos), centerPos(workPos), 0xffffffff);
             }
             String text = I18n.get("message.touhou_little_maid.kappa_compass.idle_area");
-            renderText(text, textPos.add(0, -0.75, 0), 0xff11ff11);
-            renderText("▼", textPos.add(0, 0.75, 0), 0xff11ff11);
+            renderLabel(text, textPos, 0xff11ff11);
         }
 
         BlockPos resetPos = ItemKappaCompass.getPoint(Activity.REST, stack);
@@ -79,8 +75,7 @@ public class CompassRenderEvent {
                 Gizmos.line(centerPos(resetPos), centerPos(workPos), 0xffffffff);
             }
             String text = I18n.get("message.touhou_little_maid.kappa_compass.sleep_area");
-            renderText(text, textPos.add(0, -0.75, 0), 0xff1111ff);
-            renderText("▼", textPos.add(0, 0.75, 0), 0xff1111ff);
+            renderLabel(text, textPos, 0xff1111ff);
         }
     }
 
@@ -92,7 +87,21 @@ public class CompassRenderEvent {
         Gizmos.circle(centerPos(pos), (float) radius, GizmoStyle.stroke(color));
     }
 
+    /**
+     * 基准布局：文字锚点在 textPos 上方 1.07 格（基准是 poseStack.translate(0,1,0) + 0.07），
+     * 标签再高 0.75、▼ 再低 0.75（±5 像素 × 0.15 缩放经字体空间 y 反转）——
+     * 标签在上、▼ 在下指向方块。
+     */
+    private static void renderLabel(String text, Vec3 textPos, int color) {
+        renderText(text, textPos.add(0, 1.07 + 0.75, 0), color);
+        renderText("▼", textPos.add(0, 1.07 - 0.75, 0), color);
+    }
+
+    /**
+     * 不开 always-on-top、不用 SEE_THROUGH：基准与 origin/1.21.1 的这段文字都会被墙体遮挡。
+     * 置顶还有个更硬的代价——它会清主渲染目标的深度贴图，开光影时地面整片发白。
+     */
     private static void renderText(String text, Vec3 pos, int color) {
-        RenderHelper.billboardText(text, pos, new TextGizmo.Style(color, 1.5f, OptionalDouble.empty()), Font.DisplayMode.SEE_THROUGH).setAlwaysOnTop();
+        Gizmos.billboardText(text, pos, new TextGizmo.Style(color, 1.5f, OptionalDouble.empty()));
     }
 }

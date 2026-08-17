@@ -3,12 +3,10 @@ package com.github.tartaricacid.touhoulittlemaid.client.event;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.SchedulePos;
-import com.github.tartaricacid.touhoulittlemaid.util.RenderHelper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gizmos.GizmoStyle;
@@ -18,7 +16,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
@@ -53,12 +50,15 @@ public class MaidAreaRenderEvent {
 
     private static void renderPos(@Nullable BlockPos workPos, @Nullable BlockPos idlePos, @Nullable BlockPos resetPos, EntityMaid maid, Player player) {
         BlockPos restrictCenter = maid.getHomePosition();
-        Vec3 restrictPos = Vec3.atCenterOf(restrictCenter);
+        Vec3 restrictPos = Vec3.atCenterOf(restrictCenter).add(0, 1, 0);
         if (!maid.isHomeModeEnable()) {
-            restrictPos = player.position();
+            restrictPos = player.position().add(0, 1, 0);
         }
-        AABB aabb = maid.getBoundingBox().move(0, -1, 0);
-        Gizmos.cuboid(aabb, GizmoStyle.fill(ARGB.colorFromFloat(0.8F, 0.2F, 0.75F, 0.8F)));
+        // home（或未开 home 时的玩家）到女仆的红线：基准一直在算 restrictPos，却没人画它
+        Gizmos.line(restrictPos, maid.position().add(0, 1, 0), 0xffff3333);
+        // colorFromFloat 的参数序是 (alpha, r, g, b)——基准盒色是 r0.8 g0.8 b0.2 a0.75 的半透明黄，
+        // 按位置抄成 (0.8,0.2,0.75,0.8) 会画成半透明青蓝。盒子也不该 move(0,-1,0)，那会低一格。
+        Gizmos.cuboid(maid.getBoundingBox(), GizmoStyle.fill(ARGB.colorFromFloat(0.75F, 0.8F, 0.8F, 0.2F)));
 
         if (workPos != null) {
             double radius = ServerRuleConfig.get(MaidConfig.MAID_WORK_RANGE) + 0.1;
@@ -66,8 +66,7 @@ public class MaidAreaRenderEvent {
 
             Vec3 textPos = new Vec3(workPos.getX() + 0.5, workPos.getY() + 2, workPos.getZ() + 0.5);
             String text = I18n.get("message.touhou_little_maid.kappa_compass.work_area");
-            renderText(text, textPos.add(0, -0.75, 0), 0xffff1111);
-            renderText("▼", textPos.add(0, 0.75, 0), 0xffff1111);
+            renderLabel(text, textPos, 0xffff1111);
         }
 
         if (idlePos != null) {
@@ -80,8 +79,7 @@ public class MaidAreaRenderEvent {
                 Gizmos.line(centerPos(idlePos), centerPos(workPos), 0xffffffff);
             }
             String text = I18n.get("message.touhou_little_maid.kappa_compass.idle_area");
-            renderText(text, textPos.add(0, -0.75, 0), 0xff11ff11);
-            renderText("▼", textPos.add(0, 0.75, 0), 0xff11ff11);
+            renderLabel(text, textPos, 0xff11ff11);
         }
 
         if (resetPos != null) {
@@ -95,8 +93,7 @@ public class MaidAreaRenderEvent {
                 Gizmos.line(centerPos(resetPos), centerPos(workPos), 0xffffffff);
             }
             String text = I18n.get("message.touhou_little_maid.kappa_compass.sleep_area");
-            renderText(text, textPos.add(0, -0.75, 0), 0xff1111ff);
-            renderText("▼", textPos.add(0, 0.75, 0), 0xff1111ff);
+            renderLabel(text, textPos, 0xff1111ff);
         }
     }
 
@@ -108,8 +105,18 @@ public class MaidAreaRenderEvent {
         return Vec3.atCenterOf(pos).add(0, 1, 0);
     }
 
+    /**
+     * 基准布局：文字锚点在 textPos 上方 1.07 格，标签再高 0.75、▼ 再低 0.75——
+     * 标签在上、▼ 在下指向方块。
+     */
+    private static void renderLabel(String text, Vec3 textPos, int color) {
+        renderText(text, textPos.add(0, 1.07 + 0.75, 0), color);
+        renderText("▼", textPos.add(0, 1.07 - 0.75, 0), color);
+    }
+
+    /** 不开 always-on-top、不用 SEE_THROUGH：基准与 origin/1.21.1 的这段文字都会被墙体遮挡。 */
     private static void renderText(String text, Vec3 pos, int color) {
-        RenderHelper.billboardText(text, pos, new TextGizmo.Style(color, 1.5f, OptionalDouble.empty()), Font.DisplayMode.SEE_THROUGH).setAlwaysOnTop();
+        Gizmos.billboardText(text, pos, new TextGizmo.Style(color, 1.5f, OptionalDouble.empty()));
     }
 
     public static void addSchedulePos(int id, SchedulePos pos) {

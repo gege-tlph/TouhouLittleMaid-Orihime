@@ -44,15 +44,13 @@ class ClientRenderContractTest {
      *
      * <p>「置顶」在 26.1.2 的实现是 {@code LevelRenderer.addLateDebugPass} 里对主渲染目标
      * {@code clearDepthTexture}（反编译源实查）。开光影时它会把光影包的深度附件一并抹掉，
-     * 表现为地面整片发白。下面两处是**已知未修**，与行为基准同状态：它们只在玩家主动拿着
-     * 河童罗盘 / 打开女仆范围可视化时才画，且行为基准当年也只把追踪标记搬去了 HUD。</p>
+     * 表现为地面整片发白。</p>
      *
-     * <p>⚠️ <b>追踪标记不得回到这张表里</b>——它是常驻可见的（手持仆从铃/狐狸卷轴即触发），
-     * 正是玩家报上来的那个症状。它现在画在 HUD 层，见 {@code TrackerMarkerOverlay}。</p>
+     * <p><b>本表有意为空</b>：行为基准与 {@code origin/1.21.1} 上真实调用点都是 <b>0</b>
+     * （实查；基准里唯一的字面命中在一段 javadoc 里）。追踪标记画在 HUD 层，
+     * 河童罗盘与女仆范围可视化的文字则应当被墙体遮挡。</p>
      */
-    private static final Map<String, String> ALWAYS_ON_TOP_ALLOWED = Map.of(
-            "CompassRenderEvent.java", "河童罗盘范围可视化：仅手持罗盘时绘制，与行为基准同为已知未修",
-            "MaidAreaRenderEvent.java", "女仆范围可视化：仅调试/查看范围时绘制，同上");
+    private static final Map<String, String> ALWAYS_ON_TOP_ALLOWED = Map.of();
 
     /**
      * {@code SpecialModelWrapper} 把 {@code extractArgument} 的返回值追加进 GUI 图标缓存的
