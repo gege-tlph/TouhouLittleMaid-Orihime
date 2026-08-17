@@ -7,24 +7,20 @@
 
 ## 结论
 
-当前树 = `origin/26.1`（MC 26.1.2 Fabric）+ 一层工程设施 + **审计 §3.A「服务器规则体系与配置所有权」已整块落地**
-（配置事务写盘 → 世界规则本体与文件层 → 读点改道 → 网络层与配置菜单 → op/deop 重发 →
-**个人配置只在物理客户端注册**，2026-08-17 补，此前这句「整块落地」不准确）
-+ **§3.B「智能应战 / 威胁响应」已整簇落地**（统一目标策略 → 瞬态应战 → 每女仆响应策略与配置屏 → B1 远程应战）
-+ **§3.C「AI 聊天 · 站点 · TTS/STT」已整块落地**（AI 配置店 → 站点层 →
-聊天管理层与 agent 层含 C2 三笔结构性修复 → 网络层 / 试听 / §3.H 命令面 / 17 个 lang →
-**AI 设置屏五页**）
-+ **§3.E「寻路 · 工作任务 · 跟随手感」已整块落地**（农场站位 → 浅水泳姿 → 跟随手感与
-`SMOOTH_FOLLOW`，2026-08-17；工作面由跨版本 wiki 的行为面指纹机械产出，不是抄交接文档）
-+ **§3.F「渲染与标记」三项里两项已落地**（追踪标记搬 HUD、手办/坐垫记忆化；
-YSM 那项依赖 O4 前置。顺带修掉宿主在罗盘/范围可视化上的四项回归与更早的抱姿回归）。
+当前树 = `origin/26.1`（MC 26.1.2 Fabric）+ 一层工程设施 + **审计 §3 的可做项全部落地**：
+§3.A 服务器规则体系与配置所有权（含「个人配置只在物理客户端注册」那一层，2026-08-17 补齐）·
+§3.B 智能应战 / 威胁响应整簇 · §3.C AI 聊天 · 站点 · TTS/STT（含 AI 设置屏五页）·
+§3.E 寻路 · 工作任务 · 跟随手感 · §3.F 渲染与标记（三项里两项，YSM 那项依赖 O4 前置）·
+§3.G 第三方兼容（可做的都已落地）。顺带修掉宿主在罗盘/范围可视化、抱姿、近战耐久上的多项回归。
 **除此之外，代码行为等同于代码宿主，不等同于我们 1.21.11 的行为。**
-**§3 的可做项至此全部走完**，且 §3.E/§3.F/§3.G 三节已于 2026-08-17 单人档实机验收通过
-（11 项，含开光影包那一项；环境见 O1）。**O8 行为面对账五个面已于 2026-08-18 全部跑完**，
-只产出一个真缺口且已修。剩下的开放项是：实机专服侧 / O9 与 O4 裁决 / `automation_ignore`——见 O8 与审计 §6。
+
+**两项对账已整体收口**：O8 行为面五个面（2026-08-18）与 **O2 反向缺口账本**
+（2026-08-18，待定 0 · 待补 0）。三者共产出三个真缺口，全部当轮修完。
+剩下的开放项是：**实机验收**（专服侧整体 + §3.C 那一大批 + 本轮两项新增 DEFERRED）、
+**O9 与 O4 裁决**、**O5 发布链路**——见下方各节与审计 §6。
 构建、JUnit、GameTest 三条链路均已实跑验证；**2026-08-14 起有了单人档实机验收**
-（棋局簇、背包四型、世界规则单人侧、抱姿、TACZ 五项、**§3.B 威胁响应整簇**——见 O1，
-专服/存档升级侧仍开放）。
+（棋局簇、背包四型、世界规则单人侧、抱姿、TACZ 五项、§3.B 威胁响应整簇、§3.E/F/G 三节 11 项——
+见 O1，专服/存档升级侧仍开放）。
 
 ---
 
@@ -39,11 +35,9 @@ YSM 那项依赖 O4 前置。顺带修掉宿主在罗盘/范围可视化上的�
 实机还抓出并当场修掉一个崩溃（替换燃烧中的熔炉背包，`d1fcc58c4`）。
 ☑️ 饮用音效条件难凑未实测，**用户裁定视为通过、除非后续被报告 bug**——口径与实测项不同，故分开记。
 
-图标缓存那一簇留下两条长期有效的事实：**F3+T 重载后图标暂时变 missing 属预期**
-（包重载重填队列，下次开 GUI 自动重缓存）；**缓存屏不暂停，故单人档缓存期间世界在走**
-（约 1 分钟，与开着模型 GUI 一致，非缺陷）。五轮排障的根因链见
-`7a2d63ca9`/`fdd0d3763`/`be60bdb62` 提交信息，其中「`isPauseScreen()` 冻结 level 时间」
-一条已进证伪表。
+图标缓存那一簇留下两条长期有效的事实：**F3+T 重载后图标暂时变 missing 属预期**；
+**缓存屏不暂停，故单人档缓存期间世界在走**（约 1 分钟，非缺陷）。五轮排障的根因链见
+`7a2d63ca9`/`fdd0d3763`/`be60bdb62` 提交信息，其中「`isPauseScreen()` 冻结 level 时间」已进证伪表。
 
 **可选实机抽验**（均有基准同款修法背书，非必须）：缺陷采用批（`6f5d8f2a5`）拉弓后换武器姿势应恢复 /
 灭火剂浇灭灵魂火 / 主手空时吃工作餐副手物品不消失；GIF 表情气泡（`b70145a20`）逐帧在动。
@@ -159,13 +153,12 @@ dev 客户端存档「新的世界」，全程无崩溃、无 mixin 失败、无
 追踪标记（**含开光影包那一项**）· 罗盘标签朝向与遮挡 · 调试盒颜色/位置/红线 ·
 手办与坐垫的创造栏与 JEI 帧率 · 女仆不爬森罗家具 · 酒馆座椅 · 葡萄收割与不被当工作餐。
 
-**验收环境（按「验收通过要连同环境一起记账」照录）**：dev 客户端单人档；
-`run/mods` = TACZ · 森罗厨房 1.3.0.6 · 森罗酒馆 1.2.0.5 · Iris 1.10.9 · Sodium 0.8.12-beta.1 · MCP rig；
-`run/shaderpacks` 备了四个包（Complementary / BSL / Kappa / SEUS PTGI HRR），
-**用的是哪一个我没记录**——若日后要复现「地面发白」的对照，需重新确认包名。
-这些 jar 与包**都不入库**（`run/` 已 gitignore），是从 gradle 缓存与本机既有素材拷进去的。
+**验收环境照录**：dev 客户端单人档；`run/mods` = TACZ · 森罗厨房 1.3.0.6 · 森罗酒馆 1.2.0.5 ·
+Iris 1.10.9 · Sodium 0.8.12-beta.1 · MCP rig；`run/shaderpacks` 备了四个包（Complementary / BSL /
+Kappa / SEUS PTGI HRR），**用的是哪一个我没记录**——要复现「地面发白」的对照需重新确认包名。
+这些 jar 与包**都不入库**（`run/` 已 gitignore），从 gradle 缓存与本机既有素材拷入。
 
-⚠️ **这批通过按定义只覆盖单人档**：三节里凡涉及「两侧各有一份数据」的部分
+⚠️ **这批通过按定义只覆盖单人档**：凡涉及「两侧各有一份数据」的部分
 （专服上的配置同步、权限边界）仍在下表开放；§3.F 那几项本就是纯客户端，无专服侧。
 
 **仍开放（都需要专服/局域网或旧存档，单人档验不到）**：
@@ -177,70 +170,16 @@ dev 客户端存档「新的世界」，全程无崩溃、无 mixin 失败、无
 | 专服保存 → `/tlm config reload` | 需要真专服 + 真客户端 | 改一项保存，确认提示出现且值未生效；跑 reload 后生效并同步 |
 | **AI 设置屏的侧栏权限边界**（O7 唯一未验项） | **单人档按定义测不出来**（不是「没顾上」）：`GameModeUtil.canEditSite` 的**第一个分支** `isSinglePlayer(player) → return true` 在任何权限判定之前就短路，`/deop` 改不动它，于是 `insufficientPermissions` 恒为 false，那条分支不可达 | **最便宜的路径是局域网客机**（非房主）：`isLanHost` 为假、`isDedicatedServer` 也为假 → `canEditSite` 返回 false。判据：侧栏**只剩「语音输入设置」一栏**，且落点就在那一页——不该出现「高亮的标签在侧栏里根本找不到」。专服非 OP 同理 |
 
-**O2 · 反向缺口：宿主迁移时丢掉的东西（判定已完成，进入实施排期）**
+**O2 已关闭**（2026-08-18，见已关闭表）：222 条判定完毕，「丢失」62 条全部补回，`--ledger` 待定 0 · 待补 0。
 
-差异化清单只回答「我们多出来的搬齐了没」，回答不了「宿主丢了什么」。
-账本 `docs/tools/host_gap_ledger.tsv`（222 条全登记），核对 `python docs/tools/host_gap.py --ledger`。
-方法与完整结果见审计 §7.8。
+**O8 已关闭**（2026-08-18，见已关闭表）：行为面对账五个面全部跑完，唯一真缺口已修。
 
-**判定分布与「已补回 / 待补」分栏不在本文写死**——跑 `python docs/tools/host_gap.py --ledger` 看实时数
-（本文此前写死过一次，两天内过时了两回，正是本文开头「不写会过时的数字」那条禁令针对的形态）。
-动手补的过程中已改判三条：`ClientBoardStateTooltip` 待定→丢失并已补、`MaidGameRecordManager` 丢失→替换、
-`IBackpackData` 替换→丢失——**判定的最终校验是真去补它**。
+**O10 · 女仆 GUI 自动关闭半径与行为基准有差（2026-08-18 新开，待裁决）**
 
-**「丢失」判定全部补回、`--ledger` 报待补 0**（五簇＋零散＋TACZ 批，逐簇的提交号与取证见已关闭表：
-背包四型 / 棋局层 / REI / 原版替换 / 图标缓存 / `GifTexture` / TACZ 14 条；O8 又新增两条并当场补回，见 O8）。
-一条长期有效的判定留在这里：`RenderFixer` **改判 丢失→无关**——它是 1.21.1 时代 Carry On 附魔渲染 bug 的绕行，
-判据载体 `BufferSource.fixedBuffers` 在 26.1.2 submit 管线**不存在**，行为基准也已在 render-state 重写时放弃它；
-现存 Carry On 兼容 = tag + molang 纯数据层，与基准一致，**零消费者不留空壳**。若实机复现同类 bug → 修上游。
-
-**O2 至此整体关闭：`--ledger` 报待定 0 · 待补 0**（2026-08-18；当轮收尾六道门禁各自单独跑、
-逐条读退出码，全部 0：compileJava · JUnit **206 例 0 失败** · GameTest **89/89** ·
-`--ledger` · `doc_lint` · wiki verify）。24 条待定逐条复核完毕，产出
-**替换 15 · 无关 3 · 生态 4（全是 Patchouli 一族，等 O4 前置）· 丢失 2**，两条丢失当轮补完
-（`TagRecipeSerializer` → `421ee6b70`；内置 legacy 资源包 → `6b4bf6cd5`）。逐条理由写在账本各行，不在此复制。
-
-四条值得记住的定性：① **`ItemEntityPlaceholder` 不是缺口**——三条产实体的祭坛配方都在本树，
-宿主只是把它们从 `recipe/altar_recipe/` 挪到 `recipe/` 根，并把展示产物从占位符物品换成真实代表物品
-（`maid_spawn_egg` / `minecraft:light`），实体仍由 `entity` 字段经 `spawnOutputEntity` 生成；
-② **`ShapeDraw` 在基准里就是零消费者的死代码**，补它等于搬别人的技术债；
-③ **`BundlePacketMixin` 的 javadoc 在说谎**——它自称为 `IEntityWithComplexSpawn` 的 bundle 嵌套而写，
-但那描述的是 PortingLib 的做法；本 fork 走 `ServerEntity.sendPairingData` 递普通包，
-而 26.1.2 的 `addPairing` 本来就只包一层（javap -c 实证），无嵌套可展平；
-④ **`PlayerUtil` 有可量化的手感差异**（女仆 GUI 自动关闭半径：生存 6→7 格、创造 9→7 格），
-宿主改用了原版惯例 `isWithinEntityInteractionRange`，无症状不改，恢复严格对等只需改一行——**留给用户裁决**。
-
-⚠️ **一条判定被本轮推翻**：账本原先把 `AddPackFindersEvent` 一族判成「替换 → `CustomPackLoader` 扫
-`tlm_custom_pack`」。实查基准：`AddPackFindersEvent.CALLBACK` **只有一个注册者**，其方法体**只注册那个内置
-legacy 资源包**；`CustomPackLoader` 根本不走 pack finder。**一个机制的多个用途，要分别问有没有承接者**。
-
-**内置「TLM Legacy Pack」整包丢失 —— 2026-08-18 新认定并当轮补回（`6b4bf6cd5`）**
-
-宿主删掉了 `LegacyPackRepositorySource` **和** `src/main/resources/legacy_pack/` 的 **104 个资源文件**，
-却留着 `pack.touhou_little_maid.legacy_resources_pack.title/desc` 两个 lang 键——
-**又一例「载体还在、行为没了」**，与 O8 那个唯一真缺口同族。玩家可见面：资源包列表里不再有这个可选包
-（默认关，开了就换回旧版模型与贴图）。
-
-**先证明它不是空壳再补**：104 个文件与本树现存资源求交，**98 个真的会覆盖**，孤儿仅 5 个 +
-`pack.mcmeta`/`pack.png`；且包体自洽——legacy 的 scarecrow 模型引用 `block/scarecrow`，那张贴图正在包内
-（本树主包已改名 `scarecrow_upper`/`lower`）。
-
-**写法对新基**：基准那条链（`AddPackFindersEvent` + `PackRepositoryExtension` + 三个 mixin，
-fork 自造的 Forge 风格事件总线）在宿主上已不存在。改用 Fabric 原生的 `ResourceLoader.registerBuiltinPack`，
-**包体位置由 javap -c 读它的方法体确定**是 `"resourcepacks/" + id.getPath()`，故落在
-`src/main/resources/resourcepacks/legacy_pack/`。`pack_format` 15→34（与主包同值，否则被标「不兼容」）。
-两个孤儿 lang 键就此复活：标题走 `Component.translatable`，描述走 `pack.mcmeta` 的 `description` 文本组件。
-
-四条契约（`LegacyResourcePackContractTest`），**五种缺陷形态逐个红测**（摘注册 / id 与目录名不符 /
-掏空包体 / `pack_format` 漂移 / 把描述写死回英文让 lang 键重新变孤儿），各红在正确断言上
-（id 不符那轮另有两条连带失败，因为它们读同一个已不存在的目录，属可解释的连带）。
-⚠️ 实机验收 **DEFERRED**，步骤见 O1。
-
-**优先三簇（箱子类型 / 任务数据 / 战利品，16 条）2026-08-15 全部改判「替换」**，证据在账本各行；
-「唯一可能再藏整块玩法丢失的地方」**排除**。代价是宿主取消了一批 `ILittleMaid` 第三方扩展点
-（`addChestType` / `registerTaskData`，O8 又添 `registerMagicCastingAnimation` / `MaidAfterEatEvent` /
-`ConvertMaidEvent` / 自定义配方材料），**共同特征是两个基准里都零内部实现者**，故无玩家可见差异；
-第三方需求出现时再评估（账本行有锚点）。
+宿主把 `AbstractMaidContainer.stillValid` 的距离判定从我们自造的 helper 改成原版惯例
+`isWithinEntityInteractionRange`（javap -c 逐条比过）。净效果：**生存 6 格→7 格、创造 9 格→7 格**
+（不再加基准的「创造 +3」，padding 3→4）。原版所有容器都这么写，且无人报症状，故**无症状不改**；
+恢复严格对等只需改那一行。**要不要恢复请裁决。**
 
 **O3 已关闭**（2026-08-17，`51d0c60de`：`SMOOTH_FOLLOW` 随 §3.E 的消费者同批落地）。§3.A 配置三层至此全部闭合。
 
@@ -289,55 +228,43 @@ TACZ 14 条与 B1–B7 已全部落地（见已关闭表）。本项只剩：
 `SYNCED` 改动同样搁置——审计早写了「26.x 上要重新判断这个代价是否仍必要」，
 而判断它需要那个模组的 jar（只发 GitHub Releases，本机没有），**证据不足不下结论**。
 
-**O8 · 行为面对账：五个面全部跑完（2026-08-18 收账）**
-
-审计 §7.6 的三面闭合（文件面 / 文档面 / 公开面）覆盖不到共有文件里的启动期接线，
-§7.9 为此新立第四面。**配置 / 网络包 / 存档与 attachment / 资源 / GUI 五个面至此全部对完，
-各面的可重跑脚本入库在 `docs/tools/o8/`**（10 支，判据与已知盲区写在各自文件头）：
-
-| 面 | 结论 |
-|---|---|
-| 配置 | 87 键，已闭合（2026-08-17，见已关闭表） |
-| 网络包 | 无回归。线上 id 差 5 条逐条定案、方向差 0、注册面异常 0、收件人策略差 1（宿主改进）、C2S 守卫差 0 |
-| 存档与 attachment | 无数据丢失。13 个 attachment 的四种能力无一项少于基准；玩家数据语义逐项对上 |
-| 资源 | 基名对差收敛到 12 条，11 条为改名/拆分/生态；**lang 键：基准有本树无 = 0**（本轮修了聚合口径后才算数） |
-| GUI | 无回归。菜单注册 id 差 0、屏绑定 14/14 无未绑定、`openMenu` 守卫无一处变弱、屏可达性差 0 |
-
-**产出的唯一真缺口已修**（`d9db0d754`）：进食后归还容器那条链被宿主整条丢掉，
-只留下世界规则键与配置菜单里那一栏 —— 玩家配了「食物 → 归还容器」永远不生效。
-新增 `ConfigKeyHasConsumerContractTest` 看住这一族（每个配置键都必须有人真的读它，
-允许表须具名写理由），两种缺陷形态各自红测过。
-
-**A 组约 20 项候选全部定性完毕**，结论写进 O2 账本对应行（`--ledger` 待定 36→24）。
-四条值得记住的定性：① **动画扩展点整簇 = 架构替换**，不是缺口——它整簇本就是 O2 的账，
-且施法动画那个扩展点在两个基准里零内部实现者；② `ItemHakureiGohei` **不是缺口**，
-宿主改名 `ItemGohei`，`InnerClassify` 的御币动画分类接得好好的（证伪表里那条是 1.21.11 分支的事，
-**两次独立迁移不共享结论**）；③ `MaidBaseAnimation` / `MaidArmorAnimation` 少的 7 个查询函数
-**不是内置内容缺口**——未登记的动画 id 被加载器静默跳过，且其中 2 个在基准里本就是文档化的 no-op；
-真正收窄的是**第三方模型包兼容面**（4 个生物群系温度装扮 + 指物），且温度那 4 个还要求
-render state 有 `atBiomeTemp`，本树整个没有该字段；④ `api/mixin/` 9 个接口全部有已登记的实现 mixin，
-其中 2 个零消费者但**与宿主逐字相同**，属继承来的死脚手架，无症状不改。
-
-**✅ 已裁决并落地 · `create:automation_ignore`（`421ee6b70`，2026-08-18）**
-
-裁决 = **补**。先证明这条契约在 26.1.2 Fabric 上仍然活着，再动手（否则就是「为对齐基准硬加无意义数据」）：
-官方 Create Fabric 停在 1.20.1，但社区分叉 **Create Fly**（`ZurrTum/Create-Fly`）有 `26.1.2-6.0.9-4`
-（Modrinth 实查 `loaders=fabric` · `game_versions=26.1.2`）。**下载那个 jar 逐项验，不按名字推**：
-`fabric.mod.json` 的 **mod id 就是 `create`**（文件名叫 create-fly，命名空间没改）；
-`AllRecipeTypes.shouldIgnoreInAutomation` 的方法体就是 `Holder.is(AUTOMATION_IGNORE_TAG)`（javap -c）；
-**全 jar 14 个消费者**（机械手 / 搅拌机 / 压床 / 动力锯 / 工厂面板 + JEI/EIV/RRV 三套展示分类）。
-
-⚠️ **审计 §7.9 记的「落地形态照抄即可」有一处会致错**：它说产物内容是
-`touhou_little_maid:altar_recipe_serializers`——那是**基准的**序列化器 id，宿主已改名 `altar_recipe`。
-照抄会写进一个不存在的 id，而条目是 `required: false`，**这种错永远不会在运行期报出来**。
-故实现从注册表反查 `InitRecipes.ALTAR_RECIPE_SERIALIZER` 的 key，产物实为 `touhou_little_maid:altar_recipe`。
-`RecipeSerializerTagDatagenContractTest` 四条各看住一处独立静默失败面，**四种缺陷形态逐个红测**
-（摘 provider 登记 / 把条目 id 换成基准那个旧 id / 把条目改成硬条目 / 在 provider 里写死 id），
-各红在正确断言上且无连带。⚠️ 实机未验（要装 Create Fly 才看得到效果），属 DEFERRED。
-
----
-
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-18：O2 反向缺口账本整体关闭（待定 0 · 待补 0）
+
+222 条逐条判定完毕，**「丢失」62 条全部补回**。末轮 24 条待定的产出：替换 15 · 无关 3 ·
+生态 4（Patchouli 一族，等 O4）· 丢失 2，两条当轮补完——`create:automation_ignore`（`421ee6b70`）
+与内置「TLM Legacy Pack」（`6b4bf6cd5`，104 个资源文件 + 注册点被宿主整包删掉，只留两个 lang 键，
+**又一例「载体还在、行为没了」**）。逐条理由在 `docs/tools/host_gap_ledger.tsv` 各行，方法见审计 §7.8。
+
+**四条长期有效的结论留在这里**：
+① **判定的最终校验是真去补它**——补的过程中先后改判四条（`ClientBoardStateTooltip` 待定→丢失、
+`MaidGameRecordManager` 丢失→替换、`IBackpackData` 替换→丢失、`LegacyPackRepositorySource` 待定→丢失）。
+② `RenderFixer` **改判 丢失→无关**：它绕行的是 1.21.1 时代 Carry On 的渲染 bug，判据载体在 26.1.2
+submit 管线**不存在**，行为基准也已在 render-state 重写时放弃；现存 Carry On 兼容 = tag + molang 纯数据层，
+**零消费者不留空壳**。若实机复现同类 bug → 修上游。
+③ 宿主取消了一批 `ILittleMaid` 第三方扩展点（`addChestType` / `registerTaskData` /
+`registerMagicCastingAnimation` / `MaidAfterEatEvent` / `ConvertMaidEvent` / 自定义配方材料），
+**共同特征是两个基准里都零内部实现者**，故无玩家可见差异；第三方需求出现时再评估（账本行有锚点）。
+④ 本轮四条方法论教训已进 CLAUDE.md 证伪表，两条行为契约已进跨版本 wiki（F5 / G10）。
+
+## 2026-08-18：O8 行为面对账五个面全部跑完
+
+审计 §7.6 的三面闭合（文件面 / 文档面 / 公开面）覆盖不到共有文件里的启动期接线，§7.9 为此立第四面。
+**配置 / 网络包 / 存档与 attachment / 资源 / GUI 五个面至此全部对完**，可重跑脚本入库在
+`docs/tools/o8/`（10 支，判据与已知盲区写在各自文件头）：配置面 87 键已闭合；网络包无回归；
+存档与 attachment 无数据丢失（13 个 attachment 四种能力无一项少于基准）；资源面 lang 键差 0；
+GUI 面菜单 id 差 0、14/14 屏绑定、`openMenu` 守卫无一处变弱。
+
+⚠️ **「无回归」的适用范围是这五个面各自的契约**，不等于该子系统整体无问题。
+
+**产出的唯一真缺口已修**（`d9db0d754`）：进食后归还容器那条链被宿主整条丢掉，只留下世界规则键与
+配置菜单里那一栏——玩家配了「食物 → 归还容器」永远不生效。新增 `ConfigKeyHasConsumerContractTest`
+看住这一族（每个配置键都必须有人真的读它），两种缺陷形态各自红测过。
+
+A 组约 20 项候选定性完毕（结论进 O2 账本）。两条值得记住：① **动画扩展点整簇 = 架构替换**，不是缺口；
+② **少一个实现 ≠ 少一个行为**——未登记的动画 id 被加载器**静默跳过**，其中 2 个在基准里本就是
+文档化的 no-op，真正收窄的只是第三方模型包兼容面。
 
 ## 2026-08-17：§3.G 第三方兼容（`e5eb3913c` `2d24ece5a`）——两项落地，两项另有判定
 
