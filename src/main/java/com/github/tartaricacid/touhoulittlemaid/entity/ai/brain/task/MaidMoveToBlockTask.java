@@ -56,7 +56,8 @@ public abstract class MaidMoveToBlockTask extends MaidCheckRateTask {
                         mutableBlockPos.setWithOffset(centrePos, x, y - 1, z);
                         if (maid.isWithinHome(mutableBlockPos) && shouldMoveTo(worldIn, maid, mutableBlockPos) && checkPathReach(maid, pathFinding, mutableBlockPos)
                             && checkOwnerPos(maid, mutableBlockPos)) {
-                            BehaviorUtils.setWalkAndLookTargetMemories(maid, mutableBlockPos, this.movementSpeed, 0);
+                            BlockPos walkTargetPos = this.getWalkTargetPos(maid, mutableBlockPos);
+                            BehaviorUtils.setWalkAndLookTargetMemories(maid, walkTargetPos, this.movementSpeed, 0);
                             maid.getBrain().setMemory(InitBrains.TARGET_POS, new BlockPosTracker(mutableBlockPos));
                             this.currentWorkPos = mutableBlockPos;
                             this.setNextCheckTickCount(5);
@@ -76,6 +77,15 @@ public abstract class MaidMoveToBlockTask extends MaidCheckRateTask {
      */
     protected int getHorizontalSearchRange(EntityMaid maid) {
         return (int) maid.getHomeRadius();
+    }
+
+    /**
+     * Some interaction blocks cannot be occupied directly. Subclasses which
+     * validate a reachable neighboring node may use that node for navigation
+     * while retaining the original block in {@link InitBrains#TARGET_POS}.
+     */
+    protected BlockPos getWalkTargetPos(EntityMaid maid, BlockPos targetPos) {
+        return targetPos;
     }
 
     protected void clearCurrentArrivalMap(MaidPathFindingBFS pathFinding) {

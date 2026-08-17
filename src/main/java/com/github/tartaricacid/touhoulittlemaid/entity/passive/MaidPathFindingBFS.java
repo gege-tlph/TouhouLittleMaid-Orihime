@@ -68,6 +68,10 @@ public class MaidPathFindingBFS {
         return this.cachePos.isVis(pos) || this.cachePos.isVis(pos.above());
     }
 
+    private boolean canPathReachExactInternal(BlockPos pos) {
+        return this.cachePos.isVis(pos);
+    }
+
     public boolean canPathReach(BlockPos pos) {
         if (canPathReachInternal(pos)) {
             return true;
@@ -79,6 +83,24 @@ public class MaidPathFindingBFS {
             searchStep();
         }
         return canPathReachInternal(pos);
+    }
+
+    /**
+     * Tests the exact path node represented by {@code pos}. The legacy reachability
+     * query also accepts {@code pos.above()}, which is useful for solid target blocks
+     * but cannot identify the neighboring node an entity should actually occupy.
+     */
+    public boolean canPathReachExact(BlockPos pos) {
+        if (canPathReachExactInternal(pos)) {
+            return true;
+        }
+        if (isFinished) {
+            return false;
+        }
+        while (!canPathReachExactInternal(pos) && !isFinished) {
+            searchStep();
+        }
+        return canPathReachExactInternal(pos);
     }
 
     @Nullable

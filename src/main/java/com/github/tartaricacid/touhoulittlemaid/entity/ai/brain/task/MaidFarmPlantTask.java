@@ -39,16 +39,32 @@ public class MaidFarmPlantTask extends Behavior<EntityMaid> {
     protected boolean checkExtraStartConditions(ServerLevel worldIn, EntityMaid owner) {
         Brain<EntityMaid> brain = owner.getBrain();
         return brain.getMemory(InitBrains.TARGET_POS).map(targetPos -> {
-            Vec3 targetV3d = targetPos.currentPosition();
-            if (owner.distanceToSqr(targetV3d) > Math.pow(task.getCloseEnoughDist(), 2)) {
+            BlockPos interactionBasePos = targetPos.currentBlockPosition();
+            if (!isCloseEnoughToInteract(owner, interactionBasePos)) {
                 Optional<WalkTarget> walkTarget = brain.getMemory(MemoryModuleType.WALK_TARGET);
-                if (walkTarget.isEmpty() || !walkTarget.get().getTarget().currentPosition().equals(targetV3d)) {
+                if (walkTarget.isEmpty() || !MaidFarmMoveTask.isWithinInteractionRange(
+                        walkTarget.get().getTarget().currentBlockPosition(), interactionBasePos,
+                        task.getCloseEnoughDist())) {
                     brain.eraseMemory(InitBrains.TARGET_POS);
                 }
                 return false;
             }
             return true;
         }).orElse(false);
+    }
+
+    /**
+     * Harvest as soon as the maid is actually near the crop. The move task parks the maid on a
+     * reachable node BESIDE the crop (it often cannot path into the crop column), so gate on the
+     * maid's real position with a tolerance that covers an adjacent stand node. This matches the
+     * origin/1.21.1 baseline, which harvested from within the crop column via a forgiving Vec3
+     * distance check. A strict integer block-coordinate check is too strict: the maid frequently
+     * settles one block off the exact stand node and would never satisfy it, so it keeps re-pathing
+     * to the crop without ever harvesting (only occasionally landing exactly right).
+     */
+    private boolean isCloseEnoughToInteract(EntityMaid owner, BlockPos interactionBasePos) {
+        double reach = task.getCloseEnoughDist() + 1.0D;
+        return owner.distanceToSqr(Vec3.atCenterOf(interactionBasePos.above())) <= reach * reach;
     }
 
     @SuppressWarnings("UnstableApiUsage")
