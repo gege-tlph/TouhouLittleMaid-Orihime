@@ -25,7 +25,6 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.EntityAttachment;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BannerItem;
@@ -301,7 +300,9 @@ public class EntityMaidRenderState extends HumanoidRenderState {
         state.hasBackpack = maid.hasBackpack();
         state.hurt = maid.hurtTime > 0;
         state.hasFishingHook = maid.hasFishingHook();
-        state.isSwimming = maid.isInWater() && maid.getFluidHeight(FluidTags.WATER) > maid.getFluidJumpThreshold();
+        // 泳姿由服务端 MaidSwimManager 判定（含浅水深度判据）并同步下来，渲染端不再自行按水深推算：
+        // 两套判据不一致时，浅水里会出现「碰撞箱站着、模型在游」的分裂。
+        state.isSwimming = maid.isSwimming();
         state.taskId = maid.getTask().getUid().getPath();
     }
 

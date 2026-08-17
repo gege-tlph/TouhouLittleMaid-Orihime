@@ -33,7 +33,7 @@ public class MaidNavigationManager {
             if (mode != Mode.WATER && maid.isInWater() && shouldStartOrStopSwim(5)) {
                 // 对于一般寻路，当满足：女仆接触到水，前方有长水面时，切换到水中寻路
                 if (switchToNavigation(Mode.WATER, waterNavigation)) {
-                    maid.getSwimManager().setWantToSwim(true);
+                    maid.getSwimManager().setWantToSwim(maid.getSwimManager().hasSwimmableDepth());
                     maid.getSwimManager().setReadyToLand(false);
                 }
             } else if (mode != Mode.WATER && maid.isUnderWater() && mayBeStuckUnderWater(maid.blockPosition())) {
