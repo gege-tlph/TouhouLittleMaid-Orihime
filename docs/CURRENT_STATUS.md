@@ -194,7 +194,9 @@ dev 客户端存档「新的世界」，全程无崩溃、无 mixin 失败、无
 判据载体 `BufferSource.fixedBuffers` 在 26.1.2 submit 管线**不存在**，行为基准也已在 render-state 重写时放弃它；
 现存 Carry On 兼容 = tag + molang 纯数据层，与基准一致，**零消费者不留空壳**。若实机复现同类 bug → 修上游。
 
-**O2 至此整体关闭：`--ledger` 报待定 0 · 待补 0**（2026-08-18）。24 条待定逐条复核完毕，产出
+**O2 至此整体关闭：`--ledger` 报待定 0 · 待补 0**（2026-08-18；当轮收尾六道门禁各自单独跑、
+逐条读退出码，全部 0：compileJava · JUnit **206 例 0 失败** · GameTest **89/89** ·
+`--ledger` · `doc_lint` · wiki verify）。24 条待定逐条复核完毕，产出
 **替换 15 · 无关 3 · 生态 4（全是 Patchouli 一族，等 O4 前置）· 丢失 2**，两条丢失当轮补完
 （`TagRecipeSerializer` → `421ee6b70`；内置 legacy 资源包 → `6b4bf6cd5`）。逐条理由写在账本各行，不在此复制。
 
