@@ -88,6 +88,7 @@ public class MaidFollowOwnerGameTest {
         int followPriority = Integer.MIN_VALUE;
         int vehicleFollowPriority = Integer.MIN_VALUE;
         int coreMoveSinkPriority = Integer.MIN_VALUE;
+        int healSelfPriority = Integer.MIN_VALUE;
         int minWorkPriority = Integer.MAX_VALUE;
         for (Map.Entry<Integer, Map<Activity, Set<BehaviorControl<?>>>> byPriorityEntry : byPriority.entrySet()) {
             int priority = byPriorityEntry.getKey();
@@ -100,6 +101,8 @@ public class MaidFollowOwnerGameTest {
                         vehicleFollowPriority = priority;
                     } else if (behavior instanceof MoveToTargetSink) {
                         coreMoveSinkPriority = priority;
+                    } else if (behavior instanceof MaidHealSelfTask) {
+                        healSelfPriority = priority;
                     } else if (byActivity.getKey() == Activity.WORK) {
                         minWorkPriority = Math.min(minWorkPriority, priority);
                     }
@@ -113,6 +116,8 @@ public class MaidFollowOwnerGameTest {
                 "follow behaviors are not registered in the brain at all");
         assertTrue(helper, coreMoveSinkPriority != Integer.MIN_VALUE,
                 "core MoveToTargetSink is not registered, the comparison below would be vacuous");
+        assertTrue(helper, healSelfPriority != Integer.MIN_VALUE,
+                "MaidHealSelfTask is not registered, the comparison below would be vacuous");
         assertTrue(helper, minWorkPriority != Integer.MAX_VALUE,
                 "no WORK activity behaviors found, the comparison below would be vacuous");
 
@@ -122,6 +127,11 @@ public class MaidFollowOwnerGameTest {
         assertTrue(helper, followPriority > coreMoveSinkPriority,
                 "following must start after the core movement sink: follow=%d sink=%d"
                         .formatted(followPriority, coreMoveSinkPriority));
+        // 这一条才是行为基准 3→4 买到的那个差值：跟随从「与自愈同桶、桶内次序由 Set 决定」
+        // 变成严格晚于自愈——先救命，再追人。前两条断言 3 和 4 都满足，钉不住这次移植。
+        assertTrue(helper, followPriority > healSelfPriority,
+                "self-heal must start before following: follow=%d healSelf=%d"
+                        .formatted(followPriority, healSelfPriority));
         assertTrue(helper, followPriority < minWorkPriority,
                 "following must start before every work behavior or a called maid never comes: follow=%d minWork=%d"
                         .formatted(followPriority, minWorkPriority));
