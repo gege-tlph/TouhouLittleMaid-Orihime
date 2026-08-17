@@ -27,9 +27,19 @@ import java.util.function.Predicate;
 
 public final class MaidBrain {
     /**
-     * Brain starts stopped behaviors in ascending priority order before ticking any of them.
-     * Work and opportunity behaviors use priorities 5-20, so owner following must run later
-     * or its WALK_TARGET prevents those behaviors from starting at all.
+     * 跟随主人的优先级。{@code Brain} 按优先级**升序**启动处于停止态的行为，所以数字小 = 先启动。
+     *
+     * <p>4 的含义：排在 CORE 的移动 / 开门（2）与自愈（3）之后，但**先于**全部工作与机会行为
+     * （WORK / IDLE / REST 都是 5-20）。跟随必须先拿到 WALK_TARGET，否则被叫的女仆不会过来。
+     * 它之所以还能算「兜底」，靠的是
+     * {@link com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidFollowOwnerTask}
+     * 那边的两条：进入条件只被真战斗挡住，以及 WALK_TARGET 带 1 tick 有效期（跟上了就自动让位），
+     * **不是**靠把优先级压低。</p>
+     *
+     * <p>⚠️ 行为基准上这个常量一度是 50（真·排最后），配的 javadoc 说「工作行为用 5-20，
+     * 所以跟随必须排在其后」。那次实测的结果是**女仆叫不动**，随后被改回 4，
+     * 而那段 javadoc 没跟着改——它描述的是已经被回退掉的设计。此处按实际数值重写理由。
+     * 判据见 {@code MaidFollowOwnerGameTest#followRunsBeforeWorkButAfterCoreMovement}。</p>
      */
     private static final int FOLLOW_OWNER_PRIORITY = 4;
 
