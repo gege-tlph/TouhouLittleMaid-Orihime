@@ -366,10 +366,12 @@ git diff --shortstat origin/26.1 origin/26.2 -- src
    家具重制判定为「无落点」，YSM 等 O4。
 
    **§3 的可做项至此全部走完。** ②**O8 行为面对账**已于 2026-08-18 五面跑完（见 §7.9），
-   只产出一个真缺口且已修。剩下两条（由用户定夺）：
-   ① **实机验收**——§3.E/§3.F/§3.G 三节已过单人档，§3.C 那一大批仍欠真站点密钥，专服侧整体仍开放；
-   ③ **O9 裁决**（无线 IO 绑定面比基准宽）与 O4 前置项目（YSM 的 26.1.2 移植，规模未评估）；
-   另有一个便宜的待裁决项 `create:automation_ignore`，见 `docs/CURRENT_STATUS.md` 的 O8。
+   只产出一个真缺口且已修。③ **O2 反向缺口账本已整体关闭**（2026-08-18：待定 0 · 待补 0，
+   末轮补回两条——`create:automation_ignore` 与内置 legacy 资源包，见 `docs/CURRENT_STATUS.md`）。
+   剩下两条（由用户定夺）：
+   ① **实机验收**——§3.E/§3.F/§3.G 三节已过单人档，§3.C 那一大批仍欠真站点密钥，专服侧整体仍开放，
+   另有两项新增 DEFERRED（legacy 资源包、机械动力不自动化祭坛），操作步骤已写进 O1；
+   ② **O9 裁决**（无线 IO 绑定面比基准宽）与 O4 前置项目（YSM 的 26.1.2 移植，规模未评估）。
 2. 1.21.11 分支继续维护，直到 26.x 稳定并完成实机验收。
 
 ## 7. 移植边界
@@ -482,6 +484,10 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 
 账本 `docs/tools/host_gap_ledger.tsv`，`host_gap.py --ledger` 双向核对，覆盖率 222/222。
 
+⚠️ **下表是 2026-08-14 那一刻的快照，早已过时**（O2 于 2026-08-18 整体关闭：待定 0 · 待补 0）。
+**实时分布一律跑 `python docs/tools/host_gap.py --ledger`**，别读这张表——留着它只是为了记住
+「首轮 55 条待定是怎么来的」。收口过程改判过多条，逐条理由在账本各行。
+
 | 判定 | 条数 | 含义 |
 |---|---|---|
 | 替换 | 76 | 功能还在，换了实现/位置，承接者已写进账本 |
@@ -576,13 +582,19 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 `docs/CURRENT_STATUS.md` 的 O8 与提交 `d9db0d754`）。它是这一族的典型形态——
 **「载体还在、行为没了」**，而文件面 / 文档面 / 公开面三面对它全部无信号，正是第四面存在的理由。
 
-**资源面还留下一个待裁决项**（`create:automation_ignore`，裁决入口在 CURRENT_STATUS 的 O8）。
-落地形态已查清，动手时照抄即可：基准 `datagen/tag/TagRecipeSerializer` 用**裸命名空间 Identifier**
-建 `TagKey<RecipeSerializer<?>>`（**无编译期依赖**），产物落在
-`src/main/generated/data/create/tags/recipe_serializer/` 下的 `automation_ignore.json`，
-内容一条 `touhou_little_maid:altar_recipe_serializers` 且 `"required": false`（Create 不在也不报错）。
-本树该产物 0 个。⚠️ 改 datagen 后必须重跑并把产物入库——「改了 datagen 却忘了重跑」是纯静默失败，
-`BlockTagDatagenContractTest` 已为标签这一族钉过同型判据。
+**资源面留下的待裁决项 `create:automation_ignore` 已于 2026-08-18 裁决并落地**（`421ee6b70`，
+结论与取证在 CURRENT_STATUS 的 O8）。这里只留一条**方法论**教训，因为本节原先写的落地形态会致错：
+
+> 原文写「动手时照抄即可……内容一条 `touhou_little_maid:altar_recipe_serializers`」。
+> **那是基准的序列化器 id，宿主已改名 `altar_recipe`。** 照抄会往标签里写一个不存在的 id，
+> 而条目是 `"required": false`，**这种错永远不会在运行期报出来**——闸门绿、启动绿、玩家侧静默失效。
+> 正确做法是从注册表反查 `InitRecipes.ALTAR_RECIPE_SERIALIZER` 的 key。
+> 判据推广开来是：**跨树搬运「数据产物」时，产物里出现的每一个 id 都要回到本树重新解析一次**，
+> 不能连内容一起抄——与证伪表「照抄基准的常量 = 照抄它对消费方 API 的假设」同族，
+> 这次抄的不是常量而是**产物**，但失效方式一样，且因为 optional 而更隐蔽。
+
+⚠️ 改 datagen 后必须重跑并把产物入库——「改了 datagen 却忘了重跑」是纯静默失败，
+`BlockTagDatagenContractTest` 与新增的 `RecipeSerializerTagDatagenContractTest` 各为其标签族钉着同型判据。
 
 ⚠️ 「无回归」的适用范围是**这五个面各自的契约**，不等于该子系统整体无问题；
 各脚本文件头写明了自己的盲区（例如 lang 只认字面量键、GUI 面的守卫按词类归类而非语义求值）。

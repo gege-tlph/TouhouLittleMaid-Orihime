@@ -50,6 +50,21 @@ YSM 那项依赖 O4 前置。顺带修掉宿主在罗盘/范围可视化上的�
 - **进食归还容器（`d9db0d754`，O8 唯一真缺口）**：在配置菜单「食物 → 归还容器」里加一条
   （如 `minecraft:mushroom_stew,minecraft:bowl`），让女仆吃掉那份食物，验容器进背包（背包满则掉地上）
 
+**DEFERRED — requires user-side real-world test（2026-08-18 新增两项，本地已尽力，剩下的只有真客户端能看）**
+
+| | ① 内置「TLM Legacy Pack」（`6b4bf6cd5`） | ② 祭坛不可被机械动力自动化（`421ee6b70`） |
+|---|---|---|
+| **测试目的** | 包能否出现在资源包列表；开启后是否真换成旧版模型/贴图；两个 lang 键是否显示为译文而非裸键 | 机械手（Mechanical Crafter）等自动化装置是否**拒绝**跑祭坛配方 |
+| **前置条件** | dev 客户端即可，无需额外模组 | 需装 **Create Fly** `26.1.2-6.0.9-4`（Modrinth `create-fly`，mod id 是 `create`），放 `run/mods/`；jar 不入库 |
+| **操作步骤** | ① 进标题界面 → 选项 → 资源包 ② 左栏应有「TLM Legacy Pack」③ 启用 → 完成 ④ 进世界看祭坛/稻草人/信标/相机/背包等旧模型 ⑤ 关掉再看一次作对照 | ① 造一台机械手 ② 按祭坛配方摆料 ③ 观察它是否开始合成 |
+| **预期结果** | ①包在列表里且**不是灰色/不兼容** ②包名与说明是**中文/本地化文字**，不是 `pack.touhou_little_maid.…` 裸键 ③ 启用后模型明显变旧（对照 §「补回」那条的文件清单）④ 关掉后恢复 | 机械手**不合成**祭坛配方；JEI/REI 里该配方分类也不显示为可自动化 |
+| **失败判据** | 包不在列表 = 注册没生效或目录名不符；显示裸 lang 键 = mcmeta/`translatable` 没接上；标「不兼容」= `pack_format` 与本版不符（本树取的是主包同值 34，若本版真实值不同则此处会暴露）；启用后模型没变 = 包内路径与主包资源路径没对齐 | 机械手**照样合成** = 标签没生效（先查 `/data get` 不了标签，改看 F3 或直接确认 `data/create/tags/recipe_serializer/automation_ignore.json` 是否随 jar 打包） |
+| **日志采集** | `run/logs/latest.log` 搜 `legacy_pack` / `resourcepacks` / `Failed to open pack`；截图资源包列表那一屏 | `run/logs/latest.log` 搜 `automation_ignore` / `create`；截机械手那一格 |
+| **测试后更新哪一条账本** | 本文件 O1 本表 + 上文「内置 TLM Legacy Pack」那段（把 ⚠️ DEFERRED 改成 ✅ 并记环境） | 本文件 O1 本表 + O8 里 `create:automation_ignore` 那段的「⚠️ 实机未验」一句 |
+
+⚠️ 两项的**代码面已由契约测试钉住**（各 4 条，分别红测 5 种 / 4 种缺陷形态），
+但契约测试只证明「接线在、数据在」，证明不了「玩家看到的是对的」——这正是它们仍为 DEFERRED 的原因。
+
 **TACZ 兼容刀（`167608ab9`）：单人档实机验收通过（2026-08-15 用户实测，五项全过）**：
 
 - ✅ 枪械工作模式（开火 / 背包扣弹换弹 / 走位）；持枪与换弹动画；背部枪械渲染；
@@ -179,9 +194,9 @@ dev 客户端存档「新的世界」，全程无崩溃、无 mixin 失败、无
 判据载体 `BufferSource.fixedBuffers` 在 26.1.2 submit 管线**不存在**，行为基准也已在 render-state 重写时放弃它；
 现存 Carry On 兼容 = tag + molang 纯数据层，与基准一致，**零消费者不留空壳**。若实机复现同类 bug → 修上游。
 
-**「待定」已于 2026-08-18 清零**（24 条逐条复核完毕，`--ledger` 报待定 0）。产出：**替换 15 · 无关 3 ·
-生态 4（全是 Patchouli 一族，等 O4 前置）· 丢失 2**。两条丢失里 `TagRecipeSerializer` 已补（`421ee6b70`，见下），
-`LegacyPackRepositorySource` **仍待补**（唯一的 `[待补]`，见下）。逐条理由写在账本各行，不在此复制。
+**O2 至此整体关闭：`--ledger` 报待定 0 · 待补 0**（2026-08-18）。24 条待定逐条复核完毕，产出
+**替换 15 · 无关 3 · 生态 4（全是 Patchouli 一族，等 O4 前置）· 丢失 2**，两条丢失当轮补完
+（`TagRecipeSerializer` → `421ee6b70`；内置 legacy 资源包 → `6b4bf6cd5`）。逐条理由写在账本各行，不在此复制。
 
 四条值得记住的定性：① **`ItemEntityPlaceholder` 不是缺口**——三条产实体的祭坛配方都在本树，
 宿主只是把它们从 `recipe/altar_recipe/` 挪到 `recipe/` 根，并把展示产物从占位符物品换成真实代表物品
@@ -197,21 +212,27 @@ dev 客户端存档「新的世界」，全程无崩溃、无 mixin 失败、无
 `tlm_custom_pack`」。实查基准：`AddPackFindersEvent.CALLBACK` **只有一个注册者**，其方法体**只注册那个内置
 legacy 资源包**；`CustomPackLoader` 根本不走 pack finder。**一个机制的多个用途，要分别问有没有承接者**。
 
-**O2 · 唯一待补：内置「TLM Legacy Pack」整包丢失（2026-08-18 新认定）**
+**内置「TLM Legacy Pack」整包丢失 —— 2026-08-18 新认定并当轮补回（`6b4bf6cd5`）**
 
 宿主删掉了 `LegacyPackRepositorySource` **和** `src/main/resources/legacy_pack/` 的 **104 个资源文件**，
 却留着 `pack.touhou_little_maid.legacy_resources_pack.title/desc` 两个 lang 键——
 **又一例「载体还在、行为没了」**，与 O8 那个唯一真缺口同族。玩家可见面：资源包列表里不再有这个可选包
 （默认关，开了就换回旧版模型与贴图）。
 
-**不是空壳**：104 个文件里 **98 个真的覆盖本树现存资源**（实测集合求交），孤儿仅 5 个 + `pack.mcmeta`/`pack.png`。
+**先证明它不是空壳再补**：104 个文件与本树现存资源求交，**98 个真的会覆盖**，孤儿仅 5 个 +
+`pack.mcmeta`/`pack.png`；且包体自洽——legacy 的 scarecrow 模型引用 `block/scarecrow`，那张贴图正在包内
+（本树主包已改名 `scarecrow_upper`/`lower`）。
 
-| 补它要做什么 | 说明 |
-|---|---|
-| 资源 | 自 `origin/1.21.1` 取回 104 个文件；`pack.mcmeta` 的 `pack_format` 15 需改成本树主包同值（34） |
-| 注册 | **不要照搬基准那条链**（`AddPackFindersEvent` + `PackRepositoryExtension` + 三个 mixin 是 fork 自造的 Forge 风格事件总线，本树已无）。26.1.2 的 Fabric 原生落点是 `ResourceManagerHelper.registerBuiltinResourcePack`——动手前先 javap 核对该 API 在本版本的签名与包内路径约定 |
-| 闸门 | 按既有 datagen 契约同族补一条：包目录存在 + 注册点在 + lang 两键有对应消费者 |
-| 验收 | **DEFERRED**：包能否出现在资源包列表、开启后贴图是否正确，只有真客户端能看 |
+**写法对新基**：基准那条链（`AddPackFindersEvent` + `PackRepositoryExtension` + 三个 mixin，
+fork 自造的 Forge 风格事件总线）在宿主上已不存在。改用 Fabric 原生的 `ResourceLoader.registerBuiltinPack`，
+**包体位置由 javap -c 读它的方法体确定**是 `"resourcepacks/" + id.getPath()`，故落在
+`src/main/resources/resourcepacks/legacy_pack/`。`pack_format` 15→34（与主包同值，否则被标「不兼容」）。
+两个孤儿 lang 键就此复活：标题走 `Component.translatable`，描述走 `pack.mcmeta` 的 `description` 文本组件。
+
+四条契约（`LegacyResourcePackContractTest`），**五种缺陷形态逐个红测**（摘注册 / id 与目录名不符 /
+掏空包体 / `pack_format` 漂移 / 把描述写死回英文让 lang 键重新变孤儿），各红在正确断言上
+（id 不符那轮另有两条连带失败，因为它们读同一个已不存在的目录，属可解释的连带）。
+⚠️ 实机验收 **DEFERRED**，步骤见 O1。
 
 **优先三簇（箱子类型 / 任务数据 / 战利品，16 条）2026-08-15 全部改判「替换」**，证据在账本各行；
 「唯一可能再藏整块玩法丢失的地方」**排除**。代价是宿主取消了一批 `ILittleMaid` 第三方扩展点
