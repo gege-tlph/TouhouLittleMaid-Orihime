@@ -3,6 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.config;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.Config;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ChairConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ExperimentalConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig;
 import com.github.tartaricacid.touhoulittlemaid.event.MaidMealRegConfigEvent;
@@ -269,17 +270,13 @@ public final class ServerRuleConfig {
     }
 
     /**
-     * 世界规则全集。与行为基准 {@code port/1.21.11-fabric} 的同名方法逐条对齐，**三处有意的差异**：
+     * 世界规则全集。与行为基准 {@code port/1.21.11-fabric} 的同名方法逐条对齐，**两处有意的差异**：
      *
      * <ul>
      *   <li>{@code MaidConfig.MAID_TAMED_ITEM} / {@code MAID_TEMPTATION_ITEM}：**代码宿主已删**，
      *       26.1 改用物品标签 {@code TagItem.MAID_TAMED_ITEM} / {@code MAID_TEMPTATION_ITEM}
      *       （消费点见 {@code MaidMiscManager} 与 {@code MaidBegTask}）。标签由数据包控制，
      *       不再是配置项，**不存在等价的世界规则**，故不补。</li>
-     *   <li>{@code ExperimentalConfig.SMOOTH_FOLLOW}：那个类是我们独有的（上游两个版本都没有），
-     *       而它唯一的消费者是跟随手感调优——属审计 §3.E，本刀未搬。**配置项要和它的消费者同批落地**，
-     *       否则就是一个改了没反应的开关。恢复锚点：§3.E 那一刀落地时，连同 {@code ExperimentalConfig}
-     *       一起加进本表（本表缺键由 {@code completeMissingValues} 自动补默认值，老存档不会因此报错）。</li>
      *   <li>{@code MaidConfig.MAID_GUN_LONG/MEDIUM/NEAR_DISTANCE} 三键：**已随 TACZ 兼容刀入表**
      *       （2026-08-15）。三键必须在此认领——1.21.11 分支实证两次：读口对未认领的键回落到
      *       裸 spec，集成服务端 tick 期一读就崩服（{@code TaskGunAttack.searchRadius} 正在寻路路径上）。
@@ -331,6 +328,7 @@ public final class ServerRuleConfig {
                 MiscConfig.SHRINE_LAMP_MAX_STORAGE,
                 MiscConfig.SHRINE_LAMP_MAX_RANGE,
                 MiscConfig.SCARECROW_RANGE,
+                ExperimentalConfig.SMOOTH_FOLLOW,
                 ServerConfig.CLIENT_PACK_DOWNLOAD_URLS,
                 ServerConfig.MAID_AI_TIME_DEBUG,
                 ServerConfig.MAID_BACKUP_INTERVAL_SECONDS,

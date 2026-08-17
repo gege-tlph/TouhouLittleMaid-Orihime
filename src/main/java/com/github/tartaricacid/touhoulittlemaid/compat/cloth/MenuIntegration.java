@@ -4,6 +4,7 @@ import com.github.tartaricacid.touhoulittlemaid.api.event.client.AddClothConfigE
 import com.github.tartaricacid.touhoulittlemaid.compat.gun.tacz.TacCompat;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ChairConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ExperimentalConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.RenderConfig;
@@ -62,8 +63,7 @@ public class MenuIntegration {
 
     /**
      * 存档级玩法规则。分组沿用行为基准 {@code port/1.21.11-fabric} 的六组划分，
-     * 少两组：{@code server.experimental}（`SMOOTH_FOLLOW` 未搬，见 `ServerRuleConfig.values()`），
-     * 以及 `maid_tamed_item` / `maid_temptation_item` 两条（上游 26.1 已改为物品标签，不再是配置项）。
+     * 少 `maid_tamed_item` / `maid_temptation_item` 两条（上游 26.1 已改为物品标签，不再是配置项）。
      */
     private static void addServerRules(ConfigBuilder root, ConfigEntryBuilder entries,
                                        ServerRulesClientCache.Session session) {
@@ -144,6 +144,10 @@ public class MenuIntegration {
         chair.add(serverBoolean(entries, "chair.chair_change_model", ChairConfig.CHAIR_CHANGE_MODEL, session));
         chair.add(serverBoolean(entries, "chair.chair_can_destroyed_by_anyone", ChairConfig.CHAIR_CAN_DESTROYED_BY_ANYONE, session));
         category.addEntry(chair.build());
+
+        SubCategoryBuilder experimental = sub(entries, "server.experimental");
+        experimental.add(serverBoolean(entries, "experimental.smooth_follow", ExperimentalConfig.SMOOTH_FOLLOW, session));
+        category.addEntry(experimental.build());
     }
 
     /** 运维参数：同属世界规则文件，但不进公开运行期快照，只有编辑者看得到。 */

@@ -1,8 +1,5 @@
 package com.github.tartaricacid.touhoulittlemaid.config;
 
-import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ChairConfig;
-import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
-import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -46,13 +43,13 @@ class ServerRuleReadRoutingContractTest {
     private static Map<ModConfigSpec.ConfigValue<?>, String> ruleFieldNames;
 
     @BeforeAll
-    static void buildSpec() {
+    static void buildSpec() throws IOException {
         net.minecraft.SharedConstants.tryDetectVersion();
         net.minecraft.server.Bootstrap.bootStrap();
         ServerConfig.init();
 
         Map<ModConfigSpec.ConfigValue<?>, String> byIdentity = new IdentityHashMap<>();
-        for (Class<?> owner : List.of(MaidConfig.class, ChairConfig.class, MiscConfig.class, ServerConfig.class)) {
+        for (Class<?> owner : configOwnerClasses()) {
             for (Field field : owner.getDeclaredFields()) {
                 if (!Modifier.isStatic(field.getModifiers())
                         || !ModConfigSpec.ConfigValue.class.isAssignableFrom(field.getType())) {
@@ -65,13 +62,41 @@ class ServerRuleReadRoutingContractTest {
                         byIdentity.put((ModConfigSpec.ConfigValue<?>) value,
                                 owner.getSimpleName() + "." + field.getName());
                     }
-                } catch (IllegalAccessException exception) {
-                    throw new IllegalStateException("读不到配置字段 " + owner.getSimpleName() + "." + field.getName(),
-                            exception);
+                } catch (Throwable ignored) {
+                    // 取不到值的字段跳过（未建 spec 的店、静态初始化依赖别处的类）。
+                    // 少认一个不会静默漏测：它承载的规则值会在 everyRuleValueIsAccountedFor 里报未解析。
                 }
             }
         }
         ruleFieldNames = byIdentity;
+    }
+
+    /**
+     * owner 清单按 <b>config 包的目录</b> 机械推导，不手抄类名。
+     *
+     * <p>手抄清单已实证会腐：本轮新增 {@code ExperimentalConfig} 时它不在四个硬编码类里，
+     * 那个键当场变成零覆盖。改成目录推导后，新增 subconfig 类不需要有人记得回来改这里。
+     * 腐化方向仍然安全——认漏一个类会让 {@link #everyRuleValueIsAccountedFor()} 红，而不是恒绿。</p>
+     */
+    private static List<Class<?>> configOwnerClasses() throws IOException {
+        List<Class<?>> owners = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(CONFIG_PACKAGE)) {
+            for (Path file : files.filter(path -> path.getFileName().toString().endsWith(".java")).toList()) {
+                StringBuilder name = new StringBuilder("com.github.tartaricacid.touhoulittlemaid.config");
+                for (Path segment : CONFIG_PACKAGE.relativize(file)) {
+                    name.append('.').append(segment);
+                }
+                name.setLength(name.length() - ".java".length());
+                try {
+                    owners.add(Class.forName(name.toString(), false,
+                            ServerRuleReadRoutingContractTest.class.getClassLoader()));
+                } catch (Throwable ignored) {
+                    // package-info 之类没有可加载类的源文件
+                }
+            }
+        }
+        assertTrue(owners.size() >= 8, "只认出 " + owners.size() + " 个配置类，目录推导可能已失效");
+        return owners;
     }
 
     /** 下限断言：{@code values()} 里的每一项都得能反射回一个字段名，否则下面的扫描就是零覆盖。 */

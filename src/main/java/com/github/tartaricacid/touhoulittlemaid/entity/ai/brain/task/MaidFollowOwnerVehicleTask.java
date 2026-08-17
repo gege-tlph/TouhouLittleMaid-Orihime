@@ -9,7 +9,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.behavior.Behavior;
-import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.player.Player;
@@ -87,7 +86,7 @@ public class MaidFollowOwnerVehicleTask extends Behavior<EntityMaid> {
             this.type = Type.RIDE;
             return true;
         } else if (!maid.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
-            BehaviorUtils.setWalkAndLookTargetMemories(maid, ownerControlledVehicle, speedModifier, stopDistance);
+            MaidFollowOwnerTask.setExpiringFollowTarget(maid, ownerControlledVehicle, speedModifier, stopDistance);
             return false;
         }
 

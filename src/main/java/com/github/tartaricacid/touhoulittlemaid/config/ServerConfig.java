@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.config;
 
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ChairConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ExperimentalConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig;
 import com.google.common.collect.Lists;
@@ -42,6 +43,7 @@ public class ServerConfig {
         MaidConfig.initServerRule(builder);
         ChairConfig.initServerRule(builder);
         MiscConfig.initServerRule(builder);
+        ExperimentalConfig.initServerRule(builder);
         initValues(builder);
         CONFIG = builder.build();
         return CONFIG;
