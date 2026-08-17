@@ -29,37 +29,18 @@ YSM 那项依赖 O4 前置。顺带修掉宿主在罗盘/范围可视化上的�
 
 **O1 · 待入世实测（2026-08-14 单人档验收后收窄到专服/存档侧）**
 
-**单人档实机验收已完成**（2026-08-14 用户实测，dev 客户端约 25 分钟；
-按「验收通过要连同它的环境一起记账」：**以下通过仅覆盖单人档**——
-客户端与服务端共用同一份数据的特例，两侧数据可分叉的场景仍开放）：
+**已通过的单人档验收**（2026-08-14/15 用户实测；按「验收通过要连同环境一起记账」，
+**以下仅覆盖单人档**——客户端与服务端共用同一份数据的特例，两侧数据可分叉的场景仍开放）：
+抱姿 / 棋局簇（Shift 预览、残局右键、战利品表）/ 四种背包全功能与持久化 / 祭坛四配方 /
+配置菜单两栏与保存 / 原版替换五开关（含岩浆怪崩溃点复验）/ REI 三项 / **图标缓存全项**。
+实机还抓出并当场修掉一个崩溃（替换燃烧中的熔炉背包，`d1fcc58c4`）。
+☑️ 饮用音效条件难凑未实测，**用户裁定视为通过、除非后续被报告 bug**——口径与实测项不同，故分开记。
 
-- ✅ 抱姿（F5 第三人称）、Shift 棋盘预览与提示行、残局道具右键载入、
-  创造栏顺序与译文、四种背包穿脱/背上模型/GUI 全功能（工作台合成、末影箱、
-  熔炉烧炼与火焰/箭头进度、储罐灌取与流体渲染/tooltip）、熔炉持久化重进、
-  祭坛四配方、配置菜单两栏与保存生效（单人）、四张战利品表的 `/loot`
-  （`random_board_state` + 三张背包表，tank 出品带岩浆 mB）
-- ✅ **实机抓出并当场修掉一个崩溃**：替换燃烧中的熔炉背包必崩（`d1fcc58c4`，见已关闭表）
-- ☑️ 饮用音效（女仆喂主人喝东西）：条件难凑本轮未实测，**用户裁定视为验收通过、
-  除非后续被报告 bug**（2026-08-14）——口径与上面的实测项不同，特此分开记
-
-- ✅ **原版替换五开关**（2026-08-14 第二轮实测，`6cbe559ba`+`e48a55f56`）：五开关逐个开合
-  即时生效（史莱姆/岩浆怪油库里、经验球点符、图腾 1UP、附魔之瓶点符），全关回原版；
-  **岩浆怪崩溃复现点不再崩**（资源修复经用户复验）
-- ✅ **REI 三项**（2026-08-14 第二轮实测，`30d0d2795`）：折叠组、祭坛配方页 + 背包 GUI
-  点击区、一键转移进合成格/熔炉格
-
-**图标缓存：单人档实机验收通过（2026-08-15 用户全项确认，五轮排障闭环）**：
-
-- ✅ 缓存屏弹出/回原屏/图标全量生成且**无错位**（第三次重推导的截图时序实机定案成立）；
-  bedrock 与 gecko 图标全部清晰；真绿部件（大妖精）与半透明部件（冰翅/妖精羽）均正确
-- 五轮排障入账（详见 `7a2d63ca9`/`fdd0d3763`/`be60bdb62` 提交信息）：
-  ① 绿面 = origin 固有等值抠像伪影（冰翅 α=128 实查）→ 用户批准改**双背景差分抠像**；
-  ② gecko 帧间位移被差分误读 → **同帧双幕**；③ gecko 特效（ysmGlow 法阵/gui 装饰板）
-  入镜的根因 = **CacheScreen 继承 Screen 默认 isPauseScreen()=true，单人档暂停冻结
-  level 时间，隐藏特效的 pre_parallel/条件动画永不推进** → 改不暂停 + gecko 20 tick
-  安定等待（配套，勿单独删）；④ 显示端 10:1 最近邻抽样锯齿 → 按 guiScale 面积平均降采样
-- F3+T 资源重载后图标会暂时变 missing，属预期：包重载会重填队列，下次开 GUI 自动重缓存
-- ⚠️ 缓存屏不暂停后，单人档缓存期间世界在走（约 1 分钟）——行为与开着模型 GUI 一致，非缺陷
+图标缓存那一簇留下两条长期有效的事实：**F3+T 重载后图标暂时变 missing 属预期**
+（包重载重填队列，下次开 GUI 自动重缓存）；**缓存屏不暂停，故单人档缓存期间世界在走**
+（约 1 分钟，与开着模型 GUI 一致，非缺陷）。五轮排障的根因链见
+`7a2d63ca9`/`fdd0d3763`/`be60bdb62` 提交信息，其中「`isPauseScreen()` 冻结 level 时间」
+一条已进证伪表。
 
 **缺陷采用批（`6f5d8f2a5`）可选实机抽验**：拉弓后换武器姿势应恢复；灭火剂应浇灭灵魂火；
 主手空时吃工作餐副手物品不消失。均有基准同款修法背书，抽验非必须。
@@ -175,6 +156,16 @@ dev 客户端存档「新的世界」，全程无崩溃、无 mixin 失败、无
 | 女仆脚下调试盒 | 看范围时：盒子是**半透明黄**且**正好套在女仆身上**（此前是青蓝、且低一格）；还应有一条 home→女仆的**红线** |
 | 手办/坐垫卡顿 | 创造栏翻到手办与坐垫那一页、JEI 搜同名物品：不应再有可感掉帧（此前每帧全量重画） |
 
+**§3.G 第三方兼容（`e5eb3913c` `2d24ece5a`）：零实机**
+
+| 待验 | 怎么验 |
+|---|---|
+| 女仆不爬森罗家具 | 装森罗厨房/酒馆，在桌椅吧台旁让女仆干活：不该跳上去、也不该站在上面 |
+| 酒馆座椅 | 空闲时女仆应自己去坐沙发/吧台凳；**沙发上不该背朝外**；切到工作/睡眠日程时应起身 |
+| 葡萄 | 成熟葡萄会被收割；收下的**生葡萄不该被当日常工作餐吃掉**（治疗时可以吃）；女仆不再把葡萄架当垂直捷径 |
+
+⚠️ 这三项都要**装上对应模组**才能验——它们是 compileOnly，`runGametest` 里根本不在。
+
 **仍开放（都需要专服/局域网或旧存档，单人档验不到）**：
 
 | 待验 | 为什么这轮验不到 | 怎么验 |
@@ -249,6 +240,26 @@ TACZ 14 条与 B1–B7 已全部落地（见已关闭表）。本项只剩：
 
 **O7 已关闭**（2026-08-17，见已关闭表）。§3.C 的代码面至此整块闭合，实机验收项在 O1。
 
+**O9 · 无线 IO 的绑定面比行为基准宽（2026-08-17 新开，待裁决）**
+
+搬「家具重制」兼容时查出来的，**不限于那个模组**。基准用 `IChestType` 白名单决定
+哪些方块算「箱子」，宿主把整套机制换成了 `ItemStorage.SIDED.find(...)`（O2 判为「覆盖为超集」）。
+超集这一半是对的，但**基准那张白名单还承担着安全职责**——它有意排除了会**销毁物品**的
+回收箱、以及一批带加工语义的机器（灶台/烤架/微波炉/冰柜/工作台/信箱）。
+本树按 `ItemStorage.SIDED` 绑定，这些方块**只要暴露了物品存储就都能被绑上**。
+
+| 待定 | 内容 |
+|---|---|
+| 是不是缺陷 | 玩家把无线 IO 绑到回收箱上，女仆会往里倒东西而东西会消失。基准明确禁止，本树允许 |
+| 修法不止一种 | ① 在 `ItemStorage.SIDED` 之上加一层**黑名单**（与宿主架构最小冲突，但黑名单方向不安全：第三方新增的机器默认放行）② 恢复白名单语义（与宿主架构冲突，且要重开被取消的扩展点）③ 判定为可接受，写进「有意分歧」 |
+| 为什么不擅自做 | 这已不是移植，是**超基准设计决策**；且 O2 当初把这条判成「覆盖为超集」时没算到安全那一半 |
+
+⚠️ 家具重制的那两个兼容文件因此**判定为「无落点」**：`RefurbishedStorageChestType`
+实现的 `IChestType` 在本树不存在，功能需求（无线 IO 能绑它的储物方块）已由超集满足；
+它另一半的价值正是上面这条待裁决项。`RefurbishedFurnitureCompat.init()` 的注册表
+`SYNCED` 改动同样搁置——审计早写了「26.x 上要重新判断这个代价是否仍必要」，
+而判断它需要那个模组的 jar（只发 GitHub Releases，本机没有），**证据不足不下结论**。
+
 **O8 · 行为面对账：只做完了配置面（2026-08-17 新开）**
 
 审计 §7.6 的三面闭合（文件面 / 文档面 / 公开面）**覆盖不到共有文件里的启动期接线**——
@@ -262,6 +273,34 @@ TACZ 14 条与 B1–B7 已全部落地（见已关闭表）。本项只剩：
 ---
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-17：§3.G 第三方兼容（`e5eb3913c` `2d24ece5a`）——两项落地，两项另有判定
+
+| 项 | 结论 |
+|---|---|
+| 女仆不站上森罗家具 | ✅ `e5eb3913c`。审计表标「宿主已有」，实为**文件在、内容缺**：本树只经零食台那条间接链覆盖了厨房桌子，酒馆家具与整张禁跳标签一条都没有。顺带修掉禁跳判据只挂在第二个分支、且只看脚下方块（女仆是为了**登上**桌椅才起跳的） |
+| 森罗酒馆兼容 | ✅ `2d24ece5a`。7 个兼容文件 + **5 处核心接线**——后者是真发现，见下 |
+| 家具重制兼容 | ⚠️ **判定为「无落点」**，见 O9 |
+| YSM | ⬜ 依赖 O4 前置，Fabric 26.1.2 上该模组不存在 |
+
+**酒馆那刀的真发现**：它依赖两个**我们自己加的核心扩展点**，而它们此前没搬
+（`origin/1.21.1` 与 `origin/26.1` 都是 0，实查）——`IExtraMaidBrain#canClimbBlock`
+（由寻路消费，把葡萄架从女仆的主动攀爬里摘出去）与 `MaidMealManager#addWorkMealExclusion`
+（由默认工作餐消费，让葡萄留着加工而不被日常吃掉；治疗餐有意不受影响）。
+**「搬兼容」的实际工作量常常在核心那一侧**，按兼容包的文件数估工时会失准。
+
+依赖 `kaleidoscope-tavern-refabricated:1.2.0.5-fabric+mc26.1.2`（compileOnly）。
+全部第三方符号 **javap 逐个核对 26.1.2 的 jar**，不是照抄基准的 import。
+⚠️ 一处差点误判：gradle 缓存里躺着基准那份 **1.21.11** 的同名 jar，
+**在缓存目录里看到同名文件不等于它是你要的那个版本**——坐标可解析另行实证。
+
+判据四条（`OptionalCompatWiringContractTest`，始终有效，均红测）：entrypoint 登记 /
+每个扩展点实现都有 isModLoaded 守卫 / 两个新钩子真的被核心消费 / 第三方类型不许泄漏出兼容包。
+另两条（`BlockTagDatagenContractTest`）：森罗家具 7 个 id 必须同时在两张标签里；
+**TagBlock 源码里的每个 optional id 都必须出现在入库产物里**（「改了 datagen 却忘了重跑」是纯静默失败）。
+⚠️ **不搬基准那条 `OptionalCompatInitializationGameTest`**：它整条被 `isModLoaded` 守着，
+而模组是 compileOnly、不在 runGametest 运行时里——不执行却照样绿，正是「零覆盖恒绿」。
+`little_maid_extension` 是**第十处静默注册面**。零实机项在 O1。
 
 ## 2026-08-17：§3.F 渲染与标记（`3558c6410` `5172a81b9` `f348b4ca6` `7621c181f`）
 
@@ -381,21 +420,17 @@ CLIENT spec / 次序反转 / 摘短路 / 漏登记一个键），各红在正确
 **一个能设置却不起作用的选项，比没有这个选项更糟**；采取的是诚实标注而非行为修复
 （原版朗读器接口给不出语种参数）。
 
-**「任何一页保存都提交全部改动」配了按屏枚举的测试**——我曾在别处把这句契约写了三遍
-而语音输入页根本不碰共享暂存，还无条件闪「已保存」。识别依据取「它覆写没覆写
-`addFooterButtons`」这种结构量，不取按钮标签字面量，并自带「认出了几屏」的下限断言。
+**「任何一页保存都提交全部改动」配了按屏枚举的测试**——我曾把这句契约写了三遍而语音输入页
+根本不碰共享暂存。识别依据取结构量（覆写没覆写 `addFooterButtons`）而非按钮标签字面量，
+并自带「认出了几屏」的下限断言。
 
-**两处 C2③ 漏网被新收紧的判据当场照出**（javap 实证，非推理）：
-`LocalPlayer.sendSystemMessage` 在 26.1.2 的字节码就是
-`getChatListener().handleSystemMessage(component, true)`——与已被禁用的
-`displayClientMessage` **是同一条链，只是换了个名字**，而宿主迁移时正是机械改写成了它。
-`AIChatScreen` 的玩家回显（格式 `<玩家名> 文本`，正好命中 `guessChatUUID`）与
-`TTSPlayer2Client` 的两处错误提示都在其中，均已改走 `ClientLocalChat`。
-判据已从「写了 displayClientMessage」升级为「谁把文本送进了 ChatListener」，扫描面加 `client/gui`。
+**两处 C2③ 漏网被新收紧的判据当场照出**（javap 实证）：`LocalPlayer.sendSystemMessage`
+的字节码就是 `getChatListener().handleSystemMessage(...)`——与被禁用的 `displayClientMessage`
+**是同一条链、只是换了名字**，而宿主迁移时正是机械改写成了它。判据已从「写了某个方法名」
+升级为「谁把文本送进了 ChatListener」，扫描面加 `client/gui`。
 
-**账本改判一条**：`MaidAIChatConfigButton` 待定 → **无关**。它在 `origin/1.21.1` 与行为基准
-**都是零调用者的死代码**（全仓 git grep 三个 ref 实证），贴图的真实消费者另有其人。
-交接清单曾把它列为「本刀新建三件」之一，**那是错的**。
+**账本改判一条**：`MaidAIChatConfigButton` 待定 → **无关**，它在两个基准上都是零调用者的死代码；
+交接清单把它列为「本刀新建三件」之一是错的。
 
 门禁：compileJava 0 错；JUnit **180 例 0 失败**（45 个测试类，5 个新类逐个实见于
 `build/test-results`）；GameTest **78 例 0 失败**；`--ledger` / `doc_lint` 各自单独跑退出 0。
@@ -412,29 +447,18 @@ CLIENT spec / 次序反转 / 摘短路 / 漏登记一个键），各红在正确
 | `0d5124259` | **聊天管理层 + agent 层**，含 **C2①**（判定/执行搬出对话通道、先做后说）、**C2②**（待合成文本改由无历史的独立翻译请求产出）、**C2③**（本地提示走 `ClientLocalChat`） |
 | `f74380bc1` | **网络层**（四个新包）、站点保存事务、试听链路、**§3.H 命令面**（`status`/`sites`/reload 收拢 + `AiChatDevCommand`）、17 个 lang 文件并入 |
 
-**C2③ 的前提在 26.1.2 复核成立且更硬**（javap -c）：
-`displayClientMessage → ChatListener.handleSystemMessage → guessChatUUID →
-Minecraft.isBlocked → PlayerSocialManager.isBlocked → pendingBlockListRefresh.join()`
-——在调用线程上**硬等** Mojang 屏蔽名单刷新。26.1.2 还给了个更贴切的落点：
-`ChatComponent.addMessage` 已私有化，按来源拆成 `addServerSystemMessage`（原版走这条）与
-`addClientSystemMessage`（本机自己打的提示），后者正是我们要的语义。
+**C2③ 的前提在 26.1.2 复核成立且更硬**（javap -c）：`displayClientMessage` 那条链会在
+调用线程上**硬等** Mojang 屏蔽名单刷新。26.1.2 给了更贴切的落点——`ChatComponent.addMessage`
+已按来源拆成 `addServerSystemMessage` 与 `addClientSystemMessage`，后者正是本机提示的语义。
 
 **两处按范围裁剪，各留恢复锚点**（不预留空壳）：`ChatClientInfo` 的 YSM 短路（§7.2 范围外）、
-`table_food` 两个上下文（§3.I 未移植）。**知识文档同步裁剪**：`en_us.md`/`zh_cn.md` 各剔除
-3 段（§3.E 跟随·浅水·农作站位、§3.I 桌上食物），契约测试的锚点表与数值事实表同步收窄——
-知识文档是直接喂给模型当事实的，描述一个本构建做不到的行为比不描述贵得多。
+`table_food` 两个上下文（§3.I 未移植）。**知识文档同步裁剪**（`en_us.md`/`zh_cn.md` 各剔除 3 段）——
+它是直接喂给模型当事实的，**描述一个本构建做不到的行为比不描述贵得多**。
 
-**四处静默故障被闸门当场照出**（都是「编译打包启动全正常、功能从不执行」那一族）：
-① 四个新 payload 一个都没登记进 `NetworkHandler`（J 组 `PayloadRegistrationInvariantTest`
-此前也没搬，一并补上并红测）② `MaidAIChatManager` 漏了 `@MaidManagerDef` 导致
-`EntityMaid.aiChatManager` 整个不存在 ③ 三个新 GameTest 类未登记 `fabric-gametest`
-entrypoint ④ `SiteSecretRedactionTest` 的字段集取自它本该看管的那张表（自证式断言，
-删掉 `SECRET_ID` 原有 7 条用例一条都不红）——补了一条独立取证的断言。
-
-门禁：compileJava 0 错；JUnit 75 → **168** 例 0 失败（新增 19 个测试类）；
-GameTest 64 → **78** 例 0 失败（新增 4 类，用例名逐个实见于 `report.xml`）。
-七轮红测各红在正确断言上（读口路由 / ArchUnit 认领 / 迁移次序 / 脱敏字段表 / 技能优先级 /
-站点降级 / C2 三笔 / payload 登记）。
+**四处静默故障被闸门当场照出**：四个新 payload 没登记进 `NetworkHandler` /
+`MaidAIChatManager` 漏 `@MaidManagerDef` / 三个新 GameTest 类未登记 entrypoint /
+`SiteSecretRedactionTest` 的字段集取自它本该看管的那张表（自证式断言）。
+门禁：JUnit 168 例 0 失败、GameTest 78 例 0 失败，七轮红测各红在正确断言上。
 
 ⚠️ **全部凭据来自自动化门，尚无实机验收**：AI 聊天要真站点密钥才能验，专服两侧分叉
 （站点表、AI 配置文件）单人档按定义测不出来。实机项见 O1。
@@ -464,12 +488,8 @@ activity, pairs, conditions)` 声明式；`ServerLevel.setDayTime` 已删（日�
 `EnvironmentAttribute` 驱动）；`Mob.setTarget` 与 `getTarget` **双重**经 `asValidTarget`
 过滤（创造/旁观玩家一律滤成 null）；`Item.postHurtEnemy` 空壳化（见上）。
 
-门禁：compileJava 0 错、JUnit 75/0（新增 `MaidConfigLayoutTest` 4 例）、
-GameTest 64/0（新增 33 例，四个类的 `fabric-gametest` entrypoint 均已登记）。
-**三轮红测各红在正确断言上**：① 摘 `EMERGENCY_COMBAT_ACTIVE` 出 `MaidBrain` 记忆列表
-→ 19 条红在「应战进不去」；② 摘 `restoringPersistentState` 分支 → 精确 1 条红在
-「NBT 恢复被误判为玩家指令」；③ 判据换成 `canUseNonMeleeWeapon` → 精确 2 条红，
-分别是「非远程任务应判为可用远程武器」与「没有箭时不应判为可用远程武器」。
+门禁 JUnit 75/0、GameTest 64/0（新增 33 例，四个类的 entrypoint 均已登记）。
+三轮红测各红在正确断言上（摘应战记忆 / 摘 NBT 恢复分支 / 换远程武器判据）。
 
 **单人档实机验收 2026-08-16 通过**（用户实测八项全过，含 B1 主症状「持弓站定射击 / 没箭回落近战」；
 全程无崩溃、无 mixin 失败、无封包处理失败、无 AI 超时）。按「验收连同环境记账」：
@@ -511,12 +531,9 @@ hurtClient×2，javap 复验）+ `ExplosionEvents` + `ServerExplosionMixin`（26
 「女仆免疫子弹爆炸」在那边从不生效。
 
 **弓弩解绑（B2，`c6aa20b24`）**：`resolveImplementation` 当前任务优先且不加 isWeapon；
-`MaidCombatManager.performRangedAttack` 改用它，敌我判定门（MaidTargetingPolicy）
-留 §3.B 锚点。红测：注入 isWeapon 要求 → 「当前任务胜出」红报「实得 crossbow_attack」。
+`MaidCombatManager.performRangedAttack` 改用它。红测：注入 isWeapon 要求即当场红。
 
-门禁：compileJava 0 错、JUnit 71/0（新增 GunRecognitionRangeTest 6 例）、
-GameTest 31/0（新增 RangedResolveGameTest 3 例，entrypoint 已登记；服务端启动实证
-新 mixin 织入）。**单人档实机验收 2026-08-15 通过**（用户五项实测，见 O1；
+门禁 JUnit 71/0、GameTest 31/0。**单人档实机验收 2026-08-15 通过**（用户五项实测，见 O1；
 运行期前置 FCAP 26.1.4→26.1.5 随验收补上，`7a1c0bce`）；专服侧仍开放（O1 表）。
 
 ## 2026-08-15：缺陷修复移交清单定案采用（`6f5d8f2a5`）
@@ -529,10 +546,8 @@ GameTest 31/0（新增 RangedResolveGameTest 3 例，entrypoint 已登记；服�
 （首装首进程女仆名退化的根因）+ 两层楼死锁兜底（GUI 预览竞态核实本树本就正确）。
 门禁：JUnit 65/0、GameTest 28/0（入口新时序下服务端启动实证）。
 
-**延后项（动手时必查归档件）**：C2 AI 聊天层三笔（指令停调/TTS 语种漂移/识别提示冻结，
-修法全是结构性的）+ TTS 语种诚实标注 → **§3.C 动手时必采**；#1139 返回容器形状校验 →
-`RemainFoodEatenEvent`（账本待定行已注记）移植时随行。
-**归档件 §E 是有意行为分歧全集——对照 origin 做基线等价审计时勿当漂移改回。**
+**延后项**：C2 三笔与 TTS 语种诚实标注已随 §3.C 采纳；#1139 返回容器形状校验随
+`RemainFoodEatenEvent` 移植时随行。**归档件 §E 是有意行为分歧全集——做基线等价审计时勿当漂移改回。**
 
 ## 2026-08-14：模型图标缓存整簇补回（`e45ea33a6`）——反向缺口第五簇清零
 
@@ -654,25 +669,15 @@ GameTest 四条 + 红测（摘登记行三条当场红）。JUnit 44/0、GameTes
 
 ## 2026-08-14：熔炉背包补回，IBackpackData 机制立起（`40b8cfde0`）
 
-背包四型第三种。与前两种不同，熔炉带持久化、tick 驱动的数据对象，本刀把这层机制
-按宿主形态立起来（液体背包直接沿用）：
-
-- **`BackpackStateData` 附件：persistent 但有意不 syncWith**——GUI 进度条走容器
-  `addDataSlots(ContainerData)`（26.1.2 javap 证仍在，与基准同一条路），物品走菜单槽位同步；
-  烧炼进度每 tick 在变，挂 `syncWith(all)` 会对所有追踪者每 tick 重发
-- **附件值是可变 holder**：codec 编码时从 runtime 拉活状态（存档那刻快照，无须保存前刷新钩子）；
-  解码只得待恢复 NBT，由 `MaidBackpackManager` 惰性绑定（解码时拿不到 maid/level）。
-  tag 内部格式与基准逐字相同（含 #1053 稀疏槽位修复），基准存档可互认
-- serverTick 挂 `manager.tick()`（baseTick 服务端分支），节奏同基准 aiStep
-- 三处 26.1.2 漂移（对照原版 `AbstractFurnaceBlockEntity` 反编译源实查）：`assemble` 单参、
-  燃料残留改 `Item.getCraftingRemainder()` 返回 `ItemStackTemplate`（shrink 后空则 create，
-  真实燃料下行为等价）、`canInsertItem` 挪进 `MaidItemManager`
-- 获取路径随刀齐：祭坛配方 + `furnace_or_crafting_table_backpack` 战利品表
-  （datagen 产物与基准 hash 相同）注入 SIMPLE_DUNGEON
-
-GameTest 四条：注册三点 / 附件惰性绑定 / 210 tick 烧熟牛肉全链路 / 稀疏槽位存取往返。
-红测：摘 BackpackManager 登记行 → 四条当场红 → 还原回绿。JUnit 44/0、GameTest 23/0。
-⚠️ 零实机：GUI 火焰/箭头、背上模型、穿脱丢物需入世验证（见 O1）。
+背包四型第三种，本刀把「持久化 + tick 驱动的背包数据」这层机制按宿主形态立起来
+（液体背包直接沿用）。仍然生效的三条设计事实：
+**`BackpackStateData` 附件 persistent 但有意不 syncWith**（烧炼进度每 tick 在变，
+挂 `syncWith(all)` 会对所有追踪者每 tick 重发；GUI 进度条走容器 `addDataSlots`）；
+**附件值是可变 holder**，codec 编码时从 runtime 拉活状态，解码后由 `MaidBackpackManager`
+惰性绑定，tag 内部格式与基准逐字相同（含 #1053 稀疏槽位修复），**基准存档可互认**；
+三处 26.1.2 漂移已实查（`assemble` 单参 / 燃料残留改 `getCraftingRemainder` 返回
+`ItemStackTemplate` / `canInsertItem` 挪进 `MaidItemManager`）。
+GameTest 四条 + 红测（摘 BackpackManager 登记行当场红）。⚠️ 零实机项见 O1。
 
 ## 2026-08-14：上一会话 15 刀全量审计（审计结论与修复分开，一缺陷一提交）
 
