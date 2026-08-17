@@ -576,6 +576,14 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 `docs/CURRENT_STATUS.md` 的 O8 与提交 `d9db0d754`）。它是这一族的典型形态——
 **「载体还在、行为没了」**，而文件面 / 文档面 / 公开面三面对它全部无信号，正是第四面存在的理由。
 
+**资源面还留下一个待裁决项**（`create:automation_ignore`，裁决入口在 CURRENT_STATUS 的 O8）。
+落地形态已查清，动手时照抄即可：基准 `datagen/tag/TagRecipeSerializer` 用**裸命名空间 Identifier**
+建 `TagKey<RecipeSerializer<?>>`（**无编译期依赖**），产物落在
+`src/main/generated/data/create/tags/recipe_serializer/` 下的 `automation_ignore.json`，
+内容一条 `touhou_little_maid:altar_recipe_serializers` 且 `"required": false`（Create 不在也不报错）。
+本树该产物 0 个。⚠️ 改 datagen 后必须重跑并把产物入库——「改了 datagen 却忘了重跑」是纯静默失败，
+`BlockTagDatagenContractTest` 已为标签这一族钉过同型判据。
+
 ⚠️ 「无回归」的适用范围是**这五个面各自的契约**，不等于该子系统整体无问题；
 各脚本文件头写明了自己的盲区（例如 lang 只认字面量键、GUI 面的守卫按词类归类而非语义求值）。
 
