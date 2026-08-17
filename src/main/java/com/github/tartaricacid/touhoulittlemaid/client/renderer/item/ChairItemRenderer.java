@@ -1,11 +1,14 @@
 package com.github.tartaricacid.touhoulittlemaid.client.renderer.item;
 
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.item.state.ChairRenderRenderState;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityChair;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemChair;
 import com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.client.Minecraft;
@@ -19,6 +22,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.joml.Vector3fc;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -35,6 +40,17 @@ public class ChairItemRenderer implements SpecialModelRenderer<ChairRenderRender
      */
     private static final String DEFAULT_CHAIR_ID = "touhou_little_maid:cushion";
 
+    /**
+     * 同 {@link GarageKitItemRenderer}：{@code extractArgument} 的返回值会被
+     * {@code SpecialModelWrapper} 追加进 GUI 图标缓存的 model identity（26.1.2 反编译源实查），
+     * 而本状态类没有 {@code equals} —— 每帧新建实例就等于每帧换一个 identity，
+     * 图标缓存永远失效，创造栏/JEI 里满屏坐垫时每帧全量重抽取重绘。按 modelId 记忆化后，
+     * 重活只在模型变化时做一次。
+     */
+    private static final ChairRenderRenderState EMPTY = new ChairRenderRenderState();
+    private static final Cache<String, ChairRenderRenderState> STATE_CACHE =
+            CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS).build();
+
     public ChairItemRenderer() {
     }
 
@@ -43,23 +59,29 @@ public class ChairItemRenderer implements SpecialModelRenderer<ChairRenderRender
      */
     @Override
     public ChairRenderRenderState extractArgument(ItemStack stack) {
-        ChairRenderRenderState state = new ChairRenderRenderState();
         if (!(stack.getItem() instanceof ItemChair)) {
-            return state;
+            return EMPTY;
         }
+        Level level = Minecraft.getInstance().level;
+        if (level == null) {
+            return EMPTY;
+        }
+        String modelId = ItemChair.getData(stack).modelId();
+        try {
+            return STATE_CACHE.get(modelId, () -> buildState(modelId, level));
+        } catch (ExecutionException e) {
+            TouhouLittleMaid.LOGGER.error("Failed to prepare chair item preview", e);
+            return EMPTY;
+        }
+    }
 
-        ItemChair.Data data = ItemChair.getData(stack);
-        String modelId = data.modelId();
+    private static ChairRenderRenderState buildState(String modelId, Level level) {
+        ChairRenderRenderState state = new ChairRenderRenderState();
         state.modelId = modelId;
 
         CustomPackLoader.CHAIR_MODELS.getInfo(modelId).ifPresent(
                 info -> state.renderItemScale = info.getRenderItemScale()
         );
-
-        Level level = Minecraft.getInstance().level;
-        if (level == null) {
-            return state;
-        }
 
         EntityChair chair = EntityCacheUtil.getChair(level, EntitySpawnReason.LOAD);
         chair.setModelId(modelId);

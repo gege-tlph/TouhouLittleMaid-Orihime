@@ -11,6 +11,8 @@ import com.github.tartaricacid.touhoulittlemaid.item.ItemGarageKit;
 import com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.migrate.EntityTypeUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.mojang.serialization.MapCodec;
@@ -36,6 +38,7 @@ import org.joml.Vector3fc;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.github.tartaricacid.touhoulittlemaid.client.resource.bedrock.InternalBedrockModelRegistry.STATUE_BASE;
@@ -57,28 +60,56 @@ public class GarageKitItemRenderer implements SpecialModelRenderer<GarageKitRend
         this.baseModel = InternalBedrockModelRegistry.getModel(STATUE_BASE);
     }
 
+    /**
+     * GUI 的物品图标缓存按 model identity 判等，而 {@code SpecialModelWrapper} 会把
+     * {@code extractArgument} 的返回值追加进 identity（26.1.2 反编译源实查：
+     * {@code if (argument != null) output.appendModelIdentityElement(argument)}）。
+     * {@link GarageKitRenderState} 没有 {@code equals}，所以每帧新建实例 = 每帧换 identity =
+     * 图标缓存永远失效：创造栏/JEI 满屏手办时每帧全量重做「整只女仆 NBT load + 渲染状态抽取」。
+     *
+     * <p>按数据组件记忆化后重活只在数据变化时做一次。弱键随物品堆存亡（guava 的 weakKeys
+     * 同时把键比较改成 identity，正合此处语义：同一个物品堆逐帧拿到的是同一个 CustomData 实例），
+     * 10 秒无访问过期。</p>
+     *
+     * <p><b>行为注记</b>：预览因此随数据冻结成一帧，与旧版 BEWLR「tickCount 冻结」的静态雕像
+     * 语义一致；若实机发现丢了某个真实动画，改成周期性失效即可。</p>
+     */
+    private static final GarageKitRenderState EMPTY = new GarageKitRenderState();
+    private static final Cache<CustomData, GarageKitRenderState> STATE_CACHE =
+            CacheBuilder.newBuilder().weakKeys().expireAfterAccess(10, TimeUnit.SECONDS).build();
+
+    static {
+        EMPTY.extraData = new CompoundTag();
+        EMPTY.entityRenderState = null;
+    }
+
     @Override
     public GarageKitRenderState extractArgument(ItemStack stack) {
-        GarageKitRenderState state = new GarageKitRenderState();
         CustomData data = ItemGarageKit.getMaidData(stack);
-        state.extraData = data.copyTag();
+        Level world = Minecraft.getInstance().level;
+        if (data.isEmpty() || world == null) {
+            return EMPTY;
+        }
+        try {
+            return STATE_CACHE.get(data, () -> buildState(data.copyTag(), world));
+        } catch (ExecutionException e) {
+            TouhouLittleMaid.LOGGER.error("Failed to prepare garage-kit item preview", e);
+            return EMPTY;
+        }
+    }
+
+    private GarageKitRenderState buildState(CompoundTag data, Level world) {
+        GarageKitRenderState state = new GarageKitRenderState();
+        state.extraData = data;
         state.entityRenderState = null;
 
-        // 提取实体渲染状态
-        if (state.extraData.isEmpty()) {
-            return state;
-        }
-        Level world = Minecraft.getInstance().level;
-        if (world == null) {
-            return state;
-        }
-        Optional<String> id = state.extraData.getString("id");
+        Optional<String> id = data.getString("id");
         if (id.isEmpty()) {
             return state;
         }
         EntityTypeUtil.byString(id.get()).ifPresent(type -> {
             try {
-                extractEntityRenderState(state, state.extraData, world, type);
+                extractEntityRenderState(state, data, world, type);
             } catch (ExecutionException e) {
                 TouhouLittleMaid.LOGGER.error("Failed to extract garage kit item entity render state", e);
             }
