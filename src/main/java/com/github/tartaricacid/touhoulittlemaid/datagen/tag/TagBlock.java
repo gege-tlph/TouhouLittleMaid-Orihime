@@ -101,6 +101,7 @@ public class TagBlock extends FabricTagsProvider.BlockTagsProvider {
                 .forceAddTag(BlockTags.DOORS)
                 .forceAddTag(BlockTags.FENCES)
                 .forceAddTag(BlockTags.CLIMBABLE);
+        addKaleidoscopeFurniture(MAID_JUMP_FORBIDDEN_BLOCK);
 
         valueLookupBuilder(ALTAR_TORII).add(Blocks.RED_WOOL, Blocks.RED_CONCRETE);
         builder(ALTAR_TORII).addOptional(createResourceKey(Identifier.parse("biomesoplenty:redwood_planks")));
@@ -176,6 +177,7 @@ public class TagBlock extends FabricTagsProvider.BlockTagsProvider {
                 .addOptional(createResourceKey(Identifier.parse("kaleidoscope_cookery:crimson_fungus_pot_soup")))
                 .addOptional(createResourceKey(Identifier.parse("kaleidoscope_cookery:buddha_jumps_over_the_wall")));
 
+        addKaleidoscopeFurniture(MAID_AVOID_BLOCK);
         builder(MAID_AVOID_BLOCK)
                 // 怎么能在吃饭的桌子上跳来跳去呢
                 .addTag(MAID_SNACK_STAND_BLOCK)
@@ -208,5 +210,27 @@ public class TagBlock extends FabricTagsProvider.BlockTagsProvider {
                 // 刷怪塔实用设备的锥刺和研磨机
                 .addOptional(createResourceKey(Identifier.parse("mob_grinding_utils:spikes")))
                 .addOptional(createResourceKey(Identifier.parse("mob_grinding_utils:saw")));
+    }
+
+    /**
+     * 森罗厨房与森罗酒馆的桌椅：女仆既不该站上去，也不该为了登上去而起跳。
+     *
+     * <p>优先用这两个模组**自己的语义标签**，这样它们新增木材/颜色变种时不用我们跟着改；
+     * 全部走 optional，因此不构成硬依赖。酒馆没有暴露通用的桌子/家具标签，只能逐个列方块。</p>
+     *
+     * <p>注：{@code kaleidoscope_cookery:table} 经 {@code MAID_SNACK_STAND_BLOCK} 已被
+     * {@code MAID_AVOID_BLOCK} 间接包含，此处直列是为了让两张标签各自独立成立，
+     * 不依赖那条间接链——重复条目对生成结果无影响。</p>
+     */
+    private void addKaleidoscopeFurniture(TagKey<Block> tag) {
+        valueLookupBuilder(tag)
+                .addOptionalTag(createTagKey(Identifier.parse("kaleidoscope_cookery:table")))
+                .addOptionalTag(createTagKey(Identifier.parse("kaleidoscope_cookery:sittable")))
+                .addOptionalTag(createTagKey(Identifier.parse("kaleidoscope_tavern:sittable")));
+        builder(tag)
+                .addOptional(createResourceKey(Identifier.parse("kaleidoscope_tavern:table")))
+                .addOptional(createResourceKey(Identifier.parse("kaleidoscope_tavern:bar_counter")))
+                .addOptional(createResourceKey(Identifier.parse("kaleidoscope_tavern:bar_cabinet")))
+                .addOptional(createResourceKey(Identifier.parse("kaleidoscope_tavern:glass_bar_cabinet")));
     }
 }
