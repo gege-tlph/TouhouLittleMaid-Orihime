@@ -73,7 +73,8 @@ public class TouhouLittleMaidFabricClient implements ClientModInitializer {
         KeyInputCallback.EVENT.register(PressAIChatKeyEvent::onOpenConfig);
         KeyInputCallback.EVENT.register(STTChatKey::onSttChatPress);
         KeyInputCallback.EVENT.register(DismountBroomKey::onDismountPress);
-        LevelRenderEvents.END_MAIN.register(ScrollRenderEvent::onRenderWorldLastEvent);
+        // 追踪标记不再画在世界里：世界内的「置顶」会清主渲染目标的深度贴图，光影下地面发白。
+        // 改由 HUD 层的 TrackerMarkerOverlay 承担（ClientSetupEvent 注册）
         ScreenEvents.AFTER_INIT.register(ShowOptifineScreen::showOptifineWarning);
 
         LevelRenderEvents.AFTER_SOLID_FEATURES.register(WirelessIORenderEvent::onRender);

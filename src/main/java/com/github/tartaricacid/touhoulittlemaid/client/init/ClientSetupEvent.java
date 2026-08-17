@@ -5,6 +5,7 @@ import com.github.tartaricacid.touhoulittlemaid.client.event.ShowOptifineScreen;
 import com.github.tartaricacid.touhoulittlemaid.client.overlay.BroomTipsOverlay;
 import com.github.tartaricacid.touhoulittlemaid.client.overlay.MaidTipsOverlay;
 import com.github.tartaricacid.touhoulittlemaid.client.overlay.ShowPowerOverlay;
+import com.github.tartaricacid.touhoulittlemaid.client.overlay.TrackerMarkerOverlay;
 import com.github.tartaricacid.touhoulittlemaid.compat.embeddium.EmbeddiumCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.immersivemelodies.client.ImmersiveMelodiesCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.iris.IrisCompat;
@@ -40,5 +41,8 @@ public class ClientSetupEvent {
         HudElementRegistry.attachElementBefore(VanillaHudElements.CROSSHAIR, modLoc("tlm_maid_tips"), MaidTipsOverlay.INSTANCE);
         HudElementRegistry.attachElementBefore(VanillaHudElements.CROSSHAIR, modLoc("tlm_broom_tips"), BroomTipsOverlay.INSTANCE);
         HudElementRegistry.attachElementBefore(VanillaHudElements.HOTBAR, modLoc("tlm_show_power"), ShowPowerOverlay.INSTANCE);
+        // 追踪标记画在 HUD 而不是世界里：世界内的「置顶」会清掉主渲染目标的深度贴图，
+        // 连带抹掉光影包的深度附件（详见 TrackerMarkerOverlay 的 javadoc）
+        HudElementRegistry.attachElementBefore(VanillaHudElements.CROSSHAIR, modLoc("tlm_tracker_marker"), TrackerMarkerOverlay.INSTANCE);
     }
 }
