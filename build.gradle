@@ -290,6 +290,9 @@ dependencies {
     // 森罗物语：烹饪
     compileOnly "maven.modrinth:kaleidoscope-cookery-refabricated:1.3.0.6-fabric+mc26.1.2"
 
+    // 森罗物语：酒馆（我们独有的兼容；typed adapter，故需要编译期符号）
+    compileOnly "maven.modrinth:kaleidoscope-tavern-refabricated:1.2.0.5-fabric+mc26.1.2"
+
     // Improved Mobs
 //    compileOnly "maven.modrinth:improved-mobs:1.21.1-1.14.2-fabric"
 //    compileOnly "maven.modrinth:tenshilib:1.21.1-2.1.1-fabric"

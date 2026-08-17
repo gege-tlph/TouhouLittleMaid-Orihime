@@ -2,10 +2,12 @@ package com.github.tartaricacid.touhoulittlemaid.api.entity.ai;
 
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.mojang.datafixers.util.Pair;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.Sensor;
 import net.minecraft.world.entity.ai.sensing.SensorType;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Collections;
 import java.util.List;
@@ -95,5 +97,13 @@ public interface IExtraMaidBrain {
      */
     default List<Pair<Integer, BehaviorControl<? super EntityMaid>>> getRestBehaviors() {
         return Collections.emptyList();
+    }
+
+    /**
+     * 允许附属兼容层从女仆的<b>主动攀爬寻路</b>中排除特定方块。
+     * 方块自身的原版 climbable 语义不会被修改——玩家与其它生物照旧能爬。
+     */
+    default boolean canClimbBlock(EntityMaid maid, BlockPos pos, BlockState state) {
+        return true;
     }
 }

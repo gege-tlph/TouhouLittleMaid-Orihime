@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.entity.ai.navigation;
 
 import cn.sh1rocu.touhoulittlemaid.util.neoforge.CommonHooks;
 import com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagBlock;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.ExtraMaidBrainManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -152,6 +153,7 @@ public class MaidNodeEvaluator extends WalkNodeEvaluator {
     }
 
     public static boolean isMaidCanClimbBlock(BlockState blockState, BlockPos blockPos, EntityMaid maid) {
-        return CommonHooks.isLadder(blockState, maid.level, blockPos, maid);
+        return CommonHooks.isLadder(blockState, maid.level, blockPos, maid)
+               && ExtraMaidBrainManager.canClimbBlock(maid, blockPos, blockState);
     }
 }

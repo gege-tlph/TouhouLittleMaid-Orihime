@@ -20,7 +20,8 @@ public class DefaultMaidWorkMeal implements IMaidMeal {
     public static boolean isWorkMeal(ItemStack stack) {
         return stack.has(DataComponents.FOOD)
                 && !IMaidMeal.isBlockList(stack, ServerRuleConfig.get(MaidConfig.MAID_WORK_MEALS_BLOCK_LIST))
-                && !IMaidMeal.isBlockList(stack, MaidMealRegConfigEvent.WORK_MEAL_REGEX);
+                && !IMaidMeal.isBlockList(stack, MaidMealRegConfigEvent.WORK_MEAL_REGEX)
+                && !MaidMealManager.isWorkMealExcluded(stack);
     }
 
     @Override

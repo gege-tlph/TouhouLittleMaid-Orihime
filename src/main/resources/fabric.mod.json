@@ -55,6 +55,9 @@
     ],
     "rei_client": [
       "com.github.tartaricacid.touhoulittlemaid.compat.rei.MaidREIClientPlugin"
+    ],
+    "little_maid_extension": [
+      "com.github.tartaricacid.touhoulittlemaid.compat.kaleidoscopetavern.TavernCompat"
     ]
   },
   "mixins": [
