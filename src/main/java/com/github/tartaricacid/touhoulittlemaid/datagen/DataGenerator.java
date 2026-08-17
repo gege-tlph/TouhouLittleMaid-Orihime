@@ -36,6 +36,7 @@ public class DataGenerator implements DataGeneratorEntrypoint {
         pack.addProvider(TagEnchantment::new);
         pack.addProvider(TagItem::new);
         pack.addProvider(TagPaintingVariant::new);
+        pack.addProvider(TagRecipeSerializer::new);
 
         // Registry Based Stuff
         pack.addProvider(RegistryDataGenerator::new);
