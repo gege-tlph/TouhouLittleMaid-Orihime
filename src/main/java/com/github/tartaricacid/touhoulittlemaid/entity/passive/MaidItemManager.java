@@ -3,6 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.entity.passive;
 import cn.sh1rocu.touhoulittlemaid.mixin.accessor.EntityAccessor;
 import cn.sh1rocu.touhoulittlemaid.mixin.accessor.ExperienceOrbAccessor;
 import cn.sh1rocu.touhoulittlemaid.util.transfer.*;
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.IMaidBackpack;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidPickupEvent;
@@ -38,6 +39,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -458,6 +460,66 @@ public class MaidItemManager {
         ItemStack stack = ItemUtil.getStack(hide, 0);
         ItemStack output = ItemsUtil.extractItem(hide, 0, stack.getCount(), false, null);
         maid.setItemInHand(usedHand, output);
+    }
+
+    /**
+     * 进食后归还容器（碗 / 瓶 / 桶）。
+     * <p>
+     * 原版只认 {@code USE_REMAINDER} 组件，那条路已由 vanilla 把剩余物放回手上、再由
+     * {@link #backCurrentHandItemStack} 收进背包。本方法补的是另外两条**原版不认**的：
+     * ① 物品自带的合成剩余物（26.1.2：{@code Item.getCraftingRemainder()} 返回
+     * {@code ItemStackTemplate}，旧版是 {@code ItemStack.getRecipeRemainder()}）；
+     * ② 世界规则 {@code MaidEatenReturnContainerList} 里玩家手配的「食物 → 容器」映射。
+     * <p>
+     * 宿主从 1.21.1 迁到 26.1 时把这条消费链整条丢了，只留下配置键与配置菜单里那一栏，
+     * 于是那一栏成了**能设置却不起作用的选项**。行为按 {@code port/1.21.11-fabric} 复原。
+     * <p>
+     * 上游缺陷（TartaricAcid/TouhouLittleMaid#1139）随行采用：该配置声明为
+     * {@code List<List<String>>} 却用无校验器的 {@code builder.define}，磁盘上手写成扁平
+     * {@code ["minecraft:bowl"]} 会在增强 for 的隐式 checkcast 上抛 CCE、写成
+     * {@code [["minecraft:bowl"]]} 会在 {@code get(1)} 抛 IOOBE；容器 id 非法字符还会让
+     * {@code Identifier.parse} 抛异常。本方法跑在服务端 tick 内，一条手写坏的配置就能崩 tick，
+     * 故按 Object 迭代逐项校验形状、id 用 tryParse，坏项降级为「忽略并 warn」。
+     *
+     * @param foodAfterEat 进食完成后那只手上的物品；手已空时传入被吃掉的那份拷贝
+     */
+    void returnFoodContainer(EntityMaid maid, ItemStack foodAfterEat) {
+        if (foodAfterEat.isEmpty()) {
+            return;
+        }
+        ItemStack container = ItemStack.EMPTY;
+        ItemStackTemplate craftingRemainder = foodAfterEat.getItem().getCraftingRemainder();
+        if (craftingRemainder != null) {
+            container = craftingRemainder.create();
+        }
+        if (container.isEmpty()) {
+            String itemId = ItemsUtil.getItemId(foodAfterEat.getItem());
+            for (Object entry : ServerRuleConfig.get(MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST)) {
+                if (!(entry instanceof List<?> pair) || pair.size() < 2
+                        || !(pair.get(0) instanceof String foodId) || !(pair.get(1) instanceof String containerId)) {
+                    TouhouLittleMaid.LOGGER.warn(
+                            "Ignoring malformed MaidEatenReturnContainerList entry {}; expected [item, container]", entry);
+                    continue;
+                }
+                if (foodId.equals(itemId)) {
+                    container = containerStack(containerId);
+                    break;
+                }
+            }
+        }
+        if (!container.isEmpty()) {
+            ItemsUtil.giveItemToMaid(maid, container);
+        }
+    }
+
+    private static ItemStack containerStack(String containerId) {
+        // 同 #1139：容器 id 来自手改配置，非法字符会让 Identifier.parse 抛异常并崩掉服务端 tick
+        Identifier id = Identifier.tryParse(containerId);
+        if (id == null) {
+            TouhouLittleMaid.LOGGER.warn("Ignoring malformed MaidEatenReturnContainerList container id {}", containerId);
+            return ItemStack.EMPTY;
+        }
+        return new ItemStack(BuiltInRegistries.ITEM.getValue(id));
     }
 
     void onEquipItem(EquipmentSlot slot, ItemStack oldItem, ItemStack newItem) {

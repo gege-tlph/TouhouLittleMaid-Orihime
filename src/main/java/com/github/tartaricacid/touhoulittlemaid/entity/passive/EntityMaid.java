@@ -54,6 +54,7 @@ import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.monster.CrossbowAttackMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -484,7 +485,16 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
         // 上游缺陷（TartaricAcid/TouhouLittleMaid#1177）配套：换手恢复的判据是「正在使用的那只手」，
         // 必须在 super 清掉使用状态之前捕获（清掉后 getUsedItemHand 退回主手默认值）
         InteractionHand usedHand = this.getUsedItemHand();
+        // 归还容器要的是「吃掉的是什么」，同样必须在 super 之前拷贝
+        ItemStack consumed = this.getUseItem().copy();
+        boolean wasConsumable = consumed.has(DataComponents.CONSUMABLE);
         super.completeUsingItem();
+        if (wasConsumable) {
+            // 手上非空 = vanilla 已按 USE_REMAINDER 换成了剩余物（那份由 backCurrentHandItemStack 收走）；
+            // 手上为空 = 整份吃光，此时要按「吃掉的那份」去查合成剩余物与配置映射
+            ItemStack foodAfterEat = this.getItemInHand(usedHand);
+            this.itemManager.returnFoodContainer(this, foodAfterEat.isEmpty() ? consumed : foodAfterEat.copy());
+        }
         this.itemManager.backCurrentHandItemStack(this, usedHand);
     }
 
