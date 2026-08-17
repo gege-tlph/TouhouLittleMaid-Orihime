@@ -179,8 +179,39 @@ dev 客户端存档「新的世界」，全程无崩溃、无 mixin 失败、无
 判据载体 `BufferSource.fixedBuffers` 在 26.1.2 submit 管线**不存在**，行为基准也已在 render-state 重写时放弃它；
 现存 Carry On 兼容 = tag + molang 纯数据层，与基准一致，**零消费者不留空壳**。若实机复现同类 bug → 修上游。
 
-⚠️ **还有一批「待定」**（实时数跑 `--ledger`）：子代理报「未找到」而我尚未复核，一律不写成结论
-（上一轮子代理判定被逐条推翻过）。`--ledger` 会一直提示，忘不掉。
+**「待定」已于 2026-08-18 清零**（24 条逐条复核完毕，`--ledger` 报待定 0）。产出：**替换 15 · 无关 3 ·
+生态 4（全是 Patchouli 一族，等 O4 前置）· 丢失 2**。两条丢失里 `TagRecipeSerializer` 已补（`421ee6b70`，见下），
+`LegacyPackRepositorySource` **仍待补**（唯一的 `[待补]`，见下）。逐条理由写在账本各行，不在此复制。
+
+四条值得记住的定性：① **`ItemEntityPlaceholder` 不是缺口**——三条产实体的祭坛配方都在本树，
+宿主只是把它们从 `recipe/altar_recipe/` 挪到 `recipe/` 根，并把展示产物从占位符物品换成真实代表物品
+（`maid_spawn_egg` / `minecraft:light`），实体仍由 `entity` 字段经 `spawnOutputEntity` 生成；
+② **`ShapeDraw` 在基准里就是零消费者的死代码**，补它等于搬别人的技术债；
+③ **`BundlePacketMixin` 的 javadoc 在说谎**——它自称为 `IEntityWithComplexSpawn` 的 bundle 嵌套而写，
+但那描述的是 PortingLib 的做法；本 fork 走 `ServerEntity.sendPairingData` 递普通包，
+而 26.1.2 的 `addPairing` 本来就只包一层（javap -c 实证），无嵌套可展平；
+④ **`PlayerUtil` 有可量化的手感差异**（女仆 GUI 自动关闭半径：生存 6→7 格、创造 9→7 格），
+宿主改用了原版惯例 `isWithinEntityInteractionRange`，无症状不改，恢复严格对等只需改一行——**留给用户裁决**。
+
+⚠️ **一条判定被本轮推翻**：账本原先把 `AddPackFindersEvent` 一族判成「替换 → `CustomPackLoader` 扫
+`tlm_custom_pack`」。实查基准：`AddPackFindersEvent.CALLBACK` **只有一个注册者**，其方法体**只注册那个内置
+legacy 资源包**；`CustomPackLoader` 根本不走 pack finder。**一个机制的多个用途，要分别问有没有承接者**。
+
+**O2 · 唯一待补：内置「TLM Legacy Pack」整包丢失（2026-08-18 新认定）**
+
+宿主删掉了 `LegacyPackRepositorySource` **和** `src/main/resources/legacy_pack/` 的 **104 个资源文件**，
+却留着 `pack.touhou_little_maid.legacy_resources_pack.title/desc` 两个 lang 键——
+**又一例「载体还在、行为没了」**，与 O8 那个唯一真缺口同族。玩家可见面：资源包列表里不再有这个可选包
+（默认关，开了就换回旧版模型与贴图）。
+
+**不是空壳**：104 个文件里 **98 个真的覆盖本树现存资源**（实测集合求交），孤儿仅 5 个 + `pack.mcmeta`/`pack.png`。
+
+| 补它要做什么 | 说明 |
+|---|---|
+| 资源 | 自 `origin/1.21.1` 取回 104 个文件；`pack.mcmeta` 的 `pack_format` 15 需改成本树主包同值（34） |
+| 注册 | **不要照搬基准那条链**（`AddPackFindersEvent` + `PackRepositoryExtension` + 三个 mixin 是 fork 自造的 Forge 风格事件总线，本树已无）。26.1.2 的 Fabric 原生落点是 `ResourceManagerHelper.registerBuiltinResourcePack`——动手前先 javap 核对该 API 在本版本的签名与包内路径约定 |
+| 闸门 | 按既有 datagen 契约同族补一条：包目录存在 + 注册点在 + lang 两键有对应消费者 |
+| 验收 | **DEFERRED**：包能否出现在资源包列表、开启后贴图是否正确，只有真客户端能看 |
 
 **优先三簇（箱子类型 / 任务数据 / 战利品，16 条）2026-08-15 全部改判「替换」**，证据在账本各行；
 「唯一可能再藏整块玩法丢失的地方」**排除**。代价是宿主取消了一批 `ILittleMaid` 第三方扩展点
@@ -264,11 +295,22 @@ TACZ 14 条与 B1–B7 已全部落地（见已关闭表）。本项只剩：
 render state 有 `atBiomeTemp`，本树整个没有该字段；④ `api/mixin/` 9 个接口全部有已登记的实现 mixin，
 其中 2 个零消费者但**与宿主逐字相同**，属继承来的死脚手架，无症状不改。
 
-**待裁决 · `create:automation_ignore`**（本轮未做，成本很低）：基准的
-`datagen/tag/TagRecipeSerializer` 把祭坛配方序列化器登记进 Create 的 `create:automation_ignore` 标签，
-**有意禁止 Create 自动化祭坛合成**；本树与宿主都没有。纯数据标签、无编译期依赖，补起来只是一条
-datagen 条目。与 O9 同族但便宜得多。⚠️ 补之前先确认 Create 在 26.1.2 Fabric 上是否存在——
-**标签本身无依赖，但值不值得补取决于这个**。
+**✅ 已裁决并落地 · `create:automation_ignore`（`421ee6b70`，2026-08-18）**
+
+裁决 = **补**。先证明这条契约在 26.1.2 Fabric 上仍然活着，再动手（否则就是「为对齐基准硬加无意义数据」）：
+官方 Create Fabric 停在 1.20.1，但社区分叉 **Create Fly**（`ZurrTum/Create-Fly`）有 `26.1.2-6.0.9-4`
+（Modrinth 实查 `loaders=fabric` · `game_versions=26.1.2`）。**下载那个 jar 逐项验，不按名字推**：
+`fabric.mod.json` 的 **mod id 就是 `create`**（文件名叫 create-fly，命名空间没改）；
+`AllRecipeTypes.shouldIgnoreInAutomation` 的方法体就是 `Holder.is(AUTOMATION_IGNORE_TAG)`（javap -c）；
+**全 jar 14 个消费者**（机械手 / 搅拌机 / 压床 / 动力锯 / 工厂面板 + JEI/EIV/RRV 三套展示分类）。
+
+⚠️ **审计 §7.9 记的「落地形态照抄即可」有一处会致错**：它说产物内容是
+`touhou_little_maid:altar_recipe_serializers`——那是**基准的**序列化器 id，宿主已改名 `altar_recipe`。
+照抄会写进一个不存在的 id，而条目是 `required: false`，**这种错永远不会在运行期报出来**。
+故实现从注册表反查 `InitRecipes.ALTAR_RECIPE_SERIALIZER` 的 key，产物实为 `touhou_little_maid:altar_recipe`。
+`RecipeSerializerTagDatagenContractTest` 四条各看住一处独立静默失败面，**四种缺陷形态逐个红测**
+（摘 provider 登记 / 把条目 id 换成基准那个旧 id / 把条目改成硬条目 / 在 provider 里写死 id），
+各红在正确断言上且无连带。⚠️ 实机未验（要装 Create Fly 才看得到效果），属 DEFERRED。
 
 ---
 
