@@ -11,6 +11,7 @@ import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ProjectileWeaponItem;
 
 import java.util.function.Predicate;
 
@@ -73,10 +74,15 @@ public class MaidAttackStrafingAnyItemTask extends Behavior<EntityMaid> {
 
             // 如果攻击时间大于 -1
             if (this.strafingTime > -1) {
-                // 依据距离远近决定是否前后走位
-                if (distance > projectileRange * 0.5) {
+                // 依据距离远近决定是否前后走位。
+                // ⚠️ 阈值必须按**这把武器自己的**射程取，与 MaidAttackStrafingTask 同式：
+                // 弓 15 / 弩 8，而本任务的 projectileRange 是一个固定值（应战接线传 16）。
+                // 用固定值等于让弩在 3.2 格就后退（本该 1.6）、拖到 8 格才压上（本该 4），
+                // 手感因此明显不如上游。只有拿不到武器射程时（模组远程武器/枪）才回落构造参数。
+                double maxAttackDistance = resolveMaxAttackDistance(owner);
+                if (distance > maxAttackDistance * 0.5) {
                     this.strafingBackwards = false;
-                } else if (distance < projectileRange * 0.2) {
+                } else if (distance < maxAttackDistance * 0.2) {
                     this.strafingBackwards = true;
                 }
 
@@ -96,6 +102,20 @@ public class MaidAttackStrafingAnyItemTask extends Behavior<EntityMaid> {
                 BehaviorUtils.lookAtEntity(owner, target);
             }
         });
+    }
+
+    /**
+     * 走位阈值所用的射程：原版远程武器取它自己的 {@code getDefaultProjectileRange()}
+     * （与 {@link MaidAttackStrafingTask} 逐字同式），否则回落构造参数。
+     *
+     * <p>回落分支服务的是**拿不到武器射程**的那一类——枪与模组远程武器；
+     * 弓/弩永远走前一支，因此手感与上游一致。</p>
+     */
+    private double resolveMaxAttackDistance(EntityMaid owner) {
+        if (owner.getMainHandItem().getItem() instanceof ProjectileWeaponItem weapon) {
+            return weapon.getDefaultProjectileRange();
+        }
+        return this.projectileRange;
     }
 
     @Override

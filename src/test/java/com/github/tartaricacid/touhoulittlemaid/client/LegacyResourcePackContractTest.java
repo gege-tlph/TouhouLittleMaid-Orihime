@@ -3,6 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.client;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -27,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * ② 常量里的 id 与磁盘目录名对不上 → 同样只是包消失（Fabric 按
  * {@code "resourcepacks/" + id.getPath()} 找，找不到就当没有）；
  * ③ 包体被误删/清空 → 列表里有个空包；
- * ④ {@code pack_format} 与主包脱节 → 包被标成「不兼容」而玩家以为是自己装错了。</p>
+ * ④ {@code pack_format} 与本版客户端脱节 → 包被标成「旧版 / 不兼容」而玩家以为是自己装错了。</p>
  */
 class LegacyResourcePackContractTest {
     /** 测试的 workingDir 是 build/test-working，回两级才是项目根。 */
@@ -37,7 +39,6 @@ class LegacyResourcePackContractTest {
     private static final Path CLIENT_ENTRYPOINT_SOURCE = PROJECT_ROOT.resolve(
             "src/main/java/cn/sh1rocu/touhoulittlemaid/client/TouhouLittleMaidFabricClient.java");
     private static final Path RESOURCE_PACKS_ROOT = PROJECT_ROOT.resolve("src/main/resources/resourcepacks");
-    private static final Path MAIN_PACK_MCMETA = PROJECT_ROOT.resolve("src/main/resources/pack.mcmeta");
     private static final Path LANG_EN_US = PROJECT_ROOT.resolve(
             "src/main/resources/assets/touhou_little_maid/lang/en_us.json");
 
@@ -102,20 +103,23 @@ class LegacyResourcePackContractTest {
     }
 
     /**
-     * {@code pack_format} 必须跟主包一致，且描述与标题都要落在真实的 lang 键上。
+     * {@code pack_format} 必须等于**本版客户端的资源包格式**，且描述与标题都要落在真实的 lang 键上。
      *
-     * <p>宿主删包时把这两个 lang 键留在了 lang 文件里；补回来的意义之一就是让它们重新有消费者。</p>
+     * <p>⚠️ <b>这条判据修过一次，原来那条是错的。</b>它原先断言「与主包 pack_format 一致」，
+     * 而主包的值是宿主/上游有意保留的旧值——**mod 自带资源不走兼容性检查，内置可选包走**。
+     * 于是包在资源包列表里被标成「旧版」，而契约测试全绿。**2026-08-18 用户实机报出**。
+     * 正确的判据只能来自本版客户端自己：Minecraft jar 里的 {@code version.json}，
+     * 它随版本自动跟走，不需要人记得改。</p>
      */
     @Test
-    void packMetadataStaysAlignedWithTheMainPackAndTheLangKeys() throws IOException {
+    void packFormatMatchesThisClientVersionAndLangKeysAreConsumed() throws IOException {
         String dirName = readConstant(PACK_DIR_NAME, "PACK_DIR_NAME");
         String mcmeta = Files.readString(
                 RESOURCE_PACKS_ROOT.resolve(dirName).resolve("pack.mcmeta"), StandardCharsets.UTF_8);
-        String mainMcmeta = Files.readString(MAIN_PACK_MCMETA, StandardCharsets.UTF_8);
 
-        assertEquals(readGroup(PACK_FORMAT, mainMcmeta, "主包 pack_format"),
-                readGroup(PACK_FORMAT, mcmeta, "legacy 包 pack_format"),
-                "legacy 包的 pack_format 与主包不一致 —— 会被标成「不兼容」而玩家只会以为自己装错了");
+        assertEquals(clientResourcePackFormat(), readGroup(PACK_FORMAT, mcmeta, "legacy 包 pack_format"),
+                "legacy 包的 pack_format 与本版客户端不符 —— 它会被标成「旧版 / 不兼容」，"
+                + "而玩家只会以为是自己装错了");
 
         String lang = Files.readString(LANG_EN_US, StandardCharsets.UTF_8);
         String titleKey = readConstant(TITLE_KEY, "TITLE_KEY");
@@ -128,6 +132,23 @@ class LegacyResourcePackContractTest {
         assertTrue(mcmeta.contains(descKey),
                 "pack.mcmeta 的 description 没有引用 " + descKey
                 + " —— 那个键会重新变成没有消费者的孤儿（本包补回来的理由之一正是消灭这种孤儿）");
+    }
+
+    /**
+     * 本版客户端的资源包格式，取自 Minecraft jar 里的 {@code version.json}。
+     *
+     * <p>**故意不读 {@code SharedConstants}**：那要触发它的类初始化（需要 bootstrap），
+     * 而这份 json 是同一份权威数据的静态形态，直接从测试 classpath 读即可，且随版本自动跟走。</p>
+     */
+    private static String clientResourcePackFormat() throws IOException {
+        try (InputStream in = LegacyResourcePackContractTest.class.getResourceAsStream("/version.json")) {
+            assertNotNull(in, "classpath 上没有 version.json —— 取不到本版客户端的资源包格式，"
+                    + "本条断言会退化成恒真");
+            String json = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            Matcher m = Pattern.compile("\"resource_major\"\\s*:\\s*(\\d+)").matcher(json);
+            assertTrue(m.find(), "version.json 里没有 pack_version.resource_major —— 抽取正则已失效");
+            return m.group(1);
+        }
     }
 
     private static String readConstant(Pattern pattern, String name) throws IOException {
