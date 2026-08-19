@@ -184,7 +184,12 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
         private boolean leftShooter;
 
         private MaidPlaySnowball(EntityMaid shooter) {
-            super(shooter.level(), shooter.getX(), shooter.getY(), shooter.getZ(), Items.SNOWBALL.getDefaultInstance());
+            // ⚠️ 高度取眼高而不是 getY()（脚底）：原版基于射手的构造器就是 getEyeY()-0.1
+            // （字节码实证）。上游这里用的是裸坐标构造器 + 脚底高度，而触发玩雪的前提正是
+            // 女仆站在雪片上——雪球于是在贴地处出生、弹道极低，落在目标前方的地上，
+            // 结果是这个功能**从来没打中过任何人**。
+            super(shooter.level(), shooter.getX(), shooter.getEyeY() - 0.1, shooter.getZ(),
+                    Items.SNOWBALL.getDefaultInstance());
             this.shooter = shooter;
         }
 

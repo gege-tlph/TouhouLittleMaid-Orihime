@@ -24,12 +24,43 @@ class MaidSnowballPlayContractTest {
     private static final Path PROJECT_ROOT = Path.of("..", "..");
     private static final Path BRAIN_TASKS = PROJECT_ROOT.resolve(
             "src/main/java/com/github/tartaricacid/touhoulittlemaid/entity/ai/brain/task");
+    private static final Path SNOWBALL_TASK = BRAIN_TASKS.resolve("MaidSnowballTargetTask.java");
 
     private static final String ERASE = "eraseMemory(MemoryModuleType.ATTACK_TARGET)";
     private static final String READ = "getMemory(MemoryModuleType.ATTACK_TARGET)";
 
     private static final List<String> CONTROL_FLOW = List.of(
             "if", "else", "for", "while", "switch", "case", "default", "do", "try", "catch", "finally", "synchronized");
+
+    /**
+     * 玩耍用的雪球必须从**眼高**出手，不能从脚底。
+     *
+     * <p>触发玩雪的前提正是女仆站在雪片上，从 {@code getY()}（脚底）出手会让雪球在贴地处
+     * 出生、弹道极低，落在目标前方的地上——这个功能因此**从来没打中过任何人**，
+     * 而症状表现为「打到人身上没有任何反应」，极易被误诊成受伤处理的问题（本轮就误诊过一次）。
+     * 原版基于射手的构造器取的正是 {@code getEyeY() - 0.1}（26.1.2 字节码实证：
+     * {@code ThrowableItemProjectile(Level, LivingEntity, ItemStack)} 内联 getX/getEyeY-0.1/getZ）。</p>
+     *
+     * <p>识别依据取「传坐标三元组的那一次 {@code super(...)}」——按 <b>第一个</b> {@code super(}
+     * 找会拿到本任务自己那个 {@code Behavior} 构造器，首跑即栽在此。</p>
+     */
+    @Test
+    void playSnowballLeavesFromEyeHeight() throws IOException {
+        String source = stripComments(Files.readString(SNOWBALL_TASK, StandardCharsets.UTF_8));
+        List<String> spawnCalls = new ArrayList<>();
+        int at = source.indexOf("super(");
+        while (at >= 0) {
+            String args = parenGroupAt(source, source.indexOf('(', at + "super".length()));
+            if (args != null && args.contains("getX()")) {
+                spawnCalls.add(args);
+            }
+            at = source.indexOf("super(", at + 1);
+        }
+        assertEquals(1, spawnCalls.size(),
+                "认出的坐标型 super(...) 不是一处，识别依据可能已失效：" + spawnCalls);
+        assertTrue(spawnCalls.get(0).contains("getEyeY()"),
+                "玩耍雪球的生成高度不是眼高——从脚底出手会直接砸在目标前方的地上：" + spawnCalls.get(0));
+    }
 
     /**
      * 共享槽 {@code ATTACK_TARGET} 只能由放它进去的人擦掉。
@@ -132,6 +163,10 @@ class MaidSnowballPlayContractTest {
             }
         }
         return false;
+    }
+
+    private static String parenGroupAt(String source, int open) {
+        return open < 0 ? null : parenOrBraceBlock(source, open, '(', ')');
     }
 
     private static String parenOrBraceBlock(String source, int open, char openChar, char closeChar) {
