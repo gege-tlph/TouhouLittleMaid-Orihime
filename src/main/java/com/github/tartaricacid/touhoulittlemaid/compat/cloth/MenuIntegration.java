@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.compat.cloth;
 
 import com.github.tartaricacid.touhoulittlemaid.api.event.client.AddClothConfigEvent;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.settings.AIChatSettingsHubScreen;
+import com.github.tartaricacid.touhoulittlemaid.compat.curios.CuriosCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.gun.tacz.TacCompat;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ChairConfig;
@@ -259,10 +260,15 @@ public class MenuIntegration {
         appearance.add(localBoolean(entries, "vanilla.replace_xp_texture", VanillaConfig.REPLACE_XP_TEXTURE));
         appearance.add(localBoolean(entries, "vanilla.replace_totem_texture", VanillaConfig.REPLACE_TOTEM_TEXTURE));
         appearance.add(localBoolean(entries, "vanilla.replace_xp_bottle_texture", VanillaConfig.REPLACE_XP_BOTTLE_TEXTURE));
-        // 饰品栏兼容（本树走 Trinkets）是模组专属选项，与上方 TaCZ / Patchouli 同一惯例按
-        // isModLoaded 动态显示：它的消费点是「模组已加载 && 本键」，模组不在时这个开关
-        // 按定义什么都改变不了，摆出来就是一个能设置却不起作用的选项。
-        if (FabricLoader.getInstance().isModLoaded(CompatRegistry.TRINKETS)) {
+        // 饰品栏兼容（本树走 Trinkets）是模组专属选项，按 A10 动态显示。
+        // ⚠️ 门控必须是 CuriosCompat.isLoaded()，不是 isModLoaded(TRINKETS)：
+        // 全部消费点（9 个背包屏 + BaubleButton + ExtraContainerManager + MaidContainerCache
+        // + CuriosEvent）读的都是 CuriosCompat.isLoadedOrEnable()，而那个闩只在 CuriosCompat.init()
+        // 里置真——CompatRegistry 里那行 checkModLoad(TRINKETS, CuriosCompat::init) 至今是注释掉的
+        // （代码宿主 origin/26.1 留的，四树对照过，不是我们的回归）。用 isModLoaded 门控，
+        // 装了 Trinkets 就会露出一个能设置却什么都改变不了的开关，正是 A10 禁止的那种。
+        // 改成读闩之后，将来谁接上那行登记，这个开关自己就回来了。
+        if (CuriosCompat.isLoaded()) {
             appearance.add(localBoolean(entries, "maid.enable_maid_curios", MaidConfig.ENABLE_MAID_CURIOS));
         }
         category.addEntry(appearance.build());
