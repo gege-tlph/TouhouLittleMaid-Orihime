@@ -19,7 +19,10 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SnowballItem;
 import net.minecraft.world.phys.AABB;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Optional;
+import java.util.UUID;
 
 public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
     private static final float CHANCE_STOPPING = 1 / 32F;
@@ -27,6 +30,16 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
     private boolean canThrow = false;
     private int attackTime = -1;
     private int playPickUpAnimationDelayTime = -1;
+    /**
+     * 本任务开打时的那个「玩伴」。
+     *
+     * <p>{@code ATTACK_TARGET} 是**共享槽**——威胁响应、敌我策略、各战斗行为都读它，
+     * 而打雪仗只是借它存玩伴。收尾时若无条件擦除，就会擦掉**别人刚写进去的**东西：
+     * 取证得机制是「威胁来了 → 应战写入攻击者并切换活动 → 本任务因活动切换被 stop
+     * → 擦掉应战刚设好的目标 → 应战下一 tick 发现目标对不上而自我撤销 → 雪仗夺回控制」（症状为用户实机报告，机制链为逐行取证，未插桩实证）。
+     * 记下 UUID（不持实体引用）以便收尾时判断「现在槽里的还是不是我放的那个」。</p>
+     */
+    private @Nullable UUID playmateId;
 
     public MaidSnowballTargetTask(int attackCooldown) {
         super(ImmutableMap.of(MemoryModuleType.LOOK_TARGET, MemoryStatus.REGISTERED, MemoryModuleType.ATTACK_TARGET, MemoryStatus.VALUE_PRESENT), 1200);
@@ -50,6 +63,9 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
 
     @Override
     protected void start(ServerLevel worldIn, EntityMaid entityIn, long gameTimeIn) {
+        // 必须在第一个 return 之前记下——下面两支都可能提前返回
+        this.playmateId = entityIn.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET)
+                .map(LivingEntity::getUUID).orElse(null);
         if (entityIn.getMainHandItem().isEmpty()) {
             entityIn.setItemInHand(InteractionHand.MAIN_HAND, Items.SNOWBALL.getDefaultInstance());
             PacketDistributor.sendToPlayersTrackingEntity(entityIn, MaidAnimationPackage.pickUpSnowball(entityIn));
@@ -118,6 +134,7 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
     protected void stop(ServerLevel worldIn, EntityMaid entityIn, long gameTimeIn) {
         this.canThrow = false;
         clearAttackTarget(entityIn);
+        this.playmateId = null;
     }
 
     private boolean isCurrentTargetInSameLevel(LivingEntity entity) {
@@ -139,8 +156,20 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
         return entity.getRandom().nextFloat() > CHANCE_STOPPING;
     }
 
+    /**
+     * 只擦自己放进去的那个玩伴——**谁设的谁擦**。
+     *
+     * <p>槽里现在若换成了别人（最典型的是威胁响应写进去的攻击者），这里必须放手，
+     * 否则收尾会把别人的状态一起清掉。见 {@link #playmateId} 的说明。</p>
+     */
     private void clearAttackTarget(LivingEntity entity) {
-        entity.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
+        if (this.playmateId == null) {
+            return;
+        }
+        LivingEntity current = entity.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
+        if (current != null && this.playmateId.equals(current.getUUID())) {
+            entity.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
+        }
     }
 
     /**
