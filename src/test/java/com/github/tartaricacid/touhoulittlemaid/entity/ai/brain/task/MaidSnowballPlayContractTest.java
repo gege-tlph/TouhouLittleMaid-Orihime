@@ -26,6 +26,7 @@ class MaidSnowballPlayContractTest {
             "src/main/java/com/github/tartaricacid/touhoulittlemaid/entity/ai/brain/task");
     private static final Path SNOWBALL_TASK = BRAIN_TASKS.resolve("MaidSnowballTargetTask.java");
 
+    private static final String EXTENDS_SNOWBALL = "extends Snowball";
     private static final String ERASE = "eraseMemory(MemoryModuleType.ATTACK_TARGET)";
     private static final String READ = "getMemory(MemoryModuleType.ATTACK_TARGET)";
 
@@ -60,6 +61,52 @@ class MaidSnowballPlayContractTest {
                 "认出的坐标型 super(...) 不是一处，识别依据可能已失效：" + spawnCalls);
         assertTrue(spawnCalls.get(0).contains("getEyeY()"),
                 "玩耍雪球的生成高度不是眼高——从脚底出手会直接砸在目标前方的地上：" + spawnCalls.get(0));
+    }
+
+    /**
+     * 玩耍雪球必须保持原版的伤害语义与「无归属」——**这两条都不许碰**。
+     *
+     * <p><b>这条契约为什么存在</b>：雪球砸中玩家时「粒子炸开，却没伤害、没击退、没受击闪烁」
+     * 是**原版语义**，不是缺陷。原版 {@code Snowball.onHitEntity} 对非烈焰人一律 0 点，
+     * 而 {@code Player.hurtServer} 在 {@code amount == 0} 处**直接 return false**
+     * （26.1.2 offset 108-115 与 1.21.11 offset 107-114 字节码均实证），
+     * **早于**击退所在的 {@code LivingEntity.hurtServer}。打怪则照常击退——
+     * {@code LivingEntity} 那一层没有这道闸。</p>
+     *
+     * <p>本断言防的是下一个人把这个表现当 bug 去「修」：覆写命中处理加伤害，
+     * 或把归属加回去——后者会毁掉「这颗雪球不算女仆挑衅」那一半（砸到别的生物就招来反击）。</p>
+     *
+     * <p>判据按**成因**写：不点名某个方法，而是白名单——子类只许覆写 {@code tick} 与
+     * {@code canHitEntity}。白名单的期望集**非空**，所以识别依据一旦失效就是红的，
+     * 不会像禁止型断言那样静默零覆盖。</p>
+     */
+    @Test
+    void playSnowballKeepsVanillaDamageAndOwnership() throws IOException {
+        String source = stripComments(Files.readString(SNOWBALL_TASK, StandardCharsets.UTF_8));
+
+        int at = source.indexOf(EXTENDS_SNOWBALL);
+        assertTrue(at >= 0, "没认出继承原版雪球的那个子类，识别依据可能已失效");
+        assertEquals(-1, source.indexOf(EXTENDS_SNOWBALL, at + 1),
+                "认出的雪球子类不止一个，白名单该管哪一个已不唯一");
+        String className = lastIdentifierBefore(source, at);
+        assertTrue(!className.isEmpty(), "取不到雪球子类的类名，识别依据可能已失效");
+        String body = parenOrBraceBlock(source, source.indexOf('{', at), '{', '}');
+        assertTrue(body != null, "取不到雪球子类的类体，识别依据可能已失效");
+
+        List<String> overrides = new ArrayList<>();
+        for (String name : declaredMemberNames(body)) {
+            if (!name.equals(className)) {
+                overrides.add(name);
+            }
+        }
+        overrides.sort(String::compareTo);
+        assertEquals(List.of("canHitEntity", "tick"), overrides,
+                "玩耍雪球只许覆写 tick 与 canHitEntity——碰命中处理或归属就改掉了原版语义");
+
+        assertTrue(source.contains("new " + className + "("),
+                "没认出雪球的生成点，下面那条「不得设归属」的断言会恒绿");
+        assertEquals(-1, source.indexOf("setOwner"),
+                "玩耍雪球被设了归属——它会因此算成女仆的攻击，砸到别的生物就招来反击");
     }
 
     /**
@@ -100,6 +147,55 @@ class MaidSnowballPlayContractTest {
         assertTrue(filesScanned >= 30, "只走过 " + filesScanned + " 个 brain task 文件，扫描范围可能已失效");
         assertTrue(eraseSites >= 1, "一处擦除点都没认出来，识别依据可能已失效");
         assertEquals(List.of(), unguarded, "这些行为会擦掉别人写进共享槽的状态");
+    }
+
+    /**
+     * 类体内**顶层成员**（方法与构造器）的名字，按声明顺序。
+     *
+     * <p>不认 {@code @Override}——**Java 覆写不依赖注解**，认它等于把漏写注解的覆写放过去。
+     * 改认「类体内深度为 1 的那些块」，谁在那儿开了个块谁就是一个成员。</p>
+     */
+    private static List<String> declaredMemberNames(String classBody) {
+        List<String> names = new ArrayList<>();
+        int depth = 0;
+        for (int i = 0; i < classBody.length(); i++) {
+            char c = classBody.charAt(i);
+            if (c == '{') {
+                if (depth == 1) {
+                    String name = memberNameOf(headerBefore(classBody, i));
+                    if (name != null) {
+                        names.add(name);
+                    }
+                }
+                depth++;
+            } else if (c == '}') {
+                depth--;
+            }
+        }
+        return names;
+    }
+
+    /** 成员头部里参数表之前的那个标识符——没有参数表就不是方法/构造器。 */
+    private static String memberNameOf(String header) {
+        int paren = header.indexOf('(');
+        if (paren < 0) {
+            return null;
+        }
+        String name = lastIdentifierBefore(header, paren);
+        return name.isEmpty() ? null : name;
+    }
+
+    /** index 之前（跳过空白）的那个标识符。 */
+    private static String lastIdentifierBefore(String text, int index) {
+        int end = index;
+        while (end > 0 && Character.isWhitespace(text.charAt(end - 1))) {
+            end--;
+        }
+        int start = end;
+        while (start > 0 && Character.isJavaIdentifierPart(text.charAt(start - 1))) {
+            start--;
+        }
+        return text.substring(start, end);
     }
 
     /**
