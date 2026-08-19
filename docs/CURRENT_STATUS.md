@@ -257,6 +257,13 @@ TACZ 14 条与 B1–B7 已全部落地（见已关闭表）。**mixin 退役项 
 - **YSM**：Fabric 26.1.2 上不存在任何实现（本体仅 NeoForge 且闭源，OpenYSM 无 26.x）。要保留该特色，
   须先把 `gege-tlph/OpenYSM-Updated` 移到 26.1.2——**独立项目，规模未评估**。**Patchouli**：官方有 26.1 beta，我们维护的 fork 需跟进。
 
+**质量闸两支（2026-08-19 首次在本分支跑）**：**SpotBugs**（`gradlew spotbugsMain`，
+不进默认构建）131 条，correctness 31 条逐条定位，**无一条由我方移植工作引入**——24 条是
+mixin 的 `(Target)(Object)this` 惯用法（它看未合并字节码，按构造必然误报），其余 7 条所在文件
+与代码宿主逐字相同，`EntityPowerPoint.tickCount` 遮蔽 `Entity.tickCount` 那条四棵树同款。
+⚠️ 两条上游隐患记下备查（**非我方，无症状不改**）：`DownloadInfo` 静态 `DateFormat` 非线程安全；
+`MaidClimbManager` 用 `% 1 != 0.5D` 做浮点相等。**ArchUnit** 2 条规则全绿且自带活性下限。
+
 **O5 · 公开发布链路尚未建立**
 本分支还没有清洁分支、没有公开远端分支、没有 CI。`tree_equiv.py` 与 `git_hygiene.py`
 里已经写好了目标 ref 名（`release/26.1.2-clean` / `fork/port/26.1.2-fabric`），
