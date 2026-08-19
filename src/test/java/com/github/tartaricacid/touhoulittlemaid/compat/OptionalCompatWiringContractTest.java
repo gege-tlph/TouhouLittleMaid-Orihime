@@ -35,6 +35,9 @@ class OptionalCompatWiringContractTest {
             new String[]{"com.github.ysbbbbbb.kaleidoscopetavern", "compat/kaleidoscopetavern"},
             new String[]{"com.github.ysbbbbbb.kaleidoscopecookery", "compat/kaleidoscope"});
 
+    /** {@link com.github.tartaricacid.touhoulittlemaid.entity.task.crop.SpecialCropManager} 的急切登记 API。 */
+    private static final List<String> REGISTRATION_CALLS = List.of("addSeed(", "addCrop(", ".add(");
+
     /**
      * {@code little_maid_extension} 是**第十处静默注册面**：兼容类写好、编译通过、打包正常，
      * 不登记就永远不会被 {@code AnnotatedInstanceUtil.getModExtensions()} 发现，功能从不执行。
@@ -107,6 +110,107 @@ class OptionalCompatWiringContractTest {
         }
         assertTrue(inspected >= 400, "只走过 " + inspected + " 个源文件，扫描范围可能已失效");
         assertEquals(List.of(), leaks, "第三方类型泄漏到了兼容包之外");
+    }
+
+    /**
+     * 可选兼容不得在 init 期急切求值第三方符号。
+     *
+     * <p><b>成因</b>：Fabric 对可选兼容没有初始化先后保证。这些登记方法跑在 TLM 的
+     * mod initializer 里，读一个第三方常量就会连带触发它整个宿主类的静态初始化；
+     * 若对方的效果注册尚未运行，它的食物组件会**永久**捕获空的效果 Holder，
+     * 随后任何遍历该创造页的代码（原版创造背包、JEI、REI）都在 hashCode 上 NPE。</p>
+     *
+     * <p><b>判据按成因写，不按症状写</b>：不去断言「没有空 Holder」（那要装上对方模组才测得到），
+     * 而是断言**登记通道**——凡形参是 {@code SpecialCropManager} 的方法，体内每一处登记
+     * 都必须走延迟通道。这样调用点天然正确，不必逐个靠自觉。2026-08-19 实机崩溃即此因：
+     * 多装一个模组改变了加载顺序，把原先侥幸正确的次序打翻了。</p>
+     */
+    @Test
+    void cropRegistrationsFromCompatUseTheDeferredChannel() throws IOException {
+        List<String> eager = new ArrayList<>();
+        int hooksInspected = 0;
+        int filesScanned = 0;
+        try (Stream<Path> files = Files.walk(TLM.resolve("compat"))) {
+            for (Path file : files.filter(path -> path.toString().endsWith(".java")).toList()) {
+                filesScanned++;
+                String source = stripComments(Files.readString(file, StandardCharsets.UTF_8));
+                String body = methodBodyTaking(source, "SpecialCropManager");
+                if (body == null) {
+                    continue;
+                }
+                hooksInspected++;
+                for (String call : REGISTRATION_CALLS) {
+                    if (body.contains(call)) {
+                        eager.add(file.getFileName() + " 用了急切登记 " + call);
+                    }
+                }
+            }
+        }
+        assertTrue(filesScanned >= 6,
+                "只走过 " + filesScanned + " 个兼容源文件，扫描范围可能已失效");
+        assertTrue(hooksInspected >= 1,
+                "一个吃 SpecialCropManager 的登记方法都没认出来，识别依据可能已失效");
+        assertEquals(List.of(), eager,
+                "可选兼容在 init 期急切求值了第三方符号——会提前触发对方静态初始化");
+    }
+
+    /**
+     * 延迟登记必须真的被解析，否则等于把水稻兼容悄悄删掉。
+     *
+     * <p>「登记了」与「登记项被消费」是两件事——本仓库反复栽在「init 被调 ≠ init 有内容」上。
+     * 解析点必须晚于全部 mod initializer、且早于任何女仆农作行为查表，故钉在服务器启动那一刻。</p>
+     */
+    @Test
+    void deferredCropHandlersAreResolvedAtServerStarting() throws IOException {
+        Path manager = TLM.resolve("entity/task/crop/SpecialCropManager.java");
+        String source = stripComments(Files.readString(manager, StandardCharsets.UTF_8));
+        assertTrue(source.contains("addLazySeed") && source.contains("addLazyCrop"),
+                "SpecialCropManager 没有提供延迟登记通道，兼容侧无从延迟");
+        String init = methodBodyOf(source, "public static void init()");
+        assertTrue(init != null && init.contains("SERVER_STARTING"),
+                "init() 没有在 SERVER_STARTING 上挂解析——延迟登记的项永远不会落表");
+        assertTrue(init != null && init.contains("resolveDeferredHandlers()"),
+                "SERVER_STARTING 上挂的不是解析动作，延迟项不会被消费");
+    }
+
+    /** 形参类型精确到那个管理器的登记方法体；找不到返回 null。 */
+    private static String methodBodyTaking(String source, String parameterType) {
+        int at = source.indexOf(parameterType + " ");
+        while (at >= 0) {
+            int paren = source.indexOf(')', at);
+            int brace = source.indexOf('{', at);
+            if (paren >= 0 && brace > paren) {
+                return braceBlockAt(source, brace);
+            }
+            at = source.indexOf(parameterType + " ", at + 1);
+        }
+        return null;
+    }
+
+    /** 按签名取方法体——断言方法内部关系时必须缩到方法体，否则同名调用会让断言失去意义。 */
+    private static String methodBodyOf(String source, String signature) {
+        int at = source.indexOf(signature);
+        if (at < 0) {
+            return null;
+        }
+        int brace = source.indexOf('{', at);
+        return brace < 0 ? null : braceBlockAt(source, brace);
+    }
+
+    private static String braceBlockAt(String source, int open) {
+        int depth = 0;
+        for (int i = open; i < source.length(); i++) {
+            char c = source.charAt(i);
+            if (c == '{') {
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0) {
+                    return source.substring(open, i + 1);
+                }
+            }
+        }
+        return null;
     }
 
     private static void assertConsumed(String call, Path consumer, String message) throws IOException {

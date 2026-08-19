@@ -17,9 +17,15 @@ import org.jetbrains.annotations.NotNull;
 public class RiceCropHandler implements ISpecialCropHandler {
     public static void addCropHandlers(SpecialCropManager manager) {
         RiceCropHandler handler = new RiceCropHandler();
-        manager.addSeed(ModItems.RICE_SEED, handler);
-        manager.addSeed(ModItems.WILD_RICE_SEED, handler);
-        manager.addCrop(ModBlocks.RICE_CROP, handler);
+        // 本方法在 TLM 的 mod initializer 里跑，而可选兼容不能施加 Fabric 依赖顺序，
+        // 因此 TLM 可能先于森罗厨房初始化。在这里直接读这几个常量会连带触发它整个
+        // ModItems 的静态初始化，而此时它的 ModEffects.registerEffects() 还没跑——
+        // 食物组件会永久捕获空的效果 Holder，随后创造栏/JEI 一遍历该页就 NPE。
+        // 交给 SERVER_STARTING 求值：那时所有 mod initializer 都已完成，
+        // 且早于任何女仆农作行为查这两张表。
+        manager.addLazySeed(() -> ModItems.RICE_SEED, handler);
+        manager.addLazySeed(() -> ModItems.WILD_RICE_SEED, handler);
+        manager.addLazyCrop(() -> ModBlocks.RICE_CROP, handler);
     }
 
     @Override
