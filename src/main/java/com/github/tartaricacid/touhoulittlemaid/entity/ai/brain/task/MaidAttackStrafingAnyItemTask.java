@@ -39,7 +39,16 @@ public class MaidAttackStrafingAnyItemTask extends Behavior<EntityMaid> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel worldIn, EntityMaid owner) {
-        return weaponTest.test(owner) &&
+        // O11：坐着的女仆挨打后照样平移。走位不经 WALK_TARGET，而是直接写 MoveControl
+        // （tick 里的 getMoveControl().strafe(...)），于是**绕过了全仓统一的移动闸**——
+        // 兄弟任务 MaidEmergencyWalkToTarget 早就在用 canBrainMoving() 让出 WALK_TARGET，
+        // 但那道闸管不到 strafe。这里补上同一个判据，而不是新造一个「坐姿」判据：
+        // 成因是「这条路绕过了移动闸」，不是「没判坐姿」，所以坐/骑乘/睡觉/被拴都该一并挡住。
+        // ⚠️ 只挡移动，不挡出手：原地射击（MaidShootTargetAnyItemTask）与贴脸近战
+        // （MaidMeleeAttack，它自带「已在近战距离内」的前提，本身不移动）都照旧，
+        // 后者由 usableBowCanMeleeOnlyThroughEmergencyLayer 钉着，不能因为坐着就站着挨打。
+        return owner.canBrainMoving() &&
+                weaponTest.test(owner) &&
                 owner.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET)
                         .filter(target -> MaidTargetingPolicy.canContinueTargeting(
                                 owner, target, MaidTargetingContext.PLANNED_ATTACK))
