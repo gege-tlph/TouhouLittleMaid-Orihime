@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -89,6 +90,63 @@ class ClientRenderContractTest {
     }
 
     /** 世界内「置顶」会清主渲染目标的深度贴图，光影下地面发白。只允许名单里那几处。 */
+    /**
+     * 纹理注册必须在渲染线程上发生，或显式分派回去。
+     *
+     * <p>{@code TextureManager.registerAndLoad} 会当场 load 并上传 GPU
+     * （26.1.2 字节码：{@code apply → doLoad → RenderSystem.getDevice()}），而 GL 上下文是线程绑定的。
+     * 游戏内下载走的是下载线程：{@code ClientPackDownloadManager} 的
+     * {@code CompletableFuture.thenRun} 在完成线程上直接调 {@code reloadPack}，
+     * 一路到纹理注册，**不经那条已经分派过的 asyncReload**。</p>
+     *
+     * <p>⚠️ <b>这一条是补回行为基准早就修过、而本分支漏搬的一处修复</b>
+     * （1.21.11 的 C07，用户实机撞到过「下载按钮卡在 DOWNLOADING、模型列表要重启才出现」）。
+     * 那个文件在本树与代码宿主逐字相同——**「与宿主一致」正是它可疑的地方**。</p>
+     *
+     * <p>⚠️ <b>26.1.2 与 1.21.11 在此有真实差异，不要照抄旧结论</b>：本版上传路径里
+     * <b>没有</b> {@code assertOnRenderThread}（javap 实查 {@code GlDevice} / {@code GlTexture}
+     * 均为 0 处），所以它不会像 1.21.11 那样当场断言失败。**失败形态更安静，因此更需要判据。**</p>
+     *
+     * <p><b>判据强度说明</b>：按文件粒度判（含 {@code registerAndLoad} 的文件必须同时含
+     * {@code execute(} 或 {@code isSameThread(}），不做跨方法的线程可达性分析——那需要调用图。
+     * 粗，但足以照出本次这个缺陷：出问题的文件两者皆无。</p>
+     */
+    @Test
+    void textureRegistrationEitherRunsOnTheRenderThreadOrDispatchesToIt() throws IOException {
+        // 明确只在渲染线程上被调用的位置：注明理由，别静默放行
+        Set<String> renderThreadOnly = Set.of(
+                // 缓存屏的逐模型回调本身就跑在渲染线程（RenderSystem.executePendingTasks）
+                "CacheScreen.java");
+
+        List<String> offenders = new ArrayList<>();
+        int sites = 0;
+        try (Stream<Path> files = Files.walk(MAIN_JAVA)) {
+            for (Path file : files.filter(path -> path.toString().endsWith(".java")).toList()) {
+                String source = Files.readString(file, StandardCharsets.UTF_8);
+                // 剥注释：只在 javadoc 里提到 registerAndLoad 的文件不算调用点
+                String active = source.replaceAll("(?s)/\\*.*?\\*/", "").replaceAll("(?m)//.*$", "");
+                if (!active.contains("registerAndLoad(")) {
+                    continue;
+                }
+                sites++;
+                String name = file.getFileName().toString();
+                if (renderThreadOnly.contains(name)) {
+                    continue;
+                }
+                if (!active.contains("execute(") && !active.contains("isSameThread(")) {
+                    offenders.add(PROJECT_ROOT.relativize(file).toString());
+                }
+            }
+        }
+
+        // 活性断言：与结论正交。识别依据一变就静默零覆盖，而零覆盖恒绿。
+        assertTrue(sites >= 3,
+                "只认出 " + sites + " 处 registerAndLoad 调用点，识别依据可能已失效");
+        assertTrue(offenders.isEmpty(),
+                "这些文件注册纹理却既不分派回渲染线程、也不判断当前线程："
+                        + offenders + "（GL 上下文线程绑定；本版不会断言，只会安静地坏）");
+    }
+
     @Test
     void worldSpaceAlwaysOnTopIsLimitedToTheNamedAllowlist() throws IOException {
         List<String> offenders = new ArrayList<>();
