@@ -77,9 +77,14 @@ public class MaidNodeEvaluator extends WalkNodeEvaluator {
                 case FIRE -> PathType.FIRE;
                 case DAMAGING -> PathType.DAMAGING;
                 case STICKY_HONEY -> PathType.STICKY_HONEY;
-                case POWDER_SNOW -> PathType.DAMAGE_CAUTIOUS;
+                // 本 switch 的语义是「脚下是 X ⇒ 该空气节点判为 Y」，与原版
+                // WalkNodeEvaluator.getPathTypeStatic 逐槽对应（javap -c 实证 tableswitch）：
+                // 26.1.2 把 DANGER_POWDER_SNOW / DANGER_TRAPDOOR 改名成了
+                // ON_TOP_OF_POWDER_SNOW / ON_TOP_OF_TRAPDOOR，而 DAMAGE_CAUTIOUS 是另一个概念、
+                // 原样保留。照名字近似去配会把「站在细雪/活板门上」的代价判成别的东西。
+                case POWDER_SNOW -> PathType.ON_TOP_OF_POWDER_SNOW;
                 case DAMAGE_CAUTIOUS -> PathType.DAMAGE_CAUTIOUS;
-                case TRAPDOOR -> PathType.TRAPDOOR;
+                case TRAPDOOR -> PathType.ON_TOP_OF_TRAPDOOR;
                 default -> checkNeighbourBlocks(context, x, y, z, PathType.WALKABLE);
             };
         } else {
