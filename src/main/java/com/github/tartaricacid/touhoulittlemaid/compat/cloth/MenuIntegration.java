@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.compat.cloth;
 
 import com.github.tartaricacid.touhoulittlemaid.api.event.client.AddClothConfigEvent;
+import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.ai.settings.AIChatSettingsHubScreen;
 import com.github.tartaricacid.touhoulittlemaid.compat.gun.tacz.TacCompat;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ChairConfig;
@@ -11,18 +12,23 @@ import com.github.tartaricacid.touhoulittlemaid.config.subconfig.RenderConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.VanillaConfig;
 import com.github.tartaricacid.touhoulittlemaid.init.registry.CompatRegistry;
 import com.github.tartaricacid.touhoulittlemaid.network.client.config.ServerRulesClientCache;
+import com.github.tartaricacid.touhoulittlemaid.network.message.ai.OpenAIConfigPacket;
+import com.github.tartaricacid.touhoulittlemaid.util.migrate.ScreenUtil;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Cloth 配置菜单：本机个人配置 + 服务器权威的世界规则。
@@ -44,11 +50,7 @@ public class MenuIntegration {
         ConfigEntryBuilder entryBuilder = root.entryBuilder();
         ServerRulesClientCache.Session session = ServerRulesClientCache.createSession();
 
-        maidConfig(root, entryBuilder);
-        vanillaConfig(root, entryBuilder);
-        miscConfig(root, entryBuilder);
-        renderConfig(root, entryBuilder);
-        GlobalAIIntegration.aiChat(root, entryBuilder);
+        addPersonalSettings(root, entryBuilder);
         if (ServerRulesClientCache.canEdit()) {
             addServerRules(root, entryBuilder, session);
             addServerMaintenance(root, entryBuilder, session);
@@ -227,147 +229,97 @@ public class MenuIntegration {
                 .toList();
     }
 
-    @SuppressWarnings("all")
-    private static void maidConfig(ConfigBuilder root, ConfigEntryBuilder entryBuilder) {
-        ConfigCategory maid = root.getOrCreateCategory(Component.translatable("entity.touhou_little_maid.maid"));
+    /**
+     * 个人设置：只写本机 TOML 的那一半——三个分组 + 一颗跳转按钮。
+     *
+     * <p>分组沿用行为基准 {@code port/1.21.11-fabric} 的三组划分（声音与显示 / 外观与性能 /
+     * 交互提示）。代码宿主原本把它们摊成四个平铺栏目（女仆 / 原版设置 / 杂项 / 渲染设置），
+     * 那是按**配置文件**分的，不是按**玩家想改什么**分的——「关闭 Optifine 警告」与
+     * 「缓存模型图标」被分在两栏，只因为它们住在不同的 spec 里。</p>
+     */
+    private static void addPersonalSettings(ConfigBuilder root, ConfigEntryBuilder entries) {
+        ConfigCategory category = root.getOrCreateCategory(Component.translatable(CATEGORY + "personal"));
 
-        maid.addEntry(entryBuilder.startIntSlider(Component.translatable("config.touhou_little_maid.maid.global_maid_sound_frequency"), MaidConfig.GLOBAL_MAID_SOUND_FREQUENCY.get(), 0, 100)
-                .setDefaultValue(100).setTooltip(Component.translatable("config.touhou_little_maid.maid.global_maid_sound_frequency.tooltip"))
-                .setSaveConsumer(i -> {
-                    MaidConfig.GLOBAL_MAID_SOUND_FREQUENCY.set(i);
-                    MaidConfig.GLOBAL_MAID_SOUND_FREQUENCY.save();
-                }).build());
+        SubCategoryBuilder sound = sub(entries, "personal.sound_display");
+        sound.add(entries.startIntSlider(tr("maid.global_maid_sound_frequency"),
+                        MaidConfig.GLOBAL_MAID_SOUND_FREQUENCY.get(), 0, 100)
+                .setDefaultValue(MaidConfig.GLOBAL_MAID_SOUND_FREQUENCY.getDefault())
+                .setTooltip(tip("maid.global_maid_sound_frequency"))
+                .setSaveConsumer(local(MaidConfig.GLOBAL_MAID_SOUND_FREQUENCY)).build());
+        sound.add(localBoolean(entries, "maid.global_maid_show_chat_bubble", MaidConfig.GLOBAL_MAID_SHOW_CHAT_BUBBLE));
+        category.addEntry(sound.build());
 
-        maid.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.maid.global_maid_show_chat_bubble"), MaidConfig.GLOBAL_MAID_SHOW_CHAT_BUBBLE.get())
-                .setDefaultValue(true).setTooltip(Component.translatable("config.touhou_little_maid.maid.global_maid_show_chat_bubble.tooltip"))
-                .setSaveConsumer(b -> {
-                    MaidConfig.GLOBAL_MAID_SHOW_CHAT_BUBBLE.set(b);
-                    MaidConfig.GLOBAL_MAID_SHOW_CHAT_BUBBLE.save();
-                }).build());
+        SubCategoryBuilder appearance = sub(entries, "personal.appearance_performance");
+        appearance.add(localBoolean(entries, "misc.close_optifine_warning", MiscConfig.CLOSE_OPTIFINE_WARNING));
+        appearance.add(localBoolean(entries, "misc.use_new_maid_fairy_model", MiscConfig.USE_NEW_MAID_FAIRY_MODEL));
+        appearance.add(localBoolean(entries, "misc.model_icon_cache", MiscConfig.MODEL_ICON_CACHE));
+        appearance.add(localBoolean(entries, "misc.invulnerable_particle_effect", MiscConfig.INVULNERABLE_PARTICLE_EFFECT));
+        appearance.add(localBoolean(entries, "vanilla.replace_slime_model", VanillaConfig.REPLACE_SLIME_MODEL));
+        appearance.add(localBoolean(entries, "vanilla.replace_magma_cube_model", VanillaConfig.REPLACE_MAGMA_CUBE_MODEL));
+        appearance.add(localBoolean(entries, "vanilla.replace_xp_texture", VanillaConfig.REPLACE_XP_TEXTURE));
+        appearance.add(localBoolean(entries, "vanilla.replace_totem_texture", VanillaConfig.REPLACE_TOTEM_TEXTURE));
+        appearance.add(localBoolean(entries, "vanilla.replace_xp_bottle_texture", VanillaConfig.REPLACE_XP_BOTTLE_TEXTURE));
+        // 饰品栏兼容（本树走 Trinkets）是模组专属选项，与上方 TaCZ / Patchouli 同一惯例按
+        // isModLoaded 动态显示：它的消费点是「模组已加载 && 本键」，模组不在时这个开关
+        // 按定义什么都改变不了，摆出来就是一个能设置却不起作用的选项。
+        if (FabricLoader.getInstance().isModLoaded(CompatRegistry.TRINKETS)) {
+            appearance.add(localBoolean(entries, "maid.enable_maid_curios", MaidConfig.ENABLE_MAID_CURIOS));
+        }
+        category.addEntry(appearance.build());
 
-        maid.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.maid.enable_maid_curios"),
-                        MaidConfig.ENABLE_MAID_CURIOS.get())
-                .setDefaultValue(MaidConfig.ENABLE_MAID_CURIOS.getDefault())
-                .setTooltip(Component.translatable("config.touhou_little_maid.maid.enable_maid_curios.tooltip"))
-                .setSaveConsumer(s -> {
-                    MaidConfig.ENABLE_MAID_CURIOS.set(s);
-                    MaidConfig.ENABLE_MAID_CURIOS.save();
-                }).build());
+        SubCategoryBuilder tips = sub(entries, "personal.interaction_tips");
+        tips.add(localBoolean(entries, "render.enable_compass_tip", RenderConfig.ENABLE_COMPASS_TIP));
+        tips.add(localBoolean(entries, "render.enable_golden_apple_tip", RenderConfig.ENABLE_GOLDEN_APPLE_TIP));
+        tips.add(localBoolean(entries, "render.enable_potion_tip", RenderConfig.ENABLE_POTION_TIP));
+        tips.add(localBoolean(entries, "render.enable_milk_bucket_tip", RenderConfig.ENABLE_MILK_BUCKET_TIP));
+        tips.add(localBoolean(entries, "render.enable_glass_bottle_tip", RenderConfig.ENABLE_GLASS_BOTTLE_TIP));
+        tips.add(localBoolean(entries, "render.enable_name_tag_tip", RenderConfig.ENABLE_NAME_TAG_TIP));
+        tips.add(localBoolean(entries, "render.enable_lead_tip", RenderConfig.ENABLE_LEAD_TIP));
+        tips.add(localBoolean(entries, "render.enable_saddle_tip", RenderConfig.ENABLE_SADDLE_TIP));
+        tips.add(localBoolean(entries, "render.enable_shears_tip", RenderConfig.ENABLE_SHEARS_TIP));
+        category.addEntry(tips.build());
 
-        // 枪械三档距离原先以个人配置形式裸读写在此；TACZ 兼容刀把三键定为世界规则
-        // （ServerRuleConfig.values() 认领）后，滑条移入上方 server.combat 段走 session 读写
-        // 并包 isModLoaded——两处不可并存，否则菜单写 TOML 会绕过服务器权威通道。
+        // AI 与语音设置的**唯一入口**，且对所有身份可见可点：personal 这一栏是无条件添加的，
+        // 而世界规则那两栏由 canEdit() 门控——入口放到那边就只有管理员看得见。
+        // 直接挂在栏目根上：一个只装着一颗按钮的折叠组是纯噪音。
+        category.addEntry(new ActionButtonListEntry(
+                Component.translatable(CATEGORY + "ai_settings"),
+                Component.translatable(CATEGORY + "open_ai_settings"),
+                MenuIntegration::openAiSettings));
     }
 
-    /** 原版替换五开关：实例级个人配置，默认全 false（用户 2026-07-24 定案，上游默认全 true） */
-    private static void vanillaConfig(ConfigBuilder root, ConfigEntryBuilder entryBuilder) {
-        ConfigCategory vanilla = root.getOrCreateCategory(Component.translatable("config.touhou_little_maid.vanilla"));
-        addVanillaToggle(vanilla, entryBuilder, "replace_slime_model", VanillaConfig.REPLACE_SLIME_MODEL);
-        addVanillaToggle(vanilla, entryBuilder, "replace_magma_cube_model", VanillaConfig.REPLACE_MAGMA_CUBE_MODEL);
-        addVanillaToggle(vanilla, entryBuilder, "replace_xp_texture", VanillaConfig.REPLACE_XP_TEXTURE);
-        addVanillaToggle(vanilla, entryBuilder, "replace_totem_texture", VanillaConfig.REPLACE_TOTEM_TEXTURE);
-        addVanillaToggle(vanilla, entryBuilder, "replace_xp_bottle_texture", VanillaConfig.REPLACE_XP_BOTTLE_TEXTURE);
+    /**
+     * AI 那一组**不在本菜单里摆开关**，只留这一颗跳转按钮。
+     *
+     * <p><b>理由不是「这里放不下」，是「同一件事被劈成了两个入口」</b>：总开关与代理曾经在这里，
+     * 而站点、密钥、模型、语音全在 mod 自己的五页设置屏里，管理员想让一个 LLM 跑起来得去两个
+     * 地方，两个地方连名字都不像是一回事，且两边改的是同一批键。现在全部收拢到「AI 与语音设置」。</p>
+     *
+     * <p>在世界里必须走 {@link OpenAIConfigPacket} 这条与聊天屏齿轮相同的链路——
+     * 权限判定与站点数据都在**服务端**，客户端自己开屏只能开出不需要服务端数据的那一栏。
+     * 不在世界里（标题屏进的 modmenu）才回落到纯本机的语音输入设置。</p>
+     */
+    private static void openAiSettings() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level != null && ClientPlayNetworking.canSend(OpenAIConfigPacket.TYPE)) {
+            OpenAIConfigPacket.sendToServer();
+            return;
+        }
+        ScreenUtil.setScreen(AIChatSettingsHubScreen.openSTTConfig(minecraft.screen));
     }
 
-    private static void addVanillaToggle(ConfigCategory category, ConfigEntryBuilder entryBuilder,
-                                         String key, net.neoforged.neoforge.common.ModConfigSpec.BooleanValue value) {
-        category.addEntry(entryBuilder.startBooleanToggle(
-                        Component.translatable("config.touhou_little_maid.vanilla." + key), value.get())
-                .setDefaultValue(value.getDefault())
-                .setTooltip(Component.translatable("config.touhou_little_maid.vanilla." + key + ".tooltip"))
-                .setSaveConsumer(b -> {
-                    value.set(b);
-                    value.save();
-                }).build());
+    /** 个人配置的落盘：写本机 TOML，与世界规则那半的 session 攒改动完全不同。 */
+    private static <T> Consumer<T> local(ModConfigSpec.ConfigValue<T> value) {
+        return newValue -> {
+            value.set(newValue);
+            value.save();
+        };
     }
 
-    @SuppressWarnings("all")
-    private static void miscConfig(ConfigBuilder root, ConfigEntryBuilder entryBuilder) {
-        ConfigCategory misc = root.getOrCreateCategory(Component.translatable("config.touhou_little_maid.misc"));
-        misc.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.misc.close_optifine_warning"), MiscConfig.CLOSE_OPTIFINE_WARNING.get())
-                .setDefaultValue(false).setTooltip(Component.translatable("config.touhou_little_maid.misc.close_optifine_warning.tooltip"))
-                .setSaveConsumer(b -> {
-                    MiscConfig.CLOSE_OPTIFINE_WARNING.set(b);
-                    MiscConfig.CLOSE_OPTIFINE_WARNING.save();
-                }).build());
-
-        misc.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.misc.use_new_maid_fairy_model"), MiscConfig.USE_NEW_MAID_FAIRY_MODEL.get())
-                .setDefaultValue(true).setTooltip(Component.translatable("config.touhou_little_maid.misc.use_new_maid_fairy_model.tooltip"))
-                .setSaveConsumer(b -> {
-                    MiscConfig.USE_NEW_MAID_FAIRY_MODEL.set(b);
-                    MiscConfig.USE_NEW_MAID_FAIRY_MODEL.save();
-                }).build());
-
-        misc.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.misc.model_icon_cache"), MiscConfig.MODEL_ICON_CACHE.get())
-                .setDefaultValue(false).setTooltip(Component.translatable("config.touhou_little_maid.misc.model_icon_cache.tooltip"))
-                .setSaveConsumer(b -> {
-                    MiscConfig.MODEL_ICON_CACHE.set(b);
-                    MiscConfig.MODEL_ICON_CACHE.save();
-                }).build());
-
-        misc.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.misc.invulnerable_particle_effect"), MiscConfig.INVULNERABLE_PARTICLE_EFFECT.get())
-                .setDefaultValue(true).setTooltip(Component.translatable("config.touhou_little_maid.misc.invulnerable_particle_effect.tooltip"))
-                .setSaveConsumer(s -> {
-                    MiscConfig.INVULNERABLE_PARTICLE_EFFECT.set(s);
-                    MiscConfig.INVULNERABLE_PARTICLE_EFFECT.save();
-                }).build());
-    }
-
-    private static void renderConfig(ConfigBuilder root, ConfigEntryBuilder entryBuilder) {
-        ConfigCategory render = root.getOrCreateCategory(Component.translatable("config.touhou_little_maid.render"));
-
-        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_compass_tip"), RenderConfig.ENABLE_COMPASS_TIP.get())
-                .setDefaultValue(true).setSaveConsumer(value -> {
-                    RenderConfig.ENABLE_COMPASS_TIP.set(value);
-                    RenderConfig.ENABLE_COMPASS_TIP.save();
-                }).build());
-
-        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_golden_apple_tip"), RenderConfig.ENABLE_GOLDEN_APPLE_TIP.get())
-                .setDefaultValue(true).setSaveConsumer(value -> {
-                    RenderConfig.ENABLE_GOLDEN_APPLE_TIP.set(value);
-                    RenderConfig.ENABLE_GOLDEN_APPLE_TIP.save();
-                }).build());
-
-        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_potion_tip"), RenderConfig.ENABLE_POTION_TIP.get())
-                .setDefaultValue(true).setSaveConsumer(value -> {
-                    RenderConfig.ENABLE_POTION_TIP.set(value);
-                    RenderConfig.ENABLE_POTION_TIP.save();
-                }).build());
-
-        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_milk_bucket_tip"), RenderConfig.ENABLE_MILK_BUCKET_TIP.get())
-                .setDefaultValue(true).setSaveConsumer(value -> {
-                    RenderConfig.ENABLE_MILK_BUCKET_TIP.set(value);
-                    RenderConfig.ENABLE_MILK_BUCKET_TIP.save();
-                }).build());
-
-        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_glass_bottle_tip"), RenderConfig.ENABLE_GLASS_BOTTLE_TIP.get())
-                .setDefaultValue(true).setSaveConsumer(value -> {
-                    RenderConfig.ENABLE_GLASS_BOTTLE_TIP.set(value);
-                    RenderConfig.ENABLE_GLASS_BOTTLE_TIP.save();
-                }).build());
-
-        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_name_tag_tip"), RenderConfig.ENABLE_NAME_TAG_TIP.get())
-                .setDefaultValue(true).setSaveConsumer(value -> {
-                    RenderConfig.ENABLE_NAME_TAG_TIP.set(value);
-                    RenderConfig.ENABLE_NAME_TAG_TIP.save();
-                }).build());
-
-        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_lead_tip"), RenderConfig.ENABLE_LEAD_TIP.get())
-                .setDefaultValue(true).setSaveConsumer(value -> {
-                    RenderConfig.ENABLE_LEAD_TIP.set(value);
-                    RenderConfig.ENABLE_LEAD_TIP.save();
-                }).build());
-
-        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_saddle_tip"), RenderConfig.ENABLE_SADDLE_TIP.get())
-                .setDefaultValue(true).setSaveConsumer(value -> {
-                    RenderConfig.ENABLE_SADDLE_TIP.set(value);
-                    RenderConfig.ENABLE_SADDLE_TIP.save();
-                }).build());
-
-        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_shears_tip"), RenderConfig.ENABLE_SHEARS_TIP.get())
-                .setDefaultValue(true).setSaveConsumer(value -> {
-                    RenderConfig.ENABLE_SHEARS_TIP.set(value);
-                    RenderConfig.ENABLE_SHEARS_TIP.save();
-                }).build());
+    private static AbstractConfigListEntry<Boolean> localBoolean(ConfigEntryBuilder entries, String key,
+                                                                 ModConfigSpec.ConfigValue<Boolean> value) {
+        return entries.startBooleanToggle(tr(key), value.get())
+                .setDefaultValue(value.getDefault()).setTooltip(tip(key))
+                .setSaveConsumer(local(value)).build();
     }
 }

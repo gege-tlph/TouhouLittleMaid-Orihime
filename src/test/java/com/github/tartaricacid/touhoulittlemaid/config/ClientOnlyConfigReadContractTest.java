@@ -63,9 +63,6 @@ class ClientOnlyConfigReadContractTest {
             "Cloth 配置菜单。两个调用点：modmenu entrypoint 的 ModMenuApiImpl，"
                     + "与客户端 GUI 的 client/gui/entity/maid/MaidSideTabs（经 ClothConfigCompat）。"
                     + "专服既没有 ModMenu 也没有那个屏，且 me.shedaniel.clothconfig2 本身是客户端库。",
-            "compat/cloth/GlobalAIIntegration.java",
-            "同上，唯一调用点是 MenuIntegration；它还 import 了 client/sound/record/MicrophoneManager，"
-                    + "结构上就到不了服务端。",
             "ai/service/stt/STTSite.java",
             "STT_PROXY_ADDRESS 只出现在一个 lambda 体内（不是方法引用），接口初始化时不解引用；"
                     + "而 AvailableSites#managesSttSites 已按物理端挡住，专服根本不读 stt.json、"
