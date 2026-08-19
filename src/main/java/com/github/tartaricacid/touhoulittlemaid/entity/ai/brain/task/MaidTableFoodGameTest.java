@@ -65,6 +65,39 @@ public class MaidTableFoodGameTest {
         helper.succeed();
     }
 
+    /**
+     * 玩家关掉开关，她就真的不再吃桌上食物。
+     *
+     * <p>⚠️ **这一维此前零覆盖，行为基准同样没有**——那四条用例把冷却查得很细，
+     * 却从没把开关关掉过一次。本轮红测（把 {@code canSteal} 里的开关判据摘掉）全绿才照出来。
+     * 契约里有两个动词——「开关关掉不吃」与「冷却期间不吃」——判据只覆盖了后一个。</p>
+     */
+    @GameTest(maxTicks = 100)
+    public void theTableFoodToggleActuallyGatesEating(GameTestHelper helper) {
+        EntityMaid maid = prepareMaid(helper);
+
+        assertTrue(helper, MaidStealEdibleUseTask.canSteal(maid),
+                "对照组：默认开关下本该允许偷吃——不允许说明这条用例什么都没测");
+
+        maid.getConfigManager().setTableFoodAllowed(false);
+        // fixture 自检：写入被静默丢弃时，下面那条期望 false 的断言会以「逻辑判否」的假象通过
+        assertTrue(helper, !maid.getConfigManager().isTableFoodAllowed(),
+                "开关没写进去——下面那条断言会恒真假绿");
+
+        assertTrue(helper, !MaidStealEdibleUseTask.canSteal(maid),
+                "开关关掉后仍然允许偷吃：开关没有门控行为，玩家关了个寂寞");
+        // 开关与冷却是分开的两个真值，关开关不该顺带把冷却也置上
+        assertTrue(helper, maid.getFavorabilityManager().canAdd(Type.STEAL_EDIBLE_BLOCK.getTypeName()),
+                "关掉开关不该顺带进入好感度冷却——两者是分开的真值");
+
+        maid.getConfigManager().setTableFoodAllowed(true);
+        assertTrue(helper, MaidStealEdibleUseTask.canSteal(maid),
+                "开关重新打开后没有恢复允许");
+
+        maid.addTag("tlm_table_food_toggle_mcp_pass");
+        helper.succeed();
+    }
+
     @GameTest(maxTicks = 100)
     public void stealCooldownSurvivesSaveAndLoad(GameTestHelper helper) {
         EntityMaid maid = prepareMaid(helper);
