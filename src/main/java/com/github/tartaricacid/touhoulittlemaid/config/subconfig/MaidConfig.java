@@ -22,6 +22,15 @@ public final class MaidConfig {
     public static ModConfigSpec.IntValue MAID_SLEEP_RANGE;
     public static ModConfigSpec.IntValue MAID_NON_HOME_RANGE;
 
+    /**
+     * 跟随手感：更早开始跟随、追赶更快、把传送留给更远的距离。
+     *
+     * <p><b>默认开</b>（用户 2026-08-19 定），所以本树开箱即用的跟随行为**不再等于行为基准**——
+     * 关掉它才回到基准那套起跟距离 / 速度 / 传送阈值。它此前住在实验性分组、默认关；
+     * 移出来是因为它已经不是待观察的实验项了。</p>
+     */
+    public static ModConfigSpec.BooleanValue SMOOTH_FOLLOW;
+
     public static ModConfigSpec.IntValue BOW_RANGE;
     public static ModConfigSpec.IntValue CROSS_BOW_RANGE;
     public static ModConfigSpec.IntValue DANMAKU_RANGE;
@@ -129,6 +138,11 @@ public final class MaidConfig {
         builder.comment("The max range of maid's Non-Home mode")
                 .translation(translateKey("maid_non_home_range"));
         MAID_NON_HOME_RANGE = builder.defineInRange("MaidNonHomeRange", 8, 3, 32);
+
+        builder.comment("Start following earlier, move faster, and reserve teleporting for a larger distance",
+                        "Disabling this restores the origin/1.21.1 follow behavior")
+                .translation(translateKey("smooth_follow"));
+        SMOOTH_FOLLOW = builder.define("SmoothFollow", true);
 
         builder.comment("The max number of animals around when the maid breeds animals")
                 .translation(translateKey("bow_range"));

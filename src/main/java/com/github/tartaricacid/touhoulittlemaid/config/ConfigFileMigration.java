@@ -54,6 +54,10 @@ public final class ConfigFileMigration {
     /** 这些规则值在代码宿主 origin/26.1 上原属 COMMON spec，即实例级的这个文件。 */
     private static final String LEGACY_FILE_NAME = TouhouLittleMaid.MOD_ID + "-common.toml";
 
+    /** 平滑跟随 2026-08-19 从实验性分组搬进女仆分组，旧存档的值躺在旧段名下。 */
+    private static final java.util.List<String> LEGACY_SMOOTH_FOLLOW_PATH = java.util.List.of("experimental", "SmoothFollow");
+    private static final java.util.List<String> SMOOTH_FOLLOW_PATH = java.util.List.of("maid", "SmoothFollow");
+
     private static final java.util.List<String> REPLACE_SLIME_MODEL_PATH = java.util.List.of("vanilla", "ReplaceSlimeModel");
     private static final java.util.List<String> REPLACE_MAGMA_CUBE_MODEL_PATH = java.util.List.of("vanilla", "ReplaceMagmaCubeModel");
 
@@ -298,10 +302,14 @@ public final class ConfigFileMigration {
 
         if (Files.isRegularFile(worldConfig)) {
             CommentedConfig existing = read(worldConfig);
+            // ⚠️ 换段名的键必须**先**搬，再补缺失项：补缺失那步只填空位，
+            // 旧值搬过来之后新位置就不是空位了。次序反了旧值会被默认值静默盖掉。
+            boolean renamed = inheritRenamedKey(existing, LEGACY_SMOOTH_FOLLOW_PATH, SMOOTH_FOLLOW_PATH);
             int inherited = inheritMissingValues(existing, serverValues);
-            if (inherited > 0) {
+            if (renamed || inherited > 0) {
                 writeAtomically(existing, worldConfig);
-                LOGGER.info("Completed {} missing server rule values in {}", inherited, worldConfig);
+                LOGGER.info("Completed {} missing server rule values in {} (renamed keys carried over: {})",
+                        inherited, worldConfig, renamed);
             }
             return worldConfig;
         }
@@ -316,7 +324,9 @@ public final class ConfigFileMigration {
                     FabricLoader.getInstance().getConfigDir().resolve(SERVER_FILE_NAME),
                     FabricLoader.getInstance().getConfigDir().resolve(LEGACY_FILE_NAME));
             if (source != null) {
-                migrated = copyKnownValues(read(source), target, serverValues);
+                CommentedConfig sourceConfig = read(source);
+                inheritRenamedKey(sourceConfig, LEGACY_SMOOTH_FOLLOW_PATH, SMOOTH_FOLLOW_PATH);
+                migrated = copyKnownValues(sourceConfig, target, serverValues);
             }
         }
 
@@ -327,6 +337,31 @@ public final class ConfigFileMigration {
             LOGGER.info("Migrated {} server config values from {} to {}", migrated, source, worldConfig);
         }
         return worldConfig;
+    }
+
+    /**
+     * 把改过家的键的旧值搬到新位置，返回是否真的搬了（调用方据此决定要不要回写）。
+     *
+     * <p>新位置已有值就不动——那说明这份文件已经是新格式，玩家的选择以新位置为准。
+     * 只在「新位置空着、旧位置有值」时才搬，所以重复执行是安全的。</p>
+     *
+     * <p><b>为什么必须搬</b>：改段名等于换了一个键，旧值就此无人认领，玩家的设置会被
+     * 新默认值静默取代——而平滑跟随这次的新默认值恰好是**开**，服主当初特意关掉的
+     * 会在升级后自己打开，且没有任何提示。</p>
+     */
+    static boolean inheritRenamedKey(CommentedConfig config,
+                                             java.util.List<String> legacyPath,
+                                             java.util.List<String> currentPath) {
+        if (config.contains(currentPath)) {
+            return false;
+        }
+        Object legacyValue = config.getRaw(legacyPath);
+        if (legacyValue == null) {
+            return false;
+        }
+        config.set(currentPath, legacyValue);
+        LOGGER.info("Carried {} over to {} during config key rename", legacyPath, currentPath);
+        return true;
     }
 
     /** 从实例级迁移源里补齐这份世界文件尚未携带的规则键；源不存在或键也缺就留空，由调用方补默认值。 */

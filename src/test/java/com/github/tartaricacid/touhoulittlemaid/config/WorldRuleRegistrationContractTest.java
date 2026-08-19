@@ -126,7 +126,9 @@ class WorldRuleRegistrationContractTest {
                 onByDefault.add(matcher.group(1) + " = " + matcher.group(2).trim());
             }
         }
-        assertTrue(defines >= 2, "只认出 " + defines + " 个实验性开关，识别依据可能已失效");
+        // 下限按**实测**定，不按印象定：平滑跟随 2026-08-19 移进 MaidConfig 后，
+        // 这一组只剩雪球击退一条。识别依据坏掉会得到 0，照样红。
+        assertTrue(defines >= 1, "一个实验性开关都没认出来，识别依据可能已失效");
         assertEquals(List.of(), onByDefault,
                 "实验性开关默认开着——它就不再是「可选的偏离」，而是把行为基准换掉了");
     }

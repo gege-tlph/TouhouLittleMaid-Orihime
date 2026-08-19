@@ -1,7 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
 import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
-import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ExperimentalConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBrains;
 import com.google.common.collect.ImmutableMap;
@@ -88,7 +88,7 @@ public class MaidFollowOwnerTask extends Behavior<EntityMaid> {
         if (!ownerStateConditions(owner, maid) || !maidStateConditions(maid)) {
             return;
         }
-        if (ServerRuleConfig.get(ExperimentalConfig.SMOOTH_FOLLOW)) {
+        if (ServerRuleConfig.get(MaidConfig.SMOOTH_FOLLOW)) {
             smoothFollow(maid, owner, gameTimeIn);
         } else {
             classicFollow(maid, owner);

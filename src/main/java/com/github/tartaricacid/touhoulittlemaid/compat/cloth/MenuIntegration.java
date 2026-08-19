@@ -91,6 +91,7 @@ public class MenuIntegration {
         ranges.add(serverSlider(entries, "maid.maid_idle_range", MaidConfig.MAID_IDLE_RANGE, 3, 32, session));
         ranges.add(serverSlider(entries, "maid.maid_sleep_range", MaidConfig.MAID_SLEEP_RANGE, 3, 32, session));
         ranges.add(serverSlider(entries, "maid.maid_non_home_range", MaidConfig.MAID_NON_HOME_RANGE, 3, 32, session));
+        ranges.add(serverBoolean(entries, "maid.smooth_follow", MaidConfig.SMOOTH_FOLLOW, session));
         ranges.add(serverInt(entries, "maid.feed_animal_max_number", MaidConfig.FEED_ANIMAL_MAX_NUMBER, 6, 65536, session));
         category.addEntry(ranges.build());
 
@@ -148,7 +149,6 @@ public class MenuIntegration {
         category.addEntry(chair.build());
 
         SubCategoryBuilder experimental = sub(entries, "server.experimental");
-        experimental.add(serverBoolean(entries, "experimental.smooth_follow", ExperimentalConfig.SMOOTH_FOLLOW, session));
         experimental.add(serverBoolean(entries, "experimental.snowball_knockback", ExperimentalConfig.SNOWBALL_KNOCKBACK, session));
         category.addEntry(experimental.build());
     }

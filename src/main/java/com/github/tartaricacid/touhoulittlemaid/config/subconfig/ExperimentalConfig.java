@@ -11,12 +11,6 @@ public final class ExperimentalConfig {
     private static final String TRANSLATE_KEY = "config.touhou_little_maid.experimental";
 
     /**
-     * Opt-in follow tuning. Disabled by default so the origin/1.21.1
-     * start-distance, speed and teleport thresholds remain the baseline.
-     */
-    public static ModConfigSpec.BooleanValue SMOOTH_FOLLOW;
-
-    /**
      * Opt-in: let the maid's play snowball knock players back.
      *
      * <p>Disabled by default so vanilla semantics remain the baseline — a snowball deals 0 damage
@@ -28,12 +22,6 @@ public final class ExperimentalConfig {
 
     public static void initServerRule(ModConfigSpec.Builder builder) {
         builder.translation(TRANSLATE_KEY).push("experimental");
-
-        builder.comment(
-                        "Experimental: start following earlier, move faster, and reserve teleporting for a larger distance",
-                        "Disabled preserves the origin/1.21.1 follow behavior")
-                .translation(translateKey("smooth_follow"));
-        SMOOTH_FOLLOW = builder.define("SmoothFollow", false);
 
         builder.comment(
                         "Experimental: the maid's play snowball knocks players back, the way it already knocks mobs back",
