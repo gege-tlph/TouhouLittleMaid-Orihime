@@ -329,6 +329,7 @@ public final class ServerRuleConfig {
                 MiscConfig.SHRINE_LAMP_MAX_RANGE,
                 MiscConfig.SCARECROW_RANGE,
                 ExperimentalConfig.SMOOTH_FOLLOW,
+                ExperimentalConfig.SNOWBALL_KNOCKBACK,
                 ServerConfig.CLIENT_PACK_DOWNLOAD_URLS,
                 ServerConfig.MAID_AI_TIME_DEBUG,
                 ServerConfig.MAID_BACKUP_INTERVAL_SECONDS,

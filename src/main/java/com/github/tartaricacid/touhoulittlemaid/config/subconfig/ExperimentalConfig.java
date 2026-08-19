@@ -16,6 +16,16 @@ public final class ExperimentalConfig {
      */
     public static ModConfigSpec.BooleanValue SMOOTH_FOLLOW;
 
+    /**
+     * Opt-in: let the maid's play snowball knock players back.
+     *
+     * <p>Disabled by default so vanilla semantics remain the baseline — a snowball deals 0 damage
+     * to anything but a blaze, and {@code Player.hurtServer} returns false at {@code amount == 0}
+     * before ever reaching the knockback block in {@code LivingEntity.hurtServer}. Mobs are
+     * knocked back either way, so this switch only ever changes what players feel.</p>
+     */
+    public static ModConfigSpec.BooleanValue SNOWBALL_KNOCKBACK;
+
     public static void initServerRule(ModConfigSpec.Builder builder) {
         builder.translation(TRANSLATE_KEY).push("experimental");
 
@@ -24,6 +34,12 @@ public final class ExperimentalConfig {
                         "Disabled preserves the origin/1.21.1 follow behavior")
                 .translation(translateKey("smooth_follow"));
         SMOOTH_FOLLOW = builder.define("SmoothFollow", false);
+
+        builder.comment(
+                        "Experimental: the maid's play snowball knocks players back, the way it already knocks mobs back",
+                        "Disabled preserves vanilla, where a 0 damage hit on a player is dropped before knockback")
+                .translation(translateKey("snowball_knockback"));
+        SNOWBALL_KNOCKBACK = builder.define("SnowballKnockback", false);
 
         builder.pop();
     }

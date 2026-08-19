@@ -1300,6 +1300,8 @@
   "config.touhou_little_maid.experimental": "Experimental Features",
   "config.touhou_little_maid.experimental.smooth_follow": "Smooth Follow",
   "config.touhou_little_maid.experimental.smooth_follow.tooltip": "Starts following earlier and moves faster, while delaying emergency teleportation. Disabled preserves the original behavior.",
+  "config.touhou_little_maid.experimental.snowball_knockback": "Snowball Knockback",
+  "config.touhou_little_maid.experimental.snowball_knockback.tooltip": "The maid's play snowball pushes players back, the way it already pushes mobs. Disabled preserves the original behavior, where a snowball does nothing at all to a player.",
   "button.touhou_little_maid.maid.mode.furnace": "Furnace",
   "subtitle.touhou_little_maid.maid.mode.furnace": "Maid Furnace Sound",
   "patchouli.touhou_little_maid.book.entries.maid.other_backpack.name": "Other Backpack",

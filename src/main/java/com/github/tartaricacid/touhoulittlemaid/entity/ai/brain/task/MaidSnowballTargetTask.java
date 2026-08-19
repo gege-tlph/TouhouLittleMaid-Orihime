@@ -1,6 +1,8 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
 import cn.sh1rocu.touhoulittlemaid.util.PacketDistributor;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ExperimentalConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.network.NetworkHandler;
 import com.github.tartaricacid.touhoulittlemaid.network.message.MaidAnimationPackage;
@@ -14,10 +16,14 @@ import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SnowballItem;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.Vec3;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -180,6 +186,9 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
      * 因为原版会把它当成普通抛射物处理。</p>
      */
     private static final class MaidPlaySnowball extends Snowball {
+        /** 原版 {@code LivingEntity.hurtServer} 里击退抛射物受害者用的就是这个值（字节码 offset 453）。 */
+        private static final float KNOCKBACK_STRENGTH = 0.4F;
+
         private final EntityMaid shooter;
         private boolean leftShooter;
 
@@ -200,6 +209,43 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
                 leftShooter = !sweptBounds.intersects(shooter.getBoundingBox());
             }
             super.tick();
+        }
+
+        /**
+         * 世界规则「雪球击退效果」开启时，把**玩家**也击退——默认关，关着就是原版表现。
+         *
+         * <p><b>为什么只补玩家这一种</b>：原版雪球对非烈焰人是 0 伤害，而击退整段住在
+         * {@code LivingEntity.hurtServer} 里。怪物走得到那里，所以**本来就会被雪球推开**；
+         * 玩家走不到——{@code Player.hurtServer} 在 {@code amount == 0} 处直接 return false
+         * （26.1.2 offset 108-115 字节码实证），比击退那段早得多。所以判据不是「我猜谁需要补」，
+         * 而是「原版那条路径对谁没走完」，而这个集合恰好等于 {@code Player}：
+         * 雪球只对烈焰人给非 0 伤害，玩家永远不是烈焰人。</p>
+         *
+         * <p>补的力度与方向**照抄原版那一段**：{@code knockback(0.4F, -Δx, -Δz)}，
+         * 其中 Δ 取抛射物自身速度（{@code Projectile.calculateHorizontalHurtKnockbackDirection}
+         * 的方法体就是 {@code getDeltaMovement().x/.z}），原版对它取负再传入。
+         * 击退抗性与运动同步由 {@code knockback} 自己处理，不必也不该在这里重做。</p>
+         *
+         * <p>⚠️ 前三道闸是把 {@code Player.hurtServer} 在 {@code amount == 0} <b>之前</b>
+         * 的判定原样复述一遍：那些情形下原版连伤害流程都不进，我们也不许推人——
+         * 否则创造模式和旁观模式会被雪球推着走，那是原版从不会有的表现。</p>
+         */
+        @Override
+        protected void onHitEntity(EntityHitResult result) {
+            super.onHitEntity(result);
+            if (!(level() instanceof ServerLevel serverLevel)
+                    || !(result.getEntity() instanceof Player player)
+                    || !ServerRuleConfig.get(ExperimentalConfig.SNOWBALL_KNOCKBACK)) {
+                return;
+            }
+            DamageSource source = damageSources().thrown(this, getOwner());
+            if (player.isInvulnerableTo(serverLevel, source)
+                    || player.getAbilities().invulnerable
+                    || player.isDeadOrDying()) {
+                return;
+            }
+            Vec3 motion = getDeltaMovement();
+            player.knockback(KNOCKBACK_STRENGTH, -motion.x, -motion.z);
         }
 
         @Override

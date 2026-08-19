@@ -147,6 +147,7 @@ public class MenuIntegration {
 
         SubCategoryBuilder experimental = sub(entries, "server.experimental");
         experimental.add(serverBoolean(entries, "experimental.smooth_follow", ExperimentalConfig.SMOOTH_FOLLOW, session));
+        experimental.add(serverBoolean(entries, "experimental.snowball_knockback", ExperimentalConfig.SNOWBALL_KNOCKBACK, session));
         category.addEntry(experimental.build());
     }
 

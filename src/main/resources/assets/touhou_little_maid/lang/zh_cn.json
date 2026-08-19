@@ -1300,6 +1300,8 @@
   "config.touhou_little_maid.experimental": "实验性功能",
   "config.touhou_little_maid.experimental.smooth_follow": "平滑跟随",
   "config.touhou_little_maid.experimental.smooth_follow.tooltip": "更早开始跟随并提高追赶速度，同时推迟紧急传送。关闭时保持原版行为。",
+  "config.touhou_little_maid.experimental.snowball_knockback": "雪球击退效果",
+  "config.touhou_little_maid.experimental.snowball_knockback.tooltip": "女仆玩雪扔出的雪球会把玩家推开，就像它本来就能推开怪物那样。关闭时保持原版行为——雪球打在玩家身上不产生任何效果。",
   "button.touhou_little_maid.maid.mode.furnace": "熔炉",
   "subtitle.touhou_little_maid.maid.mode.furnace": "女仆：熔炉",
   "patchouli.touhou_little_maid.book.entries.maid.other_backpack.name": "其他背包",

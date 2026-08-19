@@ -27,6 +27,7 @@ class MaidSnowballPlayContractTest {
     private static final Path SNOWBALL_TASK = BRAIN_TASKS.resolve("MaidSnowballTargetTask.java");
 
     private static final String EXTENDS_SNOWBALL = "extends Snowball";
+    private static final String KNOCKBACK = "knockback(";
     private static final String ERASE = "eraseMemory(MemoryModuleType.ATTACK_TARGET)";
     private static final String READ = "getMemory(MemoryModuleType.ATTACK_TARGET)";
 
@@ -64,7 +65,7 @@ class MaidSnowballPlayContractTest {
     }
 
     /**
-     * 玩耍雪球必须保持原版的伤害语义与「无归属」——**这两条都不许碰**。
+     * 玩耍雪球必须保持原版的**伤害量**与**无归属**——这两条不许碰。
      *
      * <p><b>这条契约为什么存在</b>：雪球砸中玩家时「粒子炸开，却没伤害、没击退、没受击闪烁」
      * 是**原版语义**，不是缺陷。原版 {@code Snowball.onHitEntity} 对非烈焰人一律 0 点，
@@ -73,12 +74,16 @@ class MaidSnowballPlayContractTest {
      * **早于**击退所在的 {@code LivingEntity.hurtServer}。打怪则照常击退——
      * {@code LivingEntity} 那一层没有这道闸。</p>
      *
-     * <p>本断言防的是下一个人把这个表现当 bug 去「修」：覆写命中处理加伤害，
-     * 或把归属加回去——后者会毁掉「这颗雪球不算女仆挑衅」那一半（砸到别的生物就招来反击）。</p>
+     * <p>本断言防的是下一个人把这个表现当 bug 去「修」：给它加伤害，或把归属加回去——
+     * 后者会毁掉「这颗雪球不算女仆挑衅」那一半（砸到别的生物就招来反击）。</p>
      *
-     * <p>判据按**成因**写：不点名某个方法，而是白名单——子类只许覆写 {@code tick} 与
-     * {@code canHitEntity}。白名单的期望集**非空**，所以识别依据一旦失效就是红的，
-     * 不会像禁止型断言那样静默零覆盖。</p>
+     * <p>⚠️ **击退是例外，而且是显式的例外**：世界规则 {@code SnowballKnockback} 开着时，
+     * {@code onHitEntity} 会补一次针对玩家的击退。那条开关默认关，关着就是上面说的原版表现；
+     * 它的「默认关」与「只补玩家」由另外两条判据钉住（见 {@code WorldRuleRegistrationContractTest}
+     * 与 {@link #snowballKnockbackIsOptInAndPlayerOnly()}）。**伤害与归属没有这种例外。**</p>
+     *
+     * <p>判据按**成因**写：不点名某个方法，而是白名单——子类的覆写面只许是这三个。
+     * 白名单的期望集**非空**，所以识别依据一旦失效就是红的，不会像禁止型断言那样静默零覆盖。</p>
      */
     @Test
     void playSnowballKeepsVanillaDamageAndOwnership() throws IOException {
@@ -100,13 +105,53 @@ class MaidSnowballPlayContractTest {
             }
         }
         overrides.sort(String::compareTo);
-        assertEquals(List.of("canHitEntity", "tick"), overrides,
-                "玩耍雪球只许覆写 tick 与 canHitEntity——碰命中处理或归属就改掉了原版语义");
+        assertEquals(List.of("canHitEntity", "onHitEntity", "tick"), overrides,
+                "玩耍雪球的覆写面变了——它只该覆写出膛豁免（tick / canHitEntity）"
+                        + "与击退开关（onHitEntity），碰别的就是在改原版语义");
+
+        assertEquals(-1, body.indexOf("hurt("),
+                "玩耍雪球动了伤害——原版对非烈焰人是 0 点，改它属超基准改上游行为");
 
         assertTrue(source.contains("new " + className + "("),
                 "没认出雪球的生成点，下面那条「不得设归属」的断言会恒绿");
         assertEquals(-1, source.indexOf("setOwner"),
                 "玩耍雪球被设了归属——它会因此算成女仆的攻击，砸到别的生物就招来反击");
+    }
+
+    /**
+     * 「雪球击退效果」必须是**可选的**，而且**只补玩家**。
+     *
+     * <p>两条各钉一维：</p>
+     * <ul>
+     *   <li><b>可选</b>：击退所在的方法体里必须出现那个世界规则键。少了它，开关就从
+     *       「可选的偏离」变成新的默认行为，而移植的唯一目标是与行为基准一致
+     *       （默认值必须是 {@code false} 那一维在 {@code WorldRuleRegistrationContractTest} 里钉）。</li>
+     *   <li><b>只补玩家</b>：怪物在原版那条路径上**本来就会被雪球推开**
+     *       （{@code LivingEntity.hurtServer} 没有 {@code amount == 0} 那道闸），
+     *       对它们再补一次就是**双份击退**。所以补的判据不是「谁看起来该被推」，
+     *       而是「原版那条路径对谁没走完」——这个集合恰好等于 {@code Player}。</li>
+     * </ul>
+     *
+     * <p>力度也一并钉住：原版那一段用的是 {@code knockback(0.4F, …)}（26.1.2 字节码 offset 453）。
+     * 照抄原版的值，这个开关才是「把原版本来就会做的事补给玩家」，而不是我们自创一股力。</p>
+     */
+    @Test
+    void snowballKnockbackIsOptInAndPlayerOnly() throws IOException {
+        String source = stripComments(Files.readString(SNOWBALL_TASK, StandardCharsets.UTF_8));
+
+        int at = source.indexOf(KNOCKBACK);
+        assertTrue(at >= 0, "找不到击退调用，识别依据可能已失效");
+        assertEquals(-1, source.indexOf(KNOCKBACK, at + 1),
+                "击退调用不止一处，下面那些断言该管哪一处已不唯一");
+
+        String body = enclosingMethodBody(source, at);
+        assertTrue(body != null, "取不到击退所在的方法体，识别依据可能已失效");
+        assertTrue(body.contains("SNOWBALL_KNOCKBACK"),
+                "击退没有被那个世界规则守着——它会变成默认行为，而不是可选的偏离");
+        assertTrue(body.contains("instanceof Player"),
+                "击退没有限定在玩家上——怪物在原版那条路径上已经被推过一次了，再补就是双份");
+        assertTrue(source.contains("KNOCKBACK_STRENGTH = 0.4F"),
+                "击退力度不再是原版那一段用的 0.4F——这个开关就不是「把原版会做的事补给玩家」了");
     }
 
     /**
