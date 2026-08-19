@@ -66,9 +66,20 @@ class RootCommandPermissionContractTest {
      */
     @Test
     void theRootGateAlsoAdmitsTheSingleplayerHost() throws IOException {
+        // ⚠️ 必须缩到**根那条建造语句**，不能在整个方法体里搜。
+        // 首版就是在方法体里搜 isSingleplayerOwner，红测当场照出假绿：
+        // ai_chat 与 config 两支自己的 requires 里也写着它，把根上那处整个摘掉，
+        // 方法体里照样搜得到三处中的两处，断言纹丝不动。
         String body = registerBody();
-        assertTrue(body.contains("isSingleplayerOwner"),
-                "根上的闸不认单人档房主：界面里房主本就能改这些东西，命令层再卡一道就是半开门");
+        int at = body.indexOf("Commands.literal(ROOT_NAME)");
+        assertTrue(at > 0, "找不到根命令的建造语句，判据的识别依据已失效");
+        int end = body.indexOf(';', at);
+        assertTrue(end > at, "根命令的建造语句没有结束分号");
+        String rootBuilder = body.substring(at, end);
+
+        assertTrue(rootBuilder.contains("isSingleplayerOwner"),
+                "根上的闸不认单人档房主：界面里房主本就能改这些东西，命令层再卡一道就是半开门。"
+                        + "实际的根闸是：" + rootBuilder.replaceAll("\\s+", " "));
     }
 
     /** 取 {@code register} 的方法体——大括号配对，别用整份文件。 */
