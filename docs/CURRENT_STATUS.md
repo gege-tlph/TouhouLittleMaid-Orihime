@@ -16,7 +16,7 @@
 
 **两项对账已整体收口**：O8 行为面五个面（2026-08-18）与 **O2 反向缺口账本**
 （2026-08-18，待定 0 · 待补 0）。三者共产出三个真缺口，全部当轮修完。
-剩下的开放项是：**实机验收**（专服侧整体 + §3.C 那一大批 + 两项 DEFERRED）、
+剩下的开放项是：**实机验收**（专服侧整体 + §3.C 那一大批 + 两项 DEFERRED：② 弓弩手感 · ③ 打雪仗两条修复）、
 **O4 前置**、**O5 发布链路**、**O6 余项**——见下方各节与审计 §6。
 **O9 / O10 已由用户 2026-08-19 裁决，两条均判为「有意分歧」不改代码**（见已关闭表）。
 构建、JUnit、GameTest 三条链路均已实跑验证；**2026-08-14 起有了单人档实机验收**
@@ -77,6 +77,20 @@
 ⚠️ 本项**代码面已由契约测试钉住**（弓弩还原三条，逐个红测过），但契约测试只证明
 「接线在、数据在」，证明不了「手上感觉到的是对的」——**这正是它仍为 DEFERRED 的原因**。
 手感按定义没有机械判据。⚠️ **测它时注意 O11**：坐着的女仆也会走位，会干扰对进退距离的判读。
+
+| | ③ 打雪仗两条修复的复验（`aeac8dc6f` `ead881a54`） |
+|---|---|
+| **测试目的** | 雪球现在打不打得中人；打雪仗期间挨打，应战起不起得来 |
+| **前置条件** | dev 客户端单人档；**女仆得站在雪片上**才会玩雪（雪地群系或自己铺一片），另备一只会主动打女仆的怪 |
+| **操作步骤** | ① 让女仆开始玩雪，站到她正对面挨雪球 ② 玩雪期间放怪打她（或自己打她一下）③ 看她转不转入应战、能不能保持住 |
+| **预期结果** | ① 雪球有明显命中（击退与命中粒子），不再落在目标脚前的地上 ② 挨打后应战起得来，不被雪仗一瞬夺回 |
+| **失败判据** | 雪球仍落地 = 出手高度那刀没生效；应战起来一瞬又回去玩雪 = 共享槽仍被擦（插 `[TLM-QA-*]` 桩打印 stop 时槽里的 UUID 即可定案） |
+| **日志采集** | 无专门日志，靠目视；必要时插桩 |
+| **测试后更新哪一条账本** | 本表 + 已关闭表「2026-08-19：打雪仗实机两条」那节 |
+
+⚠️ 雪球**打中人也只对烈焰人造成伤害**（原版 `Snowball.onHitEntity` 字节码：非烈焰人一律 0 点），
+所以判「中没中」要看**击退与命中粒子**，不要看血条——按血条判会把修好的功能再判一次「没反应」。
+
 **TACZ 兼容刀（`167608ab9`）：单人档实机验收通过（2026-08-15 用户实测，五项全过）**：
 
 - ✅ 枪械工作模式（开火 / 背包扣弹换弹 / 走位）；持枪与换弹动画；背部枪械渲染；
@@ -249,6 +263,26 @@ TACZ 14 条与 B1–B7 已全部落地（见已关闭表）。本项只剩：
 **O9 已关闭**（2026-08-19 用户裁决：判为可接受，写进有意分歧。见已关闭表）。
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-19：打雪仗实机两条 —— 都不是移植回归，三棵树同款（`aeac8dc6f` `ead881a54`）
+
+用户实机报出两件事，取证后都落在打雪仗上，而 `port/1.21.11-fabric` / `origin/1.21.1` /
+`origin/26.1` **三棵树在这两处逐字相同**——不是移植丢了东西，是上游功能自带的缺陷。
+
+| 缺陷 | 内容 |
+|---|---|
+| **玩耍雪球从脚底出手**（`ead881a54`） | 触发玩雪的前提正是女仆站在雪片上，从 `getY()` 出生的雪球弹道贴地，落在目标前方的地上——**这个功能从来没打中过任何人**。原版基于射手的构造器取的是 `getEyeY() - 0.1`（26.1.2 字节码实证：`ThrowableItemProjectile(Level, LivingEntity, ItemStack)` 内联 getX/getEyeY-0.1/getZ），本刀取同一高度；**仍不调 setOwner**——上游「玩耍雪球无归属、不算女仆挑衅」那一层原样保留 |
+| **收尾擦掉了别人的目标**（`aeac8dc6f`） | `ATTACK_TARGET` 是**共享槽**，打雪仗只是借它存玩伴。收尾无条件 `eraseMemory` 会擦掉威胁响应刚写进去的攻击者，于是「挨打 → 应战起来 → 被雪仗擦掉 → 应战下一 tick 自我撤销 → 雪仗夺回控制」。改成记玩伴 UUID、**谁设的谁擦**。这条与 O11 同族：碰撞的另一半（威胁响应整簇）是我们自己造的，上游不存在这个碰撞，**没人会来替我们修** |
+
+⚠️ **雪球那条先误诊了一轮**：症状是「打到人身上没有任何反应」，我照着去查了受伤处理——
+而真相是**根本没打到**。教训已入证伪表。
+
+判据 `MaidSnowballPlayContractTest` 两条，**逐个红测**：各红在正确的断言上、两条里只红一条、无连带。
+⚠️ **两条判据首跑都红在自己身上**：按「第一个 `super(`」找会拿到本任务自己那个 `Behavior` 构造器；
+「往回找最近的左大括号」会停在守卫自己的 `if` 块上，把正确实现判成违规。两处都已改成按语义认，
+并各配一条活性断言（恰好认出一处坐标型 `super`／走过的文件数与擦除点数）。
+共享槽那条判据强度是 **🟡 接线级**——它只能证明「擦之前读了」，证明不了比较写对了。
+JUnit 213 → 215 全过；`runGametest` 89 项全过。
 
 ## 2026-08-19：AI 与走位逐行对照 —— 三条移植回归（`dd957f27b` `ed39cea79` `15858767f`）
 
@@ -640,35 +674,21 @@ hurtClient×2，javap 复验）+ `ExplosionEvents` + `ServerExplosionMixin`（26
 **延后项**：C2 三笔与 TTS 语种诚实标注已随 §3.C 采纳；#1139 返回容器形状校验随
 `RemainFoodEatenEvent` 移植时随行。**归档件 §E 是有意行为分歧全集——做基线等价审计时勿当漂移改回。**
 
-## 2026-08-14：模型图标缓存整簇补回（`e45ea33a6`）——反向缺口第五簇清零
+## 2026-08-14：反向缺口五簇一次补完（`e45ea33a6` `6cbe559ba` `30d0d2795` `ff7ee685d` `40b8cfde0`）
 
-4 文件（CacheIconManager/CacheScreen/CacheIconTexture/IconCache）+ 5 处入口路由 +
-三个 GUI 图标分支 + `IModelInfo.getCacheIconId` 消费链 + `MODEL_ICON_CACHE`
-（initCommon 个人配置 + Cloth misc 段 + lang 两键双语；`cache_screen` 两键宿主本就留着——
-又一处宿主删代码留资源，这次顺风）。
+O2 账本里「宿主删掉、我们要补回」的五簇：模型图标缓存 · 原版替换 · REI 集成 · 液体背包 · 熔炉背包。
+**过程与逐条 API 漂移见各提交信息**，这里只留还会被用到的结论：
 
-**取证推翻了两个「基准已验」假设**：
+| 簇 | 留下的结论 |
+|---|---|
+| 模型图标缓存（`e45ea33a6`） | **基准分支这一簇是死代码**——队列填充接线在基准重构 `AbstractClientModels` 时静默丢失，缓存屏在 1.21.11 上从不弹出，故基准那三件的注释**从未被运行期执行过，不能当已验事实引用**。26.1.2 `TextureManager.register` 只入表不上传 → 必须 `registerAndLoad`，而它立即上传 GL、**只能在渲染线程**调 |
+| 原版替换（`6cbe559ba`） | 五开关整簇。**两处账本改判**：`InitSpecialItemRender` 原判「替换」被实查证伪（所谓承接者是椅子/手办的同名家族）；`ReplaceableBakedModel` 待定 → 丢失。实机崩溃与其纠错见下一节 |
+| REI 集成（`30d0d2795`） | 新通用闸 `EntrypointRegistrationInvariantTest`（与 mixin 登记闸成对）：每个 entrypoint 类必须真实存在——**第三方拉起的入口（REI/JEI/GameTest）坏了是纯静默的** |
+| 液体背包（`ff7ee685d`） | 三处 Fabric 8.0.x 漂移（`SingleVariantStorage.writeValue/readValue` 静态化 · `FluidVariantRendering.getSprite` 已删，改走原版 `FluidModel` · 桶↔储罐插入改宿主 `ItemsUtil.insertItemStacked`），**存档与基准兼容**。`TANK_BACKPACK_TAG` 数据组件宿主删功能时留着，直接用 |
+| 熔炉背包（`40b8cfde0`） | `IBackpackData` 机制在此立起（液体背包沿用）。**`BackpackStateData` 附件 persistent 但有意不 syncWith**（烧炼进度每 tick 在变，GUI 进度条走容器 `addDataSlots`）；附件值是可变 holder，tag 格式与基准逐字相同，**基准存档可互认** |
 
-1. **基准分支这一簇是死代码**：origin/1.21.1 的队列填充接线（`MaidModels`/`ChairModels.addPack`
-   登记 + `CustomPackLoader.clearCache`）在基准重构出 `AbstractClientModels` 时被静默丢失，
-   队列恒空 → 缓存屏在 1.21.11 上从不弹出。故基准三件的「1.21.11 新纹理管线」注释**从未被
-   运行期执行过**，不能当已验事实引用；本刀全部按 26.1.2 反编译源重推导，并补
-   `CacheIconWiringContractTest`（构造点唯一路由·生产者接线·GUI 分支·配置所有权·lang 四键，
-   三种缺陷形态红测：摘接线/全限定名绕过/配置挪世界规则侧 → 各自当场红）。
-2. **基准的截图时序注释在 26.1.2 不成立**：渲染线程上 `Minecraft.execute` 是**内联执行**
-   （`scheduleExecutables()` = `runningTask() || !isSameThread()`，帧循环里两者皆否），
-   「execute 延到下一帧回读」照搬会把每个图标错位成前一个模型。重推导为显式帧计数：
-   模型第 2 个 extract 帧内联发起截图（此刻主 RenderTarget 恰持有上一帧完整画面，
-   拷贝命令先于本帧渲染命令入 GPU 命令流），回调经 `RenderSystem.executePendingTasks`
-   在渲染线程执行——顺带满足 `registerAndLoad` 的渲染线程约束。
+⚠️ 这五簇的实机项都在 O1；图标缓存那一簇已于 2026-08-14/15 单人档全项通过。
 
-**26.1.2 实查漂移**：`TextureManager.register` 只入表不上传（基准裸 `register` 是从未踩响的
-潜在炸弹）→ `registerAndLoad`；`byPath` 私有化且 `getTexture` 对未注册 id 会自动建
-SimpleTexture 报错加载（不能当存在性探针）→ `CacheIconManager` 自持已注册集合；
-`Window.getGuiScale()` double→int；`NativeImage.pixels` 私有化 → `getPixel/setPixel`；
-`setIsYsmModel` 随 YSM 不存在于 26.1.2 Fabric 删去。
-
-门禁：compileJava 0 错、JUnit 57/0（新增 5）、GameTest 28/0。⚠️ 零实机项见 O1。
 
 ## 2026-08-14：实机崩溃「岩浆怪替换开关一开即崩」（`e48a55f56`）
 
@@ -677,30 +697,6 @@ SimpleTexture 报错加载（不能当存在性探针）→ `CacheIconManager` �
 （把基准 grep 输出误读成本树的，详见证伪表新条目），4 个 yukkuri 资源实为两树都缺。
 自基准取回并验字节；**新闸 `BedrockModelResourceInvariantTest`**（登记闸家族第三枚）：
 注册常量↔模型文件机械对账，红测过（挪走一个 json 当场红）。**用户复验通过**（岩浆怪开关不再崩且正常变身）。
-
-## 2026-08-14：原版替换补回（`6cbe559ba`）——反向缺口第四簇清零（4+2 条）
-
-五开关整簇：油库里史莱姆/岩浆怪、点符经验球、1UP 图腾、点符附魔之瓶。
-**两处账本改判**：InitSpecialItemRender 原判「替换」被实查证伪（所谓承接者是椅子/手办
-special renderer，同名家族误判）；ReplaceableBakedModel 待定→丢失（两开关唯一消费者）。
-基准三渲染器已是 render-state 形态近乎原样搬入；四处 26.1.2 漂移全部实查
-（CameraRenderState→state.level、BlockStateModel→block.dispatch、
-BlockModelWrapper→CuboidItemModelWrapper、entityCutoutNoCull→entityCutout 命名反转语义不变）。
-VanillaConfig 按交接裁决进 CommonConfig；inheritMagmaCubeFromSlime 迁移随行
-（四例 JUnit，接线哨兵红测过）。~~宿主半吊子清点：yukkuri 资源留了、常量没留~~（**此句错误，`e48a55f56` 纠正**：
-yukkuri 4 个资源宿主同样删了——「留了」是把基准 grep 输出误读成本树的，见证伪表新条目）；
-点符/1UP 资源全删。JUnit 51/0、GameTest 28/0。零实机项进 O1。
-
-## 2026-08-14：REI 集成补回（`30d0d2795`）——反向缺口第三簇清零
-
-四件逐字照基准（容器槽位布局两树逐行同构，转移处理器槽位号原样可用），
-Maker 重写走宿主 `ClientRecipeEvent.ALTAR_RECIPES`（真实配方 id，宿主 JEI 插件同表为参照）。
-依赖解开宿主注释行（版本经 1.21.11 交接实测）；implementation 让开发客户端可实测；
-⚠️ Xaero 前科当面验证：gametest 日志实证 REI+architectury 已加载且 28 例全过。
-一处漂移：`Item.getName()` 无参版已删 → `getName(ItemStack)`。
-**新通用闸 `EntrypointRegistrationInvariantTest`**（与 mixin 登记闸成对）：每个 entrypoint
-类必须真实存在——第三方拉起的入口（REI/JEI/GameTest）坏了纯静默，红测过。
-零实机项进 O1。
 
 ## 2026-08-14：SpotBugs（手动报告态）+ ArchUnit（进 JUnit 门）落地
 
@@ -737,38 +733,6 @@ Maker 重写走宿主 `ClientRecipeEvent.ALTAR_RECIPES`（真实配方 id，宿�
 红测：GameTest `takeOffDropPathExtractsThroughVanillaContainerWrapper` 走 onTakeOff 同路，
 修前与实机同一 NPE 当场红，修后回绿；**用户实机复验通过**（物品正常掉出）。
 JUnit 44/0、GameTest 28/0。
-
-## 2026-08-14：液体背包补回（`ff7ee685d`）——背包四型 15 条全簇清零
-
-沿用熔炉刀的附件机制，本刀的量全在流体侧。**三处 26.1.2/Fabric 8.0.x 真实漂移**（实查）：
-
-- `SingleFluidStorage.writeData/readData` 实例方法 → 静态 `SingleVariantStorage.writeValue/readValue`
-  （仍写 `variant`+`amount`，与基准存档兼容，GameTest 往返钉着）
-- `FluidVariantRendering.getSprite` 已删（Fabric 流体渲染并进原版 FluidModel）→
-  `ModelManager.getFluidStateModelSet().get(state).stillMaterial().sprite()`，
-  与 JEI 29.5 Fabric 版同款（其 FluidHelper 字节码实查——`MaidFluidRender` 本就抄自 JEI）
-- 桶↔储罐的背包插入 Forge `ItemHandlerHelper` → 宿主 `ItemsUtil.insertItemStacked`
-
-同步三通道照基准：`BACKPACK_FLUID` 实体数据（流体 id）+ 容器 data slot（int 低位）+
-`SyncFluidAmountPackage`（精确 long，变化发主人、开 GUI 发打开者）。
-`TANK_BACKPACK_TAG` 数据组件**宿主删功能时留了下来**，直接用（又一处宿主半吊子删除，这次是顺风）。
-槽位空图标走宿主 back_show 同款 idiom（gui/sprites png + blocks.json 双保险）。
-获取路径随刀齐：祭坛配方 + `chest/tank_backpack`（岩浆 9/4/3 桶，产物与基准 hash 相同）注入下界要塞。
-
-GameTest 四条 + 红测（摘登记行三条当场红）。JUnit 44/0、GameTest 27/0。
-⚠️ 零实机：GUI 流体渲染与 tooltip、背上模型、穿脱携带流体，见 O1。
-
-## 2026-08-14：熔炉背包补回，IBackpackData 机制立起（`40b8cfde0`）
-
-背包四型第三种，本刀把「持久化 + tick 驱动的背包数据」这层机制按宿主形态立起来
-（液体背包直接沿用）。仍然生效的三条设计事实：
-**`BackpackStateData` 附件 persistent 但有意不 syncWith**（烧炼进度每 tick 在变，
-挂 `syncWith(all)` 会对所有追踪者每 tick 重发；GUI 进度条走容器 `addDataSlots`）；
-**附件值是可变 holder**，codec 编码时从 runtime 拉活状态，解码后由 `MaidBackpackManager`
-惰性绑定，tag 内部格式与基准逐字相同（含 #1053 稀疏槽位修复），**基准存档可互认**；
-三处 26.1.2 漂移已实查（`assemble` 单参 / 燃料残留改 `getCraftingRemainder` 返回
-`ItemStackTemplate` / `canInsertItem` 挪进 `MaidItemManager`）。
-GameTest 四条 + 红测（摘 BackpackManager 登记行当场红）。⚠️ 零实机项见 O1。
 
 ## 2026-08-14：上一会话 15 刀全量审计（审计结论与修复分开，一缺陷一提交）
 
@@ -816,122 +780,29 @@ API 漂移，资源与基准 hash 相同。
 且提交前要把 183 个文件的 CRLF/LF churn 还原、只 stage 真正新增的产物。
 
 
-## 2026-08-13：复原「扛女仆时玩家手臂摆抱姿」（`79e7f7914`）
+## 2026-08-13：分支起步这一批（`8c439de1a` `e1efc8b64` `d387a07b7` `9354189d9` `0e54b51ac` `c8b0c4d70` `79e7f7914` `d726e2915`）
 
-上一刀的 mixin 登记闸门首跑照出的那处宿主回归。**不是我们漏搬**——`origin/1.21.1` 上就有，
-宿主 `origin/26.1` 迁移期把它整段注释、靶点改指 `Dummy` 空壳、留 `FIXME` 且未登记。
+探路轮（配置事务写盘）· 世界规则体系三刀 · 规则网络层与配置菜单 · op/deop 后重发规则快照 +
+`MixinRegistrationInvariantTest` · 复原「扛女仆时玩家手臂摆抱姿」（**宿主搁置件，不是我们漏搬**）·
+方法论继承前提逐条修正。**过程详情见各提交信息**，教训已全部进 `CLAUDE.md` 的证伪表与方法论。
 
-按 26.1.2 的渲染状态形态复原：`setupAnim` 只拿得到 `HumanoidRenderState`、拿不到实体，
-故经 `ICarryMaidRenderState` 三件套传递（存位 → 抽取时求值 → 摆姿势时读出）；
-两个注入点描述符经 javap 实查。`MixinRegistrationInvariantTest.HOST_PARKED` 随之清空——
-往那张名单里加条目前先分清「宿主搁置」与「对基准的回归」，**后者要修好并登记，不是加进名单**。
-⚠️ 无运行期凭据：客户端 mixin 在纯服务端的 `runGametest` 里不加载，见 O1。
+**这批留下的长期有效事实**（仍在被引用，故不压掉）：
 
+- **测试的 `workingDir` 是 `build/test-working`**——读文件的用例必须 `Path.of("..", "..")` 回项目根；
+  弄错的症状是「找不到文件」，不是断言不成立。
+- **不注册 SERVER spec**（新基把它注册给了 Forge Config API Port，会来抢 `serverconfig` 那个文件），
+  只当 spec 用。副产物是一条机制性保证：规则值上的 `XXX.get()` 会抛
+  `Cannot get config value before config is loaded`——**漏改道的读点当场炸，而不是静默读到旧值**。
+- **Xaero 小地图/世界地图整体停用**：`runtimeOnly` 无 client-only 标记，进服务端即
+  `Registry is not frozen yet!`，`runGametest` 起不来。`build.gradle` 里留了注释，
+  临时取消注释可看地图但**不要提交**。
+- **`:test` 报 `NO-SOURCE` 与「全部通过」在输出上无从分辨**，靠 `BuildInfrastructureSmokeTest`
+  这枚常驻探针照出。
+- 世界规则的网络形态：`runtimeRulesJson` 发给所有人、`editableRulesJson` 只发给有编辑权的人；
+  `SaveServerRulesPacket` **只带改动过的键**（两个管理员同时改不同字段不会互相回滚）；
+  `/tlm config reload` 是本分支补的，缺了它「保存只写文件」那条路是死的。
+- 抱姿那条**无运行期凭据**：客户端 mixin 在纯服务端的 `runGametest` 里不加载，见 O1。
 
-## 2026-08-13：op/deop 后重发规则快照 + mixin 登记闸门（`c8b0c4d70`）
-
-§3.A 最后一条。`canEdit` 只在发包那一刻求值，`/op` 与 `/deop` 本身不触发重新同步，
-先进服后被授予 OP 的玩家要重进才看得到玩法设置栏。**至此配置三层的世界规则那一层闭合。**
-
-**注入点的取证**（基准踩过坑，本轮在 26.1.2 上重验，结论照旧）：
-`javap` 实查 `PlayerList`，`sendPlayerPermissionLevel` 的调用方恰是四个——
-`placeNewPlayer` / `respawn` / `op` / `deop`。挂它会在**每次加入与每次重生**都白发一个规则包，
-故只挂 `op`(三参) 与 `deop`。单参 `op` 的方法体就是 `op(id, empty, empty)`，注入三参即覆盖两条路径。
-
-**顺带补的通用闸门 `MixinRegistrationInvariantTest`**：把核心纪律第 3 条机械化——
-每个 mixin 源文件都必须登记进 `mixins.json`。没登记是**纯静默**的（本仓库为此抓过 5 枚纸面接口）；
-登记了但靶点不存在则由 `required: true` 在启动时报错，不归它管。
-**它第一次跑就照出了 `HumanoidModelMixin`**（见 O1）。
-
-GameTest 加 `playerListMixinIsWovenIn`：反射查织入产物。
-`required: true` 只在**目标类被加载**时才会因注入失败而崩，「服务器起来了」本身不构成证据。
-
-
-## 2026-08-13：世界规则网络层与配置菜单（`0e54b51ac`）
-
-上一刀有意留下的功能缺口全部补齐：世界规则从「只能手改存档 TOML」回到**服务器权威 + 客户端可编辑**。
-
-| 落地 | 说明 |
-|---|---|
-| `SyncServerRulesPacket`（S2C） | 两份快照分开：`runtimeRulesJson` 发给所有人（客户端侧读点据此看到服务器的值），`editableRulesJson` 只发给有编辑权的人（菜单的编辑基线）。进服即下发 |
-| `SaveServerRulesPacket`（C2S） | **只带改动过的键**，两个管理员同时开菜单改不同字段不会互相回滚。服务端重做权限 / JSON / 键归属 / spec 校验，任一不过整批拒绝并回发权威快照 |
-| `ServerRulesClientCache` + `Session` | 菜单编辑的是**文件值**而非运行期值——专服上两者可以不同 |
-| Cloth 菜单 | 上一刀摘掉的 36 条以「玩法设置 / 高级设置」两栏装回，由 `canEdit()` 门控（无权限者看不到，而不是看得到点不动） |
-| `/tlm config reload` | 新基**没有**这个命令，随本刀补入。专服上「保存只写文件」这条路要靠它激活，缺了它那条路是死的 |
-| 断开连接复位 | 离开服务器时清缓存并把运行期快照退回本端文件值 |
-
-**一处 26.1.2 API 漂移**：`ServerPlayer.displayClientMessage(Component, boolean)` 已不存在，
-改用新基通用的 `sendSystemMessage(Component)`，玩家侧同样是一条聊天消息。
-
-**一处文案与基准有意不同**：基准的 `config.reload_success` 写「存档配置与 AI 站点已重新加载」，
-而它自己的 `ConfigCommand` 明写「与 AI 零瓜葛」——那是条陈旧文案。本分支按实际行为写。
-
-**红测三种缺陷形态，全部照出**：客户端接收器漏注册 / 进服不下发 / 激活判定写死。
-另有一条测试自身的缺陷被照出：读点契约的「命中数 ≥ 40」下限对**第一层**（禁止直接 `get()`）
-是错的——那一层命中数**本就应当是 0**，拿它当活性判据就是「零覆盖恒绿」。
-已改为按「走过了多少个源文件」判活性，两层各用各的下限。
-
-## 2026-08-13：世界规则体系落地（`e1efc8b64` `d387a07b7` `9354189d9`）
-
-**这是第一刀真正碰新基宿主结构的差异化**，量出的数才有代表性（探路轮那刀零依赖，量不出成本）。
-
-**先答上一轮的两个问题**（结论与「它们在新基改名/合并了」的猜想都不同）：
-
-| 问 | 实查结论 |
-|---|---|
-| `ExperimentalConfig` 去哪了 | **哪也没去，它是我们独有的**——`origin/1.21.1` 与 `origin/26.1` 都没有。唯一成员 `SMOOTH_FOLLOW` 的消费者属 §3.E |
-| `VanillaConfig` 去哪了 | **上游在 26.1 删了**，连同整个原版替换功能（`yukkuri` 资源 11 → 0，只剩一条孤儿 lang 键）。不是改名也不是合并 |
-| 顺带 | `MAID_TAMED_ITEM` / `MAID_TEMPTATION_ITEM` **由配置项改成了物品标签** `TagItem.*`，`values()` 少两项且无等价物 |
-
-**决定「我们的类挂在哪」的那个事实**：新基把 SERVER spec **注册给了 Forge Config API Port**，
-于是 FCAP 自己在管 `<world>/serverconfig/touhou_little_maid-server.toml`——正是 `ServerRuleConfig`
-要独占的那个文件。故照 1.21.11 的做法**不注册 SERVER spec**，只把它当 spec 用（`correct` 播种、
-`getSpec().test()` 校验）。副产物是一条机制性保证：规则值上的 `XXX.get()` 会抛
-`Cannot get config value before config is loaded`（已对 FCAP 26.1.4 的 `ConfigValue.getRaw`
-字节码取证）——**漏改道的读点当场炸，而不是静默读到实例级旧值**。后者才是危险形态。
-
-**量到的结论（对后续排期有效）**：主体语义逐条可搬，改动都在接口而非逻辑；
-**真正的成本在宿主的读写面上**——93 处读点 / 38 个文件改道，Cloth 菜单摘 36 条。
-**「代码能不能搬」不是成本所在，「宿主有多少地方在读它」才是**，§7.1 那 247 个同名文件的估算按此校准。
-新基逼出来的新代码：`ConfigFileMigration.migrateServerFileIfNeeded` + `prepareWorldFile` 不再「文件已存在即返回」。
-
-两次红测各照出一个真缺陷（都在被测代码而非测试）：契约测试第一版按 `Owner.FIELD.get()` 扫，
-对「把配置对象当参数传」与「静态导入后写裸名字」两种形态零覆盖（四条攻击任务正是这么漏改的，
-运行期一攻击就炸）；GameTest 第一版拿「世界文件存在」当接线判据，而 `runGametest` 的 run 目录
-多轮复用，读到的是上一轮遗留的文件。
-
-## 2026-08-13：继承前提逐条修正（`d726e2915`）
-
-`CLAUDE.md` 的方法论与证伪表自 1.21.11 原样搬入，**经验有效但前提是版本相关的**。逐条查证后就地改：
-
-| 条目 | 查证结果 | 已做 |
-|---|---|---|
-| 核心纪律 2 | **方向反了**（原文禁止「为贴近 26.1 改行为」写于 `origin/26.1` 还只是架构参照的时期） | 改写成两问：代码长什么样照 `origin/26.1`，表现成什么样照 `port/1.21.11-fabric` |
-| 核心纪律 3 | 「排除 = 隐形」前提不存在——新基 `sourceSets` **零条源码排除**（`build.gradle` 里的 `exclude` 全是依赖组与 shadowJar 的） | 三查降为两查（entrypoint / `mixins.json`），适用面改为「**我们新增的类**」；顺带删掉一条指向 1.21.11 分支 COMPAT 文档的路径，那份文档没随方法论迁进本分支 |
-| 核心纪律 4 | frozen-node 是逐个解除排除时的排序法，本分支无适用对象 | 标注保留备查，未删 |
-| 核心纪律 8 | 命名约定**是假的**（新基 `blockentity/BlockEntity*`）；另两半**经查仍成立**：`fabric.mod.json` 的 `depends` 恰为 `fabric-api`/`forgeconfigapiport`/`minecraft`，`build.gradle` 生效的 `include(` 为 0 | 只改命名那半 |
-| 核心纪律 11 | 已自带「动到时复核」标注 | 不动 |
-
-⚠️ 顺带更正上一版此表的一处数字：本分支 JEI 是 **`29.5.0.28-fabric`**（`gradle.properties`），不是 29.22。
-
-**教训已入证伪表**：复制方法论，继承的不只是经验，还有**它的前提**。前提失效的那条会**主动把人引向错误方向**
-（第 2 条尤甚——照它做等于拒绝新基的正确写法）。判据是逐条问「这条依赖的前提在新语境还成立吗」，
-而不是只改显眼的版本号；改法是逐条改并注明理由，**别整份重写**。
-
-## 2026-08-13：分支建立与工程设施带入
-
-工作树、方法论、`docs/tools/` 七个门禁脚本、JUnit/Mockito/`runGametest`/`clientDedicated`、
-审计文档与 §9 台账一并带入。仍然生效的两条环境事实：
-**测试的 `workingDir` 是 `build/test-working`**，读文件的用例必须 `Path.of("..", "..")` 回项目根
-（症状是「找不到文件」而非断言不成立）；新基 `.gitignore` 曾忽略测试源码目录
-（**Gradle 编译但 git 不跟踪**），已删除。`shadowJar` 的 `META-INF/services` 重复覆盖警告是新基自带，与我们无关。
-
-## 2026-08-13：O1 探路轮完成（`8c439de1a`）
-
-配置事务写盘逐字搬入、零 API 漂移；阻力全在环境侧。仍然生效的两条：
-**Xaero 小地图/世界地图已整体停用**（`runtimeOnly` 无 client-only 标记，进服务端即
-`Registry is not frozen yet!`，`runGametest` 起不来；`build.gradle` 有注释，临时取消注释可看地图但**不要提交**）；
-**`:test` 报 `NO-SOURCE` 与「通过」输出无从分辨**，靠 `BuildInfrastructureSmokeTest` 这枚常驻探针照出。
 
 ---
 
