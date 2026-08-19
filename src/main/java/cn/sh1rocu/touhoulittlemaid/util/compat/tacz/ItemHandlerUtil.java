@@ -19,8 +19,9 @@ import net.minecraft.world.item.ItemStack;
  * {@code variant.toStack()} 的**拷贝**——改完弹药盒必须 {@code setStackInSlot} 回写，
  * 否则消耗静默丢失。</p>
  *
- * <p>本类引用 TACZ 类（compileOnly），仅由 isModLoaded 门控的 tacz mixin 调用，
- * 未装 TACZ 时不会被类加载。</p>
+ * <p>本类引用 TACZ 类（compileOnly），唯一调用方是 {@code MaidAmmoSource.consumeAmmo}，
+ * 而后者只在 {@code TacCompat.init()} 的 isModLoaded 守卫内被触及，未装 TACZ 时不会被类加载。
+ * （26.1.2_R2 退役四个 tacz mixin 之前，调用方是其中两个 mixin。）</p>
  */
 public class ItemHandlerUtil {
     public static int findAndExtractInventoryAmmo(SlottedStorage<ItemVariant> itemHandler, ItemStack gunItem, int needAmmoCount) {

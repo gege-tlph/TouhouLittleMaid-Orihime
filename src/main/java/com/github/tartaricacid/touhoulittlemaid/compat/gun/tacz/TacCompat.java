@@ -18,6 +18,7 @@ import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.event.AnimationEv
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.animated.GeoModelState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.tacz.guns.api.event.common.EntityHurtByGunEvent;
+import com.tacz.guns.api.item.ammo.AmmoSourceRegistry;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
@@ -49,6 +50,14 @@ public class TacCompat {
 
             MaidGunEquipEvent maidGunEquipEvent = new MaidGunEquipEvent();
             MaidEquipEvent.CALLBACK.register(maidGunEquipEvent::onMaidEquip);
+
+            // 女仆背包作为弹药来源。上游 26.1.2_R2 起提供官方 AmmoSource API，取代原来的四个 mixin
+            // ——那四个注入锚点在 R2 里一个不剩（双 jar javap 实证），而 mixins.json 是 required:true，
+            // 留着旧写法上 R2 是启动崩溃。本处在 isModLoaded 守卫内，且 MaidAmmoSource 单独成类，
+            // 未装 TaCZ 时不会被类加载。
+            // 两个逻辑端都要登记：换弹动画那条判定（GunAnimationStateContext）跑在客户端，
+            // 而本方法经 CommonRegistry → TaskManager.init() 在两端都会执行。
+            AmmoSourceRegistry.EVENT.register(MaidAmmoSource::findFor);
 
             INSTALLED = true;
         }

@@ -29,6 +29,14 @@ class OptionalCompatWiringContractTest {
     private static final Path TLM = MAIN_JAVA.resolve("com/github/tartaricacid/touhoulittlemaid");
     private static final Path FABRIC_MOD_JSON = PROJECT_ROOT.resolve("src/main/resources/fabric.mod.json");
     private static final Path TAVERN_COMPAT = TLM.resolve("compat/kaleidoscopetavern");
+    private static final Path MENU_INTEGRATION = TLM.resolve("compat/cloth/MenuIntegration.java");
+    private static final Path TAC_COMPAT = TLM.resolve("compat/gun/tacz/TacCompat.java");
+    private static final Path MAID_AMMO_SOURCE = TLM.resolve("compat/gun/tacz/MaidAmmoSource.java");
+    private static final Path MIXIN_ROOT = MAIN_JAVA.resolve("cn/sh1rocu/touhoulittlemaid/mixin");
+    private static final Path FABRIC_MIXINS =
+            PROJECT_ROOT.resolve("src/main/resources/touhou_little_maid_fabric.mixins.json");
+    /** 饰品栏那一行的识别依据：选配置键而不是按钮文案——文案会改，键不会。 */
+    private static final String CURIOS_MENU_ROW = "MaidConfig.ENABLE_MAID_CURIOS";
 
     /** 第三方模组的包前缀 → 只允许出现在哪个兼容包里。 */
     private static final List<String[]> FOREIGN_PACKAGE_CONTAINMENT = List.of(
@@ -211,6 +219,92 @@ class OptionalCompatWiringContractTest {
             }
         }
         return null;
+    }
+
+    /**
+     * 模组专属的菜单行，其**显示判据**必须与它的**生效判据**同源。
+     *
+     * <p>违反它的形态是「能设置却什么都改变不了的开关」：饰品栏那一行原先按
+     * {@code isModLoaded(TRINKETS)} 显示，而它全部 13 个消费点读的是
+     * {@code CuriosCompat.isLoadedOrEnable()}——那个闩只在 {@code CuriosCompat.init()} 里置真，
+     * 而代码宿主把它的登记行注释掉了（四树对照过，不是我们的回归）。
+     * 于是装了 Trinkets 的玩家能看见、能改、存得下，却什么都不会发生。</p>
+     *
+     * <p><b>判据钉的是「同源」这一维</b>，不是某个字面写法：门控表达式必须提到持有那个闩的类，
+     * 且不得再拿模组 id 当判据。这样将来谁接上 {@code checkModLoad(TRINKETS, CuriosCompat::init)}，
+     * 开关自己就回来了——不需要有人记得同时改菜单。</p>
+     */
+    @Test
+    void modGatedMenuRowsGateOnTheSameLatchTheirConsumersRead() throws IOException {
+        String menu = stripComments(Files.readString(MENU_INTEGRATION, StandardCharsets.UTF_8));
+
+        int row = menu.indexOf(CURIOS_MENU_ROW);
+        assertTrue(row > 0, "菜单里找不到饰品栏那一行（" + CURIOS_MENU_ROW + "），判据的识别依据可能已失效");
+        // 缩到看守这一行的那个 if 条件本身——只在整份文件里找会被别处的同名门控蒙混过去
+        int guardOpen = menu.lastIndexOf("if (", row);
+        assertTrue(guardOpen > 0, "饰品栏那一行没有任何 if 门控");
+        String guard = menu.substring(guardOpen, menu.indexOf(')', guardOpen) + 1);
+
+        assertTrue(guard.contains("CuriosCompat.isLoaded()"),
+                "饰品栏菜单行的门控必须是消费点读的那个闩 CuriosCompat.isLoaded()，实际是：" + guard);
+        assertTrue(!guard.contains("TRINKETS"),
+                "不得用 isModLoaded(TRINKETS) 门控：模组在场不等于兼容在场，"
+                        + "登记行注释掉时会露出一个改不动任何东西的开关。实际是：" + guard);
+
+        // 活性：被镜像的那个闩必须真的有一批消费点，否则这条断言是在守一个没人用的写法
+        int consumers = 0;
+        try (Stream<Path> walk = Files.walk(MAIN_JAVA)) {
+            for (Path java : walk.filter(p -> p.toString().endsWith(".java")).toList()) {
+                if (stripComments(Files.readString(java, StandardCharsets.UTF_8))
+                        .contains("CuriosCompat.isLoadedOrEnable()")) {
+                    consumers++;
+                }
+            }
+        }
+        assertTrue(consumers >= 10,
+                "只找到 " + consumers + " 个 isLoadedOrEnable 消费点，识别依据可能已失效");
+    }
+
+    /**
+     * TaCZ 弹药来源走官方 API，且**不得再留任何 tacz mixin**。
+     *
+     * <p>{@code 26.1.2_R2} 起上游提供了 {@code AmmoSource} / {@code AmmoSourceProvider} /
+     * {@code AmmoSourceRegistry}，同时把我们四个 mixin 的注入锚点**全部移除**
+     * （R1/R2 双 jar javap 实证：{@code tacz$getItemHandler} 由 5 处变 0，
+     * {@code lambda$hasAmmoToConsume$0} 由 1 处变 0）。而
+     * {@code touhou_little_maid_fabric.mixins.json} 是 {@code "required": true}，
+     * 所以留着旧 mixin 不是「兼容退化」而是**启动崩溃**——两者互斥，没有并存写法。</p>
+     *
+     * <p>这道闸同时看守两件事：provider 登记还在（没登记＝女仆背包里的弹药 TaCZ 看不见，
+     * 会静默回落到 {@code ENTITY_INVENTORY}，表现为「有弹药却换不了弹」而不报任何错），
+     * 与 mixin 没有复活。</p>
+     */
+    @Test
+    void taczAmmoGoesThroughTheOfficialApiAndNoTaczMixinSurvives() throws IOException {
+        String compat = stripComments(Files.readString(TAC_COMPAT, StandardCharsets.UTF_8));
+        String init = methodBodyOf(compat, "public static boolean init()");
+        assertTrue(init != null, "TacCompat.init() 找不到，判据的识别依据已失效");
+        assertTrue(init.contains("AmmoSourceRegistry.EVENT.register"),
+                "TacCompat.init() 没有登记 AmmoSourceProvider：女仆背包的弹药 TaCZ 将完全看不见，"
+                        + "且会静默回落到实体自身物品栏，不报任何错");
+
+        String mixins = Files.readString(FABRIC_MIXINS, StandardCharsets.UTF_8);
+        assertTrue(!mixins.contains("compat.tacz."),
+                "mixins.json 仍登记着 tacz mixin：R2 已移除全部注入锚点，required:true 下会启动崩溃");
+        try (Stream<Path> walk = Files.walk(MIXIN_ROOT)) {
+            List<Path> left = walk.filter(p -> p.toString().replace('\\', '/').contains("/mixin/compat/tacz/"))
+                    .filter(p -> p.toString().endsWith(".java")).toList();
+            assertTrue(left.isEmpty(), "还留着 tacz mixin 源文件：" + left);
+        }
+
+        // provider 的两侧判据必须一致：hasAmmo 说有、consumeAmmo 抠不到，会让换弹动画播了却不上弹
+        String source = stripComments(Files.readString(MAID_AMMO_SOURCE, StandardCharsets.UTF_8));
+        String has = methodBodyOf(source, "public boolean hasAmmo(");
+        assertTrue(has != null, "MaidAmmoSource.hasAmmo 找不到");
+        assertTrue(has.contains("IAmmo") && has.contains("IAmmoBox"),
+                "hasAmmo 的判据必须与抠除侧一样覆盖散装弹药与弹药盒两种，实际：" + has);
+        assertTrue(!has.contains("extractItem") && !has.contains("setStackInSlot"),
+                "hasAmmo 必须只读——上游明写它要与 consumeAmmo 一致且不得有副作用");
     }
 
     private static void assertConsumed(String call, Path consumer, String message) throws IOException {

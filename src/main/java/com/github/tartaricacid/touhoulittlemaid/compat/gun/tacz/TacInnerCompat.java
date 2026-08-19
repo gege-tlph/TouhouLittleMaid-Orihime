@@ -162,7 +162,7 @@ public class TacInnerCompat {
 
     /**
      * 手持枪械且背包里有对应弹药——威胁响应据此决定「站定射击」还是「上去近战」。
-     * 判据与 {@code AbstractGunItemMixin.hasInventoryAmmo} 一致：弹药或弹药盒任一命中即可。
+     * 判据与 {@code MaidAmmoSource.hasAmmo} 一致：弹药或弹药盒任一命中即可。
      */
     static boolean hasUsableGun(EntityMaid maid) {
         ItemStack gunItem = maid.getMainHandItem();
