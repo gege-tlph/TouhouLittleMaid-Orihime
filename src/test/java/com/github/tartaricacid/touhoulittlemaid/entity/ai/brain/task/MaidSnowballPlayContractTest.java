@@ -155,6 +155,35 @@ class MaidSnowballPlayContractTest {
     }
 
     /**
+     * 对**玩家**施加击退，必须同时把这次击退同步给**受击者自己的客户端**。
+     *
+     * <p><b>成因</b>：玩家的移动是客户端权威的——服务端改了它的速度，下一个位置包就把它覆盖掉。
+     * 真正让受击者自己的客户端收到速度的，是 {@code hurtMarked} 这个标志：
+     * {@code ServerEntity} 见它为真才走 {@code sendToTrackingPlayersAndSelf}
+     * （26.1.2 字节码 offset 1155-1188）。而 {@code knockback} 自己**只**置 {@code needsSync}，
+     * 那条路只发给**别人**。</p>
+     *
+     * <p>所以原版那一段是**两句**：{@code markHurt()}（offset 349）+ 击退。只抄后一句，
+     * 症状是「别人看得见你被推，你自己毫无反应」——这在 2026-08-19 由实机报出，
+     * 而它**不会有任何报错，服务端日志也完全干净**。</p>
+     *
+     * <p>判据按成因写：不点名某个字段的赋值写法，而是要求「击退所在的方法体里必须出现
+     * 那个同步标志」。玩家侧的击退只要还在，这条就必须成立。</p>
+     */
+    @Test
+    void playerKnockbackIsSyncedToTheVictimsOwnClient() throws IOException {
+        String source = stripComments(Files.readString(SNOWBALL_TASK, StandardCharsets.UTF_8));
+
+        int at = source.indexOf(KNOCKBACK);
+        assertTrue(at >= 0, "找不到击退调用，识别依据可能已失效");
+        String body = enclosingMethodBody(source, at);
+        assertTrue(body != null, "取不到击退所在的方法体，识别依据可能已失效");
+        assertTrue(body.contains("hurtMarked"),
+                "击退没有同步给受击者自己的客户端——服务端算出来的速度会被玩家的下一个位置包覆盖，"
+                        + "表现为「别人看得见你被推，你自己没反应」，且不会有任何报错");
+    }
+
+    /**
      * 共享槽 {@code ATTACK_TARGET} 只能由放它进去的人擦掉。
      *
      * <p><b>成因</b>：这个槽被威胁响应、敌我策略与各战斗行为共用，而打雪仗只是借它存玩伴。

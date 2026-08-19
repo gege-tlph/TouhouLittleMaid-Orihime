@@ -246,6 +246,14 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
             }
             Vec3 motion = getDeltaMovement();
             player.knockback(KNOCKBACK_STRENGTH, -motion.x, -motion.z);
+            // ⚠️ 还得让**受击者自己的客户端**知道，否则这次击退玩家自己毫无感觉：
+            // 玩家的移动是客户端权威的，服务端算出来的速度会被下一个位置包直接覆盖。
+            // 原版那一段是**两句**——offset 349 的 markHurt() 与随后的 knockback()：
+            // 前者置 hurtMarked，ServerEntity 据它走 sendToTrackingPlayersAndSelf；
+            // 而 knockback() 自己只置 needsSync，那条**只发给别人**。
+            // 照抄一半的后果正是「别人看得见你被推，你自己没反应」（字节码实证，2026-08-19 实机报出）。
+            // markHurt() 是 protected，够不着；hurtMarked 是 public 字段，直接置位。
+            player.hurtMarked = true;
         }
 
         @Override
