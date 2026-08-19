@@ -1,5 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitAttribute;
 import com.google.common.collect.ImmutableMap;
@@ -32,7 +34,8 @@ public class MaidTridentTargetTask extends Behavior<EntityMaid> {
         Optional<LivingEntity> memory = owner.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET);
         if (memory.isPresent()) {
             LivingEntity target = memory.get();
-            return hasTrident(owner) && owner.canSee(target);
+            return MaidTargetingPolicy.canContinueTargeting(owner, target, MaidTargetingContext.PLANNED_ATTACK)
+                    && hasTrident(owner) && owner.canSee(target);
         }
         return false;
     }

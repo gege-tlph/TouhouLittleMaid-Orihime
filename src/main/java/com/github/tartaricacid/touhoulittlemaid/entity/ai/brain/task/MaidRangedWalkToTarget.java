@@ -1,5 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.mojang.datafixers.kinds.IdF;
 import com.mojang.datafixers.kinds.OptionalBox;
@@ -48,6 +50,10 @@ public class MaidRangedWalkToTarget {
                                                  MemoryAccessor<OptionalBox.Mu, NearestVisibleLivingEntities> livingEntitiesMemory) {
         return (level, maid, gameTime) -> {
             LivingEntity target = maidInstance.get(entityMemory);
+            if (!MaidTargetingPolicy.canContinueTargeting(maid, target, MaidTargetingContext.PLANNED_ATTACK)) {
+                walkTargetMemory.erase();
+                return false;
+            }
             if (maid.canSee(target) && shouldEraseWalkTarget(maid, target)) {
                 walkTargetMemory.erase();
             } else {
