@@ -583,7 +583,8 @@ Patchouli beta、Refurbished），它们在 1.21.11 上就没断过。
 **「载体还在、行为没了」**，而文件面 / 文档面 / 公开面三面对它全部无信号，正是第四面存在的理由。
 
 **资源面留下的待裁决项 `create:automation_ignore` 已于 2026-08-18 裁决并落地**（`421ee6b70`，
-结论与取证在 CURRENT_STATUS 的 O8）。这里只留一条**方法论**教训，因为本节原先写的落地形态会致错：
+结论与取证在 CURRENT_STATUS 的 O8），**2026-08-19 装 Create Fly 实机验收通过**（机械手不合成祭坛配方）。
+这里只留一条**方法论**教训，因为本节原先写的落地形态会致错：
 
 > 原文写「动手时照抄即可……内容一条 `touhou_little_maid:altar_recipe_serializers`」。
 > **那是基准的序列化器 id，宿主已改名 `altar_recipe`。** 照抄会往标签里写一个不存在的 id，
