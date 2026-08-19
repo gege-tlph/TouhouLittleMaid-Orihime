@@ -55,6 +55,15 @@ projectile weapon, or empty hand currently held in the maid's main hand. Damage,
 durability follow the vanilla held-item rules, and no weapon is swapped in from inventory automatically. Permanent
 melee work and ranged work such as bows or crossbows retain their own weapon and ammunition requirements.
 
+Table food:
+Maids may eat table food, meaning food already served on blocks such as cakes and plated dishes. A per-maid
+toggle in the maid configuration screen controls this; it defaults to on and is saved with the maid. A successful
+bite always grants 1 to 3 favorability regardless of the dish's nutrition, rarity, or price, and then starts a shared
+cooldown of 3600 game ticks during which no further table food is eaten. Plating food onto blocks is a separate
+action and is affected by neither the toggle nor the cooldown. While seeking or eating table food a maid holds the
+shared work target for at most 200 game ticks before work reclaims it, so a maid who cannot reach a dish does not
+stay stuck on it.
+
 Backpacks and storage:
 Backpacks are equipped by right-clicking the maid while holding a backpack. They expand inventory and come in multiple
 sizes. Some special backpacks add extra functions such as crafting table, furnace, or ender chest behavior. Shears can

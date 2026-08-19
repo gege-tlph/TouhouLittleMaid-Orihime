@@ -155,6 +155,18 @@ public class MaidConfigContainerGui extends AbstractMaidContainerGui<MaidConfigC
                     button.setValue(Component.translatable("gui.touhou_little_maid.maid_config.value." + this.configData.isActiveClimbing()));
                 }
         ));
+
+        MaidConfigButton allowTableFoodButton = new MaidConfigButton(buttonLeft, nextButtonTop(),
+                Component.translatable("gui.touhou_little_maid.maid_config.allow_table_food"),
+                Component.translatable("gui.touhou_little_maid.maid_config.value." + this.configData.isTableFoodAllowed()),
+                button -> {
+                    this.syncConfigData(this.configData.setTableFoodAllowed(!this.configData.isTableFoodAllowed()));
+                    button.setValue(Component.translatable("gui.touhou_little_maid.maid_config.value." + this.configData.isTableFoodAllowed()));
+                }
+        );
+        allowTableFoodButton.setTooltip(Tooltip.create(
+                Component.translatable("gui.touhou_little_maid.maid_config.allow_table_food.tooltip")));
+        addConfigButton(allowTableFoodButton);
         refreshVisibleButtons();
     }
 

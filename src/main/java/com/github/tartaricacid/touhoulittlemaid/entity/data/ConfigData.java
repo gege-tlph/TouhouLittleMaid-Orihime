@@ -24,6 +24,16 @@ public record ConfigData(long booleanValue, PickType pickupType, float soundFreq
     private static final int OPEN_DOOR_FLAG = 6;
     private static final int OPEN_FENCE_GATE_FLAG = 7;
     private static final int ACTIVE_CLIMBING_FLAG = 8;
+    /**
+     * ⚠️ **这一位是反的：置位 = 不许吃桌上食物**，读口 {@link #isTableFoodAllowed()} 取反。
+     *
+     * <p>行为基准那边这项存成独立 NBT 键、缺键时 {@code getBooleanOr(TAG, true)} 回落 true，
+     * 于是旧档天然保持「一直允许」。**照搬到位域上会翻转**：旧档的 boolean_value 里没有第 9 位，
+     * 正读就是 false = 不许吃，等于给每一只已存在的女仆静默关掉这项行为，且无人会发现。
+     * 把语义定成「置位 = 禁止」，旧档（位为 0）自然落在「允许」，新默认也不必置位——
+     * 不需要任何存档迁移，也不需要给 boolean_value 加版本号。</p>
+     */
+    private static final int DISALLOW_TABLE_FOOD_FLAG = 9;
 
     private static final long DEFAULT_BOOLEAN_VALUE =
             (1L << PICKUP_FLAG)
@@ -35,6 +45,7 @@ public record ConfigData(long booleanValue, PickType pickupType, float soundFreq
                     | (1L << OPEN_DOOR_FLAG)
                     | (1L << OPEN_FENCE_GATE_FLAG)
                     | (1L << ACTIVE_CLIMBING_FLAG);
+    // DISALLOW_TABLE_FOOD 有意不置位：默认允许吃桌上食物（见该常量的 javadoc）
 
     private static final float DEFAULT_SOUND_FREQ = 1.0f;
 
@@ -157,6 +168,18 @@ public record ConfigData(long booleanValue, PickType pickupType, float soundFreq
 
     public boolean isActiveClimbing() {
         return hasFlag(ACTIVE_CLIMBING_FLAG);
+    }
+
+    /**
+     * 女仆是否允许吃已摆放的桌上食物。默认允许——这项是**退出式**开关，
+     * 玩家不主动关它就一直是开的（旧档同理，见 {@code DISALLOW_TABLE_FOOD_FLAG}）。
+     */
+    public boolean isTableFoodAllowed() {
+        return !hasFlag(DISALLOW_TABLE_FOOD_FLAG);
+    }
+
+    public ConfigData setTableFoodAllowed(boolean allowed) {
+        return setFlag(DISALLOW_TABLE_FOOD_FLAG, !allowed);
     }
 
     public ConfigData setPickupType(PickType pickupType) {

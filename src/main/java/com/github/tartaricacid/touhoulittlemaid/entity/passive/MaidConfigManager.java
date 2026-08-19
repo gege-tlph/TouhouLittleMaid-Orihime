@@ -107,6 +107,14 @@ public class MaidConfigManager {
         this.setConfigData(this.getConfigData().setActiveClimbing(activeClimbing));
     }
 
+    public boolean isTableFoodAllowed() {
+        return this.getConfigData().isTableFoodAllowed();
+    }
+
+    public void setTableFoodAllowed(boolean allowed) {
+        this.setConfigData(this.getConfigData().setTableFoodAllowed(allowed));
+    }
+
     public MaidCombatResponsePolicy getCombatResponsePolicy() {
         return this.getConfigData().combatResponsePolicy();
     }
@@ -212,6 +220,14 @@ public class MaidConfigManager {
 
         default void setActiveClimbing(boolean activeClimbing) {
             getConfigManager().setActiveClimbing(activeClimbing);
+        }
+
+        default boolean isTableFoodAllowed() {
+            return getConfigManager().isTableFoodAllowed();
+        }
+
+        default void setTableFoodAllowed(boolean allowed) {
+            getConfigManager().setTableFoodAllowed(allowed);
         }
     }
 }

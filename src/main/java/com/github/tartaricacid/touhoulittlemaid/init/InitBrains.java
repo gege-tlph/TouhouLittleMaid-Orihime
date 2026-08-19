@@ -41,6 +41,21 @@ public interface InitBrains {
     );
 
     /**
+     * 偷吃/摆盘对目标的持有期限（游戏刻绝对值）。超过它就让位给优先级更高的工作行为，
+     * 免得女仆为一份够不着或抢不到的桌上食物无限期占着 {@code TARGET_POS}。
+     *
+     * <p>⚠️ **无 codec，因此有意不随实体存档持久化**——它是一个 tick 级仲裁量，
+     * 重进世界后重新计时才是正确行为；给它 codec 反而会让旧的期限跨存档生效。</p>
+     *
+     * <p>⚠️ 注册在此还不够：必须同时进 {@code MaidBrain} 的 memory 列表，
+     * 否则 {@code setMemory} **静默无效**（证伪表既有条目，这是第 3 处静默注册面）。</p>
+     */
+    MemoryModuleType<Long> MAID_EDIBLE_HOLD_EXPIRY = registerMemoryModuleType(
+            "maid_edible_hold_expiry",
+            new MemoryModuleType<>(Optional.empty())
+    );
+
+    /**
      * 瞬态应战活动的进入条件位。⚠️ 注册在此还不够：必须同时进
      * {@code MaidBrain.getMemoryTypes()}，否则 {@code setMemory} 静默无效（证伪表既有条目）。
      * 有意不给 codec：应战状态不持久化，跨存档恒从头开始。

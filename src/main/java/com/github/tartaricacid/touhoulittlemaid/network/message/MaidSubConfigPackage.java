@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.network.message;
 
 import com.github.tartaricacid.touhoulittlemaid.entity.data.ConfigData;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.init.InitBrains;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -43,6 +44,12 @@ public record MaidSubConfigPackage(int id, ConfigData configData) implements Cus
     public static void apply(EntityMaid maid, ConfigData configData) {
         var oldPolicy = maid.getAttachedOrCreate(CONFIG).combatResponsePolicy();
         maid.setAttached(CONFIG, configData);
+        if (!configData.isTableFoodAllowed()) {
+            // 关掉开关要立刻停下正在进行的偷吃/摆盘，否则她会把手上这一轮走完才生效。
+            // ⚠️ 只擦 ACTION，不碰 WALK_TARGET——那是共享槽，此刻可能正被某个
+            // 与桌上食物无关的工作行为占着，擦了等于顺手取消别人的移动。
+            maid.getBrain().eraseMemory(InitBrains.MAID_EDIBLE_BLOCK_ACTION);
+        }
         if (oldPolicy != configData.combatResponsePolicy()) {
             maid.getEmergencyCombatManager().setResponsePolicy(configData.combatResponsePolicy());
         }

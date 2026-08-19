@@ -33,7 +33,8 @@
       "com.github.tartaricacid.touhoulittlemaid.command.TlmCommandSmokeGameTest",
       "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidFarmNavigationGameTest",
       "com.github.tartaricacid.touhoulittlemaid.entity.passive.MaidSwimmingGameTest",
-      "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidFollowOwnerGameTest"
+      "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidFollowOwnerGameTest",
+      "com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidTableFoodGameTest"
     ],
     "fabric-datagen": [
       "com.github.tartaricacid.touhoulittlemaid.datagen.DataGenerator"

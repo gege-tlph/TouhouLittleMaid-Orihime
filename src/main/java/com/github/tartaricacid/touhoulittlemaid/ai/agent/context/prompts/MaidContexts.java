@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.ai.agent.context.prompts;
 
 import com.github.tartaricacid.touhoulittlemaid.ai.agent.context.AbstractMaidContext;
 import com.github.tartaricacid.touhoulittlemaid.ai.agent.context.GameContextRegister;
+import com.github.tartaricacid.touhoulittlemaid.entity.favorability.Type;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -31,7 +32,8 @@ public final class MaidContexts {
         register.registerContext(CATEGORY, new EmergencyStateContext());
         register.registerContext(CATEGORY, new ThreatSourceContext());
         register.registerContext(CATEGORY, new CurrentTaskContext());
-        // table_food / table_food_cooldown 两个上下文随审计 §3.I 一起补，见下方恢复锚点
+        register.registerContext(CATEGORY, new TableFoodContext());
+        register.registerContext(CATEGORY, new TableFoodCooldownContext());
     }
 
     private static final class MaidHealthContext extends AbstractMaidContext {
@@ -160,15 +162,38 @@ public final class MaidContexts {
         }
     }
 
-    /*
-     * ⚠️ 恢复锚点（审计 §3.I 桌上食物）：行为基准这里还有两个上下文——
-     * {@code table_food}（开关：她能不能吃）与 {@code table_food_cooldown}（冷却：她现在为什么不吃）。
-     * 两个是分开的真值，合并会让模型把冷却期说成「功能被关了」。
+    /**
+     * 桌上食物是否被允许——**开关**回答「她能不能吃」。
      *
-     * 本分支**尚未移植 §3.I**：{@code MaidConfigManager} 上没有 isTableFoodAllowed/setTableFoodAllowed，
-     * 桌上食物奖励与冷却整块都不在。此处不预留空壳——装了返回常量的上下文，模型会拿它当事实说出去，
-     * 比没有更糟。§3.I 那一刀落地时连同 {@code MaidContextsGameTest} 里对应的三条断言一起补回。
+     * <p>玩家真正会问的是「她为什么不去吃那块蛋糕」，而那有两个完全不同的原因：开关关着，
+     * 或者刚吃过还在冷却。只给开关会让模型把冷却期说成「功能被关了」，所以两个都给。</p>
+     *
+     * <p>（2026-08-19 随桌上食物那一刀补回；此前这里是一条恢复锚点，
+     * 有意不预留空壳——装一个返回常量的上下文，模型会拿它当事实说出去，比没有更糟。）</p>
      */
+    private static final class TableFoodContext extends AbstractMaidContext {
+        private TableFoodContext() {
+            super("table_food", "table_food");
+        }
+
+        @Override
+        public String getValue(EntityMaid maid) {
+            return maid.getConfigManager().isTableFoodAllowed() ? "allowed" : "disallowed";
+        }
+    }
+
+    /** 冷却回答「她现在为什么不吃」——与开关是两个问题，别合并 */
+    private static final class TableFoodCooldownContext extends AbstractMaidContext {
+        private TableFoodCooldownContext() {
+            super("table_food_cooldown", "table_food_cooldown");
+        }
+
+        @Override
+        public String getValue(EntityMaid maid) {
+            return maid.getFavorabilityManager().canAdd(Type.STEAL_EDIBLE_BLOCK.getTypeName())
+                    ? "ready" : "cooling_down";
+        }
+    }
 
     private static final class ResponsePolicyContext extends AbstractMaidContext {
         private ResponsePolicyContext() {

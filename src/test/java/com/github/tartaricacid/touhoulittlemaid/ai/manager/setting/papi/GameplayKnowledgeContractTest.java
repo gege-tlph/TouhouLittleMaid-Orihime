@@ -35,29 +35,40 @@ class GameplayKnowledgeContractTest {
         // knowledge 不代替实时状态查询
         put("knowledge-scope", new String[]{"only for gameplay knowledge", "只用于玩法知识问答"});
 
+        // §3.I 桌上食物（2026-08-19 落地，本行随之补回）
+        put("table-food", new String[]{"table food", "桌上食物"});
+
         /*
-         * ⚠️ 恢复锚点：行为基准这张表还有四项，本分支**尚未移植对应功能**，
-         * 故连同知识文档里描述它们的三个段落一并剔除：
-         *   follow / shallow-water / farm-stand-node —— 审计 §3.E 寻路·跟随手感
-         *   table-food                              —— 审计 §3.I 桌上食物
+         * ⚠️ 恢复锚点（剩余三项）：行为基准这张表还有 follow / shallow-water / farm-stand-node，
+         * 属审计 §3.E 寻路·跟随手感。
          *
-         * 知识文档是直接喂给模型当事实的：写进去的每一句女仆都会当真说出去。
-         * 描述一个本构建做不到的行为，比不描述贵得多——玩家会照着它去试，然后发现她做不到。
-         * §3.E / §3.I 落地时，把那三段文本与这四项锚点一起装回来。
+         * ⚠️ **这三项的延后理由已经过期**：§3.E 本身早在 2026-08-17 就落地并实机验收过了
+         * （平滑跟随、浅水泳姿、农场站位收割三项都在那批 11 项里），只是知识文档那三段
+         * 一直没人回来装。这正是本仓库反复栽的 R7 形态——延后注释里的障碍早已消除，
+         * 却因为没人回收而让一个功能白白「对模型不存在」。
+         *
+         * 之所以本轮**仍不补**：知识文档是直接喂给模型当事实的，写进去的每一句女仆都会
+         * 当真说出去，所以每一句都得对着实现逐条核过才能写。桌上食物那段是本轮亲手实现的，
+         * 五项断言（默认开、随档保存、1~3 点、3600 刻冷却、200 刻让位）都当场核对过才敢装；
+         * 这三项没核，就不写——**宁可少说，不可说错**。
          */
     }};
 
     /**
      * 已落地的数值事实；两种语言必须同时给出，避免只改一边。
      *
-     * <p>基准另有 {@code 3600 game ticks}（好感冷却）与 {@code 200 game ticks}（目标上限）两条，
-     * 都属 §3.I 桌上食物，随该功能一起补。</p>
+     * <p>{@code 3600 game ticks}（好感冷却）与 {@code 200 game ticks}（目标上限）属 §3.I 桌上食物，
+     * 已随该功能于 2026-08-19 补回。两个数都对着实现核过：冷却取
+     * {@code Type.STEAL_EDIBLE_BLOCK} 的 3*60*20，让位上限取
+     * {@code MaidStealEdibleMoveBlockTask.MAX_TARGET_HOLD_TICKS}。</p>
      */
     private static final String[][] NUMERIC_FACTS = {
             {"16-block", "16 格"},
             {"40 game ticks", "40 游戏刻"},
             {"60 game ticks", "60 游戏刻"},
             {"100 game ticks", "100 游戏刻"},
+            {"3600 game ticks", "3600 游戏刻"},
+            {"200 game ticks", "200 游戏刻"},
     };
 
     @Test

@@ -31,6 +31,11 @@ public class MaidStealEdibleMoveBlockTask extends MaidMoveToBlockTask {
      */
     private static final int NEXT_CHECK_TICK_COUNT = 45 * 20;
     /**
+     * 单次持有目标的上限。够不着或抢不到的桌上食物不能让女仆无限期占着 TARGET_POS，
+     * 否则优先级更高的工作行为永远起不来（它们同样要求 TARGET_POS 与 WALK_TARGET 为空）。
+     */
+    private static final int MAX_TARGET_HOLD_TICKS = 200;
+    /**
      * 检查方块可达性的范围，默认检查寻路点周围 3x3x3 范围内的方块的可达性
      */
     private static final BoundingBox CHECK_RANGE = new BoundingBox(-1, -1, -1, 1, 1, 1);
@@ -75,6 +80,7 @@ public class MaidStealEdibleMoveBlockTask extends MaidMoveToBlockTask {
                         this.placedStack = stack;
                         maid.getBrain().setMemory(this.action, MaidEdibleBlockAction.TRY_PLACE);
                         this.searchForDestination(worldIn, maid);
+                        armTargetHold(worldIn, maid);
                         return;
                     }
                 }
@@ -87,8 +93,27 @@ public class MaidStealEdibleMoveBlockTask extends MaidMoveToBlockTask {
             maid.getBrain().setMemory(this.action, MaidEdibleBlockAction.TRY_STEAL);
         }
 
+        // 摆盘和偷吃是两套玩家可感知的行为。关闭偷吃或仍处于偷吃冷却时，仍允许上面的
+        // 背包食物扫描与摆盘，只跳过对世界中现成食物的搜索。
+        if (!MaidStealEdibleUseTask.canSteal(maid)) {
+            return;
+        }
+
         // 尝试搜索目标位置
         this.searchForDestination(worldIn, maid);
+        armTargetHold(worldIn, maid);
+    }
+
+    /**
+     * 搜索成功时给本次持有打上到期时刻；搜索失败则什么也不做。
+     *
+     * <p>每次取得目标都重新计时，因此不存在「上一轮遗留的到期时刻立刻掐掉这一轮」的问题。</p>
+     */
+    private static void armTargetHold(ServerLevel worldIn, EntityMaid maid) {
+        if (maid.getBrain().hasMemoryValue(InitBrains.TARGET_POS)) {
+            maid.getBrain().setMemory(InitBrains.MAID_EDIBLE_HOLD_EXPIRY,
+                    worldIn.getGameTime() + MAX_TARGET_HOLD_TICKS);
+        }
     }
 
     @Override
