@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
@@ -16,6 +17,7 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SnowballItem;
+import net.minecraft.world.phys.AABB;
 
 import java.util.Optional;
 
@@ -101,8 +103,8 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
 
     private void performRangedAttack(EntityMaid shooter, LivingEntity target) {
         // 发射的是无 shooter 雪球，避免打中其他生物惹来攻击
-        //TODO:这个传入物品是什么鬼？？？看上去就是用来渲染材质的
-        Snowball snowball = new Snowball(shooter.level(), shooter.getX(), shooter.getY(), shooter.getZ(), Items.SNOWBALL.getDefaultInstance());
+        // 形参那个 ItemStack 是渲染用的贴图来源，与归属无关（原版 ThrowableItemProjectile 约定）
+        Snowball snowball = new MaidPlaySnowball(shooter);
         double x = target.getX() - shooter.getX();
         double y = target.getBoundingBox().minY + target.getBbHeight() / 3.0F - snowball.position().y;
         double z = target.getZ() - shooter.getZ();
@@ -139,5 +141,36 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
 
     private void clearAttackTarget(LivingEntity entity) {
         entity.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
+    }
+
+    /**
+     * 保持雪球无归属（这样打中别的生物不会算成女仆挑衅），但把原版「出膛前不打到发射者」
+     * 那条只应用在造出它的这只女仆身上。
+     *
+     * <p>缺了它有两个后果：雪球一出手就打在女仆自己身上；以及无归属带来的好处也拿不到，
+     * 因为原版会把它当成普通抛射物处理。</p>
+     */
+    private static final class MaidPlaySnowball extends Snowball {
+        private final EntityMaid shooter;
+        private boolean leftShooter;
+
+        private MaidPlaySnowball(EntityMaid shooter) {
+            super(shooter.level(), shooter.getX(), shooter.getY(), shooter.getZ(), Items.SNOWBALL.getDefaultInstance());
+            this.shooter = shooter;
+        }
+
+        @Override
+        public void tick() {
+            if (!leftShooter) {
+                AABB sweptBounds = getBoundingBox().expandTowards(getDeltaMovement()).inflate(1.0);
+                leftShooter = !sweptBounds.intersects(shooter.getBoundingBox());
+            }
+            super.tick();
+        }
+
+        @Override
+        protected boolean canHitEntity(Entity entity) {
+            return (leftShooter || entity != shooter) && super.canHitEntity(entity);
+        }
     }
 }
