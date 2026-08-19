@@ -82,7 +82,10 @@ public class ModelDownloadGui extends Screen {
         String textCache = textField == null ? "" : textField.getValue();
         boolean focus = textField != null && textField.isFocused();
         textField = new EditBox(Screens.getFont(this), x + 273, y + 78, 144, 16, Component.empty());
-        textField.setTextColor(0xF3EFE0);
+        // ⚠️ 必须带 alpha。这个常量是从上游 1.21.1 原样继承下来的，在那边能显示是因为当时的
+        // Font 会把 alpha=0 的颜色补成不透明；1.21.11 起删掉了那个兜底（26.1.2 字节码实查同样没有），
+        // 于是同一个字面量在本版含义变成「全透明」——搜索框里打的字一个都看不见。
+        textField.setTextColor(0xFFF3EFE0);
         textField.setFocused(focus);
         textField.setValue(textCache);
         textField.moveCursorToEnd(Screens.getMinecraft(this).hasShiftDown());

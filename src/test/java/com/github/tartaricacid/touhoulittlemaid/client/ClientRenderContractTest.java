@@ -89,7 +89,6 @@ class ClientRenderContractTest {
         assertEquals(List.of(), offenders, "特殊模型渲染器的状态必须按数据记忆化");
     }
 
-    /** 世界内「置顶」会清主渲染目标的深度贴图，光影下地面发白。只允许名单里那几处。 */
     /**
      * 纹理注册必须在渲染线程上发生，或显式分派回去。
      *
@@ -147,6 +146,49 @@ class ClientRenderContractTest {
                         + offenders + "（GL 上下文线程绑定；本版不会断言，只会安静地坏）");
     }
 
+    /**
+     * 传给文字/图形 API 的颜色字面量必须带 alpha 通道。
+     *
+     * <p>1.21.11 起 {@code Font} 删掉了「alpha 为 0 就补成不透明」的兜底
+     * （26.1.2 字节码实查同样没有），于是 {@code 0xF3EFE0} 这类 6 位十六进制在本版
+     * 含义是<b>全透明</b>——事件在跑、组件读到、几何算对、绘制执行、日志干净，屏幕上什么都没有。</p>
+     *
+     * <p>⚠️ 危险之处在于<b>这些常量多半是从上游 1.21.1 原样继承来的</b>，在那边显示正常。
+     * 本仓库已因此栽过两次：追踪标记全透明，以及资源下载屏搜索框里打的字一个都看不见
+     * （后者由行为基准 2026-07-20 修过，本分支漏搬，2026-08-20 补回）。</p>
+     *
+     * <p><b>判据</b>：{@code setTextColor} / {@code setFGColor} 一类的颜色入参若写成十六进制
+     * 字面量，必须是 8 位（含 alpha）。变量与表达式不在此判据范围内——那要常量传播。</p>
+     */
+    @Test
+    void colorLiteralsPassedToTextApisCarryAnAlphaChannel() throws IOException {
+        Pattern colorCall = Pattern.compile(
+                "\\b(setTextColor|setTextColorUneditable|setFGColor)\\s*\\(\\s*0x([0-9A-Fa-f]+)\\s*\\)");
+
+        List<String> offenders = new ArrayList<>();
+        int sites = 0;
+        try (Stream<Path> files = Files.walk(MAIN_JAVA)) {
+            for (Path file : files.filter(path -> path.toString().endsWith(".java")).toList()) {
+                String source = Files.readString(file, StandardCharsets.UTF_8);
+                String active = source.replaceAll("(?s)/\\*.*?\\*/", "").replaceAll("(?m)//.*$", "");
+                Matcher m = colorCall.matcher(active);
+                while (m.find()) {
+                    sites++;
+                    if (m.group(2).length() != 8) {
+                        offenders.add(PROJECT_ROOT.relativize(file) + " -> " + m.group());
+                    }
+                }
+            }
+        }
+
+        // 活性断言：与结论正交——识别依据一变就静默零覆盖，而零覆盖恒绿
+        assertTrue(sites >= 2, "只认出 " + sites + " 处颜色字面量调用，识别依据可能已失效");
+        assertTrue(offenders.isEmpty(),
+                "这些颜色字面量没有 alpha 通道，在本版会画成全透明（看不见，且不报任何错）："
+                        + offenders);
+    }
+
+    /** 世界内「置顶」会清主渲染目标的深度贴图，光影下地面发白。只允许名单里那几处。 */
     @Test
     void worldSpaceAlwaysOnTopIsLimitedToTheNamedAllowlist() throws IOException {
         List<String> offenders = new ArrayList<>();
