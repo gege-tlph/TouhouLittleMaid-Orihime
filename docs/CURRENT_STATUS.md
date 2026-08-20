@@ -28,69 +28,11 @@
 
 # 开放项
 
-**O14 · 枪械能放进女仆头部装备槽，穿模进模型（2026-08-20 用户实机报告，归属未定）**
-现象：TACZ 枪械可以被放进女仆的**头部装备槽**，随后枪械模型穿进女仆模型里。
-用户报告**两条移植分支都有**。⚠️ 「头饰栏位」是用户的描述用词，本树资源里没有这个字符串。
-
-**已证的代码事实**：
-① 该栏位 = 头部**装备**槽：`MaidMainContainer.SLOT_IDS` = `{HEAD, CHEST, LEGS, FEET}`，
-   四个 `ResourceHandlerSlot`。**不是饰品槽**——饰品走 `BaubleManager.getBauble(stack)`，
-   未注册为饰品的物品进不去。
-② `EntityMaid` **没有覆写** `getEquipmentSlotForItem`（全 `src/main/java` 只有三处调用点、
-   零处覆写），走原版按 `EQUIPPABLE` 数据组件判定那套。
-③ 该处判据在各树的写法：`upstream/1.21` 是 `stack.canEquip(equipmentSlot, maid)`；
-   `origin/1.21.1`、`origin/26.1` 与本树都是 `maid.getEquipmentSlotForItem(stack) == equipmentSlot`。
-   ⚠️ **本树这一处与代码宿主 `origin/26.1` 逐字相同**（整份 `MaidMainContainer.java` 与宿主零差异），
-   改写发生在 fork 侧（`origin/1.21.1` 就已是这个写法），**不是本分支的移植改动**。
-④ TACZ jar（`TACZ-Refabricated-26.1.2-1.1.8+fabric.26.1.2.R2.jar`，即 `build.gradle` 所指那一份）
-   **全 1157 个 class 与全部非贴图资源，零处引用 `EQUIPPABLE`/`Equippable`**。
-   ⚠️ 该扫描做过活性对照，不是仪器沉默：同一遍扫描里 `DataComponents` 命中 22 个 class、
-   `EquipmentSlot` 10 个、`ItemStack` 294 个。本树也从不给任何物品**挂** `EQUIPPABLE`（只读不写）。
-⑤ 原版 `LivingEntity.getEquipmentSlotForItem` 的字节码（26.1.2 Mojang 映射 jar，`javap -c` 实证）：
-   读 `EQUIPPABLE`，**为 null 就返回 `MAINHAND`**，否则返回 `equippable.slot()`。
-
-**⚠️ 症状尚未被以上事实解释**：④+⑤ 合起来意味着枪械的 `getEquipmentSlotForItem` 应返回
-`MAINHAND`，于是头部槽的 `mayPlace` 判为 **false**，本该**拒收**。也就是说
-**「枪械声明了 HEAD 所以原版规则本就允许」这条解释已被证伪**，而现有判据按字面也不该放行。
-**在拿到「它是经哪条路径进去的」之前，不许下根因。**
-
-**下一步取证**（按此顺序，先证「怎么进去的」再谈判据）：
-- 复现时确认**是哪条路径**放进去的：玩家手动拖放 / Shift 快捷移动 / 整理类模组搬运 /
-  女仆自己拾取。判据落在「这一次是怎么放进去的」，不同路径经过的闸门不同。
-- 手动拖放与 Shift 都过 `Slot.mayPlace`；但该槽是 fork 的 `ResourceHandlerSlot`，
-  底层 `LivingEntityEquipmentWrapper.isValid` 另有一道 `isEquippableInSlot` 闸——
-  **要确认这两道闸在这条路径上是否都真的被问过**（有第三方绕开容器直接写 handler 的可能）。
-- 若确系整理类模组直接搬运，则与本容器判据无关，去查那个模组的槽位分类——**与 O15 同源**。
-- ⚠️ 别据「上游写法不同」直接归因：③ 已证那次改写不是本分支做的，且⑤显示现写法更严不更松。
-
-**O15 · 快捷移动物品优先进主副手，而不是背包/快捷栏（2026-08-20 用户实机报告，归属未定）**
-现象：用 IPN（Inventory Profiles Next）等整理工具，按住 Shift 或 Alt 快捷移动物品时，
-物品优先被放进女仆的**主手/副手**，而不是背包或快捷栏。用户报告**两条移植分支都有**。
-
-**已证的代码事实**：
-① `MaidMainContainer.quickMoveStack` 从玩家背包侧走
-   `moveItemStackTo(stack, PLAYER_INVENTORY_SIZE, this.slots.size(), false)`——
-   即**按槽位注册顺序**依次尝试，谁先注册谁先吃。
-② 该容器的实际注册次序（本轮逐个列出）：`AbstractMaidContainer` 先注册玩家背包
-   36 格（索引 0–35 = `PLAYER_INVENTORY_SIZE`），随后 `MaidMainContainer` 构造器依次是
-   **`addMaidArmorInv()`（4 个装备槽）→ `addMaidHandInv()`（主手、副手）→
-   `addMainDefaultInv()`（默认背包）→ `addBackpackInv()`**。
-   故手持槽确实排在背包槽**之前**；非装备类物品被四个装备槽的 `mayPlace` 拒掉后，
-   下一个吃到的就是主手/副手——与症状一致。
-③ ⚠️ **这个次序不是移植改动**：`upstream/1.21`、`origin/1.21.1`、`origin/26.1`、
-   本树四棵树的构造器次序**完全一致**，`quickMoveStack` 的两行 `moveItemStackTo` 亦逐字相同。
-
-**未定与下一步取证**：
-- IPN 是否根本不走 `quickMoveStack`（自己按槽位分类搬运）。若是，则与本容器无关，
-  要查它的槽位分类——**这也是 O14 的候选路径之一**。
-- ②③ 只证明「代码次序如此且非我方改动」，**不证明玩家看到的就是这条路径**。
-- ⚠️ 判据要落在「玩家 Shift 点一次，物品进了哪个槽」这个可观测量上，不要只读代码次序。
-
 **O13 · 清单 B 七条的实机目视复验（2026-08-20 补齐，代码面全绿，一项都没入世）**
 
 | 项 | 怎么看 | 失败长什么样 |
 |---|---|---|
-| 坐垫点状白线（`708b9da88`） | 放一个 qingluka(Alex) 坐垫，看头发/背部有没有点状白线、头顶细杆 | 线还在 = 零面积 UV 判据没生效；眉毛或眼睛**不见了** = 判据过宽，误杀了有效面 |
+| 坐垫点状白线（`708b9da88`） | 放一个 qingluka(Alex) 坐垫，看头发/背部有没有点状白线、头顶细杆 | 线还在 = 零面积 UV 判据没生效；眉毛或眼睛**不见了** = 判据过宽，误杀了有效面。⚠️ **别往背面剔除方向查**，那条已于 2026-08-21 排除（见已关闭表当日条目） |
 | Gecko 坐垫掉落物（`33b5737c7`） | 把 gecko 坐垫扔在地上 | 还是看不见 = 预览 id 判据没生效。⚠️ 掉落态**会有动画**（基准同款，上游因时钟冻结才是静态），这是预期不是缺陷 |
 | JEI 变体展开（`ed7225531`） | JEI 里搜坐垫与车库手办 | 仍塌成一条 = 组件通道没生效。⚠️ 占位物本树没有，别拿它当判据 |
 | 模组身份（`b91729e78`） | 模组列表看名称/作者/图标 | 名字是 Tsumugi 而图仍是 Orihime 的 = `icon.png` 没进 jar |
@@ -393,6 +335,50 @@ mixin 的 `(Target)(Object)this` 惯用法（它看未合并字节码，按构�
 若裁「留」，本条直接关闭，无需任何代码改动。
 
 # 已关闭（一行结论 + 提交）
+
+## 2026-08-21：物品栏两条实机缺陷（O14 / O15）—— 从行为基准同步（`bb066da43` `91b41fca6`）
+
+两条均由用户 2026-08-20 实机报出、两条移植分支都有；行为基准 `port/1.21.11-fabric`
+（`2cdfa84ad` / `4a8001b47`）已实机验收，本轮按 26.1.2 的写法同步。用户对两条的裁决口径一致：
+**不加准入限制**——手动放什么是玩家的自由，修法只落在「落点顺序」或「渲染」一侧。
+
+**O15 快捷移动优先落储物区**：成因不是「手持槽优先级高」，是它的准入判据几乎不挡东西
+（`ResourceHandlerSlot` 默认 `mayPlace` → `LivingEntityEquipmentWrapper.isValid` → 女仆分支
+`MaidItemManager.canInsertItem`，即黑名单 + `canFitInsideContainerItems`），而 `moveItemStackTo`
+按注册顺序试，手持槽恰好排在储物区之前。改法：构造期记下储物区起点，先试 [储物区, 末尾)、
+装不下才回落 [装备与手持)。`addBackpackInv` 是抽象方法，一处改动覆盖全部背包类型。
+⚠️ 原 O14 条目里「与 O15 同源」那句猜测**被证伪**，两条毫无关系。
+
+**O14 实为背部展示格，不是头部装备槽**：原条目锁定头部装备槽，且自己已证「按字节码本该拒收」——
+方向就是错的。逐层排除后落在**背部展示格**（默认背包最右那格）：它收得下（无 `mayPlace`）
+且 `LayerMaidBackItem` 确实会画。真实机制**不是「让枪不显示」**：枪**带 TOOL 组件**，
+满足 `extractBackpackState` 的 `has(DataComponents.TOOL)` → 走通用物品渲染画在背上（模型过大穿模），
+而那一支画完就 `return`，两个背部渲染层里**既有的枪械专用分支一直不可达**。排除枪后
+`backItem` 为空，控制流自然落到 `GunClientUtil.renderBackGun`。同时改掉**三处假注释**
+（`EntityMaidRenderState` 字段 javadoc / `LayerMaidBackItem` / `GeckoLayerMaidBackItem` 都写着
+「枪不带 TOOL」）——正是没人回去核对这个事实断言，枪械分支才不可达了整整一个版本。
+
+**明确不做**（用户裁决）：gecko 模型没穿背包时手枪找 `TAC_PISTOL`、长枪找 `TAC_RIFLE` 骨骼，
+没骨骼就什么都不画、不回落。实查 `origin/1.21.1` 同一段同样无 else 兜底，属上游行为，
+决定权留给模型作者。
+
+**判据**：`MaidQuickMoveGameTest` 三条（🟢 行为）+ `BackDisplayGunRenderContractTest` 两条
+（🟡 接线——客户端渲染在 GameTest 里不加载）。**五条逐条红测过**，每次只注入一个缺陷：
+去储物区优先 → ①红 · 去回落 → ②红 · 给手持槽加 `mayPlace` → ③红（②同时红，同一缺陷波及两条）·
+去 `isGun` 守卫 → ④红 · 摘某层 `renderBackGun` → ⑤红。红测**同时正向证明了三条新 GameTest 真的在跑**
+（日志只打失败，通过项不列名，靠红测才拿得到执行凭据）。门禁：JUnit 239 项 0 失败 · GameTest 98 项全通过。
+
+**⚠️ 仍待实机成对验**（只验一半会把错误修法判成通过）：① 批量搬运先进储物区 **且** 手动拖剑到主手仍放得进
+② 枪进展示格不再穿模 **且** 镐/剑进展示格仍正常显示 ③ 各种背包各试一次（小/中/大/末影箱/熔炉/储罐）。
+
+**顺带定案的两条观察**（交接时列为「值得单独立项」，查完**均不需改代码**）：
+- **`IGeoRenderer` 用 `entityCutout` 不是回归**：26.1.2 把 1.21.1 的 `entityCutoutNoCull` **改名为**
+  `entityCutout`，原 `entityCutout` 改名为 `entityCutoutCull`。`RenderPipelines` 字节码实证：
+  `ENTITY_CUTOUT` 建造时调 `withCull(false)`，`ENTITY_CUTOUT_CULL` 不调。本树与基准**行为相同**。
+  ⇒ O13 的「眉毛/眼睛不见了」**与背面剔除无关**。
+- **缺 `IGeoLocatorSource` 那层不是缺口，是 O4 前置未到**：基准里它的唯一真实消费者是
+  `YsmMaidLayerBridge`，YSM 在 26.1.2 Fabric 上不存在。现在补它就是造零消费者接口。
+  **记为 O4 附带项**：YSM 一旦落地必须同时补回，否则 YSM 模型的女仆不渲染任何挂件。
 
 ## 2026-08-20：清单 B 七条全部补齐 —— 正向普查确认的漏搬（+1 顺带）
 
