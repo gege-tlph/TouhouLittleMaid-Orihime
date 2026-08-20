@@ -28,6 +28,64 @@
 
 # 开放项
 
+**O14 · 枪械能放进女仆头部装备槽，穿模进模型（2026-08-20 用户实机报告，归属未定）**
+现象：TACZ 枪械可以被放进女仆的**头部装备槽**，随后枪械模型穿进女仆模型里。
+用户报告**两条移植分支都有**。⚠️ 「头饰栏位」是用户的描述用词，本树资源里没有这个字符串。
+
+**已证的代码事实**：
+① 该栏位 = 头部**装备**槽：`MaidMainContainer.SLOT_IDS` = `{HEAD, CHEST, LEGS, FEET}`，
+   四个 `ResourceHandlerSlot`。**不是饰品槽**——饰品走 `BaubleManager.getBauble(stack)`，
+   未注册为饰品的物品进不去。
+② `EntityMaid` **没有覆写** `getEquipmentSlotForItem`（全 `src/main/java` 只有三处调用点、
+   零处覆写），走原版按 `EQUIPPABLE` 数据组件判定那套。
+③ 该处判据在各树的写法：`upstream/1.21` 是 `stack.canEquip(equipmentSlot, maid)`；
+   `origin/1.21.1`、`origin/26.1` 与本树都是 `maid.getEquipmentSlotForItem(stack) == equipmentSlot`。
+   ⚠️ **本树这一处与代码宿主 `origin/26.1` 逐字相同**（整份 `MaidMainContainer.java` 与宿主零差异），
+   改写发生在 fork 侧（`origin/1.21.1` 就已是这个写法），**不是本分支的移植改动**。
+④ TACZ jar（`TACZ-Refabricated-26.1.2-1.1.8+fabric.26.1.2.R2.jar`，即 `build.gradle` 所指那一份）
+   **全 1157 个 class 与全部非贴图资源，零处引用 `EQUIPPABLE`/`Equippable`**。
+   ⚠️ 该扫描做过活性对照，不是仪器沉默：同一遍扫描里 `DataComponents` 命中 22 个 class、
+   `EquipmentSlot` 10 个、`ItemStack` 294 个。本树也从不给任何物品**挂** `EQUIPPABLE`（只读不写）。
+⑤ 原版 `LivingEntity.getEquipmentSlotForItem` 的字节码（26.1.2 Mojang 映射 jar，`javap -c` 实证）：
+   读 `EQUIPPABLE`，**为 null 就返回 `MAINHAND`**，否则返回 `equippable.slot()`。
+
+**⚠️ 症状尚未被以上事实解释**：④+⑤ 合起来意味着枪械的 `getEquipmentSlotForItem` 应返回
+`MAINHAND`，于是头部槽的 `mayPlace` 判为 **false**，本该**拒收**。也就是说
+**「枪械声明了 HEAD 所以原版规则本就允许」这条解释已被证伪**，而现有判据按字面也不该放行。
+**在拿到「它是经哪条路径进去的」之前，不许下根因。**
+
+**下一步取证**（按此顺序，先证「怎么进去的」再谈判据）：
+- 复现时确认**是哪条路径**放进去的：玩家手动拖放 / Shift 快捷移动 / 整理类模组搬运 /
+  女仆自己拾取。判据落在「这一次是怎么放进去的」，不同路径经过的闸门不同。
+- 手动拖放与 Shift 都过 `Slot.mayPlace`；但该槽是 fork 的 `ResourceHandlerSlot`，
+  底层 `LivingEntityEquipmentWrapper.isValid` 另有一道 `isEquippableInSlot` 闸——
+  **要确认这两道闸在这条路径上是否都真的被问过**（有第三方绕开容器直接写 handler 的可能）。
+- 若确系整理类模组直接搬运，则与本容器判据无关，去查那个模组的槽位分类——**与 O15 同源**。
+- ⚠️ 别据「上游写法不同」直接归因：③ 已证那次改写不是本分支做的，且⑤显示现写法更严不更松。
+
+**O15 · 快捷移动物品优先进主副手，而不是背包/快捷栏（2026-08-20 用户实机报告，归属未定）**
+现象：用 IPN（Inventory Profiles Next）等整理工具，按住 Shift 或 Alt 快捷移动物品时，
+物品优先被放进女仆的**主手/副手**，而不是背包或快捷栏。用户报告**两条移植分支都有**。
+
+**已证的代码事实**：
+① `MaidMainContainer.quickMoveStack` 从玩家背包侧走
+   `moveItemStackTo(stack, PLAYER_INVENTORY_SIZE, this.slots.size(), false)`——
+   即**按槽位注册顺序**依次尝试，谁先注册谁先吃。
+② 该容器的实际注册次序（本轮逐个列出）：`AbstractMaidContainer` 先注册玩家背包
+   36 格（索引 0–35 = `PLAYER_INVENTORY_SIZE`），随后 `MaidMainContainer` 构造器依次是
+   **`addMaidArmorInv()`（4 个装备槽）→ `addMaidHandInv()`（主手、副手）→
+   `addMainDefaultInv()`（默认背包）→ `addBackpackInv()`**。
+   故手持槽确实排在背包槽**之前**；非装备类物品被四个装备槽的 `mayPlace` 拒掉后，
+   下一个吃到的就是主手/副手——与症状一致。
+③ ⚠️ **这个次序不是移植改动**：`upstream/1.21`、`origin/1.21.1`、`origin/26.1`、
+   本树四棵树的构造器次序**完全一致**，`quickMoveStack` 的两行 `moveItemStackTo` 亦逐字相同。
+
+**未定与下一步取证**：
+- IPN 是否根本不走 `quickMoveStack`（自己按槽位分类搬运）。若是，则与本容器无关，
+  要查它的槽位分类——**这也是 O14 的候选路径之一**。
+- ②③ 只证明「代码次序如此且非我方改动」，**不证明玩家看到的就是这条路径**。
+- ⚠️ 判据要落在「玩家 Shift 点一次，物品进了哪个槽」这个可观测量上，不要只读代码次序。
+
 **O13 · 清单 B 七条的实机目视复验（2026-08-20 补齐，代码面全绿，一项都没入世）**
 
 | 项 | 怎么看 | 失败长什么样 |
