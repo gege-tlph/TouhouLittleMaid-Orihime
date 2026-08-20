@@ -26,8 +26,25 @@ public class GeckoChairEntity extends AnimatableEntity<EntityChair> {
         return chairInfo;
     }
 
+    /**
+     * 与 {@code GeckoMaidEntity.setMaidInfo} 对称。缺了这句 {@code setModelId}，实体的 modelId
+     * 恒为 null，{@code checkGeckoContainerUpdateInner} 便从不去查容器，{@code isModelPresent()}
+     * 恒 false，{@code createUpdateTask} 返回空任务——gecko 坐垫于是什么都不提交：模型切换器的
+     * 格子、模型详情屏、掉落物、手持与放置在世界里，一律为空。
+     *
+     * <p>origin/1.21.1 没有 modelId 字段（它覆写 getModelLocation 直接读 chairInfo），所以这是
+     * 26.1 式容器查找在坐垫上的接线；女仆侧一直有（GeckoMaidEntity 的 setMaidInfo），坐垫侧
+     * 在移植中丢了。2026-08-20 实机四症状（切换器 Geckolib 页整页空白、详情屏空白、掉落物零
+     * 顶点、放置态不显示）由本条一并解释。</p>
+     */
     public void setChair(ChairModelInfo chairInfo) {
-        this.chairInfo = chairInfo;
+        waitForAsyncUpdate();
+        if (this.chairInfo != chairInfo) {
+            this.chairInfo = chairInfo;
+            if (chairInfo != null) {
+                setModelId(chairInfo.getModelId());
+            }
+        }
     }
 
     /**
