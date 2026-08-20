@@ -128,12 +128,12 @@ public class GeoMesh {
             int faceIndex = index * FACE_COUNT;
             if (!isBoxUV) {
                 UvFaces faceUV = uvUnion.faceUV;
-                FaceUv west = faceUV.getWest();
-                FaceUv east = faceUV.getEast();
-                FaceUv north = faceUV.getNorth();
-                FaceUv south = faceUV.getSouth();
-                FaceUv up = faceUV.getUp();
-                FaceUv down = faceUV.getDown();
+                FaceUv west = skipZeroArea(faceUV.getWest());
+                FaceUv east = skipZeroArea(faceUV.getEast());
+                FaceUv north = skipZeroArea(faceUV.getNorth());
+                FaceUv south = skipZeroArea(faceUV.getSouth());
+                FaceUv up = skipZeroArea(faceUV.getUp());
+                FaceUv down = skipZeroArea(faceUV.getDown());
 
                 if (down != null) {
                     faces |= 0b000001;
@@ -250,6 +250,25 @@ public class GeoMesh {
 
         public GeoMesh build() {
             return new GeoMesh(cubeCount, FACES, POSITION, DX, DY, DZ, U0, V0, U1, V1);
+        }
+
+        /**
+         * Bedrock/Blockbench uses a zero-area uv_size as the "this face is invisible"
+         * convention. Emitting such a face makes every fragment sample the single UV
+         * point; per-fragment float rounding then flickers between that texel and its
+         * opaque neighbours, which shows up as dotted bright lines on thin cubes
+         * (hair plate edges, eyebrow slivers). Treat the face as absent, matching how
+         * Bedrock itself renders it.
+         */
+        private static FaceUv skipZeroArea(FaceUv face) {
+            if (face == null) {
+                return null;
+            }
+            float[] uvSize = face.getUvSize();
+            if (uvSize != null && (uvSize[0] == 0 || uvSize[1] == 0)) {
+                return null;
+            }
+            return face;
         }
     }
 
