@@ -53,8 +53,12 @@ public class LayerMaidBackItem extends RenderLayer<EntityMaidRenderState, Entity
             return;
         }
 
-        // 枪械额外渲染兼容。取的是抽取期存下的原始 ItemStack：
-        // state.backItem 只在物品带 TOOL 组件时才被填充，枪不满足，读它必然为空。
+        // 枪械额外渲染兼容。取的是抽取期存下的原始 ItemStack。
+        //
+        // ⚠️ 别再写「枪不带 TOOL 组件所以走不到上面那支」——**枪是带 TOOL 的**。
+        // 这条假的事实断言让本分支整整一个版本不可达：枪满足上面的判据 → 被通用物品渲染
+        // 画在背上（穿模）→ 那一支 return，这里永远轮不到。抽取期现在显式排除了枪
+        // （见 EntityMaidRenderState#extractBackpackState），backItem 才会为空并落到这里。
         EntityMaid backMaid = state.maid;
         if (backMaid != null) {
             GunClientUtil.renderBackGun(poseStack, submitNode, state.lightCoords,

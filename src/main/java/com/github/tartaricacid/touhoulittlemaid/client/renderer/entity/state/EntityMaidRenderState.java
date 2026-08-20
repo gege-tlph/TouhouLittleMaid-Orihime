@@ -8,6 +8,7 @@ import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.EntityMaidM
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.gecko.GeckoMaidRenderData;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.models.SpecialMaidModelResolver;
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelInfo;
+import com.github.tartaricacid.touhoulittlemaid.compat.gun.tacz.TacCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.simplehats.SimpleHatsCompat;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.backpack.BackpackManager;
@@ -184,9 +185,14 @@ public class EntityMaidRenderState extends HumanoidRenderState {
      */
     public final ItemStackRenderState backItem = new ItemStackRenderState();
     /**
-     * 背部展示物的原始 ItemStack（抽取期写入）。{@code backItem} 只在物品带 TOOL 组件时才被填充，
-     * 枪械不满足——背部枪械渲染读本字段。渲染期不得回实体取（submit 跑在渲染线程，
-     * 服务端线程正在改背包）。
+     * 背部展示物的原始 ItemStack（抽取期写入）。
+     *
+     * <p>{@code backItem} 只在物品带 TOOL 组件<b>且不是枪</b>时才被填充。
+     * ⚠️ <b>枪是带 TOOL 组件的</b>——所以它必须被显式排除，否则会走通用物品渲染而穿模，
+     * 且通用那一支画完就 return，枪械专用分支永不可达（2026-08-20 用户实机报出）。
+     * 背部枪械渲染读的就是本字段。</p>
+     *
+     * <p>渲染期不得回实体取（submit 跑在渲染线程，服务端线程正在改背包）。</p>
      */
     public ItemStack backpackShowItem = ItemStack.EMPTY;
     /**
@@ -406,8 +412,17 @@ public class EntityMaidRenderState extends HumanoidRenderState {
 
         ItemStack showItem = maid.getBackpackShowItem();
         state.backpackShowItem = showItem;
-        // 只有工具类物品才会显示在背部
-        if (showItem.has(DataComponents.TOOL)) {
+        // 只有工具类物品才会显示在背部。
+        //
+        // ⚠️ 枪械另外排除：**枪带 TOOL 组件**，所以它本来满足上面那条，于是走通用物品渲染
+        // 把枪的物品模型直接画在背上——模型相对女仆过大，会穿进模型里（用户 2026-08-20 实机报出）。
+        // 而通用那一支画完就 return，两个背部渲染层里**既有的枪械专用分支因此一直不可达**。
+        // 排除之后 backItem 保持为空，控制流自然落到那条分支，走 TACZ 自己的渲染器。
+        //
+        // 判据落在**渲染**侧而不是槽位准入侧——那一格没有任何 mayPlace，
+        // 玩家想往里放什么是他的自由（手动拖放不该被拦），我们只是不用通用方式去画它。
+        // TacCompat.isGun 自带 INSTALLED 守卫，未装 TACZ 时恒 false。
+        if (showItem.has(DataComponents.TOOL) && !TacCompat.isGun(showItem)) {
             itemModelResolver.updateForLiving(state.backItem, showItem, ItemDisplayContext.FIXED, maid);
         }
     }
