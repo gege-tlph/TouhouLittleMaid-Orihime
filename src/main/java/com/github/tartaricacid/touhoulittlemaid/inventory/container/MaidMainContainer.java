@@ -34,11 +34,29 @@ public abstract class MaidMainContainer extends AbstractMaidContainer {
     protected static final Identifier[] TEXTURE_EMPTY_SLOTS = new Identifier[]{EMPTY_ARMOR_SLOT_BOOTS, EMPTY_ARMOR_SLOT_LEGGINGS, EMPTY_ARMOR_SLOT_CHESTPLATE, EMPTY_ARMOR_SLOT_HELMET};
     protected static final EquipmentSlot[] SLOT_IDS = new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
 
+    /**
+     * 储物区（默认背包 + 背包本体）在 {@code slots} 里的起点。
+     *
+     * <p>装备槽与手持槽排在它之前，而<b>手持槽几乎什么都收</b>：它用的是
+     * {@link ResourceHandlerSlot} 的默认 {@code mayPlace}，转交
+     * {@code LivingEntityEquipmentWrapper.isValid}，女仆分支只问
+     * {@code MaidItemManager.canInsertItem}——即背包黑名单加
+     * {@code canFitInsideContainerItems()}，此外一律放行。
+     * 于是按注册顺序搬运时它们总是先被填满。见 {@link #quickMoveStack}。</p>
+     *
+     * <p>装备槽反而不受影响：它在上面那层之外<b>自己覆写了</b> {@code mayPlace}，
+     * 要求 {@code getEquipmentSlotForItem} 恰好等于该槽。</p>
+     */
+    private int storageStart = PLAYER_INVENTORY_SIZE;
+
     public MaidMainContainer(MenuType<?> type, int id, Inventory inventory, int entityId) {
         super(type, id, inventory, entityId);
         if (maid != null) {
             this.addMaidArmorInv();
             this.addMaidHandInv();
+            // 记下「储物区」的起点：它之前是装备槽与手持槽，之后全是可以随便放东西的地方。
+            // 快捷移动要优先落在储物区，见 quickMoveStack。
+            this.storageStart = this.slots.size();
             this.addMainDefaultInv();
             this.addBackpackInv(inventory);
         }
@@ -131,7 +149,19 @@ public abstract class MaidMainContainer extends AbstractMaidContainer {
             stack1 = stack2.copy();
 
             if (index < PLAYER_INVENTORY_SIZE) {
-                if (!this.moveItemStackTo(stack2, PLAYER_INVENTORY_SIZE, this.slots.size(), false)) {
+                // 先试储物区（默认背包 + 背包本体），装不下才轮到装备与手持。
+                //
+                // ⚠️ 成因不是「手持槽优先级高」，而是**手持槽的准入判据几乎不挡东西**：
+                // 它们用 ResourceHandlerSlot 的默认 mayPlace，最终只问 canInsertItem
+                // （黑名单 + canFitInsideContainerItems），而搬运是按槽位注册顺序试的，
+                // 它们又恰好排在储物区之前。玩家用 IPN 之类的整理工具按住 Shift/Alt
+                // 批量搬运时，东西就全进了主副手。
+                //
+                // 这里只调整**落点顺序**，不加准入限制——手动拖放仍然可以往手持槽里放任何东西，
+                // 那是玩家的明确意图；快捷移动则是「随便找个地方放」，该落在储物区。
+                boolean moved = this.moveItemStackTo(stack2, this.storageStart, this.slots.size(), false)
+                        || this.moveItemStackTo(stack2, PLAYER_INVENTORY_SIZE, this.storageStart, false);
+                if (!moved) {
                     return ItemStack.EMPTY;
                 }
             } else if (!this.moveItemStackTo(stack2, 0, PLAYER_INVENTORY_SIZE, true)) {
