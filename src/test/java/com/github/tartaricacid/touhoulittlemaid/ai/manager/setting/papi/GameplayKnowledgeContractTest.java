@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.ai.manager.setting.papi;
 
+import com.github.tartaricacid.touhoulittlemaid.ai.agent.tool.implement.QueryGameContextTool;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -136,6 +137,32 @@ class GameplayKnowledgeContractTest {
                 "提示词应说明 protect_owner 在主人不在本地时会临时降级");
     }
 
+    /**
+     * skill.md 是 UseSkillTool 交给模型的那份技能说明的抬头，负责界定「这份知识管什么、不管什么」。
+     *
+     * <p>本树此前与代码宿主 origin/26.1 逐字相同，缺的正是安全范围那一段。没有它，模型会把这份
+     * 静态知识当成实时状态去回答「你现在拿着什么」「附近有什么」，而正确做法是去调工具。行为基准
+     * port/1.21.11-fabric 的 f8e900d93 / 195600c42 早已补上，本树 2026-08-20 补回。</p>
+     *
+     * <p>判据刻意<b>不取自 skill.md 自身</b>：工具名从 {@link QueryGameContextTool#TOOL_ID} 读，
+     * 工具改名时这条会红而不是跟着一起漂。契约有两个动词，两个都断言——
+     * ① 声明自己不是权威实时状态 ② 指出实时状态该去问谁；只钉前者时后者可以整句消失而测试全绿。</p>
+     */
+    @Test
+    void skillHeaderScopesItselfAsReferenceKnowledgeAndPointsAtTheLiveStateTool() throws IOException {
+        String skill = normalizeWhitespace(readResource(SKILL_ROOT + "skill.md"));
+
+        // 活性断言，与上面两条结论正交：没有它，「资源没读到」与「读到了但没写这段」输出完全一样
+        assertTrue(skill.length() > 400, "skill.md 内容过短，疑似没读到: " + skill.length() + " 字符");
+
+        // 动词一：声明这是参考知识，不是权威实时状态
+        assertTrue(skill.contains("not authoritative live state"),
+                "skill.md 缺少「这是参考知识、不是实时状态」的范围声明");
+
+        // 动词二：指出实时状态该去调哪个工具。工具名来自实现侧常量，不是本文件里抄一遍
+        assertTrue(skill.contains("`" + QueryGameContextTool.TOOL_ID + "`"),
+                "skill.md 未指向实时状态查询工具 " + QueryGameContextTool.TOOL_ID);
+    }
     private static String readResource(String path) throws IOException {
         try (InputStream stream = GameplayKnowledgeContractTest.class.getClassLoader().getResourceAsStream(path)) {
             if (stream == null) {
