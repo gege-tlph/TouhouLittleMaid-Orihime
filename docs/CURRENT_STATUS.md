@@ -19,6 +19,7 @@
 剩下的开放项是：**实机验收**（专服侧整体 + §3.C 那一大批 + 两项 DEFERRED：② 弓弩手感 · ③ 打雪仗后一半；④/⑤ 已过主症状，余下几维见 O1）、
 **O4 前置**、**O5 发布链路**、**O6 余项**——见下方各节与审计 §6。
 **O9 / O10 已由用户 2026-08-19 裁决，两条均判为「有意分歧」不改代码**（见已关闭表）。
+**O12（图标缓存簇）2026-08-20 标为待归档**——用户打算砍掉该功能，范围已量清，尚未动手。
 构建、JUnit、GameTest 三条链路均已实跑验证；**2026-08-14 起有了单人档实机验收**
 （棋局簇、背包四型、世界规则单人侧、抱姿、TACZ 五项、§3.B 威胁响应整簇、§3.E/F/G 三节 11 项——
 见 O1，专服/存档升级侧仍开放）。
@@ -269,6 +270,53 @@ mixin 的 `(Target)(Object)this` 惯用法（它看未合并字节码，按构�
 **O7 已关闭**（2026-08-17，见已关闭表）。§3.C 的代码面至此整块闭合，实机验收项在 O1。
 
 **O9 已关闭**（2026-08-19 用户裁决：判为可接受，写进有意分歧。见已关闭表）。
+
+**O12 · 图标缓存簇 —— 待归档（用户 2026-08-20 表示打算砍掉本功能）**
+
+**当前是「标记待归档」，尚未动手删。** 下面是砍之前量出来的事实，删的时候照这个范围走。
+
+| 事实 | 值 |
+|---|---|
+| 开关 | `MiscConfig.MODEL_ICON_CACHE`（`EnableModelIconCache`），**默认 `false`** |
+| 消费点是否全被开关守着 | **是**，6 处全部写成 `MODEL_ICON_CACHE.get() && …` |
+| 因此默认玩家的可观察行为 | **完全惰性**——砍它对默认配置是零行为变更，是纯删代码 |
+| 四棵树 | 上游 `origin/1.21.1` 有 · 行为基准 `port/1.21.11-fabric` 有 · 宿主 `origin/26.1` **无** · 本树有（`e45ea33a6` 补回 + 三轮改进） |
+| 三棵有它的树的默认值 | **全部是 `false`**（上游/基准/本树一致，不存在"上游默认开"的问题） |
+
+**⚠️ 砍它不是删四个文件——这个簇占着「打开模型选择界面」的路由**。
+`CacheIconManager.openMaidModelGui / openChairModelGui / openModelSwitcherModelGui`
+的方法体是「要缓存就先开缓存屏，否则直接开模型屏」，**5 个入口全部经它进门**：
+
+| 入口 | 位置 |
+|---|---|
+| 女仆界面的皮肤按钮 | `AbstractMaidContainerGui:281` |
+| 椅子 GUI 的开屏包 | `OpenChairGuiPackageProxy:17` |
+| 女仆模型详情屏返回 | `MaidModelDetailsGui:51` |
+| 椅子模型详情屏返回 | `ChairModelDetailsGui:38` |
+| 模型切换器方块的皮肤按钮 | `ModelSwitcherGui:84` |
+
+**这 5 个入口必须先改成直接 `ScreenUtil.setScreen(模型屏)`，否则皮肤按钮整个失效。**
+这是本条唯一有真实回归风险的地方，其余都是删除。
+
+**删除面清单**（4 个产品文件 + 2 个测试 + 若干接线点）：
+- 独占文件：`client/gui/entity/cache/CacheIconManager.java`、`client/gui/entity/cache/CacheScreen.java`、
+  `client/renderer/texture/CacheIconTexture.java`、`util/IconCache.java`
+- 独占测试：`CacheIconWiringContractTest.java`、`IconCacheMattingMathTest.java`
+  （另 `ClientRenderContractTest.java` 里有引用，只需摘掉相关断言）
+- 接线点：`IModelInfo.getCacheIconId` 及 `MaidModelInfo`/`ChairModelInfo` 两个实现与其初始化、
+  `MaidModels`/`ChairModels` 的 `addXxxPack`、`CustomPackLoader.clearCache`、
+  三个模型 GUI（`MaidModelGui:64`、`ChairModelGui:56`、`ModelSwitcherModelGui:65`）的图标分支
+- 配置面：`MiscConfig.MODEL_ICON_CACHE` 声明与 `define`、`GeneralConfig:56` 的认领、
+  `MenuIntegration:256` 的菜单行、以及对应的 lang 键（**删配置键要连 lang 键一起删，
+  否则留下孤儿键**——本仓库有 `noOrphanConfigLangKeys` 判据看着）
+
+**跨分支影响（必须同时决定）**：行为基准 `port/1.21.11-fabric` **有**这个功能。
+砍掉后两条分支在这一点上不再一致，属**有意分歧**，不是移植回归——
+需要同步记进 `tlm-port-wiki` 的对齐清单，否则下一轮普查会把它报成「26.1.2 漏搬」。
+一并决定：1.21.11 那边是跟着砍，还是保留。
+
+**下一步**：等用户确认「砍」之后再动手；动手时先改 5 个路由入口、再删文件、
+最后跑 `runGametest` 与门禁（本条改动进玩家可见界面路径，收尾必须跑）。
 
 # 已关闭（一行结论 + 提交）
 
