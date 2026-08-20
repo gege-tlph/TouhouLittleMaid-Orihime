@@ -81,13 +81,16 @@ public final class MiscConfig {
                 .translation(translateKey("player_death_loss_power_point"));
         PLAYER_DEATH_LOSS_POWER_POINT = builder.defineInRange("PlayerDeathLossPowerPoint", 1.0, 0, 5);
 
+        // 默认值按用户 2026-07-24 定案为 false：origin/1.21.1 与代码宿主 origin/26.1 均默认
+        // 首次加入即赠使魔符 / 幻想乡手册（true），本项目有意默认不赠送；需要时由服务器权威规则
+        // 打开（世界 serverconfig TOML，或配置界面——幻想乡手册那一栏需装 Patchouli 才显示）。
         builder.comment("Give a soul spell item for player first join")
                 .translation(translateKey("give_smart_slab"));
-        GIVE_SMART_SLAB = builder.define("GiveSoulSpell", true);
+        GIVE_SMART_SLAB = builder.define("GiveSoulSpell", false);
 
         builder.comment("Give the Memorizable Gensokyo book item for player first join")
                 .translation(translateKey("give_patchouli_book"));
-        GIVE_PATCHOULI_BOOK = builder.define("GivePatchouliBook", true);
+        GIVE_PATCHOULI_BOOK = builder.define("GivePatchouliBook", false);
 
         builder.comment("Shrine Lamp Effect Cost (Power Point/Per Hour)")
                 .translation(translateKey("shrine_lamp_effect_cost"));
