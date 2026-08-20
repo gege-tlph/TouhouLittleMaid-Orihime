@@ -89,7 +89,7 @@ public class StringConstant {
             
             <game-env>
             Platform: Minecraft Java Edition
-            Version: 1.21.11
+            Version: 26.1.2
             </game-env>
             
             ## Conversation Text Requirements

@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -122,10 +124,15 @@ class GameplayKnowledgeContractTest {
      * 攻击合法性等门禁由服务端 MaidTargetingPolicy 裁决，提示词不承担安全边界职责。
      */
     @Test
-    void promptExplainsPersistentToolsAndLiveStateFields() {
+    void promptExplainsPersistentToolsAndLiveStateFields() throws IOException {
         String prompt = normalizeWhitespace(StringConstant.FULL_SETTING);
 
-        assertTrue(prompt.contains("Version: 1.21.11"), "提示词的游戏版本应为 1.21.11");
+        // 版本号不写死字面量：从 gradle.properties 的 minecraft_version 读，随版本自动跟走。
+        // 写死的代价本轮亲历——从行为基准照搬来的 "1.21.11" 在 26.1.2 上是错的，
+        // 而断言同样照搬，于是它绿着把一句错事实喂给了模型。
+        String mcVersion = gradleProperty("minecraft_version");
+        assertTrue(prompt.contains("Version: " + mcVersion),
+                "提示词的游戏版本应为 " + mcVersion + "，实际提示词未包含它");
 
         assertTrue(prompt.contains("switch_work_task") && prompt.contains("PERSISTENT"),
                 "提示词应说明直接状态工具是持久设置，switch_work_task 会改永久任务");
@@ -162,6 +169,23 @@ class GameplayKnowledgeContractTest {
         // 动词二：指出实时状态该去调哪个工具。工具名来自实现侧常量，不是本文件里抄一遍
         assertTrue(skill.contains("`" + QueryGameContextTool.TOOL_ID + "`"),
                 "skill.md 未指向实时状态查询工具 " + QueryGameContextTool.TOOL_ID);
+    }
+    /**
+     * 从项目根的 {@code gradle.properties} 取一个键。
+     *
+     * <p>{@code ..\..} 是本仓库既有约定：test 任务的 workingDir 被设为
+     * {@code build/test-working}（见 build.gradle），故上溯两级即项目根，
+     * 与 ToolDispatchWiringContractTest 等既有契约测试同款。</p>
+     */
+    private static String gradleProperty(String key) throws IOException {
+        Path properties = Path.of("..", "..", "gradle.properties");
+        for (String line : Files.readAllLines(properties, StandardCharsets.UTF_8)) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith(key + "=")) {
+                return trimmed.substring(key.length() + 1).trim();
+            }
+        }
+        throw new IOException("gradle.properties 缺少键: " + key);
     }
     private static String readResource(String path) throws IOException {
         try (InputStream stream = GameplayKnowledgeContractTest.class.getClassLoader().getResourceAsStream(path)) {
