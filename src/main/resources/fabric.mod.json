@@ -2,14 +2,22 @@
   "schemaVersion": 1,
   "id": "touhou_little_maid",
   "version": "${version}",
-  "name": "Touhou Little Maid: Orihime",
-  "description": "Touhou Little Maid Unofficial Fabric port",
+  "name": "Touhou Little Maid: Tsumugi",
+  "description": "Touhou Little Maid: Orihime 的社区分支，由 gege-tlph 独立维护，移植至 Minecraft 26.1.2。原版模组由 TartaricAcid 制作。",
   "authors": [
+    "gege-tlph"
+  ],
+  "contributors": [
+    "TartaricAcid",
     "Sh1roCu"
   ],
-  "contact": {},
+  "contact": {
+    "homepage": "https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi",
+    "sources": "https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi",
+    "issues": "https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/issues"
+  },
   "license": "MIT / CC BY-NC-SA 4.0",
-  "icon": "logo.png",
+  "icon": "icon.png",
   "environment": "*",
   "entrypoints": {
     "fabric-gametest": [
