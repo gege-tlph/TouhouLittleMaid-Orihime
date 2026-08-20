@@ -28,7 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * （变体读着一个上游已经不用的东西，而我们以为还对得上）。成对断言把「上游还在用它」
  * 也钉住，不成立时红给下一个人看，逼他回去重新推导，而不是让判据悄悄退化。</p>
  *
- * <p>⚠️ <b>强度只到接线</b>：这里验的是「那三个输入确实被读了」，不是「手感真的对」。
+ * <p>⚠️ <b>强度只到接线</b>：这里验的是「那三个输入确实被读了<b>并且被算进了决策</b>」，
+ * 不是「手感真的对」。
  * 手感只有实机能判——这条测试的作用是**防止再次悄悄丢掉**，不是替代实机。</p>
  */
 class RangedTaskUpstreamParityContractTest {
@@ -44,32 +45,42 @@ class RangedTaskUpstreamParityContractTest {
     /** 附魔等级越高拉弓越快——丢了它，附魔弓与白板弓射速一样。 */
     @Test
     void variantShootTaskReadsQuickChargeLikeUpstream() throws IOException {
-        assertPairedUse(UPSTREAM_SHOOT, VARIANT_SHOOT, "QUICK_CHARGE",
+        assertPairedUse(UPSTREAM_SHOOT, VARIANT_SHOOT, "QUICK_CHARGE", "level * 5",
                 "应战期的弓不再受快速射击附魔影响——附魔白附");
     }
 
     /** 射击间隔要读属性——丢了它，那条属性在应战期无效。 */
     @Test
     void variantShootTaskReadsShootCooldownAttributeLikeUpstream() throws IOException {
-        assertPairedUse(UPSTREAM_SHOOT, VARIANT_SHOOT, "MAID_SHOOT_COOLDOWN",
+        assertPairedUse(UPSTREAM_SHOOT, VARIANT_SHOOT, "MAID_SHOOT_COOLDOWN", "attributeInstance.getValue()",
                 "应战期的射击间隔不再受 MAID_SHOOT_COOLDOWN 属性影响");
     }
 
     /** 走位阈值要按每把武器自己的射程取——丢了它，弩的进退距离全错。 */
     @Test
     void variantStrafingTaskUsesPerWeaponRangeLikeUpstream() throws IOException {
-        assertPairedUse(UPSTREAM_STRAFE, VARIANT_STRAFE, "getDefaultProjectileRange",
+        assertPairedUse(UPSTREAM_STRAFE, VARIANT_STRAFE, "getDefaultProjectileRange", "maxAttackDistance *",
                 "应战期的走位阈值退回固定值——弩会在错误的距离上进退");
     }
 
     /**
-     * 上游任务与我们的变体必须都用到 {@code symbol}。
+     * 上游任务与我们的变体必须都用到 {@code symbol}，并且都把它算进了决策（{@code consumption}）。
      *
      * <p>先断言上游还在用它（否则本条判据的前提已经不成立，应当回去重新推导），
      * 再断言变体没把它丢掉。</p>
+     *
+     * <p>⚠️ <b>光断言「符号出现过」是不够的</b>：读了却不用，符号照样在，判据照样绿。
+     * 红测实证：把蓄力门槛改回不含附魔的形式（{@code >= this.chargeDurationTick}）、
+     * 只留下那行读取附魔等级的代码，收紧前的判据三条全绿——而<b>读了却不用与根本不读，
+     * 玩家感受完全一样</b>。所以每个输入除符号外还要钉一个 <b>消费片段</b>：
+     * 那段真正把输入算进决策的表达式。</p>
+     *
+     * <p>消费片段同样<b>两侧都断言</b>：上游那侧断言的是「本判据的前提还成立」，
+     * 上游哪天换了算法会红在那一句上，而不是让判据静默退化成一句空话。</p>
      */
     private static void assertPairedUse(String upstreamFile, String variantFile,
-                                        String symbol, String consequence) throws IOException {
+                                        String symbol, String consumption,
+                                        String consequence) throws IOException {
         String upstream = readStripped(upstreamFile);
         String variant = readStripped(variantFile);
 
@@ -80,6 +91,13 @@ class RangedTaskUpstreamParityContractTest {
         assertTrue(variant.contains(symbol),
                 variantFile + " 没有读 " + symbol + " —— " + consequence
                 + "。它是照 " + upstreamFile + " 改写的，改写时不许把上游读的输入丢掉");
+
+        assertTrue(upstream.contains(consumption),
+                upstreamFile + " 里已经找不到消费片段 " + consumption
+                + " —— 上游换了算法，本条判据的前提不再成立，需要回去重新推导");
+        assertTrue(variant.contains(consumption),
+                variantFile + " 读了 " + symbol + " 却没把它算进决策（缺 " + consumption
+                + "） —— " + consequence + "。读而不用与根本不读，玩家感受完全一样");
     }
 
     /** 剥注释后再比：符号可能只出现在注释里，那不算「读了它」。 */
