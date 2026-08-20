@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -31,6 +33,15 @@ class OptionalCompatWiringContractTest {
     private static final Path TAVERN_COMPAT = TLM.resolve("compat/kaleidoscopetavern");
     private static final Path MENU_INTEGRATION = TLM.resolve("compat/cloth/MenuIntegration.java");
     private static final Path TAC_COMPAT = TLM.resolve("compat/gun/tacz/TacCompat.java");
+
+    private static final Path REFURBISHED_COMPAT =
+            TLM.resolve("compat/refurbishedfurniture/RefurbishedFurnitureCompat.java");
+    private static final Path COMPAT_REGISTRY = TLM.resolve("init/registry/CompatRegistry.java");
+    private static final Path TAG_BLOCK = TLM.resolve("datagen/tag/TagBlock.java");
+    private static final Path GENERATED_TAGS =
+            PROJECT_ROOT.resolve("src/main/generated/data/touhou_little_maid/tags/block");
+    /** 家具重制的桌面标签。选它当判据是因为它是该模组<b>唯一</b>的方块标签，语义不会漂。 */
+    private static final String REFURBISHED_TUCKABLE = "refurbished_furniture:tuckable";
     private static final Path MAID_AMMO_SOURCE = TLM.resolve("compat/gun/tacz/MaidAmmoSource.java");
     private static final Path MIXIN_ROOT = MAIN_JAVA.resolve("cn/sh1rocu/touhoulittlemaid/mixin");
     private static final Path FABRIC_MIXINS =
@@ -307,6 +318,80 @@ class OptionalCompatWiringContractTest {
                 "hasAmmo 必须只读——上游明写它要与 consumeAmmo 一致且不得有副作用");
     }
 
+    /**
+     * 家具重制的注册表同步必须真的被调用，且被 {@code isModLoaded} 守着。
+     *
+     * <p>写好一个 {@code init()} 却没人调，是本仓库反复栽的「纸面接口」形态：编译、打包、
+     * 启动一路正常，功能从不执行。这里钉的是<b>那条调用存在且经过模组守卫</b>。</p>
+     *
+     * <p>守卫不可省：{@code RegistryAttribute.SYNCED} 一旦加上就<b>对所有玩家生效</b>——
+     * 服务端持有客户端没有的配方序列化器时会显式踢人。没装家具重制的人不该承担这个代价。</p>
+     */
+    @Test
+    void refurbishedRegistrySyncIsWiredBehindTheModGate() throws IOException {
+        String registry = stripComments(Files.readString(COMPAT_REGISTRY, StandardCharsets.UTF_8));
+
+        assertTrue(registry.contains("RefurbishedFurnitureCompat::init"),
+                "CompatRegistry 没有调用 RefurbishedFurnitureCompat::init——注册表同步永远不会发生");
+
+        String enqueue = methodBodyOf(registry, "public static void onEnqueue()");
+        assertNotNull(enqueue, "CompatRegistry.onEnqueue() 不见了，兼容接线的落点没了");
+        assertTrue(enqueue.contains("checkModLoad(REFURBISHED_FURNITURE, RefurbishedFurnitureCompat::init)"),
+                "家具重制的 init 必须经 checkModLoad 守卫；无条件调用会让没装该模组的玩家也承担"
+                        + "注册表同步的断线代价");
+    }
+
+    /**
+     * 同步的目标必须正是<b>配方序列化器</b>那张表。
+     *
+     * <p>缺陷类是「一张会上网的表没有被同步」：26.1.2 字节码实证 {@code Recipe.STREAM_CODEC}
+     * 走 {@code ByteBufCodecs.registry(Registries.RECIPE_SERIALIZER)} 再 dispatch，
+     * 即序列化器按<b>数字 id</b> 上线。换成别的注册表就修不到这个缺陷，而代码依旧「看起来对」。</p>
+     */
+    @Test
+    void refurbishedSyncsExactlyTheRecipeSerializerRegistry() throws IOException {
+        String source = stripComments(Files.readString(REFURBISHED_COMPAT, StandardCharsets.UTF_8));
+        String init = methodBodyOf(source, "public static void init()");
+        assertNotNull(init, "RefurbishedFurnitureCompat.init() 不见了");
+
+        assertTrue(init.contains("Registries.RECIPE_SERIALIZER"),
+                "同步的必须是 RECIPE_SERIALIZER 那张表——换成别的表就修不到这个缺陷");
+        assertTrue(init.contains("RegistryAttribute.SYNCED"),
+                "必须加的属性是 SYNCED；OPTIONAL 只覆盖「整张表缺席」，不覆盖「表里缺条目」");
+    }
+
+    /**
+     * 家具的桌面 / 坐具必须真的进了避让与禁跳两张标签，而且是 optional 条目。
+     *
+     * <p>判据同时看<b>源码</b>与<b>datagen 产物</b>：只看源码会漏掉「改了 TagBlock 但忘了重跑
+     * datagen」，而 json 才是真正装进 jar 的东西。</p>
+     *
+     * <p>{@code required: false} 那一维不能省——写成必需项时，没装该模组的世界会因为标签
+     * 指向不存在的方块而报错。</p>
+     */
+    @Test
+    void refurbishedFurnitureLandsInTheGeneratedTagsAsOptionalEntries() throws IOException {
+        String tagBlock = stripComments(Files.readString(TAG_BLOCK, StandardCharsets.UTF_8));
+        assertTrue(tagBlock.contains("addRefurbishedFurniture(MAID_AVOID_BLOCK)"),
+                "TagBlock 没把家具重制接进 MAID_AVOID_BLOCK");
+        assertTrue(tagBlock.contains("addRefurbishedFurniture(MAID_JUMP_FORBIDDEN_BLOCK)"),
+                "TagBlock 没把家具重制接进 MAID_JUMP_FORBIDDEN_BLOCK");
+
+        int checked = 0;
+        for (String tag : new String[]{"maid_avoid_block", "maid_jump_forbidden_block",
+                "maid_snack_stand_block"}) {
+            String json = Files.readString(GENERATED_TAGS.resolve(tag + ".json"), StandardCharsets.UTF_8);
+            assertTrue(json.contains(REFURBISHED_TUCKABLE),
+                    "datagen 产物 " + tag + ".json 里没有 " + REFURBISHED_TUCKABLE
+                            + "——改了 TagBlock 但没重跑 runDatagen？");
+            assertFalse(json.contains("\"required\": true"),
+                    tag + ".json 出现了必需条目：未装该模组的世界会因标签指向不存在的方块而报错");
+            checked++;
+        }
+        // 活性断言：与上面的结论正交。没有它，「产物目录改名了、一个文件都没读到」
+        // 与「读到了且都合格」在输出上完全一样。
+        assertEquals(3, checked, "应当检查 3 张标签产物");
+    }
     private static void assertConsumed(String call, Path consumer, String message) throws IOException {
         String source = stripComments(Files.readString(consumer, StandardCharsets.UTF_8));
         assertTrue(source.contains(call), message + "（期望在 " + consumer.getFileName() + " 里找到 " + call + "）");

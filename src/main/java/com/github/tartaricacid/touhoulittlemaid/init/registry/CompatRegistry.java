@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.init.registry;
 
 import com.github.tartaricacid.touhoulittlemaid.compat.immersivemelodies.server.ImmersiveMelodiesServerCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.patchouli.PatchouliCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.refurbishedfurniture.RefurbishedFurnitureCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.tbackpack.TBackpackCompat;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -16,6 +17,7 @@ public final class CompatRegistry {
     public static final String TBACKPACK = "travelersbackpack";
     public static final String TRINKETS = "trinkets";
     public static final String IMMERSIVE_MELODIES = "immersive_melodies";
+    public static final String REFURBISHED_FURNITURE = RefurbishedFurnitureCompat.MOD_ID;
 
     public static void onEnqueue() {
         checkModLoad(PATCHOULI, PatchouliCompat::init);
@@ -23,6 +25,7 @@ public final class CompatRegistry {
         checkModLoad(TBACKPACK, TBackpackCompat::init);
         // checkModLoad(TRINKETS, CuriosCompat::init);
         checkModLoad(IMMERSIVE_MELODIES, ImmersiveMelodiesServerCompat::init);
+        checkModLoad(REFURBISHED_FURNITURE, RefurbishedFurnitureCompat::init);
     }
 
     private static void checkModLoad(String modId, Runnable runnable) {
