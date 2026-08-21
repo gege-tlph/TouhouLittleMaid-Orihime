@@ -11,25 +11,37 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 背部展示格里的枪械必须走 TACZ 自己的渲染器，不能走通用物品渲染。
+ * 背部展示格里的枪械：<b>只在模型作者给了挂点骨骼时才画，没有骨骼就什么都不画</b>
+ * （用户 2026-08-21 裁决）。
  *
  * <p><b>这是接线判据（🟡），不是行为判据</b>：GameTest 是纯服务端，客户端渲染在那里不加载，
  * 「背上那把枪看起来对不对」只有实机能验。明写这一点是为了不让「测试通过」被读成「渲染正确」。</p>
  *
- * <p>契约有<b>两个动词</b>，各配一条用例：</p>
+ * <p>⚠️ 本文件 2026-08-21 整体重写过一次，原因值得留着：上一版断言「填充 backItem 的条件
+ * 必须显式排除枪」，而那条断言建立在一个<b>假事实</b>上——「TACZ 的枪带 TOOL 组件」。
+ * 运行期实测（{@code tacz:modern_kinetic_gun} 共 12 个组件，{@code minecraft:tool} 不在其中；
+ * 对照组 {@code minecraft:diamond_pickaxe} 有）证伪了它：枪从来就走不到通用物品渲染，
+ * 那条排除是<b>纯空操作</b>，而红测只能证明「判据抓得住它断言的那件事」，
+ * 证明不了「它断言的是对的那件事」。</p>
+ *
+ * <p>现在的契约有<b>三个动词</b>，各配一条用例：</p>
  * <ol>
- *   <li><b>不走通用渲染</b>——抽取期填 {@code state.backItem} 的那个条件必须显式排除枪。
- *       ⚠️ <b>枪是带 TOOL 组件的</b>，只写 {@code has(DataComponents.TOOL)} 会把它放进来。</li>
- *   <li><b>专用分支还在</b>——两个背部渲染层在「{@code backItem} 为空」那条路上
- *       都得真的调 {@code renderBackGun}。前者排除掉枪只是让控制流<b>落得到</b>这里，
- *       这里要是没人接，症状会从「穿模」变成「什么都不画」。</li>
+ *   <li><b>通用渲染只收带 TOOL 的东西</b>——抽取期填 {@code state.backItem} 的那个条件
+ *       必须仍然只由 {@code DataComponents.TOOL} 把关（放宽了枪就会掉进通用渲染），
+ *       且不许再加那条空操作的 {@code isGun} 排除。</li>
+ *   <li><b>只有 gecko 那一层接枪</b>——画通用背部物品的两层里，只有 gecko 层调
+ *       {@code renderBackGun}；bedrock 层不许再有兜底调用。</li>
+ *   <li><b>枪械渲染器只按挂点骨骼画</b>——{@code GunMaidRender} 必须仍按
+ *       {@code TAC_PISTOL} / {@code TAC_RIFLE} 定位组渲染，且不许再出现那条
+ *       固定变换兜底的特征（{@code scale(0.6f)} / {@code ZP -35} / 背包位移）。</li>
  * </ol>
  *
- * <p>⚠️ 全部判定都在<b>剥掉注释之后</b>做：这两处的注释里恰好写着 {@code isGun} 与
- * {@code renderBackGun}，不剥的话把接线删干净了测试照样绿。</p>
+ * <p>⚠️ 全部判定都在<b>剥掉注释之后</b>做：这几处的注释里恰好写着 {@code isGun}、
+ * {@code renderBackGun}、{@code scale(0.6f)}，不剥的话把接线删干净了测试照样绿。</p>
  */
 class BackDisplayGunRenderContractTest {
     /** 测试的 workingDir 是 build/test-working，回两级才是项目根。 */
@@ -39,20 +51,22 @@ class BackDisplayGunRenderContractTest {
             "com/github/tartaricacid/touhoulittlemaid/client/renderer/entity/state/EntityMaidRenderState.java");
     private static final Path CLIENT_RENDERER = MAIN_JAVA.resolve(
             "com/github/tartaricacid/touhoulittlemaid/client/renderer");
+    private static final Path GUN_MAID_RENDER = MAIN_JAVA.resolve(
+            "com/github/tartaricacid/touhoulittlemaid/compat/gun/tacz/client/GunMaidRender.java");
 
-    /** 通用背部物品渲染的落笔处——谁写了这一句，谁就得对枪负责。 */
+    /** 通用背部物品渲染的落笔处——谁写了这一句，谁就是一个「背部物品层」。 */
     private static final String GENERIC_BACK_ITEM_DRAW = "state.backItem.submit(";
     /** 抽取期填充 backItem 的唯一入口。 */
     private static final String BACK_ITEM_FILL = "updateForLiving(state.backItem";
 
     /**
-     * ① 抽取期必须把枪排除在通用物品渲染之外。
+     * ① 通用背部物品渲染的准入判据只能是 TOOL，且不许再加空操作的枪械排除。
      *
      * <p>判据缩到<b>被判定的那个表达式</b>（守着填充语句的那个 {@code if} 的条件），
      * 不是整份文件——否则文件里别处出现一次 {@code isGun} 就能让它假绿。</p>
      */
     @Test
-    void backItemFillExcludesGuns() throws IOException {
+    void backItemFillIsGatedOnToolAlone() throws IOException {
         String source = stripComments(Files.readString(RENDER_STATE, StandardCharsets.UTF_8));
 
         // 活性：填充点必须恰好一处，多了少了都说明这条判据已经不在看它该看的东西
@@ -63,20 +77,22 @@ class BackDisplayGunRenderContractTest {
         assertTrue(condition.contains("showItem"),
                 "认错了 if：抽出来的条件里没有 showItem，实际是 " + condition);
         assertTrue(condition.contains("DataComponents.TOOL"),
-                "背部展示的 TOOL 判据不见了，实际条件是 " + condition);
-        assertTrue(condition.contains("isGun"),
-                "背部展示没有排除枪械——枪带 TOOL 组件，不排除就会走通用物品渲染并穿模。实际条件是 " + condition);
+                "背部展示的 TOOL 判据不见了——放宽了它，枪就会掉进通用物品渲染。实际条件是 " + condition);
+        assertFalse(condition.contains("isGun"),
+                "又加回了 isGun 排除。TACZ 的枪不带 TOOL（2026-08-21 运行期实测），"
+                        + "这条排除永远不会成立，是纯空操作。实际条件是 " + condition);
     }
 
     /**
-     * ② 排除之后得有人接：画通用背部物品的每一层，都要在「backItem 为空」那条路上调枪械渲染。
+     * ② 画通用背部物品的两层里，只有 gecko 那层把枪交给枪械渲染器。
      *
-     * <p>枚举面按「谁画了通用背部物品」定，不按「哪个包」定——普通与 gecko 两套各一个。</p>
+     * <p>bedrock 模型没有枪械挂点，上游在那里的兜底是固定变换，实机表现为枪甩到身侧、
+     * 穿进模型里；用户 2026-08-21 裁决砍掉。枚举面按「谁画了通用背部物品」定，不按包定。</p>
      */
     @Test
-    void everyBackItemLayerAlsoRoutesGunsToTheDedicatedRenderer() throws IOException {
+    void onlyTheGeckoLayerRoutesGunsToTheDedicatedRenderer() throws IOException {
         List<Path> layers = new ArrayList<>();
-        List<String> offenders = new ArrayList<>();
+        List<String> routing = new ArrayList<>();
         try (Stream<Path> files = Files.walk(CLIENT_RENDERER)) {
             for (Path file : files.filter(path -> path.toString().endsWith(".java")).sorted().toList()) {
                 String source = stripComments(Files.readString(file, StandardCharsets.UTF_8));
@@ -84,16 +100,43 @@ class BackDisplayGunRenderContractTest {
                     continue;
                 }
                 layers.add(file);
-                if (!source.contains("renderBackGun(")) {
-                    offenders.add(file.toString());
+                if (source.contains("renderBackGun(")) {
+                    routing.add(file.toString());
                 }
             }
         }
         // 活性下限：识别依据一变就静默零覆盖，而零覆盖的测试永远是绿的
         assertEquals(2, layers.size(),
-                "画通用背部物品的层不是两个（普通 + gecko），判据的枚举面已失效：" + layers);
-        assertTrue(offenders.isEmpty(),
-                "这些层画了通用背部物品却没给枪械留渲染路径，枪会变成什么都不画：" + offenders);
+                "画通用背部物品的层不是两个（bedrock + gecko），判据的枚举面已失效：" + layers);
+        assertEquals(1, routing.size(),
+                "接枪械渲染的背部物品层不是恰好一个。多了说明 bedrock 那条固定变换兜底被加了回来，"
+                        + "少了说明 gecko 模型的枪彻底不画了。实际：" + routing);
+        assertTrue(routing.getFirst().contains("gecko"),
+                "接枪械渲染的不是 gecko 那一层——只有它拿得到 TAC_PISTOL / TAC_RIFLE 定位组。实际：" + routing);
+    }
+
+    /**
+     * ③ 枪械渲染器只按挂点骨骼画，不许有固定变换的兜底。
+     *
+     * <p>「没有骨骼就什么都不画」这条，用户 2026-08-20 已对 gecko 分支裁决过一次，
+     * 2026-08-21 扩到全部路径：挂点归模型作者定，没给挂点就是不想让枪挂在那儿。</p>
+     */
+    @Test
+    void backGunRendererDrawsOnlyAtLocatorBones() throws IOException {
+        String source = stripComments(Files.readString(GUN_MAID_RENDER, StandardCharsets.UTF_8));
+
+        // 活性：被看管的那两条挂点分支必须都在，否则下面的「不许出现」全是空转
+        assertTrue(source.contains("GeoLocatorType.TAC_PISTOL"),
+                "手枪挂点分支不见了：" + GUN_MAID_RENDER);
+        assertTrue(source.contains("GeoLocatorType.TAC_RIFLE"),
+                "长枪挂点分支不见了：" + GUN_MAID_RENDER);
+
+        assertFalse(source.contains("scale(0.6f"),
+                "固定变换兜底的缩放又出现了——那条路不看任何挂点骨骼，实机表现是枪穿进女仆身体。");
+        assertFalse(source.contains("rotationDegrees(-35"),
+                "固定变换兜底的 ZP -35 又出现了——见本文件类注释与 GunMaidRender 类注释。");
+        assertFalse(source.contains("offsetBackpackItem"),
+                "固定变换兜底的背包位移又出现了：枪的落点不该由背包型决定，只该由挂点骨骼决定。");
     }
 
     /**

@@ -24,10 +24,13 @@ public class GeckoLayerMaidBackItem implements GeoLayerRenderer<EntityMaidRender
             // 背部枪械渲染。基准是「背包展示物不是 TieredItem 就走枪械分支」，
             // 本树等价的判据是 backItem 为空。
             //
-            // ⚠️ 别再写「枪不带 TOOL 组件」——**枪是带 TOOL 的**，这条假断言让本分支整整
-            // 一个版本走不到这里（枪被通用物品渲染画在背上、穿模，且那一支 return）。
-            // backItem 之所以为空，是因为抽取期**显式排除了枪**，
-            // 见 EntityMaidRenderState#extractBackpackState。
+            // 枪为什么必然落到这里：TACZ 的枪**不带 TOOL 组件**（2026-08-21 运行期实测，
+            // tacz:modern_kinetic_gun 的 12 个组件里没有 minecraft:tool，对照组
+            // diamond_pickaxe 有），而 extractBackpackState 只在 has(TOOL) 时填 backItem。
+            //
+            // 真正画不画得出来，取决于模型作者有没有给 TAC_PISTOL / TAC_RIFLE 挂点骨骼；
+            // 没给就什么都不画，不回落到固定变换——那条兜底已于 2026-08-21 按用户裁决砍掉，
+            // 见 GunMaidRender 类注释。
             EntityMaid gunMaid = state.maid;
             if (state.backpack != null && gunMaid != null) {
                 GunClientUtil.renderBackGun(state.backpackShowItem, data.modelState, gunMaid,

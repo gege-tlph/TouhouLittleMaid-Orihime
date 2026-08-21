@@ -5,8 +5,6 @@ import com.github.tartaricacid.touhoulittlemaid.api.backpack.MaidBackpackRenderD
 import com.github.tartaricacid.touhoulittlemaid.client.model.bedrock.EntityMaidModel;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.EntityMaidRenderer;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.state.EntityMaidRenderState;
-import com.github.tartaricacid.touhoulittlemaid.compat.gun.common.GunClientUtil;
-import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -50,19 +48,19 @@ public class LayerMaidBackItem extends RenderLayer<EntityMaidRenderState, Entity
             state.backItem.submit(poseStack, submitNode, state.lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor);
 
             poseStack.popPose();
-            return;
         }
 
-        // 枪械额外渲染兼容。取的是抽取期存下的原始 ItemStack。
+        // ⚠️ 这里**没有**枪械分支，是有意的。
         //
-        // ⚠️ 别再写「枪不带 TOOL 组件所以走不到上面那支」——**枪是带 TOOL 的**。
-        // 这条假的事实断言让本分支整整一个版本不可达：枪满足上面的判据 → 被通用物品渲染
-        // 画在背上（穿模）→ 那一支 return，这里永远轮不到。抽取期现在显式排除了枪
-        // （见 EntityMaidRenderState#extractBackpackState），backItem 才会为空并落到这里。
-        EntityMaid backMaid = state.maid;
-        if (backMaid != null) {
-            GunClientUtil.renderBackGun(poseStack, submitNode, state.lightCoords,
-                    state.backpackShowItem, backMaid);
-        }
+        // 事实（2026-08-21 运行期实测）：TACZ 的枪**不带 TOOL 组件**
+        // （tacz:modern_kinetic_gun 只有 12 个组件，minecraft:tool 不在其中；
+        // 对照组 diamond_pickaxe 有），所以上面那个 has(TOOL) 判据对枪恒为 false，
+        // state.backItem 对枪必然为空——枪从来就没走过通用物品渲染这条路。
+        //
+        // 上游在这里有一条固定变换的兜底（GunMaidRender 的五参 renderBackGun），
+        // 不看任何挂点骨骼，直接把枪的物品模型拍在背上。bedrock 模型没有枪械挂点，
+        // 实机结果是枪甩到女仆身侧、长度接近整个身体、穿进模型里。三棵树逐字相同，
+        // 属上游行为而非移植回归；用户 2026-08-21 裁决砍掉兜底、只保留
+        // gecko 模型按 TAC_PISTOL / TAC_RIFLE 骨骼渲染的那条。见 GunMaidRender 类注释。
     }
 }

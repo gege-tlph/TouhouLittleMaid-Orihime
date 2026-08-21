@@ -139,13 +139,6 @@ public class TacCompat {
     }
 
     @Environment(EnvType.CLIENT)
-    public static void renderBackGun(PoseStack poseStack, SubmitNodeCollector submitNode, int packedLightIn, ItemStack stack, EntityMaid maid) {
-        if (INSTALLED) {
-            GunMaidRender.renderBackGun(poseStack, submitNode, packedLightIn, stack, maid);
-        }
-    }
-
-    @Environment(EnvType.CLIENT)
     public static void renderBackGun(ItemStack offhandItem, GeoModelState modelState, EntityMaid maid, PoseStack poseStack, SubmitNodeCollector submitNode, int packedLight) {
         if (INSTALLED && isGun(offhandItem)) {
             poseStack.pushPose();

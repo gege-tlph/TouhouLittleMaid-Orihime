@@ -1,7 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.compat.gun.tacz.client;
 
 import com.github.tartaricacid.touhoulittlemaid.compat.gun.tacz.TacCompat;
-import com.github.tartaricacid.touhoulittlemaid.entity.backpack.BackpackManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.animated.GeoModelState;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.render.built.GeoLocatorType;
@@ -16,26 +15,31 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Locale;
 
-import static com.github.tartaricacid.touhoulittlemaid.entity.backpack.BackpackManager.RENDER_DATA_CACHE;
-
 /**
- * 背部枪械渲染（行为基准 = origin/1.21.1，写法照宿主）。与 1.21.11 分支的差异：
- * <ul>
- *   <li>定位组载体：那边抽象成 {@code IGeoLocatorSource}，宿主直接用 {@link GeoModelState}
- *       （gecko 层的 {@code data.modelState}），API 同名（visitLocatorGroup / locatorGroupSize）。</li>
- *   <li>背包位移：宿主把渲染数据从 {@code IMaidBackpack} 分离成
- *       {@code MaidBackpackRenderData}（{@code RENDER_DATA_CACHE.apply(id)}），此处随宿主。</li>
- *   <li>物品提交走标准通道：TaCZ 侧自己实现了原版 ItemModel（TaczDynamicItemModel），
- *       {@code ItemModelResolver.updateForLiving} + {@code ItemStackRenderState.submit}
- *       即可画出枪模型，不必碰它的渲染器（与宿主 AltarRenderer 同款五参 submit）。</li>
- * </ul>
+ * 背部枪械渲染。<b>只在模型作者提供了挂点骨骼时才画</b>——手枪找
+ * {@link GeoLocatorType#TAC_PISTOL}、长枪找 {@link GeoLocatorType#TAC_RIFLE}，
+ * 没有对应骨骼就什么都不画、不回落。
+ *
+ * <p>⚠️ 上游（{@code origin/1.21.1}）与行为基准另有一条<b>固定变换的兜底</b>：
+ * 不看任何骨骼，直接 {@code ZP180 / XP180 / translate / 背包位移 / ZP-35 / scale(0.6)}
+ * 把枪的物品模型拍在背上。它是 bedrock 模型以及「gecko 模型 + 穿着背包」两条路的落点，
+ * <b>实机结果是枪甩到女仆身侧、长度接近整个身体、穿进模型里</b>
+ * （用户 2026-08-20 实机报出，2026-08-21 截图取证）。三棵树的那条兜底逐字相同，
+ * 所以它不是移植回归，是上游一直如此。用户 2026-08-21 裁决<b>砍掉兜底、只保留骨骼那条</b>，
+ * 与 2026-08-20 对「没有 TAC_PISTOL/TAC_RIFLE 骨骼就不画」的裁决同一个原则：
+ * 挂点归模型作者定，没给挂点就是不想让枪挂在那儿。</p>
+ *
+ * <p>与 1.21.11 分支的写法差异：定位组载体那边抽象成 {@code IGeoLocatorSource}，
+ * 宿主直接用 {@link GeoModelState}（gecko 层的 {@code data.modelState}），
+ * API 同名（visitLocatorGroup / locatorGroupSize）。物品提交走标准通道：TaCZ 侧自己实现了
+ * 原版 ItemModel（TaczDynamicItemModel），{@code ItemModelResolver.updateForLiving}
+ * + {@code ItemStackRenderState.submit} 即可画出枪模型，不必碰它的渲染器。</p>
  */
 @Environment(EnvType.CLIENT)
 public class GunMaidRender {
@@ -49,52 +53,15 @@ public class GunMaidRender {
         }
     }
 
-    public static void renderBackGun(PoseStack poseStack, SubmitNodeCollector submitNode, int packedLight, ItemStack stack, EntityMaid maid) {
-        if (!(stack.getItem() instanceof IGun)) {
-            return;
-        }
-        poseStack.pushPose();
-        poseStack.mulPose(Axis.ZP.rotationDegrees(180.0F));
-        poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
-        poseStack.translate(0, 0.5, -0.25);
-        // 基准：显示背包时按女仆背包型位移，否则按空背包位移——两条路都会继续画
-        Identifier backpackId = maid.getConfigManager().isShowBackpack()
-                ? maid.getMaidBackpackType().getId()
-                : BackpackManager.getEmptyBackpack().getId();
-        RENDER_DATA_CACHE.apply(backpackId).offsetBackpackItem(poseStack);
-        {
-            poseStack.pushPose();
-            poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(-35));
-            poseStack.scale(0.6f, 0.6f, 0.6f);
-            submitGun(poseStack, submitNode, packedLight, stack, maid);
-            poseStack.popPose();
-        }
-        poseStack.popPose();
-    }
-
     public static void renderBackGun(ItemStack heldItem, GeoModelState modelState, EntityMaid maid, PoseStack poseStack,
                                      SubmitNodeCollector submitNode, int packedLight) {
         IGun gun = IGun.getIGunOrNull(heldItem);
         if (gun == null) {
             return;
         }
-        // 如果女仆穿戴了背包，且配置文件允许显示背包
-        // 直接调用背包渲染
-        if (maid.getConfigManager().isShowBackpack()
-                && maid.getMaidBackpackType() != BackpackManager.getEmptyBackpack()) {
-            // 基准：有背包定位骨骼就先 prepMatrixForLocator，没有就直接用当前矩阵——两条路都会继续画
-            if (modelState.locatorGroupSize(GeoLocatorType.BACKPACK) > 0) {
-                modelState.visitLocatorGroup(GeoLocatorType.BACKPACK, poseStack,
-                        locator -> renderBackpackGun(locator, submitNode, packedLight, heldItem, maid));
-            } else {
-                renderBackpackGun(poseStack, submitNode, packedLight, heldItem, maid);
-            }
-            return;
-        }
         TimelessAPI.getCommonGunIndex(gun.getGunId(heldItem)).ifPresent(index -> {
             String weaponType = index.getType();
-            // 基准这两支是「有对应定位骨骼才画」，没有就什么都不画，不回落
+            // 有对应定位骨骼才画，没有就什么都不画、不回落
             if (isPistol(weaponType)) {
                 modelState.visitLocatorGroup(GeoLocatorType.TAC_PISTOL, poseStack, locator -> {
                     locator.translate(0, -0.125, 0);
@@ -111,13 +78,6 @@ public class GunMaidRender {
                 });
             }
         });
-    }
-
-    private static void renderBackpackGun(PoseStack poseStack, SubmitNodeCollector submitNode, int packedLight,
-                                          ItemStack heldItem, EntityMaid maid) {
-        poseStack.mulPose(Axis.ZP.rotationDegrees(180));
-        poseStack.translate(0, -1, 0.25);
-        renderBackGun(poseStack, submitNode, packedLight, heldItem, maid);
     }
 
     private static void submitGun(PoseStack poseStack, SubmitNodeCollector submitNode, int packedLight,

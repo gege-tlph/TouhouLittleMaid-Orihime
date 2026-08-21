@@ -31,12 +31,14 @@ public class GunClientUtil {
         }
     }
 
-    public static void renderBackGun(PoseStack poseStack, SubmitNodeCollector submitNode, int packedLightIn, ItemStack stack, EntityMaid maid) {
-        if (TacCompat.isGun(stack)) {
-            TacCompat.renderBackGun(poseStack, submitNode, packedLightIn, stack, maid);
-        }
-    }
-
+    /**
+     * 背部枪械渲染。<b>只有 gecko 模型走得到这里</b>，且只在模型作者提供了
+     * {@code TAC_PISTOL} / {@code TAC_RIFLE} 挂点骨骼时才真的画出东西。
+     *
+     * <p>⚠️ 曾经还有一个五参重载，走的是不看骨骼的固定变换兜底（bedrock 模型与
+     * 「gecko + 穿背包」两条路的落点）。实机结果是枪甩到女仆身侧、穿进模型里，
+     * 用户 2026-08-21 裁决砍掉，见 {@code GunMaidRender} 的类注释。</p>
+     */
     public static void renderBackGun(ItemStack offhandItem, GeoModelState modelState, EntityMaid maid, PoseStack poseStack, SubmitNodeCollector submitNode, int packedLight) {
         if (TacCompat.isGun(offhandItem)) {
             TacCompat.renderBackGun(offhandItem, modelState, maid, poseStack, submitNode, packedLight);
