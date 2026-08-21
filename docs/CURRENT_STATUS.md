@@ -336,11 +336,12 @@ mixin 的 `(Target)(Object)this` 惯用法（它看未合并字节码，按构�
 
 # 已关闭（一行结论 + 提交）
 
-## 2026-08-21：物品栏两条实机缺陷（O14 / O15）—— 从行为基准同步（`bb066da43` `91b41fca6`）
+## 2026-08-21：物品栏两条实机缺陷（O14 / O15）（`bb066da43` `91b41fca6` `0929c1feb`）
 
-两条均由用户 2026-08-20 实机报出、两条移植分支都有；行为基准 `port/1.21.11-fabric`
-（`2cdfa84ad` / `4a8001b47`）已实机验收，本轮按 26.1.2 的写法同步。用户对两条的裁决口径一致：
+两条均由用户 2026-08-20 实机报出、两条移植分支都有。用户对两条的裁决口径一致：
 **不加准入限制**——手动放什么是玩家的自由，修法只落在「落点顺序」或「渲染」一侧。
+⚠️ 起手是「从行为基准 `port/1.21.11-fabric`（`2cdfa84ad` / `4a8001b47`）同步」，
+O15 确实如此；**O14 那一半的前提整个不成立**，基准那一刀同样是空操作，详见下文。
 
 **O15 快捷移动优先落储物区**：成因不是「手持槽优先级高」，是它的准入判据几乎不挡东西
 （`ResourceHandlerSlot` 默认 `mayPlace` → `LivingEntityEquipmentWrapper.isValid` → 女仆分支
@@ -350,26 +351,41 @@ mixin 的 `(Target)(Object)this` 惯用法（它看未合并字节码，按构�
 ⚠️ 原 O14 条目里「与 O15 同源」那句猜测**被证伪**，两条毫无关系。
 
 **O14 实为背部展示格，不是头部装备槽**：原条目锁定头部装备槽，且自己已证「按字节码本该拒收」——
-方向就是错的。逐层排除后落在**背部展示格**（默认背包最右那格）：它收得下（无 `mayPlace`）
-且 `LayerMaidBackItem` 确实会画。真实机制**不是「让枪不显示」**：枪**带 TOOL 组件**，
-满足 `extractBackpackState` 的 `has(DataComponents.TOOL)` → 走通用物品渲染画在背上（模型过大穿模），
-而那一支画完就 `return`，两个背部渲染层里**既有的枪械专用分支一直不可达**。排除枪后
-`backItem` 为空，控制流自然落到 `GunClientUtil.renderBackGun`。同时改掉**三处假注释**
-（`EntityMaidRenderState` 字段 javadoc / `LayerMaidBackItem` / `GeckoLayerMaidBackItem` 都写着
-「枪不带 TOOL」）——正是没人回去核对这个事实断言，枪械分支才不可达了整整一个版本。
+方向就是错的。逐层排除后落在**背部展示格**（默认背包最右那格，无 `mayPlace`，收得下）。
 
-**明确不做**（用户裁决）：gecko 模型没穿背包时手枪找 `TAC_PISTOL`、长枪找 `TAC_RIFLE` 骨骼，
-没骨骼就什么都不画、不回落。实查 `origin/1.21.1` 同一段同样无 else 兜底，属上游行为，
-决定权留给模型作者。
+⚠️ **本条 2026-08-21 二次定案**：用户实测 `91b41fca6` 没生效，取证推翻了它的**全部**前提（`0929c1feb`）。
+- **TACZ 的枪不带 TOOL 组件**。运行期实测：`tacz:modern_kinetic_gun` 共 12 个组件，
+  `minecraft:tool` 不在其中；对照组 `minecraft:diamond_pickaxe` 有。注册处佐证：
+  `ModItems.itemProps()` 只有 `setId`，`ModernKineticGunItem` 加 `stacksTo(1)`，
+  `AbstractGunItem` 构造器是裸 `super`。⇒ `has(DataComponents.TOOL)` 对枪恒为 false，
+  枪**一直**走的就是专用分支，`91b41fca6` 加的 `!isGun(...)` 是**纯空操作**；
+  它还把三处**本来正确**的注释（「枪不满足 TOOL，读它必然为空」）改成了错的，本轮改回。
+- 真实症状出在 `GunMaidRender` 的**五参 `renderBackGun`**：不看任何挂点骨骼，直接
+  `ZP180/XP180/translate/背包位移/ZP-35/scale(0.6)` 把枪的物品模型拍在背上，
+  是 bedrock 模型与「gecko + 穿背包」两条路的落点。实机截图：AK-47 甩到女仆身侧、
+  长度接近整个身体、穿进模型里；同格放钻石镐（走通用渲染）则小而贴背。
+- **不是移植回归**：该方法的变换链在 `origin/1.21.1`、`port/1.21.11-fabric`、本树**逐字相同**，
+  上游一直如此。⇒ `4a8001b47` 在基准那边同样是空操作，那条「已实机验收」不成立。
 
-**判据**：`MaidQuickMoveGameTest` 三条（🟢 行为）+ `BackDisplayGunRenderContractTest` 两条
-（🟡 接线——客户端渲染在 GameTest 里不加载）。**五条逐条红测过**，每次只注入一个缺陷：
-去储物区优先 → ①红 · 去回落 → ②红 · 给手持槽加 `mayPlace` → ③红（②同时红，同一缺陷波及两条）·
-去 `isGun` 守卫 → ④红 · 摘某层 `renderBackGun` → ⑤红。红测**同时正向证明了三条新 GameTest 真的在跑**
-（日志只打失败，通过项不列名，靠红测才拿得到执行凭据）。门禁：JUnit 239 项 0 失败 · GameTest 98 项全通过。
+**修法（用户 2026-08-21 裁决）**：砍掉固定变换兜底，只保留 gecko 模型按 `TAC_PISTOL` /
+`TAC_RIFLE` 定位组渲染的那条——与 2026-08-20 对「没有那两根骨骼就什么都不画」的裁决
+同一个原则：挂点归模型作者定，没给挂点就是不想让枪挂在那儿。删除面：五参 `renderBackGun`
+与 `renderBackpackGun`、六参里「穿背包就 return」整块、`TacCompat` / `GunClientUtil` 的五参转发、
+`LayerMaidBackItem` 的兜底调用（该文件现与 `origin/26.1` 只差一段注释）。
+
+**判据**：`MaidQuickMoveGameTest` 三条（🟢 行为）+ `BackDisplayGunRenderContractTest` 三条
+（🟡 接线——客户端渲染在 GameTest 里不加载，「背上那把枪看起来对不对」只有实机能验）。
+O15 三条逐条红测（去储物区优先 / 去回落 / 给手持槽加 `mayPlace`）；O14 三条共**五次注入**
+（放宽 TOOL 判据 / 加回 `isGun` 空操作 / bedrock 层加回兜底 / gecko 层摘掉接线 /
+渲染器里把 `scale(0.6f)` 加回来），每次只动一个变量，每次恰好一条红。红测**同时正向证明了
+三条新 GameTest 真的在跑**（日志只打失败，通过项不列名，靠红测才拿得到执行凭据）。
+⚠️ O14 原来那条「必须排除枪」的判据建立在被证伪的前提上，已删——它是
+「红测只证明判据抓得住它断言的那件事，证明不了它断言的是对的那件事」的又一实例。
+门禁：JUnit 240 项 0 失败 · GameTest 98 项全通过。
 
 **⚠️ 仍待实机成对验**（只验一半会把错误修法判成通过）：① 批量搬运先进储物区 **且** 手动拖剑到主手仍放得进
-② 枪进展示格不再穿模 **且** 镐/剑进展示格仍正常显示 ③ 各种背包各试一次（小/中/大/末影箱/熔炉/储罐）。
+② 展示格放枪：bedrock 模型**什么都不画** **且** 同格放镐/剑仍正常显示；gecko 模型带
+`TAC_PISTOL` / `TAC_RIFLE` 骨骼的仍照常显示 ③ 各种背包各试一次（小/中/大/末影箱/熔炉/储罐）。
 
 **顺带定案的两条观察**（交接时列为「值得单独立项」，查完**均不需改代码**）：
 - **`IGeoRenderer` 用 `entityCutout` 不是回归**：26.1.2 把 1.21.1 的 `entityCutoutNoCull` **改名为**
