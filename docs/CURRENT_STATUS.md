@@ -41,6 +41,36 @@
 
 知识文档那条（`2883dabb5`）无需实机：它是喂给模型的文本，已由契约测试钉住。
 
+**✅ 2026-08-22 Alex 坐垫透明/沉地回归实机关闭：** 用户连续观察图标、手持、掉落、放置四形态后确认修好。根因有两层：① 预览 identity 缓存复用了已被 Gecko 几何提交 `close()` 的一次性 `GeckoRenderData`，首次提交有 55 根骨骼，后续同一状态为 `CLOSED`；② `getExtentsForGui` 给的是 Bedrock 部件空间 1.3125..1.5 的 y，原版掉落物高度公式据此算出 -1.25，坐垫沉入地面。修复只缓存稳定的 `modelId`/缩放，实际 `submit` 每次重新抽取实体渲染状态，并把物品渲染包围盒固定回行为基准同款的 `minY=0`。客户端契约测试覆盖两条边界。**这只关闭本次新报回归；O13 原有六项目视清单仍按各自判据开放。**
+
+---
+
+**O14 · 每次进入世界触发一次完整客户端资源重载（2026-08-22 已定位；我方兼容补丁已落地，待实机）**
+
+现有 `run/logs/debug.log` 已把触发者定死为运行期 TACZ R2 jar 的
+`com.tacz.guns.client.compat.RecipeViewerReloadBridge`，不是 TLM 的世界规则同步或
+`ClientPackDownloadManager`：`00:59:44/45` 客户端收到 `sync_server_rules`，随后 TACZ 在
+`00:59:47` 为枪包同步刷新配方查看器；其 `ServerMessageSyncGunPack.doSync` 每次同步后都会
+调用 `RecipeViewerReloadBridge.requestReload()`。JEI 轻量入口因当前 API 缺少
+`AFTER_RECIPES_UPDATED` 字段失败；REI 入口则反射调用 `reloadPlugins(null, null)`（日志明确显示
+`stage null`）。TACZ 的策略是**任一查看器轻量刷新失败就降级**，因此随后明确执行
+`Minecraft.reloadResourcePacks()`。同一毫秒 Minecraft 打印 `Reloading ResourceManager`，
+TLM 的 `CustomPackReloadListener` 只是被全局 reload 连带调用，额外重扫模型包耗时 2390 ms。
+
+**我方兼容补丁：** `cn.sh1rocu.touhoulittlemaid.mixin.compat.tacz.client.RecipeViewerReloadBridgeMixin`
+只在 TACZ 与 JEI 同时加载时织入 `refreshJei()Z`，调用 JEI 29 的 `AFTER_RECIPE_SYNC`，让 JEI
+重新启动插件并读取已经同步的枪包数据；若该调用抛出异常则保留 TACZ 原有 fallback。旧的
+TaCZ 弹药 mixin 没有恢复。`compileJava`、`OptionalCompatWiringContractTest`、
+`MixinRegistrationInvariantTest` 已通过。
+
+**已向上游提交修复方案：** [q14433686-arch/TaCZ_Refabricated_Unofficial#67](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/issues/67)。提案要求 JEI 桥按
+`AFTER_RECIPE_SYNC` → `AFTER_RECIPES_UPDATED` 顺序兼容事件名，并保留真正不支持时的资源
+重载 fallback；附带 JEI/REI/无查看器四路回归矩阵。
+
+**待实机：** 启动后首次进世界、退回主菜单后二次进入同一世界，日志中应无 TACZ fallback 警告、
+无第二次 `Reloading ResourceManager`，且 JEI/REI 仍能看到 TACZ 枪桌配方。若 JEI 轻量刷新仍
+失败，必须保留 fallback 证据再继续改桥，不能用静默禁用来掩盖配方陈旧。
+
 ---
 
 **O1 · 待入世实测（2026-08-14 单人档验收后收窄到专服/存档侧）**
@@ -277,10 +307,16 @@ mixin 的 `(Target)(Object)this` 惯用法（它看未合并字节码，按构�
 ⚠️ 两条上游隐患记下备查（**非我方，无症状不改**）：`DownloadInfo` 静态 `DateFormat` 非线程安全；
 `MaidClimbManager` 用 `% 1 != 0.5D` 做浮点相等。**ArchUnit** 2 条规则全绿且自带活性下限。
 
-**O5 · 公开发布链路尚未建立**
-本分支还没有清洁分支、没有公开远端分支、没有 CI。`tree_equiv.py` 与 `git_hygiene.py`
-里已经写好了目标 ref 名（`release/26.1.2-clean` / `fork/port/26.1.2-fabric`），
-但**那两个 ref 还不存在**，相关门禁步骤现在必然跳过或报缺失——属预期，不是缺陷。
+**O5 · 公开发布链路尚未建立（流程设施已迁入，公开拓扑仍未创建）**
+发布规范、兼容账本、正式 CI、快照 artifact workflow 与五份文档入口已迁入本分支：
+`docs/RELEASE_WORKFLOW.md`、`docs/COMPAT.md`、`.github/workflows/build.yml`，以及
+按 26.1.2/TACZ R2 改写的 `26.1-snapshot.yml`。正式 CI 使用 Java 25，下载并校验
+TACZ R2 编译期 jar，只上传单个可安装 remap JAR；快照 workflow 不创建正式 Release。
+
+本分支仍没有清洁分支、没有公开远端分支。`tree_equiv.py` 与 `git_hygiene.py` 里的目标 ref
+名是 `release/26.1.2-clean` / `fork/port/26.1.2-fabric`，但**那两个 ref 还不存在**；
+因此 `release-gate.ps1 -Release` 现在应当报缺失，不能用跳过审计来伪造通过。首次发布前仍需
+用户确认公开仓库、默认分支、版本号和 Release 归属，再按 `RELEASE_WORKFLOW.md` 建立拓扑。
 
 **O7 已关闭**（2026-08-17，见已关闭表）。§3.C 的代码面至此整块闭合，实机验收项在 O1。
 
