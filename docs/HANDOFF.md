@@ -67,6 +67,10 @@ handler）。2026-08-16 实跑一遍，踩到并已固化的五条：
 | 标签规范 | `v<版本>+mc26.1.2` |
 | 备份规范 | `backup/26.1.2/<原因>/<YYYYMMDD>/<dev\|public>`——**必须带 `26.1.2` 段**，否则与 1.21.11 的备份标签混在同一个 `git tag` 视图里分不清 |
 
+完整发布顺序、清洁树边界、CI、精确租约、附件与回滚见
+[RELEASE_WORKFLOW.md](RELEASE_WORKFLOW.md)。正式 CI 文件为 `.github/workflows/build.yml`；
+`26.1-snapshot.yml` 只产出开发快照 artifact，不创建正式 Release。
+
 ⚠️ 本分支建立时已 `git branch --unset-upstream`：`origin` 指向基准仓库，**我们没有写权限**，
 留着跟踪只会让 `git push` 指错地方。将来接公开分支时把 upstream 设到 `fork`。
 
@@ -88,5 +92,6 @@ handler）。2026-08-16 实跑一遍，踩到并已固化的五条：
 
 ## 下一步
 
-见 [CURRENT_STATUS.md](CURRENT_STATUS.md) 的 O1–O4。最短路径是 **O2 先跑一次 `build`**
-（证明照搬来的工程设施真的可用），再进 **O1 探路轮**。
+见 [CURRENT_STATUS.md](CURRENT_STATUS.md) 顶部开放项。准备首次 26.1.2 发布时，先按
+[RELEASE_WORKFLOW.md](RELEASE_WORKFLOW.md) 建立清洁分支与公开分支；在二者不存在期间，
+`release-gate.ps1 -Release` 应当失败，不能把这条预期红灯改成跳过。

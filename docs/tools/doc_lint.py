@@ -17,15 +17,16 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DOCS = ROOT / "docs"
 
-#: 常驻入口 5 份，其余一律进 archive。
+#: 常驻入口 5 份，加上当前唯一在建设计文档；其它一律进 archive。
 #: 另允许**至多一份在建设计文档**：它随实施完成移入 archive，不常驻。
 #: 加进来的那一份必须同时登记到 docs/README.md 的表里，否则读者找不到它。
-#: 本分支起步阶段只有四份。RELEASE_WORKFLOW.md 与 COMPAT.md 等到真的要发布 / 真的接第三方
-#: 兼容时再建并登记——**提前放空壳文档只会腐烂**。
 EXPECTED_DOCS = {
     "README.md",
     "CURRENT_STATUS.md",
     "HANDOFF.md",
+    "RELEASE_WORKFLOW.md",
+    "COMPAT.md",
+    # 当前唯一在建设计文档；完成后移入 docs/archive/，同时删除此行。
     "PORT_26X_AUDIT.md",
 }
 
@@ -128,7 +129,7 @@ def main():
             print(f"  - {problem}")
         return 1
 
-    print(f"文档 lint 通过：{len(EXPECTED_DOCS)} 份活跃文档，链接、路径、提交引用与禁用词均无问题。")
+    print(f"文档 lint 通过：{len(EXPECTED_DOCS)} 份维护文档，链接、路径、提交引用与禁用词均无问题。")
     return 0
 
 

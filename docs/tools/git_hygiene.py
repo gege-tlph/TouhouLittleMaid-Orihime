@@ -14,8 +14,10 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
-#: backup/<原因>/<日期 8 位>/<视图>，例如 backup/release/20260724/dev
-BACKUP_NAME = re.compile(r"^backup/[a-z0-9-]+/\d{8}/(dev|public)$")
+#: 26.1.2 的备份必须带版本段，例如 backup/26.1.2/release/20260822/dev。
+TARGET_BACKUP_NAME = re.compile(r"^backup/26\.1\.2/[a-z0-9-]+/\d{8}/(dev|public)$")
+# 共享 git 仓库里还保留 1.21.11 的旧命名；它们属于另一条工作树，不能被本分支误判。
+LEGACY_BACKUP_NAME = re.compile(r"^backup/[a-z0-9-]+/\d{8}/(dev|public)$")
 
 #: 中断残留超过这个体积就该清理。
 GARBAGE_LIMIT_MIB = 50
@@ -70,15 +72,22 @@ def check_backup_refs():
         problems.append(f"备份 {branch} 建成了分支：备份一律用标签"
                         f"（不可被误 checkout、不污染 git branch、语义就是钉住不动）")
 
+    legacy = []
     for tag in git("tag", "--list", "backup/*").splitlines():
-        if not BACKUP_NAME.match(tag):
-            problems.append(f"备份标签命名不合规：{tag}"
-                            f"（应为 backup/<原因>/<YYYYMMDD>/<dev|public>；不要写版本号，版本号会写错）")
+        if TARGET_BACKUP_NAME.match(tag):
+            continue
+        if LEGACY_BACKUP_NAME.match(tag):
+            legacy.append(tag)
+            continue
+        problems.append(f"备份标签命名不合规：{tag}"
+                        f"（26.1.2 应为 backup/26.1.2/<原因>/<YYYYMMDD>/<dev|public>）")
+    if legacy:
+        notes.append(f"共享仓库保留 {len(legacy)} 个旧版备份标签；本分支只使用带 26.1.2 段的新命名")
 
 
 def check_unreachable_backups():
     """指向不可达提交的备份是唯一的存档，必须显式提示不可删除。"""
-    for tag in git("tag", "--list", "backup/*").splitlines():
+    for tag in git("tag", "--list", "backup/26.1.2/*").splitlines():
         sha = git("rev-parse", f"{tag}^{{commit}}")
         if not sha:
             continue
