@@ -1,0 +1,21 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "cases": [
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "touhou_little_maid:item/picnic_basket"
+        },
+        "when": [
+          "gui"
+        ]
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "touhou_little_maid:item/picnic_basket_in_hand"
+    },
+    "property": "minecraft:display_context"
+  }
+}

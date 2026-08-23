@@ -1,0 +1,17 @@
+{
+  "type": "touhou_little_maid:altar_recipe",
+  "entity": "minecraft:item",
+  "ingredients": [
+    "#c:crops/nether_wart",
+    "#c:dyes/red",
+    "minecraft:blaze_powder",
+    "minecraft:blaze_powder",
+    "minecraft:blaze_powder",
+    "minecraft:blaze_powder"
+  ],
+  "lang": "jei.touhou_little_maid.altar_craft.item_craft.result",
+  "power": 0.2,
+  "result": {
+    "id": "touhou_little_maid:fire_protect_bauble"
+  }
+}

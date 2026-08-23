@@ -1,0 +1,9 @@
+{
+  "pack": {
+    "description": {
+      "translate": "pack.touhou_little_maid.legacy_resources_pack.desc"
+    },
+    "min_format": 84,
+    "max_format": 84
+  }
+}

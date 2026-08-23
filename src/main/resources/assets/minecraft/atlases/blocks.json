@@ -1,0 +1,20 @@
+{
+  "sources": [
+    {
+      "type": "single",
+      "resource": "touhou_little_maid:gui/sprites/container/slot/back_show"
+    },
+    {
+      "type": "single",
+      "resource": "touhou_little_maid:gui/sprites/container/slot/tank_input"
+    },
+    {
+      "type": "single",
+      "resource": "touhou_little_maid:gui/sprites/container/slot/tank_output"
+    },
+    {
+      "type": "single",
+      "resource": "touhou_little_maid:bedrock/block/snack_cabinet"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "type": "touhou_little_maid:altar_recipe",
+  "entity": "minecraft:item",
+  "ingredients": [
+    "minecraft:clay_ball",
+    "minecraft:clay_ball",
+    "minecraft:clay_ball",
+    "minecraft:clay_ball",
+    "#c:dyes/orange",
+    "#c:dyes/red"
+  ],
+  "lang": "jei.touhou_little_maid.altar_craft.item_craft.result",
+  "power": 0.2,
+  "result": {
+    "id": "touhou_little_maid:extinguisher"
+  }
+}

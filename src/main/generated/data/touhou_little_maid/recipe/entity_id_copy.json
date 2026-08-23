@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "#c:leathers",
+    "minecraft:paper"
+  ],
+  "result": {
+    "id": "touhou_little_maid:entity_id_copy"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "touhou_little_maid:altar_recipe",
+  "entity": "minecraft:item",
+  "ingredients": [
+    "#c:crops/nether_wart",
+    "#c:dyes/blue",
+    "minecraft:shield",
+    "minecraft:shield",
+    "minecraft:shield",
+    "minecraft:shield"
+  ],
+  "lang": "jei.touhou_little_maid.altar_craft.item_craft.result",
+  "power": 0.2,
+  "result": {
+    "id": "touhou_little_maid:projectile_protect_bauble"
+  }
+}

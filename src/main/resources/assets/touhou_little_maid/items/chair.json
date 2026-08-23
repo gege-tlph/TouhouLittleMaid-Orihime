@@ -1,0 +1,10 @@
+{
+  "oversized_in_gui": true,
+  "model": {
+    "type": "minecraft:special",
+    "base": "touhou_little_maid:item/chair",
+    "model": {
+      "type": "touhou_little_maid:chair_item"
+    }
+  }
+}

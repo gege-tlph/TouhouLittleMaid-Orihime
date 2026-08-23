@@ -1,0 +1,17 @@
+{
+  "type": "touhou_little_maid:altar_recipe",
+  "entity": "minecraft:item",
+  "ingredients": [
+    "minecraft:pink_wool",
+    "minecraft:pink_wool",
+    "minecraft:pink_wool",
+    "minecraft:pink_wool",
+    "#c:ingots/gold",
+    "minecraft:pink_wool"
+  ],
+  "lang": "jei.touhou_little_maid.altar_craft.item_craft.result",
+  "power": 0.2,
+  "result": {
+    "id": "touhou_little_maid:maid_backpack_middle"
+  }
+}

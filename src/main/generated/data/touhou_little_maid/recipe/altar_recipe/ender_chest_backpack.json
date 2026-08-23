@@ -1,0 +1,13 @@
+{
+  "type": "touhou_little_maid:altar_recipe",
+  "entity": "minecraft:item",
+  "ingredients": [
+    "touhou_little_maid:maid_backpack_middle",
+    "minecraft:ender_chest"
+  ],
+  "lang": "jei.touhou_little_maid.altar_craft.item_craft.result",
+  "power": 0.2,
+  "result": {
+    "id": "touhou_little_maid:ender_chest_backpack"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "touhou_little_maid:altar_recipe",
+  "entity": "minecraft:item",
+  "ingredients": [
+    "#c:gems/emerald",
+    "#c:ender_pearls",
+    "#c:dyes/cyan",
+    "#c:dyes/cyan",
+    "#c:dyes/cyan",
+    "#c:dyes/cyan"
+  ],
+  "lang": "jei.touhou_little_maid.altar_craft.item_craft.result",
+  "power": 0.3,
+  "result": {
+    "id": "touhou_little_maid:ultramarine_orb_elixir"
+  }
+}
