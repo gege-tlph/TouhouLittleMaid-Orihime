@@ -1,0 +1,89 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - port/26.1.2-fabric
+  pull_request:
+    branches:
+      - port/26.1.2-fabric
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      # TACZ is compile-only. It has no Maven coordinate for this target and is not committed.
+      # Pinning the release asset by SHA-256 prevents a replaced upstream asset from silently
+      # changing the public build.
+      - name: Fetch TACZ compile-only dependency
+        env:
+          TACZ_JAR: TACZ-Refabricated-26.1.2-1.1.8+fabric.26.1.2.R2.jar
+          TACZ_SHA256: fcfdfe6e6356ae5f33c7a6a439ed656f2b9f1034d09cd850a2666c7399febf6f
+        run: |
+          mkdir -p libs/compile_only
+          curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors \
+            -o "libs/compile_only/$TACZ_JAR" \
+            "https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases/download/26.1.2_R2/$TACZ_JAR"
+          echo "$TACZ_SHA256  libs/compile_only/$TACZ_JAR" | sha256sum -c -
+
+      - name: Fetch Patchouli compile-only dependency
+        env:
+          PATCHOULI_JAR: patchouli-fabric-26.1-94.jar
+          PATCHOULI_SHA256: f8934d6305520fdf33fdfc4649eb9fae40067e1507f6a9731733c9eac0f0c0e1
+        run: |
+          mkdir -p libs/compile_only
+          curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors \
+            -o "libs/compile_only/$PATCHOULI_JAR" \
+            "https://cdn.modrinth.com/data/nU0bVIaL/versions/AveV4Tjn/$PATCHOULI_JAR"
+          echo "$PATCHOULI_SHA256  libs/compile_only/$PATCHOULI_JAR" | sha256sum -c -
+
+      - name: Build
+        run: ./gradlew build --no-daemon --console=plain
+
+      - name: Select installable remapped JAR
+        id: artifact
+        shell: bash
+        run: |
+          mapfile -t candidates < <(
+            find build/libs -maxdepth 1 -type f -name "*.jar" \
+              ! -name "*-sources.jar" \
+              ! -name "*-shadow.jar" \
+              ! -name "*-dev.jar" \
+              ! -name "*-dev-shadow.jar" | sort
+          )
+          if [[ "${#candidates[@]}" -ne 1 ]]; then
+            echo "Expected exactly one installable JAR, found ${#candidates[@]}:" >&2
+            printf "  %s\n" "${candidates[@]}" >&2
+            exit 1
+          fi
+          echo "path=${candidates[0]}" >> "$GITHUB_OUTPUT"
+          sha256sum "${candidates[0]}"
+
+      - name: Upload installable JAR
+        uses: actions/upload-artifact@v6
+        with:
+          name: touhoulittlemaid-fabric-26.1.2
+          path: ${{ steps.artifact.outputs.path }}
+          if-no-files-found: error
+          retention-days: 14

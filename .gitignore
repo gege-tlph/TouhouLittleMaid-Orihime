@@ -1,0 +1,35 @@
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea
+
+# vscode
+.vscode
+
+# gradle
+build
+.gradle
+
+# other
+eclipse
+run
+# clientDedicated 的 runDir（build.gradle 的 run-dedicated-client），以及将来任何 run* 变体。
+# 只写 `run` 覆盖不到它们，跑过 -WithClient 就会攒出一堆待误提交的文件。
+run*/
+
+/src/generated/.cache/
+/src/main/generated/.cache/
+
+# libs/compile_only 里的构件各自保留其上游许可证；缺件时构建会打印下载地址。
+/libs/*.jar
+/libs/compile_only/*.jar

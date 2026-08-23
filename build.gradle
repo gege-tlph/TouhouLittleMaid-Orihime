@@ -1,0 +1,513 @@
+plugins {
+    id 'idea'
+    id 'net.fabricmc.fabric-loom' version '1.16-SNAPSHOT'
+    id 'maven-publish'
+    id 'com.gradleup.shadow' version '9.4.1'
+    // OpenRewrite 插件，用于自动化处理 Minecraft 或者 Fabric 更新时的代码修改
+    id "org.openrewrite.rewrite" version "7.35.0"
+    // 质量闸：字节码静态分析（手动跑 spotbugsMain，不进默认构建），配置见文件末尾。
+    // 自 1.21.11 分支照搬（隔离纪律：门禁工具以副本共享）
+    id 'com.github.spotbugs' version '6.5.10'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = "${archives_base_name}"
+}
+
+
+fabricApi {
+    configureDataGeneration {
+        client = true
+    }
+}
+
+loom {
+    accessWidenerPath = file("src/main/resources/touhou_little_maid.classtweaker")
+    mixin {
+        defaultRefmapName = "touhou_little_maid.refmap.json"
+    }
+    runs {
+        datagen {
+            property "fabric-api.datagen.modid", "touhou_little_maid"
+        }
+        gametest {
+            server()
+            name = "Game Test"
+            vmArg "-Dfabric-api.gametest"
+            vmArg "-Dfabric-api.gametest.report-file=${projectDir}/build/gametest/report.xml"
+            runDir "build/gametest"
+        }
+        // 专服联机测试用的客户端。必须与 runServer 分开 runDir：两者都用 run/ 时，
+        // 正在运行的服务器锁住 run/.fabric/processedMods/*.jar，客户端重映射 mod 时删不掉，
+        // 直接 FileSystemException 启动失败。
+        clientDedicated {
+            client()
+            name = "Minecraft Client (Dedicated Test)"
+            runDir "run-dedicated-client"
+            // dev 客户端默认每次启动随机生成 Player### 用户名，UUID 随之改变，
+            // 于是 ops.json 里上一轮授予的 OP 全部失效。钉死用户名，OP 才能跨重启保留。
+            programArgs "--username", "TlmTester"
+        }
+    }
+}
+
+repositories {
+    // ./libs 目录为库
+    flatDir {
+        dir "libs"
+    }
+    // mavenLocal 为本机仓库
+    mavenLocal()
+    mavenCentral()
+    maven {
+        name = 'ParchmentMC'
+        url = 'https://maven.parchmentmc.org'
+    }
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+    }
+    maven {
+        url "https://maven.shedaniel.me/"
+        content {
+            includeGroup "me.shedaniel"
+            includeGroup "me.shedaniel.cloth"
+            includeGroup "dev.architectury"
+        }
+    }
+    maven {
+        url "https://maven2.bai.lol"
+        content {
+            includeGroup "mcp.mobius.waila"
+            includeGroup "lol.bai"
+        }
+    }
+    maven {
+        name = "TerraformersMC"
+        url = "https://maven.terraformersmc.com/"
+        content {
+            includeGroup "dev.emi"
+        }
+    }
+    maven {
+        name 'cursemaven'
+        url "https://www.cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+    maven { // for TOP
+        url "https://maven.k-4u.nl/"
+        content {
+            includeGroup "mcjty.theoneprobe"
+        }
+    }
+    maven {
+        url = "https://maven.theillusivec4.top/"
+        content {
+            includeGroup "top.theillusivec4.curios"
+        }
+    }
+    maven {// CCA
+        name = "Ladysnake Mods"
+        url = 'https://maven.ladysnake.org/releases'
+    }
+    maven {// Forge Config API Port
+        name = "Fuzs Mod Resources"
+        url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
+    }
+    maven {// ModMenu
+        name = "Terraformers"
+        url = "https://maven.terraformersmc.com/"
+    }
+    maven {
+        url = "https://maven.modmuss50.me/"
+    }
+    maven { url 'https://maven.wispforest.io/releases' }
+    maven { url 'https://maven.su5ed.dev/releases' }
+    maven {
+        name "reposiliteRepositoryArtifacts"
+        url "https://maven.conczin.net/Artifacts"
+    }
+    maven { url = "https://maven.createmod.net" }
+    maven { url 'https://maven.wispforest.io/releases' }
+    maven { url 'https://maven.su5ed.dev/releases' }
+    maven { url = "https://mvn.devos.one/releases/" }
+    maven { url = "https://mvn.devos.one/snapshots/" }
+    maven {
+        name = 'GeckoLib'
+        url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        content {
+            includeGroupByRegex("software\\.bernie.*")
+            includeGroup("com.eliotlash.mclib")
+        }
+    }
+    maven {
+        url = "https://raw.github.com/Sh1roCu/Sh1roCu_MCRepo/master/repository"
+    }
+    maven {
+        name "KosmX's maven"
+        url 'https://maven.kosmx.dev/'
+    }
+    maven {
+        name = "Jared's maven"
+        url = "https://maven.blamejared.com/"
+    }
+    maven {
+        name = "ModMaven"
+        url = "https://modmaven.dev"
+    }
+    maven {
+        name = "Greenhouse Maven"
+        url = 'https://maven.greenhouse.lgbt/releases/'
+    }
+    maven {
+        name = "Nucleoid"
+        url = 'https://maven.nucleoid.xyz/releases'
+    }
+    maven {
+        name = "AlexIIL"
+        url = "https://staging.alexiil.uk/maven/"
+    }
+
+}
+
+configurations {
+    runtimeClasspath.extendsFrom localRuntime
+
+    mcLib
+    implementation {
+        extendsFrom mcLib
+    }
+    additionalRuntimeClasspath {
+        extendsFrom mcLib
+    }
+}
+
+sourceSets.main {
+    java {
+        srcDir layout.buildDirectory.dir("generated/sources/annotationProcessor/java/main")
+    }
+}
+
+// TACZ 的编译期 jar。不入库，故可能缺席——缺席时让 compileJava 直接说清楚怎么补，
+// 而不是让 javac 抛出几十条「找不到程序包 com.tacz」把人引向别处。
+def taczCompileJar = file("libs/compile_only/TACZ-Refabricated-26.1.2-1.1.8+fabric.26.1.2.R2.jar")
+def patchouliCompileJar = file("libs/compile_only/patchouli-fabric-26.1-94.jar")
+tasks.named('compileJava').configure {
+    doFirst {
+        if (!taczCompileJar.exists()) {
+            throw new GradleException(
+                    "缺少 TACZ 编译期依赖：${taczCompileJar}\n" +
+                    "从 https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases/tag/26.1.2_R2\n" +
+                    "下载 TACZ-Refabricated-26.1.2-1.1.8+fabric.26.1.2.R2.jar 放到 libs/compile_only/ 下。\n" +
+                    "该 jar 体积大且许可证与本仓库不同，按约定不入库。")
+        }
+        if (!patchouliCompileJar.exists()) {
+            throw new GradleException(
+                    "缺少 Patchouli 编译期依赖：${patchouliCompileJar}\n" +
+                    "从 https://modrinth.com/mod/patchouli/version/26.1-94-beta 下载 patchouli-fabric-26.1-94.jar 放到 libs/compile_only/ 下。\n" +
+                    "该 jar 为可选兼容的 compile-only 依赖，不打进本项目 JAR。")
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+    annotationProcessor 'com.google.code.findbugs:jsr305:3.0.2'
+
+    annotationProcessor project(':maid-manager-codegen')
+    annotationProcessor 'com.squareup:javapoet:1.13.0'
+
+    // Opus 音频解码库
+    mcLib("org.gagravarr:vorbis-java-core:0.8")
+    mcLib("io.github.jaredmdobson:concentus:1.0.2")
+
+    // MP3 音频解码库
+    mcLib "com.googlecode.soundlibs:mp3spi:1.9.5.4"
+
+    // YAML 库
+    mcLib("org.yaml:snakeyaml:2.4")
+
+    // 拆分出来的基岩版模型加载库
+    // 又合并回来了
+    // implementation(include("libs:simplebedrockmodel:1.3.0-fabric+mc1.21.1"))
+
+    // JEI
+    implementation "maven.modrinth:jei:${jei_version}"
+    // REI（宿主注释掉的依赖解开，版本经 1.21.11 交接实测可下载；compileOnly = 软兼容，
+    // 运行期只在 REI 在场时经 rei_client entrypoint 实例化插件）
+    // implementation 而非 compileOnly：开发客户端要能实测 REI 界面（宿主对 JEI 同款做法）。
+    // 生产端仍是软兼容——fabric.mod.json 的 depends 不含它们。
+    implementation "maven.modrinth:architectury-api:${architectury_api_version}"
+    implementation "me.shedaniel:RoughlyEnoughItems-fabric:${rei_version}"
+    implementation("me.shedaniel.cloth:cloth-config-fabric:${cloth_config_version}") {
+        exclude group: 'net.fabricmc.fabric-api'
+    }
+    // EMI
+    // compileOnly "maven.modrinth:emi:${emi_version}"
+
+    implementation "maven.modrinth:jade:${jade_version}"
+//    compileOnly "maven.modrinth:cyberanner-ironchest:${iron_chests_version}"
+//    compileOnly "maven.modrinth:carry-on:${carry_on_version}"
+    // Patchouli 26.1-94-beta：官方 Fabric 构件；只为编译 API/processor，运行期由玩家另装。
+    compileOnly files(patchouliCompileJar)
+
+    // IPN
+    implementation "net.fabricmc:fabric-language-kotlin:1.13.11+kotlin.2.3.21"
+    implementation "maven.modrinth:libipn:fabric-26.1-6.7.2"
+    implementation "maven.modrinth:inventory-profiles-next:fabric-26.1-2.3.2"
+
+    compileOnly "maven.modrinth:sodium:mc26.1.2-0.8.12-beta.1-fabric"
+    compileOnly "maven.modrinth:iris:1.10.9+26.1-fabric"
+
+    // Forge Config API Port
+    // 26.1.5：TaCZ Refabricated 26.1.2_R1 要求 forgeconfigapiport>=26.1.5（实查其 fabric.mod.json）；
+    // 世界规则层对 FCAP 的字节码取证（ConfigValue.getRaw 抛「before config is loaded」）原是对 26.1.4 做的，
+    // 升级后由既有 JUnit/GameTest 门复验同一行为。
+    implementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:26.1.5"
+
+    // ModMenu
+    implementation("com.terraformersmc:modmenu:18.0.0-beta.1")
+
+    // Simple Hats
+//    compileOnly "maven.modrinth:simple-hats:nV0q5j3l"
+
+    // Trinkets
+    implementation "eu.pb4:trinkets:4.0.0-beta.1+26.1"
+
+    // Immersive Melodies
+//    compileOnly "immersive_melodies:immersive_melodies-fabric:0.6.2+1.21.1"
+
+    // Ponder
+//    compileOnly("net.createmod.ponder:Ponder-Fabric-1.21.1:1.0.61")
+
+    // 精妙背包
+//    compileOnly files("libs/sophisticatedbackpacks-1.21.1-3.23.4.3.106.jar")
+//    compileOnly files("libs/sophisticatedcore-1.21.1-1.2.9.17.157.jar")
+//    compileOnly fileTree(dir: 'libs/compile_only', include: ['*.jar'])
+
+    // 森罗物语：烹饪
+    compileOnly "maven.modrinth:kaleidoscope-cookery-refabricated:1.3.0.6-fabric+mc26.1.2"
+
+    // 森罗物语：酒馆（我们独有的兼容；typed adapter，故需要编译期符号）
+    compileOnly "maven.modrinth:kaleidoscope-tavern-refabricated:1.2.0.5-fabric+mc26.1.2"
+
+    // Improved Mobs
+//    compileOnly "maven.modrinth:improved-mobs:1.21.1-1.14.2-fabric"
+//    compileOnly "maven.modrinth:tenshilib:1.21.1-2.1.1-fabric"
+
+    // TACZ（枪械）—— 非官方 Fabric 移植 q14433686-arch/TaCZ_Refabricated_Unofficial 分支 26.1.2。
+    // 只在 GitHub Releases 发布，没有 Maven 坐标（Modrinth 的 tacz-refabricated 停在 1.21.1），
+    // 故按本地 jar 引入；jar **不入库**（55 MB，且它是 GPL-3.0 而本仓库 MIT+CC）。
+    // 缺文件时由下方 compileJava 守卫给出可执行提示。luaj/bcel/commons-math3 等运行库
+    // 该 jar 已 JiJ 自带（META-INF/jars），编译期不需要单列。
+    // 裸 compileOnly 而非 1.21.11 的 modCompileOnly：26.x 无混淆，loom 1.16 已无 mod* 配置
+    //（宿主全部依赖同样是裸 implementation/compileOnly）。我们不编译期引用其注入接口成员，
+    // mixin 的 @At target 字符串不参与编译解析，故无需 loom 的接口注入处理。
+    compileOnly files(taczCompileJar)
+//    implementation "curse.maven:nonconflictkeys-fabric-865546:4572953"
+
+    // PatPat
+//    compileOnly "maven.modrinth:patpat:1.2.1+1.21.1"
+//    compileOnly "maven.modrinth:proxlib:0.2.4+1.21"
+//    compileOnly "maven.modrinth:fabric-permissions-api:0.3.1"
+
+    // 卓越前线
+//    compileOnly "software.bernie.geckolib:geckolib-fabric-1.21.1:4.7.5"
+//    // TODO: 1.21没移植完，暂时用1.20通过编译
+//    compileOnly(files("libs/compile_only/superbwarfare-fabric-0.0.1-forge0.8.7.jar"))
+
+    // 地图相关模组兼容
+    // Xaero 小地图/世界地图是开发客户端的便利件，但它们没有声明 client-only，
+    // 于是 Fabric 会把它们一并加载进 **GameTest 的服务端**，并在 serverStarting 阶段崩：
+    //   java.lang.IllegalStateException: Registry is not frozen yet!
+    //     at xaero.lib.common.config.channel.register.ConfigChannelRegistry.iterator
+    // 而 runGametest 必须有服务端。loom 未拆分环境源集时 runtimeOnly 对所有运行配置生效，
+    // 没有"只给客户端"的作用域，故整体停用。要在 dev 客户端里看地图就临时取消注释，
+    // 但**别提交**——那会让 runGametest 再次全线崩溃。
+//    runtimeOnly "maven.modrinth:xaeros-minimap:fabric-26.1.2-25.3.12"
+//    runtimeOnly "maven.modrinth:xaeros-world-map:fabric-26.1.2-1.40.16"
+
+    // 拔刀剑
+//    compileOnly "cn.sh1rocu:slashblade-refabricated:1.21.1-1.0.1-Resharped-1.7.55"
+
+    // 农夫乐事
+    compileOnly("maven.modrinth:farmers-delight-refabricated:26.1-3.6.4") {
+        exclude(group: "net.fabricmc")
+    }
+    // 更多蛋糕
+//    compileOnly("maven.modrinth:common-network:1.0.21-1.21.1-fabric")
+//    compileOnly("maven.modrinth:just-more-cakes:1.19.2-fabric,1.21.1")
+
+    // 旅行者背包
+    compileOnly("maven.modrinth:travelersbackpack:CoCSwzdR")
+
+//    // 不加就无法run的各种前置
+//    implementation files("libs/LibGui-11.1.0+1.21.jar")
+//    implementation files("libs/Jankson-Fabric-8.0.0+j1.2.3.jar")
+//    implementation name: "libninepatch-1.2.0"
+//    implementation "me.zeroeightsix:fiber:0.23.0-SNAPSHOT"
+
+    // 单元与契约测试。1.21.11 分支上这一层拦下的是「纸面接口」「假成功保存」「提示词漂移」
+    // 一类编译期看不见的缺陷，移植期同样需要，故随工程设施一并带入。
+    testImplementation platform("org.junit:junit-bom:5.11.4")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testImplementation "org.mockito:mockito-core:5.15.2"
+    // 架构断言：读**字节码**而非源码文本。本仓库既有契约测试多在扫源码，1.21.11 分支
+    // 已两次栽在识别依据上（剥注释、字面量换常量）；ArchUnit 直接看调用图与字段访问，
+    // 没有这类脆弱面。自 1.21.11 分支照搬。
+    testImplementation "com.tngtech.archunit:archunit:1.4.1"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    workingDir layout.buildDirectory.dir("test-working")
+    doFirst {
+        workingDir.mkdirs()
+    }
+}
+
+shadowJar {
+    configurations = [project.configurations.mcLib]
+
+    dependencies {
+        exclude(dependency('junit:junit'))
+    }
+
+    archiveClassifier.set("")
+
+    enableAutoRelocation = true
+    relocationPrefix = "com.github.tartaricacid.touhoulittlemaid.libs"
+
+    exclude 'META-INF/maven/**/*'
+    exclude 'META-INF/versions/**/*'
+    exclude 'META-INF/LICENSE'
+    exclude '.cache/**'
+
+    mergeServiceFiles()
+    minimize()
+}
+
+assemble {
+    dependsOn shadowJar
+}
+
+tasks.compileJava {
+    // dsx137: 强制重新编译和生成 refmap.json 文件，避免偶发情况下该文件丢失问题
+    outputs.upToDateWhen { false }
+}
+
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    inputs.property "version", project.version
+    inputs.property "minecraft_version", project.minecraft_version
+    inputs.property "loader_version", project.loader_version
+    filteringCharset "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version,
+                "minecraft_version": project.minecraft_version,
+                "loader_version": project.loader_version
+    }
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-Xlint:-removal']
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Jar).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+}
+tasks.withType(Zip).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+}
+tasks.withType(Copy).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+}
+
+java {
+    withSourcesJar()
+
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.named('sourcesJar') {
+    // sourcesJar 会打包 annotationProcessor 生成的源码目录，显式依赖 compileJava
+    dependsOn tasks.named('compileJava')
+}
+
+jar {
+    from("LICENSE-MIT") {
+        rename { "${it}_${project.archives_base_name}" }
+    }
+    from("LICENSE-CC") {
+        rename { "${it}_${project.archives_base_name}" }
+    }
+}
+
+idea {
+    module {
+        downloadSources = true
+    }
+}
+
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifactId = "${project.archives_base_name}"
+            from components.java
+        }
+    }
+
+    repositories {
+        maven {
+            url "file:///D:/github_maven/Sh1roCu_MCRepo/repository"
+        }
+    }
+}
+
+rewrite {
+    activeRecipe("com.github.tartaricacid.Upgrade")
+}
+// ============================================================================
+// SpotBugs：字节码静态分析（自 1.21.11 分支照搬的门禁工具副本）。
+// 手写的「扫源码 + 断言」是在土法重造工业工具，且两条分支各因识别依据栽过。
+//
+// ⚠️ **不进默认构建**：手动跑 `gradlew spotbugsMain` → build/reports/spotbugs/main.html。
+//    发布门禁暂不接——按 tree_equiv 假绿那次教训，新闸得先红测、确认真的会红，再谈纳入。
+//
+// 📌 PIT（变异测试）在 1.21.11 分支评估过、用户裁决未采用：它的 minion 不继承
+//    test 任务的 workingDir 与 loom classpath，且对「扫源码文本」型契约测试天然无能为力。
+//    本分支同构，不必再试一遍。
+// ============================================================================
+
+spotbugs {
+    ignoreFailures = true          // 先报告不拦路，避免一上来被历史噪音淹没
+    showStackTraces = false
+    reportLevel = com.github.spotbugs.snom.Confidence.valueOf('HIGH')
+    effort = com.github.spotbugs.snom.Effort.valueOf('MAX')
+}
+
+tasks.named('spotbugsMain') {
+    reports {
+        html { required = true }
+        xml { required = false }
+    }
+}
+
+// 测试类分析价值低且噪音大，暂不跑
+tasks.matching { it.name == 'spotbugsTest' }.configureEach { enabled = false }
