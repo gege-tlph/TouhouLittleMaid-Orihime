@@ -63,13 +63,21 @@ TLM 的 `CustomPackReloadListener` 只是被全局 reload 连带调用，额外�
 TaCZ 弹药 mixin 没有恢复。`compileJava`、`OptionalCompatWiringContractTest`、
 `MixinRegistrationInvariantTest` 已通过。
 
-**已向上游提交修复方案：** [q14433686-arch/TaCZ_Refabricated_Unofficial#67](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/issues/67)。提案要求 JEI 桥按
-`AFTER_RECIPE_SYNC` → `AFTER_RECIPES_UPDATED` 顺序兼容事件名，并保留真正不支持时的资源
-重载 fallback；附带 JEI/REI/无查看器四路回归矩阵。
+**上游回复（2026-08-22）：** [q14433686-arch/TaCZ_Refabricated_Unofficial#67](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/issues/67)
+已关闭，理由是 `not planned`。维护者确认 R2 的设计就是「按版本尝试轻量查看器刷新；入口不可用时，
+只回退一次客户端资源重载」，该 fallback 不是缺陷，也不会自我循环。R2 发布时按 JEI 29.5.0.26
+验证 `AFTER_RECIPES_UPDATED`；当前目标的 JEI 29.5.0.28 改名为 `AFTER_RECIPE_SYNC`，因此会触发
+设计中的一次 fallback。上游给玩家的选项是：使用 JEI 29.5.0.26 保持轻量路径，或继续使用 29.5.0.28
+并接受一次入世重载；双事件名查找属于未来增强，不是 R2 缺陷修复。
 
-**待实机：** 启动后首次进世界、退回主菜单后二次进入同一世界，日志中应无 TACZ fallback 警告、
-无第二次 `Reloading ResourceManager`，且 JEI/REI 仍能看到 TACZ 枪桌配方。若 JEI 轻量刷新仍
-失败，必须保留 fallback 证据再继续改桥，不能用静默禁用来掩盖配方陈旧。
+**本地处置：** 我方 `RecipeViewerReloadBridgeMixin` 仍作为 26.1.2/JEI 29.5.0.28 的兼容增强保留，
+目标是把当前事件名接回轻量刷新，从而避免本模组自己的资源包监听器被额外调用；它不改变 TACZ 的
+一次性 fallback 安全网。该补丁应以实机日志确认「无 fallback + 枪包配方仍新鲜」后再宣称完成，不能
+因为上游把 fallback 判为设计行为，就把本地增强写成上游修复。
+
+**待实机：** 启动后首次进世界、退回主菜单后二次进入同一世界，确认 JEI/REI 枪桌配方正确；在本地
+桥生效时应无 TACZ fallback 警告、无第二次 `Reloading ResourceManager`。若桥失败，允许回到上游
+设计的一次 fallback，但必须保留日志证据，不能静默禁用资源重载。
 
 ---
 

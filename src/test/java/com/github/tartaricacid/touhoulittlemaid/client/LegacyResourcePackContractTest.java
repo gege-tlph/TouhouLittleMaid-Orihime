@@ -47,6 +47,8 @@ class LegacyResourcePackContractTest {
     private static final Pattern TITLE_KEY = Pattern.compile(
             "String\\s+TITLE_KEY\\s*=\\s*\"([^\"]+)\"");
     private static final Pattern PACK_FORMAT = Pattern.compile("\"pack_format\"\\s*:\\s*(\\d+)");
+    private static final Pattern MIN_FORMAT = Pattern.compile("\"min_format\"\\s*:\\s*(\\d+)");
+    private static final Pattern MAX_FORMAT = Pattern.compile("\"max_format\"\\s*:\\s*(\\d+)");
 
     /** 不在客户端入口调用，这个包就永远不会出现在资源包列表里，而且不会报任何错。 */
     @Test
@@ -103,7 +105,8 @@ class LegacyResourcePackContractTest {
     }
 
     /**
-     * {@code pack_format} 必须等于**本版客户端的资源包格式**，且描述与标题都要落在真实的 lang 键上。
+     * 旧版 {@code pack_format} 或 26.x 的 {@code min_format}/{@code max_format} 必须覆盖**本版客户端的资源包格式**，
+     * 且描述与标题都要落在真实的 lang 键上。
      *
      * <p>⚠️ <b>这条判据修过一次，原来那条是错的。</b>它原先断言「与主包 pack_format 一致」，
      * 而主包的值是宿主/上游有意保留的旧值——**mod 自带资源不走兼容性检查，内置可选包走**。
@@ -117,9 +120,20 @@ class LegacyResourcePackContractTest {
         String mcmeta = Files.readString(
                 RESOURCE_PACKS_ROOT.resolve(dirName).resolve("pack.mcmeta"), StandardCharsets.UTF_8);
 
-        assertEquals(clientResourcePackFormat(), readGroup(PACK_FORMAT, mcmeta, "legacy 包 pack_format"),
-                "legacy 包的 pack_format 与本版客户端不符 —— 它会被标成「旧版 / 不兼容」，"
-                + "而玩家只会以为是自己装错了");
+        String expected = clientResourcePackFormat();
+        Matcher legacyFormat = PACK_FORMAT.matcher(mcmeta);
+        if (legacyFormat.find()) {
+            assertEquals(expected, legacyFormat.group(1),
+                    "legacy 包的 pack_format 与本版客户端不符 —— 它会被标成「旧版 / 不兼容」，"
+                    + "而玩家只会以为是自己装错了");
+        } else {
+            String minFormat = readGroup(MIN_FORMAT, mcmeta, "legacy 包 min_format");
+            String maxFormat = readGroup(MAX_FORMAT, mcmeta, "legacy 包 max_format");
+            assertEquals(expected, minFormat,
+                    "legacy 包的 min_format 与本版客户端不符 —— 它会被标成「旧版 / 不兼容」");
+            assertEquals(expected, maxFormat,
+                    "legacy 包的 max_format 与本版客户端不符 —— 它会被标成「旧版 / 不兼容」");
+        }
 
         String lang = Files.readString(LANG_EN_US, StandardCharsets.UTF_8);
         String titleKey = readConstant(TITLE_KEY, "TITLE_KEY");
