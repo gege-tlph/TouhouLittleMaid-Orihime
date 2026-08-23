@@ -17,7 +17,7 @@
 |---|---|---|
 | JEI | Fabric entrypoint；配方与变体展示 | 代码已接通，随发布门禁验证 |
 | REI | `rei_client` entrypoint；祭坛配方摘要与侧栏 | 代码已接通，GameTest/客户端路径按门禁验证 |
-| Patchouli | `26.1-94-beta` Fabric 构件覆盖 Minecraft 26.1.2；提供本项目内置手册运行时 | 已接线：Patchouli compile-only 构件、创造栏手册入口、女仆 GUI 跳转、多方块祭坛注册、祭坛配方 processor 与客户端配方同步均已落地；2026-08-23 修复 `maid_bed` 条目引用不存在物品导致整本书回退为空的问题，编译/测试及客户端启动日志通过；仍需进入存档打开手册做页面目视确认 |
+| Patchouli | `26.1-94-beta` Fabric 构件覆盖 Minecraft 26.1.2；提供本项目内置手册运行时 | 已接线并完成用户入世确认：创造栏手册入口、女仆 GUI 跳转、多方块祭坛注册、祭坛配方 processor 与客户端配方同步均已落地；2026-08-23 修复无效 `maid_bed` 物品引用及 `spawn_box`/`reborn_maid` 特殊祭坛配方 ID，契约测试、完整构建、98/98 required GameTest 和客户端页面均通过 |
 | Sodium / Iris | 仅可选客户端兼容，不进入服务端运行集 | 已有共存实机证据；新版本组合仍需用户回归 |
 | TACZ Refabricated | `26.1.2_R2`；枪械攻击、弹药来源、持枪渲染与远程应战。编译期 jar 不入库 | R2 代码已落地；R1 旧验收不能替代 R2 实机复验 |
 | Farmer's Delight Refabricated | compile-only typed adapter，目标模组缺席时核心不触碰其类型 | 兼容边界已接通，按真实 mod jar 验收 |

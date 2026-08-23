@@ -92,6 +92,12 @@ handler）。2026-08-16 实跑一遍，踩到并已固化的五条：
 
 ## 下一步
 
+**本轮交接（2026-08-23）：** Patchouli 手册已由用户入世确认正常。最终修复包含：
+`maid_bed` 图标/Spotlight 使用有效的 `pink_maid_bed`；`spawn_box` 与 `reborn_maid` 页面改用实际
+注册的顶层 recipe ID；契约测试直接校验生成 recipe 文件、分类、图片和中英文翻译。门禁结果为
+`compileJava`、`test`、`build`、`runGametest` 全绿，required GameTest `98/98`。工作树中的开发客户端
+已关闭，避免 26.1.2 与 1.21.11 两个工作树同时运行 Gradle/Loom。
+
 见 [CURRENT_STATUS.md](CURRENT_STATUS.md) 顶部开放项。准备首次 26.1.2 发布时，先按
 [RELEASE_WORKFLOW.md](RELEASE_WORKFLOW.md) 建立清洁分支与公开分支；在二者不存在期间，
 `release-gate.ps1 -Release` 应当失败，不能把这条预期红灯改成跳过。

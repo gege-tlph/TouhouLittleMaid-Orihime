@@ -309,13 +309,13 @@ TACZ 14 条与 B1–B7 已全部落地（见已关闭表）。**mixin 退役项 
   须先把 `gege-tlph/OpenYSM-Updated` 移到 26.1.2——**独立项目，规模未评估**。**Patchouli**：官方已有
   `26.1-94-beta` 的 Fabric 构件，明确覆盖 Minecraft `26.1.2`；不再把“维护 fork”作为前置。
   本轮已完成 Patchouli API 接线：Gradle compile-only 构件、创造栏手册入口、女仆 GUI 跳转、祭坛
-  multiblock 注册、`AltarRecipeComponent` 以及客户端配方同步均已落地；`compileJava` 已通过。
-  **2026-08-23 资源错误修复：** 客户端日志发现 `entries/other/maid_bed.json` 的图标和 Spotlight
-  物品误写为不存在的 `touhou_little_maid:maid_bed`；Patchouli 因单条目构建失败把整本书回退成空内容。
-  已改为已注册的 `touhou_little_maid:pink_maid_bed`，并新增契约测试扫描本模组 `icon`/`item` 引用。
-  `compileJava`、`test` 及客户端启动日志均通过，日志不再出现 `Invalid icon item stack` 或
-  `using empty contents`。仍需进入存档打开手册，目视确认分类、条目、祭坛结构预览和全部配方页面后，
-  才能关闭最后的玩家行为验收项。
+  multiblock 注册、`AltarRecipeComponent` 以及客户端配方同步均已落地。
+  **2026-08-23 用户入世确认并关闭：** 手册已正常显示分类与条目。排障同时收掉两类资源引用错误：
+  `maid_bed.json` 的图标/Spotlight 改为已注册的 `touhou_little_maid:pink_maid_bed`；四处特殊祭坛页面
+  的 `spawn_box` / `reborn_maid` 改为实际注册 ID（此前误写成不存在的 `altar_recipe/...`）。契约测试现在
+  直接对账生成后的 recipe 文件，并检查分类、图片和 en_us/zh_cn 翻译键。`compileJava`、`test`、`build`
+  及 `runGametest` 均通过（98/98 required）；客户端日志不再出现 `Invalid icon item stack`、
+  `using empty contents` 或 `Altar recipe not found for Patchouli page`。
 
   **下限实测（2026-08-23）：** Patchouli 自身下限是 Loader `0.18.4` + Fabric API `0.144.0`，但必装
   Forge Config API Port `26.1.5` 要求 Loader `>=0.19.0`、Fabric API `>=0.149.0`，所以这才是基础

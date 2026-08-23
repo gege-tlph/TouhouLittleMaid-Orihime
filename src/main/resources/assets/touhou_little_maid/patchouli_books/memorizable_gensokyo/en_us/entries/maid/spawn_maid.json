@@ -14,7 +14,7 @@
     },
     {
       "type": "altar_recipe",
-      "recipe_id": "touhou_little_maid:altar_recipe/spawn_box"
+      "recipe_id": "touhou_little_maid:spawn_box"
     }
   ]
 }
