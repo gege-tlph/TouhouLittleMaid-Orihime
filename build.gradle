@@ -196,6 +196,7 @@ sourceSets.main {
 // TACZ 的编译期 jar。不入库，故可能缺席——缺席时让 compileJava 直接说清楚怎么补，
 // 而不是让 javac 抛出几十条「找不到程序包 com.tacz」把人引向别处。
 def taczCompileJar = file("libs/compile_only/TACZ-Refabricated-26.1.2-1.1.8+fabric.26.1.2.R2.jar")
+def patchouliCompileJar = file("libs/compile_only/patchouli-fabric-26.1-94.jar")
 tasks.named('compileJava').configure {
     doFirst {
         if (!taczCompileJar.exists()) {
@@ -204,6 +205,12 @@ tasks.named('compileJava').configure {
                     "从 https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases/tag/26.1.2_R2\n" +
                     "下载 TACZ-Refabricated-26.1.2-1.1.8+fabric.26.1.2.R2.jar 放到 libs/compile_only/ 下。\n" +
                     "该 jar 体积大且许可证与本仓库不同，按约定不入库。")
+        }
+        if (!patchouliCompileJar.exists()) {
+            throw new GradleException(
+                    "缺少 Patchouli 编译期依赖：${patchouliCompileJar}\n" +
+                    "从 https://modrinth.com/mod/patchouli/version/26.1-94-beta 下载 patchouli-fabric-26.1-94.jar 放到 libs/compile_only/ 下。\n" +
+                    "该 jar 为可选兼容的 compile-only 依赖，不打进本项目 JAR。")
         }
     }
 }
@@ -251,7 +258,8 @@ dependencies {
     implementation "maven.modrinth:jade:${jade_version}"
 //    compileOnly "maven.modrinth:cyberanner-ironchest:${iron_chests_version}"
 //    compileOnly "maven.modrinth:carry-on:${carry_on_version}"
-//    compileOnly "maven.modrinth:patchouli:${patchouli_version}"
+    // Patchouli 26.1-94-beta：官方 Fabric 构件；只为编译 API/processor，运行期由玩家另装。
+    compileOnly files(patchouliCompileJar)
 
     // IPN
     implementation "net.fabricmc:fabric-language-kotlin:1.13.11+kotlin.2.3.21"

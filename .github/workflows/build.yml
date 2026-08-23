@@ -47,6 +47,17 @@ jobs:
             "https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases/download/26.1.2_R2/$TACZ_JAR"
           echo "$TACZ_SHA256  libs/compile_only/$TACZ_JAR" | sha256sum -c -
 
+      - name: Fetch Patchouli compile-only dependency
+        env:
+          PATCHOULI_JAR: patchouli-fabric-26.1-94.jar
+          PATCHOULI_SHA256: f8934d6305520fdf33fdfc4649eb9fae40067e1507f6a9731733c9eac0f0c0e1
+        run: |
+          mkdir -p libs/compile_only
+          curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors \
+            -o "libs/compile_only/$PATCHOULI_JAR" \
+            "https://cdn.modrinth.com/data/nU0bVIaL/versions/AveV4Tjn/$PATCHOULI_JAR"
+          echo "$PATCHOULI_SHA256  libs/compile_only/$PATCHOULI_JAR" | sha256sum -c -
+
       - name: Build
         run: ./gradlew build --no-daemon --console=plain
 

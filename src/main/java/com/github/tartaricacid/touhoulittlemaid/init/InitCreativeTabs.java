@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.init;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.block.BlockGarageKit;
+import com.github.tartaricacid.touhoulittlemaid.compat.patchouli.PatchouliCompat;
 import com.github.tartaricacid.touhoulittlemaid.datagen.EnchantmentKeys;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemChair;
 import net.fabricmc.api.EnvType;
@@ -31,10 +32,10 @@ public class InitCreativeTabs {
             .title(Component.translatable("item_group.touhou_little_maid.main"))
             .icon(HAKUREI_GOHEI::getDefaultInstance)
             .displayItems((par, output) -> {
-                // TODO: Patchouli 暂无
-                // if (FabricLoader.getInstance().isModLoaded("patchouli")) {
-                //     output.accept(ItemModBook.forBook(MEMORIZABLE_GENSOKYO_LOCATION));
-                // }
+                if (FabricLoader.getInstance().isModLoaded("patchouli")) {
+                    output.accept(PatchouliCompat.getBookStack(
+                            Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "memorizable_gensokyo")));
+                }
                 output.accept(MAID_SPAWN_EGG);
                 output.accept(FAIRY_SPAWN_EGG);
                 output.accept(HAKUREI_GOHEI);

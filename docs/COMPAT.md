@@ -17,14 +17,14 @@
 |---|---|---|
 | JEI | Fabric entrypoint；配方与变体展示 | 代码已接通，随发布门禁验证 |
 | REI | `rei_client` entrypoint；祭坛配方摘要与侧栏 | 代码已接通，GameTest/客户端路径按门禁验证 |
-| Patchouli | `26.1-94-beta` Fabric 构件覆盖 Minecraft 26.1.2；提供本项目内置手册运行时 | 构件适用；项目依赖未接线，且内置 `altar_recipe.json` 引用的 `AltarRecipeComponent` 当前缺失，不能宣称手册功能已验收 |
+| Patchouli | `26.1-94-beta` Fabric 构件覆盖 Minecraft 26.1.2；提供本项目内置手册运行时 | 已接线：Patchouli compile-only 构件、创造栏手册入口、女仆 GUI 跳转、多方块祭坛注册、祭坛配方 processor 与客户端配方同步均已落地；仍需带 Patchouli 的客户端入世确认页面渲染 |
 | Sodium / Iris | 仅可选客户端兼容，不进入服务端运行集 | 已有共存实机证据；新版本组合仍需用户回归 |
 | TACZ Refabricated | `26.1.2_R2`；枪械攻击、弹药来源、持枪渲染与远程应战。编译期 jar 不入库 | R2 代码已落地；R1 旧验收不能替代 R2 实机复验 |
 | Farmer's Delight Refabricated | compile-only typed adapter，目标模组缺席时核心不触碰其类型 | 兼容边界已接通，按真实 mod jar 验收 |
 | Kaleidoscope Cookery | 标准食物/作物由核心覆盖，特殊三段水稻走 adapter | 已接通；初始化必须延迟到服务端启动 |
 | Kaleidoscope Tavern | 桌台、坐具、葡萄与工作餐排除；不自动饮酒或接入酿造机器 | 已接通，玩家路径仍按兼容组合回归 |
 | Carry On | 黑名单与携带行为 | 目标版本组合需专服/客户端回归 |
-| Traveler's Backpack | 仅保留可编译的软适配，不把 Accessories 当成硬前置 | 26.1.2 构件可得性需逐次确认 |
+| Traveler's Backpack | 当前不支持；旧 `TBackpackCompat`/`TBackpackSlotRef` 仅为未启用的 compile-only 遗留代码，不参与 `CompatRegistry` | 原识别器恒返 `false`、初始化为空，不能算兼容；在取得精确 26.1.2 Fabric API 和实机用例前不得重新启用 |
 
 ### 版本下限矩阵
 
@@ -41,6 +41,12 @@
 - KubeJS、Aquaculture、Sophisticated Backpacks、Accessories：当前目标构件为 NeoForge-only 或缺少 Fabric 依赖。
 - EMI、The One Probe、Iron Chests、Ponder、Immersive Melodies、Improved Mobs、Simple Hats、Embeddium：没有当前目标的可测 Fabric 闭包。
 - Refurbished Furniture：当前树中判定为无落点，不得只凭类名或旧版白名单宣称支持。
+
+### 已确认的空壳/假接线
+
+- **Traveler's Backpack**：`TBackpackCompat.init()` 为空，`isBackpack(ItemStack)` 恒返 `false`；其 slot adapter 没有有效消费者。已从 `CompatRegistry` 移除自动初始化，保留源码仅供后续取得真实 Fabric 构件后重写。
+- **Immersive Melodies**：服务端 `isInstrumentItem(ItemStack)` 恒返 `false`，原 `MobInteractMixin` 因此永远不会执行所谓的乐器交互修复；该 mixin 和服务端兼容类已删除。客户端 `ImmersiveMelodiesCompat` 只保留未安装模组时的 Molang 零值占位，不代表支持该模组。
+- **Simple Hats / Sodium / Embeddium**：当前类只做 mod id 检测或空渲染方法，未接入目标模组 API，也没有可验证的 26.1.2 Fabric 行为闭包；它们不在活动兼容表中，不能写成“已兼容”。
 
 这些项目不是“永远不做”的承诺；只有拿到精确的 26.1.2 Fabric 构件和可复现测试路径后，才能重新进入活动兼容表。
 
