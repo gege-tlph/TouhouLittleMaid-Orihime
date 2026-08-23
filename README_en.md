@@ -21,7 +21,7 @@ See the [Touhou Little Maid Wiki](http://page.cfpa.team/TouhouLittleMaid/) for g
 
 | Minecraft | Loader | Branch | Status |
 |---|---|---|---|
-| 26.1.2 | Fabric | [`port/26.1.2`](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/tree/port/26.1.2) | `v1.0.22-beta.1`, Beta |
+| 26.1.2 | Fabric | [`port/26.1.2-fabric`](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/tree/port/26.1.2-fabric) | `v1.0.22-beta.1`, Beta |
 | 1.21.11 | Fabric | [`port/1.21.11-fabric`](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/tree/port/1.21.11-fabric) | Stable maintenance |
 
 Each Minecraft version is maintained on an independent branch. Match the artifact, dependencies and save data
@@ -106,7 +106,7 @@ reproduction steps. Redact credentials before reporting an AI-related issue.
 
 ## Building from source (26.1.2 branch)
 
-Check out `port/26.1.2` and install JDK 25. The build also requires the TACZ R2 and Patchouli Fabric compile-time
+Check out `port/26.1.2-fabric` and install JDK 25. The build also requires the TACZ R2 and Patchouli Fabric compile-time
 JARs in `libs/compile_only/`; they are compile inputs only and are not included in the final artifact.
 
 ```bash

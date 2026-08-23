@@ -20,7 +20,7 @@
 
 | Minecraft | 加载器 | 分支 | 状态 |
 |---|---|---|---|
-| 26.1.2 | Fabric | [`port/26.1.2`](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/tree/port/26.1.2) | `v1.0.22-beta.1`，Beta |
+| 26.1.2 | Fabric | [`port/26.1.2-fabric`](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/tree/port/26.1.2-fabric) | `v1.0.22-beta.1`，Beta |
 | 1.21.11 | Fabric | [`port/1.21.11-fabric`](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/tree/port/1.21.11-fabric) | 稳定维护 |
 
 每个 Minecraft 版本使用独立分支维护。构件、依赖和存档均应按目标版本核对，不要跨版本混装。
@@ -99,7 +99,7 @@ KubeJS、Aquaculture、Accessories、Sophisticated Backpacks、YSM/OpenYSM 等�
 
 ## 从源码构建（26.1.2 分支）
 
-确认 checkout 的分支是 `port/26.1.2`，并安装 JDK 25。构建还需要将 TACZ R2 与 Patchouli Fabric 的
+确认 checkout 的分支是 `port/26.1.2-fabric`，并安装 JDK 25。构建还需要将 TACZ R2 与 Patchouli Fabric 的
 编译期 JAR 放入 `libs/compile_only/`；它们只参与编译，不会进入最终产物。
 
 ```bash
