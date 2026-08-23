@@ -310,8 +310,12 @@ TACZ 14 条与 B1–B7 已全部落地（见已关闭表）。**mixin 退役项 
   `26.1-94-beta` 的 Fabric 构件，明确覆盖 Minecraft `26.1.2`；不再把“维护 fork”作为前置。
   本轮已完成 Patchouli API 接线：Gradle compile-only 构件、创造栏手册入口、女仆 GUI 跳转、祭坛
   multiblock 注册、`AltarRecipeComponent` 以及客户端配方同步均已落地；`compileJava` 已通过。
-  仍需带 Patchouli 的客户端入世确认书籍打开、祭坛结构预览和全部祭坛配方页面渲染，才能关闭最后的
-  玩家行为验收项。
+  **2026-08-23 资源错误修复：** 客户端日志发现 `entries/other/maid_bed.json` 的图标和 Spotlight
+  物品误写为不存在的 `touhou_little_maid:maid_bed`；Patchouli 因单条目构建失败把整本书回退成空内容。
+  已改为已注册的 `touhou_little_maid:pink_maid_bed`，并新增契约测试扫描本模组 `icon`/`item` 引用。
+  `compileJava`、`test` 及客户端启动日志均通过，日志不再出现 `Invalid icon item stack` 或
+  `using empty contents`。仍需进入存档打开手册，目视确认分类、条目、祭坛结构预览和全部配方页面后，
+  才能关闭最后的玩家行为验收项。
 
   **下限实测（2026-08-23）：** Patchouli 自身下限是 Loader `0.18.4` + Fabric API `0.144.0`，但必装
   Forge Config API Port `26.1.5` 要求 Loader `>=0.19.0`、Fabric API `>=0.149.0`，所以这才是基础

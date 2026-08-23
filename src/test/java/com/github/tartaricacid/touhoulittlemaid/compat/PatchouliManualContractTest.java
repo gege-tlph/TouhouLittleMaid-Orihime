@@ -30,6 +30,8 @@ class PatchouliManualContractTest {
             "com/github/tartaricacid/touhoulittlemaid/datagen/RecipeGenerator.java");
     private static final Pattern RECIPE_ID = Pattern.compile(
             "\\\"recipe_id\\\"\\s*:\\s*\\\"touhou_little_maid:altar_recipe/([^\\\"]+)\\\"");
+    private static final Pattern ITEM_REFERENCE = Pattern.compile(
+            "\\\"(?:icon|item)\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"");
 
     @Test
     void manualBookAndRuntimeHooksArePresent() throws IOException {
@@ -76,6 +78,41 @@ class PatchouliManualContractTest {
                 .collect(java.util.stream.Collectors.toSet());
         assertTrue(missing.isEmpty(),
                 "Patchouli manual references an altar recipe with no generated/source definition: " + missing);
+    }
+
+    @Test
+    void patchouliEntriesUseRegisteredTlmItems() throws IOException {
+        String itemsSource = Files.readString(JAVA.resolve(
+                "com/github/tartaricacid/touhoulittlemaid/init/InitItems.java"), StandardCharsets.UTF_8);
+        Set<String> registered = new HashSet<>();
+        Matcher registrations = Pattern.compile("register\\(\\\"([^\\\"]+)\\\"").matcher(itemsSource);
+        while (registrations.find()) {
+            registered.add(registrations.group(1));
+        }
+
+        Set<String> missing = new HashSet<>();
+        try (Stream<Path> files = Files.walk(ENTRIES)) {
+            files.filter(path -> path.getFileName().toString().endsWith(".json")).forEach(path -> {
+                try {
+                    Matcher references = ITEM_REFERENCE.matcher(Files.readString(path, StandardCharsets.UTF_8));
+                    while (references.find()) {
+                        for (String value : references.group(1).split(",")) {
+                            if (value.startsWith("#") || !value.startsWith("touhou_little_maid:")) {
+                                continue;
+                            }
+                            String id = value.substring("touhou_little_maid:".length());
+                            if (!registered.contains(id)) {
+                                missing.add(value + " in " + path);
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            });
+        }
+        assertTrue(missing.isEmpty(),
+                "Patchouli manual references an unregistered TLM item: " + missing);
     }
 
     @Test
