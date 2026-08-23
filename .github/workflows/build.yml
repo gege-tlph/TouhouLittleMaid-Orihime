@@ -5,11 +5,9 @@ on:
   push:
     branches:
       - port/26.1.2
-      - port/26.1.2-fabric
   pull_request:
     branches:
       - port/26.1.2
-      - port/26.1.2-fabric
 
 permissions:
   contents: read

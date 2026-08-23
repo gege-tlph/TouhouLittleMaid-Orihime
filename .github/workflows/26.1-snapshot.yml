@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - port/26.1.2
-      - port/26.1.2-fabric
     paths:
       - "src/**"
       - "build.gradle"
