@@ -17,6 +17,7 @@
 |---|---|---|
 | JEI | Fabric entrypoint；配方与变体展示 | 代码已接通，随发布门禁验证 |
 | REI | `rei_client` entrypoint；祭坛配方摘要与侧栏 | 代码已接通，GameTest/客户端路径按门禁验证 |
+| Patchouli | `26.1-94-beta` Fabric 构件覆盖 Minecraft 26.1.2；提供本项目内置手册运行时 | 构件适用；本项目 Gradle/API 接入仍待完成，不能宣称手册功能已验收 |
 | Sodium / Iris | 仅可选客户端兼容，不进入服务端运行集 | 已有共存实机证据；新版本组合仍需用户回归 |
 | TACZ Refabricated | `26.1.2_R2`；枪械攻击、弹药来源、持枪渲染与远程应战。编译期 jar 不入库 | R2 代码已落地；R1 旧验收不能替代 R2 实机复验 |
 | Farmer's Delight Refabricated | compile-only typed adapter，目标模组缺席时核心不触碰其类型 | 兼容边界已接通，按真实 mod jar 验收 |

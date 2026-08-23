@@ -306,7 +306,10 @@ TACZ 14 条与 B1–B7 已全部落地（见已关闭表）。**mixin 退役项 
 
 **O4 · 前置项目未决**
 - **YSM**：Fabric 26.1.2 上不存在任何实现（本体仅 NeoForge 且闭源，OpenYSM 无 26.x）。要保留该特色，
-  须先把 `gege-tlph/OpenYSM-Updated` 移到 26.1.2——**独立项目，规模未评估**。**Patchouli**：官方有 26.1 beta，我们维护的 fork 需跟进。
+  须先把 `gege-tlph/OpenYSM-Updated` 移到 26.1.2——**独立项目，规模未评估**。**Patchouli**：官方已有
+  `26.1-94-beta` 的 Fabric 构件，明确覆盖 Minecraft `26.1.2`；不再把“维护 fork”作为前置。
+  但本项目的 Patchouli 依赖仍未接线（Gradle 声明注释、`PatchouliCompat.init()` 为空），需完成 API 接入、
+  书籍打开路径和 GameTest/实机验证后，才能把手册兼容从“可用前置”提升为“项目已支持”。
 
 **质量闸两支（2026-08-19 首次在本分支跑）**：**SpotBugs**（`gradlew spotbugsMain`，
 不进默认构建）131 条，correctness 31 条逐条定位，**无一条由我方移植工作引入**——24 条是

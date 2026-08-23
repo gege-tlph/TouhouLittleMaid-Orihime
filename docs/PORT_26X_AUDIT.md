@@ -30,8 +30,8 @@
    - **宿主结构已重构**（§5），`EntityMaid` 被拆成多个 manager，我们的改动没有落点。
 3. **量级**：89 笔差异化提交、396 个生产文件、12,711 增 / 18,365 删。其中
    **149 个文件新基上不存在（可直接搬）**，**247 个已存在（必须在新宿主上重做）**。
-4. **生态齐备**（§2），唯二缺口是两个由我们自己维护的前置：**Yes Steve Model**（上游无 26.x）
-   与 **Patchouli**（只有 26.1 beta，26.2 缺）。
+4. **生态齐备**（§2），主要生态缺口仍是 **Yes Steve Model**（上游无 26.x）；Patchouli 已有
+   覆盖 26.1.2 的官方 Fabric beta，项目侧剩余的是本手册集成而非前置移植。
 
 ## 1. 事实基线
 
@@ -77,7 +77,7 @@
 | Kaleidoscope Tavern Refabricated | `1.2.0.5-fabric+mc26.1.2` | release | 我们独有的兼容 |
 | Carry On | `2.10.0` | release | |
 | PatPat | `1.3.1+26.1+fabric` | release | |
-| Patchouli | `26.1-94-beta` | **beta** | 我们维护的 fork 需跟进到此 |
+| Patchouli | `26.1-94-beta` | **beta / Fabric** | 官方构件覆盖 26.1.2；TLM 侧仍需接线与验收，不再要求维护 fork |
 | MrCrayfish's Furniture: Refurbished | `v1.0.23+26.1.2` | release | GitHub Releases 实查 |
 | Traveler's Backpack（本体） | `26.1.2-11.2.9` | release | **但兼容走 Accessories，见 2.2** |
 
@@ -393,7 +393,7 @@ git diff --shortstat origin/26.1 origin/26.2 -- src
 | 特色 | 前置 | 现状 |
 |---|---|---|
 | YSM 自定义模型 + 挂件渲染 | Fabric 上要有 YSM 实现 | **26.1.2 上不存在**：本体仅 NeoForge 且闭源；OpenYSM 无 26.x 发布。**要保留就得我们把 `gege-tlph/OpenYSM-Updated` 移植到 26.1.2**，那是独立仓库的独立项目，规模未评估 |
-| Patchouli 手册 | Patchouli 26.1.x | 官方有 `26.1-94-beta`，**我们维护的 fork 需跟到这一版** |
+| Patchouli 手册 | Patchouli 26.1.x | 官方 Fabric `26.1-94-beta` 已覆盖 26.1.2；TLM 的 Gradle/API 接入与书籍路径仍待完成 |
 
 ### 7.3 范围外 —— 生态不允许（§2.2 实查，非我们选择）
 
