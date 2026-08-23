@@ -308,8 +308,15 @@ TACZ 14 条与 B1–B7 已全部落地（见已关闭表）。**mixin 退役项 
 - **YSM**：Fabric 26.1.2 上不存在任何实现（本体仅 NeoForge 且闭源，OpenYSM 无 26.x）。要保留该特色，
   须先把 `gege-tlph/OpenYSM-Updated` 移到 26.1.2——**独立项目，规模未评估**。**Patchouli**：官方已有
   `26.1-94-beta` 的 Fabric 构件，明确覆盖 Minecraft `26.1.2`；不再把“维护 fork”作为前置。
-  但本项目的 Patchouli 依赖仍未接线（Gradle 声明注释、`PatchouliCompat.init()` 为空），需完成 API 接入、
-  书籍打开路径和 GameTest/实机验证后，才能把手册兼容从“可用前置”提升为“项目已支持”。
+  但本项目的 Patchouli 依赖仍未接线（Gradle 声明注释、`PatchouliCompat.init()` 为空）；更关键的是，
+  内置 `altar_recipe.json` 已引用 `compat.patchouli.AltarRecipeComponent`，而当前源码中没有这个类。
+  需先恢复/重写该 processor，再完成 API 接入、书籍打开路径和 GameTest/实机验证，才能把手册兼容从
+  “可用前置”提升为“项目已支持”。
+
+  **下限实测（2026-08-23）：** Patchouli 自身下限是 Loader `0.18.4` + Fabric API `0.144.0`，但必装
+  Forge Config API Port `26.1.5` 要求 Loader `>=0.19.0`、Fabric API `>=0.149.0`，所以这才是基础
+  TLM/Patchouli 档的项目下限。此前用更低的 `0.18.4/0.144.0` 做过 `compileJava` 试跑，但不能据此
+  宣称运行时支持。若安装 TACZ Refabricated R2，必须再提高到 Loader `>=0.19.3`、Fabric API `>=0.155.2`。
 
 **质量闸两支（2026-08-19 首次在本分支跑）**：**SpotBugs**（`gradlew spotbugsMain`，
 不进默认构建）131 条，correctness 31 条逐条定位，**无一条由我方移植工作引入**——24 条是

@@ -17,7 +17,7 @@
 |---|---|---|
 | JEI | Fabric entrypoint；配方与变体展示 | 代码已接通，随发布门禁验证 |
 | REI | `rei_client` entrypoint；祭坛配方摘要与侧栏 | 代码已接通，GameTest/客户端路径按门禁验证 |
-| Patchouli | `26.1-94-beta` Fabric 构件覆盖 Minecraft 26.1.2；提供本项目内置手册运行时 | 构件适用；本项目 Gradle/API 接入仍待完成，不能宣称手册功能已验收 |
+| Patchouli | `26.1-94-beta` Fabric 构件覆盖 Minecraft 26.1.2；提供本项目内置手册运行时 | 构件适用；项目依赖未接线，且内置 `altar_recipe.json` 引用的 `AltarRecipeComponent` 当前缺失，不能宣称手册功能已验收 |
 | Sodium / Iris | 仅可选客户端兼容，不进入服务端运行集 | 已有共存实机证据；新版本组合仍需用户回归 |
 | TACZ Refabricated | `26.1.2_R2`；枪械攻击、弹药来源、持枪渲染与远程应战。编译期 jar 不入库 | R2 代码已落地；R1 旧验收不能替代 R2 实机复验 |
 | Farmer's Delight Refabricated | compile-only typed adapter，目标模组缺席时核心不触碰其类型 | 兼容边界已接通，按真实 mod jar 验收 |
@@ -25,6 +25,13 @@
 | Kaleidoscope Tavern | 桌台、坐具、葡萄与工作餐排除；不自动饮酒或接入酿造机器 | 已接通，玩家路径仍按兼容组合回归 |
 | Carry On | 黑名单与携带行为 | 目标版本组合需专服/客户端回归 |
 | Traveler's Backpack | 仅保留可编译的软适配，不把 Accessories 当成硬前置 | 26.1.2 构件可得性需逐次确认 |
+
+### 版本下限矩阵
+
+- **基础 TLM + Patchouli**：Minecraft `26.1.x`（当前构建目标 `26.1.2`）、Fabric Loader `>=0.19.0`、Fabric API `>=0.149.0`；这是必装 Forge Config API Port `26.1.5` 抬高后的项目下限。
+- **基础 TLM + TACZ Refabricated R2**：Loader 提高为 `>=0.19.3`、Fabric API 提高为 `>=0.155.2`，这是 TACZ R2 的硬依赖，不是 Patchouli 的要求。
+- Patchouli 自身只要求 Loader `>=0.18.4`、Fabric API `>=0.144.0`；该较低值不能作为本项目最终下限，因为 FCAP `26.1.5` 更高。
+- 其它可选模组仍可能有更高的自身下限；不能因为基础档成立，就宣称所有兼容组合都支持同一组最低版本。
 
 ## 无落点或暂不支持
 
