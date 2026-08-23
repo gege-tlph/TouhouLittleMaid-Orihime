@@ -1,0 +1,39 @@
+package com.github.tartaricacid.touhoulittlemaid.event;
+
+import cn.sh1rocu.touhoulittlemaid.api.event.ProjectileImpactEvent;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
+
+public final class EntityHurtEvent {
+    public static void onArrowImpact(ProjectileImpactEvent event) {
+        Entity attacker = event.getProjectile().getOwner();
+        HitResult ray = event.getRayTraceResult();
+        if (attacker instanceof TamableAnimal thrower && ray instanceof EntityHitResult hitResult) {
+            Entity victim = hitResult.getEntity();
+            if (victim instanceof TamableAnimal tameable) {
+                LivingEntity owner = thrower.getOwner();
+                // 同一主人，那么免伤
+                if (owner != null && tameable.isOwnedBy(owner)) {
+                    event.setCanceled(true);
+                }
+            }
+            if (victim instanceof LivingEntity livingVictim) {
+                // 主人和同 Team 玩家免伤
+                if (thrower.isAlliedTo(livingVictim)) {
+                    event.setCanceled(true);
+                }
+            }
+            Identifier registryName = BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType());
+            if (ServerRuleConfig.get(MaidConfig.MAID_RANGED_ATTACK_IGNORE).contains(registryName.toString())) {
+                event.setCanceled(true);
+            }
+        }
+    }
+}

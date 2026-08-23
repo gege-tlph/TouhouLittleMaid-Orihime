@@ -1,0 +1,67 @@
+package com.github.tartaricacid.touhoulittlemaid.network.message.ai;
+
+import com.github.tartaricacid.touhoulittlemaid.ai.manager.site.ClientAvailableSitesSync;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.init.InitDataAttachment;
+import com.github.tartaricacid.touhoulittlemaid.network.client.ai.SyncMaidAIDataPacketProxy;
+import io.netty.buffer.ByteBuf;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerPlayer;
+
+import java.util.Objects;
+
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
+
+public record SyncMaidAIDataPacket(int entityId, CompoundTag configData, int currentTokens,
+                                   int maxTokens) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<SyncMaidAIDataPacket> TYPE = new CustomPacketPayload.Type<>(modLoc("sync_maid_ai_data"));
+    public static final StreamCodec<ByteBuf, SyncMaidAIDataPacket> STREAM_CODEC = new StreamCodec<>() {
+        @Override
+        public SyncMaidAIDataPacket decode(ByteBuf byteBuf) {
+            FriendlyByteBuf buf = new FriendlyByteBuf(byteBuf);
+            int entityId = buf.readVarInt();
+            CompoundTag configData = Objects.requireNonNullElse(buf.readNbt(), new CompoundTag());
+            ClientAvailableSitesSync.readFromNetwork(buf);
+            int currentTokens = buf.readVarInt();
+            int maxTokens = buf.readVarInt();
+            return new SyncMaidAIDataPacket(entityId, configData, currentTokens, maxTokens);
+        }
+
+        @Override
+        public void encode(ByteBuf byteBuf, SyncMaidAIDataPacket message) {
+            FriendlyByteBuf buf = new FriendlyByteBuf(byteBuf);
+            buf.writeVarInt(message.entityId);
+            buf.writeNbt(message.configData);
+            ClientAvailableSitesSync.writeToNetwork(buf);
+            buf.writeVarInt(message.currentTokens);
+            buf.writeVarInt(message.maxTokens);
+        }
+    };
+
+    public SyncMaidAIDataPacket(EntityMaid maid, ServerPlayer player) {
+        // 还原 HEAD 形态：writeToTag(CompoundTag) 仍存在（MaidAIChatData:75）。移植期改成 save(TagValueOutput) +
+        //   this() 非首语句 = Java 21 非法且 save 不存在 → 复原为单表达式 this()。行为对齐 HEAD。
+        this(maid.getId(), maid.getAiChatManager().writeToTag(new CompoundTag()),
+                player.getAttachedOrCreate(InitDataAttachment.CHAT_TOKENS).get(),
+                ServerRuleConfig.get(AIConfig.MAX_TOKENS_PER_PLAYER)
+        );
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    @Environment(EnvType.CLIENT)
+    public static void handle(SyncMaidAIDataPacket message, ClientPlayNetworking.Context context) {
+        context.client().execute(() -> SyncMaidAIDataPacketProxy.handle(message));
+    }
+}

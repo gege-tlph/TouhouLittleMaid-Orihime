@@ -1,0 +1,221 @@
+package com.github.tartaricacid.touhoulittlemaid.item;
+
+import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
+import com.github.tartaricacid.touhoulittlemaid.client.proxy.ItemServantBellProxy;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
+import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
+import com.github.tartaricacid.touhoulittlemaid.world.data.MaidInfo;
+import com.github.tartaricacid.touhoulittlemaid.world.data.MaidWorldData;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.level.Level;
+
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
+
+import static com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent.*;
+
+@SuppressWarnings("deprecation")
+public class ItemServantBell extends Item {
+    private static final int MIN_USE_DURATION = 20;
+
+    public ItemServantBell(Identifier id) {
+        super((new Properties()
+                .stacksTo(1))
+                .setId(ResourceKey.create(Registries.ITEM, id)));
+    }
+
+    public static void recordMaidInfo(ItemStack stack, UUID uuid, String tip) {
+        if (stack.is(InitItems.SERVANT_BELL)) {
+            stack.set(SAKUYA_BELL_UUID_TAG, uuid);
+            stack.set(SAKUYA_BELL_TIP_TAG, tip);
+        }
+    }
+
+    @Nullable
+    public static ItemFoxScroll.TrackInfo getMaidShow(ItemStack stack) {
+        return stack.get(SAKUYA_BELL_SHOW_TAG);
+    }
+
+    @Override
+    public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity target,
+                                                  InteractionHand usedHand) {
+        if (usedHand == InteractionHand.MAIN_HAND
+            && target instanceof EntityMaid maid
+            && maid.isOwnedBy(player)
+        ) {
+            if (maid.level.isClientSide()) {
+                ItemServantBellProxy.openServantBellSetScreen(maid);
+            }
+            return InteractionResult.SUCCESS;
+        }
+        return super.interactLivingEntity(stack, player, target, usedHand);
+    }
+
+    @Override
+    public InteractionResult use(Level worldIn, Player playerIn, InteractionHand handIn) {
+        ItemStack stack = playerIn.getItemInHand(handIn);
+        UUID searchUuid = getMaidUuid(stack);
+        if (searchUuid != null) {
+            playerIn.startUsingItem(handIn);
+            return InteractionResult.CONSUME;
+        }
+        if (!worldIn.isClientSide()) {
+            MutableComponent msg = Component.translatable("message.touhou_little_maid.servant_bell.data_is_empty");
+            playerIn.sendSystemMessage(msg);
+        }
+        return super.use(worldIn, playerIn, handIn);
+    }
+
+    @Override
+    public boolean releaseUsing(ItemStack stack, Level worldIn, LivingEntity entityLiving, int timeLeft) {
+        if (!(entityLiving instanceof Player player) || timeLeft < MIN_USE_DURATION) {
+            return false;
+        }
+
+        UUID searchUuid = getMaidUuid(stack);
+        if (searchUuid == null) {
+            MutableComponent msg = Component.translatable("message.touhou_little_maid.servant_bell.data_is_empty");
+            player.sendSystemMessage(msg);
+            return false;
+        }
+
+        if (worldIn instanceof ServerLevel serverLevel) {
+            List<? extends EntityMaid> maids = serverLevel.getEntities(
+                    EntityMaid.TYPE,
+                    maid -> checkMaidUuid(player, maid, searchUuid)
+            );
+            if (maids.isEmpty()) {
+                showMaidInfo(worldIn, player, stack, searchUuid);
+            } else {
+                stack.remove(SAKUYA_BELL_SHOW_TAG);
+                teleportMaid(player, maids);
+            }
+        }
+
+        worldIn.playSound(null, player.blockPosition(), SoundEvents.BELL_BLOCK,
+                SoundSource.BLOCKS, 2.0F, 1.0F);
+
+        player.getCooldowns().addCooldown(stack, 20);
+        if (player instanceof ServerPlayer serverPlayer) {
+            InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.USE_SERVANT_BELL);
+        }
+        return true;
+    }
+
+    @Nullable
+    private UUID getMaidUuid(ItemStack stack) {
+        return stack.get(SAKUYA_BELL_UUID_TAG);
+    }
+
+    private void teleportMaid(Player player, List<? extends EntityMaid> maids) {
+        maids.forEach(maid -> {
+            maid.setHomeModeEnable(false);
+            // 如果女仆是骑乘某个实体的，先让女仆下来
+            if (maid.isPassenger()) {
+                maid.stopRiding();
+            }
+            maid.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 1, true, false));
+            double x = player.getX() + player.getRandom().nextInt(3) - 1;
+            double z = player.getZ() + player.getRandom().nextInt(3) - 1;
+            maid.teleportTo(x, player.getY(), z);
+        });
+    }
+
+    private void showMaidInfo(Level worldIn, Player player, ItemStack stack, UUID searchUuid) {
+        MaidWorldData data = MaidWorldData.get(worldIn);
+        if (data == null) {
+            player.sendSystemMessage(Component.translatable("message.touhou_little_maid.servant_bell.no_result"));
+            return;
+        }
+
+        List<MaidInfo> infos = data.getPlayerMaidInfos(player);
+        if (infos == null || infos.isEmpty()) {
+            player.sendSystemMessage(Component.translatable("message.touhou_little_maid.servant_bell.no_result"));
+            return;
+        }
+
+        infos.stream().filter(info -> info.entityId().equals(searchUuid)).findFirst().ifPresentOrElse(info -> {
+            String dimension = info.dimension();
+            String playerDimension = player.level.dimension().identifier().toString();
+            stack.set(SAKUYA_BELL_SHOW_TAG, new ItemFoxScroll.TrackInfo(dimension, info.chunkPos()));
+
+            if (dimension.equals(playerDimension)) {
+                player.sendSystemMessage(Component.translatable("message.touhou_little_maid.servant_bell.show_pos"));
+            } else {
+                player.sendSystemMessage(Component.translatable("message.touhou_little_maid.servant_bell.not_same_dimension", dimension));
+            }
+        }, () -> player.sendSystemMessage(Component.translatable("message.touhou_little_maid.servant_bell.no_result")));
+    }
+
+    private boolean checkMaidUuid(Player player, EntityMaid maid, UUID searchUuid) {
+        return maid.isOwnedBy(player) && maid.getUUID().equals(searchUuid);
+    }
+
+    @Override
+    public int getUseDuration(ItemStack stack, LivingEntity livingEntity) {
+        return 100;
+    }
+
+    @Override
+    public ItemUseAnimation getUseAnimation(ItemStack pStack) {
+        return ItemUseAnimation.BLOCK;
+    }
+
+    @Override
+    public Component getName(ItemStack stack) {
+        String tip = stack.get(SAKUYA_BELL_TIP_TAG);
+        if (tip != null) {
+            return Component.literal(tip).withStyle(ChatFormatting.GOLD, ChatFormatting.UNDERLINE);
+        }
+        return super.getName(stack);
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, @Nullable Item.TooltipContext context, TooltipDisplay display,
+                                Consumer<Component> tooltip, TooltipFlag flagIn) {
+        UUID uuid = getMaidUuid(stack);
+
+        if (uuid != null) {
+            tooltip.accept(Component
+                    .translatable("tooltips.touhou_little_maid.servant_bell.uuid", uuid.toString())
+                    .withStyle(ChatFormatting.GRAY)
+            );
+
+            tooltip.accept(CommonComponents.space());
+        }
+
+        tooltip.accept(Component
+                .translatable("tooltips.touhou_little_maid.servant_bell.desc.1")
+                .withStyle(ChatFormatting.GRAY)
+        );
+
+        tooltip.accept(Component
+                .translatable("tooltips.touhou_little_maid.servant_bell.desc.2")
+                .withStyle(ChatFormatting.GRAY)
+        );
+    }
+}

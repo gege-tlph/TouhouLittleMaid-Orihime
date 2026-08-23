@@ -1,0 +1,743 @@
+package com.github.tartaricacid.touhoulittlemaid.entity.passive;
+
+import cn.sh1rocu.touhoulittlemaid.mixin.accessor.EntityAccessor;
+import cn.sh1rocu.touhoulittlemaid.mixin.accessor.ExperienceOrbAccessor;
+import cn.sh1rocu.touhoulittlemaid.util.transfer.*;
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
+import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
+import com.github.tartaricacid.touhoulittlemaid.api.backpack.IMaidBackpack;
+import com.github.tartaricacid.touhoulittlemaid.api.event.MaidPickupEvent;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
+import com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagItem;
+import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityPowerPoint;
+import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityTombstone;
+import com.github.tartaricacid.touhoulittlemaid.init.InitAttribute;
+import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
+import com.github.tartaricacid.touhoulittlemaid.inventory.handler.BaubleItemHandler;
+import com.github.tartaricacid.touhoulittlemaid.inventory.handler.MaidBackpackHandler;
+import com.github.tartaricacid.touhoulittlemaid.inventory.handler.MaidInvWrapper;
+import com.github.tartaricacid.touhoulittlemaid.item.ItemFilm;
+import com.github.tartaricacid.touhoulittlemaid.mixin.accessor.ArrowAccessor;
+import com.github.tartaricacid.touhoulittlemaid.network.NetworkHandler;
+import com.github.tartaricacid.touhoulittlemaid.network.message.ItemBreakPackage;
+import com.github.tartaricacid.touhoulittlemaid.util.ItemsUtil;
+import com.google.common.collect.Lists;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.AABB;
+
+import javax.annotation.Nullable;
+import java.util.List;
+
+import static com.github.tartaricacid.touhoulittlemaid.datagen.EnchantmentKeys.getEnchantmentLevel;
+import static com.github.tartaricacid.touhoulittlemaid.datagen.tag.TagItem.MAID_VANISHING_BLOCKLIST_ITEM;
+import static net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
+
+/**
+ * 物品管理类，各种形式的物品存入与取出
+ */
+@MaidManagerDef(alias = "itemManager", exposeView = true)
+public class MaidItemManager {
+    public static final String MAID_INVENTORY_TAG = "MaidInventory";
+    public static final String MAID_BAUBLE_INVENTORY_TAG = "MaidBaubleInventory";
+    public static final String MAID_HIDE_INVENTORY_TAG = "MaidHideInventory";
+    public static final String MAID_TASK_INVENTORY_TAG = "MaidTaskInventory";
+
+    private final EntityMaid maid;
+    /**
+     * 护甲栏包装类
+     */
+    private final ResourceHandler<ItemVariant> armorInvWrapper;
+    /**
+     * 主副手包装类
+     */
+    private final ResourceHandler<ItemVariant> handsInvWrapper;
+    /**
+     * 女仆主背包
+     */
+    private final ItemStacksResourceHandler maidInv;
+    /**
+     * 女仆饰品栏
+     */
+    private final BaubleItemHandler maidBauble;
+    /**
+     * 用于暂存副手物品的物品栏
+     */
+    private final ItemStacksResourceHandler hideInv;
+    /**
+     * 用于工作任务可能需要的物品栏
+     */
+    private final ItemStacksResourceHandler taskInv;
+
+    public MaidItemManager(EntityMaid entityMaid) {
+        this.maid = entityMaid;
+        this.armorInvWrapper = (ResourceHandler<ItemVariant>) LivingEntityEquipmentWrapper.of(maid, EquipmentSlot.Type.HUMANOID_ARMOR);
+        this.handsInvWrapper = (ResourceHandler<ItemVariant>) LivingEntityEquipmentWrapper.of(maid, EquipmentSlot.Type.HAND);
+        this.maidInv = new MaidBackpackHandler(36, maid);
+        this.maidBauble = new BaubleItemHandler(30);
+        this.hideInv = new ItemStacksResourceHandler(1);
+        this.taskInv = new ItemStacksResourceHandler(9);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static boolean canInsertItem(ItemStack stack) {
+        Identifier key = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (ServerRuleConfig.get(MaidConfig.MAID_BACKPACK_BLACKLIST).contains(key.toString())) {
+            return false;
+        }
+        return stack.getItem().canFitInsideContainerItems();
+    }
+
+    public ResourceHandler<ItemVariant> getArmorInvWrapper() {
+        return armorInvWrapper;
+    }
+
+    public ResourceHandler<ItemVariant> getHandsInvWrapper() {
+        return handsInvWrapper;
+    }
+
+    public ItemStacksResourceHandler getMaidInv() {
+        return maidInv;
+    }
+
+    public BaubleItemHandler getMaidBauble() {
+        return maidBauble;
+    }
+
+    public ItemStacksResourceHandler getHideInv() {
+        return hideInv;
+    }
+
+    public ItemStacksResourceHandler getTaskInv() {
+        return taskInv;
+    }
+
+    /**
+     * 获取女仆的全部物品栏（不考虑任何限制）
+     * <p>
+     * 一般情况下不应该调用此访问
+     */
+    public CombinedResourceHandler<ItemVariant> getAllInv() {
+        return new CombinedResourceHandler<>(
+                getArmorInvWrapper(),
+                getHandsInvWrapper(),
+                getMaidInv(),
+                getMaidBauble()
+        );
+    }
+
+    /**
+     * 获取可用的背包物品栏（因为女仆背包是可变大小的）
+     * <p>
+     * 返回 MaidInvWrapper，方便触发 MaidRequestItemEvent 事件时使用
+     */
+    public CombinedResourceHandler<ItemVariant> getAvailableBackpackInv() {
+        int maxContainerIndex = maid.getMaidBackpackType().getAvailableMaxContainerIndex();
+        var rangedWrapper = RangedResourceHandler.of(maidInv, 0, maxContainerIndex);
+        return new MaidInvWrapper(maid, rangedWrapper);
+    }
+
+    /**
+     * 获取可用的背包物品栏 + 主手物品栏（因为女仆背包是可变大小的）
+     * <p>
+     * 返回 MaidInvWrapper，方便触发 MaidRequestItemEvent 事件时使用
+     *
+     * @param handsFirst 是否将手持物品栏放在前面，放在前面会优先使用手持物品栏的物品
+     */
+    public CombinedResourceHandler<ItemVariant> getAvailableInv(boolean handsFirst) {
+        int maxContainerIndex = maid.getMaidBackpackType().getAvailableMaxContainerIndex();
+        var combinedInvWrapper = RangedResourceHandler.of(maidInv, 0, maxContainerIndex);
+        if (handsFirst) {
+            return new MaidInvWrapper(maid, handsInvWrapper, combinedInvWrapper);
+        } else {
+            return new MaidInvWrapper(maid, combinedInvWrapper, handsInvWrapper);
+        }
+    }
+
+    /**
+     * 直接将指定坐标处方块的掉落物放入女仆背包里，如果放不下了就掉落在地上
+     *
+     * @param state       准备被挖掘的方块状态
+     * @param level       世界
+     * @param pos         方块坐标
+     * @param blockEntity 方块实体（可能为 null）
+     * @param tool        挖掘方块使用的工具
+     */
+    public void dropResourcesToMaidInv(BlockState state, Level level, BlockPos pos, @Nullable BlockEntity blockEntity, ItemStack tool) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        var availableInv = getAvailableInv(false);
+        Block.getDrops(state, serverLevel, pos, blockEntity, maid, tool).forEach(stack -> {
+            ItemStack remindItemStack = ItemsUtil.insertItemStacked(availableInv, stack, false, null);
+            if (!remindItemStack.isEmpty()) {
+                Block.popResource(level, pos, remindItemStack);
+            }
+        });
+        state.spawnAfterBreak(serverLevel, pos, tool, true);
+    }
+
+    /**
+     * 用于物品的耐久损失，同步到附近的玩家，发出破碎的效果
+     */
+    public void hurtAndBreak(ItemStack stack, int amount) {
+        if (maid.level instanceof ServerLevel serverLevel) {
+            stack.hurtAndBreak(amount, serverLevel, null/*maid*/, stackIn -> {
+                ItemStack instance = stackIn.getDefaultInstance();
+                ItemBreakPackage msg = new ItemBreakPackage(maid.getId(), instance);
+                NetworkHandler.sendToNearby(maid, msg);
+            });
+        }
+    }
+
+    public boolean pickupArrow(AbstractArrow arrow, boolean simulate) {
+        MaidPickupEvent.ArrowResult event = new MaidPickupEvent.ArrowResult(maid, arrow, simulate);
+        MaidPickupEvent.ARROW_RESULT.invoker().onArrowResult(event);
+        if (event.isCanceled()) {
+            return event.isCanPickup();
+        }
+        if (!maid.level.isClientSide() && arrow.isAlive() && arrow.shakeTime <= 0) {
+            // 先判断箭是否处于可以拾起的状态
+            if (arrow.pickup != AbstractArrow.Pickup.ALLOWED) {
+                return false;
+            }
+            // 能够塞入
+            ItemStack stack = getArrowFromEntity(arrow);
+            if (stack.isEmpty()) {
+                return false;
+            }
+            var inv = getAvailableInv(false);
+            ItemStack inserted = ItemsUtil.insertItemStacked(inv, stack, simulate, null);
+            if (!inserted.isEmpty()) {
+                return false;
+            }
+            // 非模拟状态下，清除实体箭
+            if (!simulate) {
+                // 这是向客户端同步数据用的，如果加了这个方法，会有短暂的拾取动画和音效
+                maid.take(arrow, 1);
+                maid.tryPlayMaidPickupSound();
+                arrow.discard();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public boolean pickupItem(ItemEntity entityItem, boolean simulate) {
+        MaidPickupEvent.ItemResultPre event = new MaidPickupEvent.ItemResultPre(maid, entityItem, simulate);
+        MaidPickupEvent.ITEM_RESULT_PRE.invoker().onItemResultPre(event);
+        if (event.isCanceled()) {
+            return event.isCanPickup();
+        }
+        if (!maid.level.isClientSide() && entityItem.isAlive() && !entityItem.hasPickUpDelay()) {
+            // 获取实体的物品堆
+            ItemStack itemstack = entityItem.getItem();
+            // 检查物品是否合法
+            if (!MaidItemManager.canInsertItem(itemstack)) {
+                return false;
+            }
+            // 获取数量，为后面方面用
+            int count = itemstack.getCount();
+            var inv = getAvailableInv(false);
+            itemstack = ItemsUtil.insertItemStacked(inv, itemstack, simulate, null);
+            if (count == itemstack.getCount()) {
+                return false;
+            }
+            if (!simulate) {
+                // 这是向客户端同步数据用的，如果加了这个方法，会有短暂的拾取动画和音效
+                maid.take(entityItem, count - itemstack.getCount());
+                maid.tryPlayMaidPickupSound();
+                ItemStack copy = new ItemStack(itemstack.getItem(), count - itemstack.getCount());
+                // 如果遍历塞完后发现为空了
+                if (itemstack.isEmpty()) {
+                    // 清除这个实体
+                    entityItem.discard();
+                } else {
+                    // 将物品数量同步到客户端
+                    entityItem.setItem(itemstack);
+                }
+                MaidPickupEvent.ITEM_RESULT_POST.invoker().onItemResultPost(new MaidPickupEvent.ItemResultPost(maid, copy));
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public void pickupXPOrb(ExperienceOrb entityXPOrb) {
+        MaidPickupEvent.ExperienceResult event = new MaidPickupEvent.ExperienceResult(maid, entityXPOrb, false);
+        MaidPickupEvent.EXPERIENCE_RESULT.invoker().onExperienceResult(event);
+        if (event.isCanceled()) {
+            return;
+        }
+        if (!maid.level.isClientSide() && entityXPOrb.isAlive() && entityXPOrb.tickCount > 2) {
+            // 这是向客户端同步数据用的，如果加了这个方法，会有短暂的拾取动画和音效
+            maid.take(entityXPOrb, 1);
+            maid.tryPlayMaidPickupSound();
+
+            // 普通的经验球可以修补护甲栏，主副手和女仆饰品栏
+            var allItems = new CombinedResourceHandler<>(armorInvWrapper, handsInvWrapper, maidBauble);
+            ItemStack itemstack = getRandomItemWithMendingEnchantments(allItems);
+            if (!itemstack.isEmpty() && itemstack.isDamaged()) {
+                /** itemstack.getXpRepairRatio()*/
+                int i = Math.min(entityXPOrb.getValue(), itemstack.getDamageValue());
+                ((ExperienceOrbAccessor) entityXPOrb).tlm$setValue(entityXPOrb.getValue() - (i / 2));
+                itemstack.setDamageValue(itemstack.getDamageValue() - i);
+            }
+            if (entityXPOrb.getValue() > 0) {
+                maid.setExperience(maid.getExperience() + entityXPOrb.getValue());
+            }
+            entityXPOrb.discard();
+        }
+    }
+
+    public void pickupPowerPoint(EntityPowerPoint powerPoint) {
+        MaidPickupEvent.PowerPointResult event = new MaidPickupEvent.PowerPointResult(maid, powerPoint, false);
+        MaidPickupEvent.POWERPOINT_RESULT.invoker().onPowerPointResult(event);
+        if (event.isCanceled()) {
+            return;
+        }
+        if (!maid.level.isClientSide() && powerPoint.isAlive() && powerPoint.throwTime == 0) {
+            // 这是向客户端同步数据用的，如果加了这个方法，会有短暂的拾取动画和音效
+            powerPoint.take(maid, 1);
+            maid.tryPlayMaidPickupSound();
+
+            // P 点则可以修补女仆身上所有的物品栏（包括背包）
+            var allItems = getAllInv();
+            ItemStack itemstack = getRandomItemWithMendingEnchantments(allItems);
+            int xpValue = EntityPowerPoint.transPowerValueToXpValue(powerPoint.getValue());
+            if (!itemstack.isEmpty() && itemstack.isDamaged()) {
+                /** itemstack.getXpRepairRatio()*/
+                int i = Math.min(xpValue, itemstack.getDamageValue());
+                xpValue -= (i / 2);
+                itemstack.setDamageValue(itemstack.getDamageValue() - i);
+            }
+            if (xpValue > 0) {
+                maid.setExperience(maid.getExperience() + xpValue);
+            }
+            powerPoint.discard();
+        }
+    }
+
+    public boolean canPickup(Entity pickupEntity, boolean checkInWater) {
+        if (maid.isPickup()) {
+            if (checkInWater && pickupEntity.isInWater()) {
+                return false;
+            }
+            PickType pickupType = maid.getConfigManager().getPickupType();
+            if (pickupType.canPickItem() && pickupEntity instanceof ItemEntity entity) {
+                return pickupItem(entity, true);
+            }
+            if (pickupType.canPickItem() && pickupEntity instanceof AbstractArrow entity) {
+                return pickupArrow(entity, true);
+            }
+            if (pickupType.canPickXp() && pickupEntity instanceof ExperienceOrb) {
+                return true;
+            }
+            return pickupType.canPickXp() && pickupEntity instanceof EntityPowerPoint;
+        }
+        return false;
+    }
+
+    void pickupEntities() {
+        AABB pickupBox;
+        AttributeInstance attribute = maid.getAttribute(InitAttribute.MAID_PICKUP_RANGE);
+        if (attribute != null) {
+            pickupBox = maid.getBoundingBox().inflate(attribute.getValue());
+        } else {
+            pickupBox = maid.getBoundingBox().inflate(0.5);
+        }
+
+        List<Entity> entityList = maid.level.getEntities(maid, pickupBox, maid::canPickup);
+        if (!entityList.isEmpty() && maid.isAlive()) {
+            for (Entity entityPickup : entityList) {
+                // 如果是物品
+                if (entityPickup instanceof ItemEntity entity) {
+                    pickupItem(entity, false);
+                }
+                // 如果是经验
+                if (entityPickup instanceof ExperienceOrb entity) {
+                    pickupXPOrb(entity);
+                }
+                // 如果是 P 点
+                if (entityPickup instanceof EntityPowerPoint entity) {
+                    pickupPowerPoint(entity);
+                }
+                // 如果是箭
+                if (entityPickup instanceof AbstractArrow entity) {
+                    pickupArrow(entity, false);
+                }
+            }
+        }
+    }
+
+    void addItemsToTomb(EntityTombstone tombstone) {
+        // 女仆物品栏
+        var allInv = new CombinedResourceHandler<>(armorInvWrapper, handsInvWrapper, maidInv, maidBauble, hideInv, taskInv);
+        // 需要考虑消失诅咒附魔
+        this.destroyVanishingCursedItems(allInv);
+        // 将物品栏里的物品都放入墓碑里
+        for (int i = 0; i < allInv.size(); i++) {
+            ItemVariant resource = allInv.getResource(i);
+            if (resource.isBlank()) {
+                continue;
+            }
+            int size = allInv.getCapacityAsInt(i, resource);
+            ItemStack extractItem = ItemsUtil.extractItem(allInv, i, size, false, null);
+            tombstone.insertItem(extractItem);
+        }
+        // 背包额外数据
+        IMaidBackpack maidBackpack = maid.getMaidBackpackType();
+        tombstone.insertItem(maidBackpack.getTakeOffItemStack(ItemStack.EMPTY, null, maid));
+        maidBackpack.onSpawnTombstone(maid, tombstone);
+        // 胶片
+        ItemStack filmItem = ItemFilm.maidToFilm(maid);
+        tombstone.insertItem(filmItem);
+    }
+
+    private void destroyVanishingCursedItems(CombinedResourceHandler<ItemVariant> invWrapper) {
+        if (maid.level instanceof ServerLevel level && level.getGameRules().get(GameRules.KEEP_INVENTORY)) {
+            return;
+        }
+        for (int i = 0; i < invWrapper.size(); ++i) {
+            ItemStack stack = ItemUtil.getStack(invWrapper, i);
+            if (!stack.isEmpty() && EnchantmentHelper.has(stack, PREVENT_EQUIPMENT_DROP) && !stack.is(MAID_VANISHING_BLOCKLIST_ITEM)) {
+                ItemsUtil.extractItem(invWrapper, i, stack.getCount(), false, null);
+            }
+        }
+    }
+
+    /**
+     * 将之前临时存在背包里的物品再次放在对应的手上
+     *
+     */
+    /**
+     * 上游缺陷（TartaricAcid/TouhouLittleMaid#1177）：本方法原本硬编码操作副手，而
+     * {@code memoryHandItemStack} 的调用方（工作餐 / 家餐 / 自愈 / 换气）都用
+     * {@code HandUtils.NATIVE_HANDS} 挑「第一只空手」，主手为空时换的是<b>主手</b>。
+     * 于是主手空、副手有物时吃一次工作餐，副手那件无关物品会被塞进背包（满则掉地上），
+     * 随后副手被清空——玩家侧表现为物品凭空消失。判据改由调用方传入「正在使用的那只手」。
+     */
+    void backCurrentHandItemStack(EntityMaid maid, InteractionHand usedHand) {
+        // 先看看这只手是否为空？（进食后此处通常是碗、瓶等剩余物）
+        ItemStack usedHandItem = maid.getItemInHand(usedHand);
+        if (!usedHandItem.isEmpty()) {
+            var backpackInv = getAvailableBackpackInv();
+            ItemStack stack = ItemsUtil.insertItemStacked(backpackInv, usedHandItem.copy(), false, null);
+            if (!stack.isEmpty()) {
+                ItemEntity itemEntity = new ItemEntity(maid.level(), maid.getX(), maid.getY() + 0.5, maid.getZ(), stack);
+                maid.level.addFreshEntity(itemEntity);
+            }
+        }
+        // 这只手此时为空，那么插入我们的物品
+        var hide = this.getHideInv();
+        ItemStack stack = ItemUtil.getStack(hide, 0);
+        ItemStack output = ItemsUtil.extractItem(hide, 0, stack.getCount(), false, null);
+        maid.setItemInHand(usedHand, output);
+    }
+
+    /**
+     * 进食后归还容器（碗 / 瓶 / 桶）。
+     * <p>
+     * 原版只认 {@code USE_REMAINDER} 组件，那条路已由 vanilla 把剩余物放回手上、再由
+     * {@link #backCurrentHandItemStack} 收进背包。本方法补的是另外两条**原版不认**的：
+     * ① 物品自带的合成剩余物（26.1.2：{@code Item.getCraftingRemainder()} 返回
+     * {@code ItemStackTemplate}，旧版是 {@code ItemStack.getRecipeRemainder()}）；
+     * ② 世界规则 {@code MaidEatenReturnContainerList} 里玩家手配的「食物 → 容器」映射。
+     * <p>
+     * 宿主从 1.21.1 迁到 26.1 时把这条消费链整条丢了，只留下配置键与配置菜单里那一栏，
+     * 于是那一栏成了**能设置却不起作用的选项**。行为按 {@code port/1.21.11-fabric} 复原。
+     * <p>
+     * 上游缺陷（TartaricAcid/TouhouLittleMaid#1139）随行采用：该配置声明为
+     * {@code List<List<String>>} 却用无校验器的 {@code builder.define}，磁盘上手写成扁平
+     * {@code ["minecraft:bowl"]} 会在增强 for 的隐式 checkcast 上抛 CCE、写成
+     * {@code [["minecraft:bowl"]]} 会在 {@code get(1)} 抛 IOOBE；容器 id 非法字符还会让
+     * {@code Identifier.parse} 抛异常。本方法跑在服务端 tick 内，一条手写坏的配置就能崩 tick，
+     * 故按 Object 迭代逐项校验形状、id 用 tryParse，坏项降级为「忽略并 warn」。
+     *
+     * @param foodAfterEat 进食完成后那只手上的物品；手已空时传入被吃掉的那份拷贝
+     */
+    void returnFoodContainer(EntityMaid maid, ItemStack foodAfterEat) {
+        if (foodAfterEat.isEmpty()) {
+            return;
+        }
+        ItemStack container = ItemStack.EMPTY;
+        ItemStackTemplate craftingRemainder = foodAfterEat.getItem().getCraftingRemainder();
+        if (craftingRemainder != null) {
+            container = craftingRemainder.create();
+        }
+        if (container.isEmpty()) {
+            String itemId = ItemsUtil.getItemId(foodAfterEat.getItem());
+            for (Object entry : ServerRuleConfig.get(MaidConfig.MAID_EATEN_RETURN_CONTAINER_LIST)) {
+                if (!(entry instanceof List<?> pair) || pair.size() < 2
+                        || !(pair.get(0) instanceof String foodId) || !(pair.get(1) instanceof String containerId)) {
+                    TouhouLittleMaid.LOGGER.warn(
+                            "Ignoring malformed MaidEatenReturnContainerList entry {}; expected [item, container]", entry);
+                    continue;
+                }
+                if (foodId.equals(itemId)) {
+                    container = containerStack(containerId);
+                    break;
+                }
+            }
+        }
+        if (!container.isEmpty()) {
+            ItemsUtil.giveItemToMaid(maid, container);
+        }
+    }
+
+    private static ItemStack containerStack(String containerId) {
+        // 同 #1139：容器 id 来自手改配置，非法字符会让 Identifier.parse 抛异常并崩掉服务端 tick
+        Identifier id = Identifier.tryParse(containerId);
+        if (id == null) {
+            TouhouLittleMaid.LOGGER.warn("Ignoring malformed MaidEatenReturnContainerList container id {}", containerId);
+            return ItemStack.EMPTY;
+        }
+        return new ItemStack(BuiltInRegistries.ITEM.getValue(id));
+    }
+
+    void onEquipItem(EquipmentSlot slot, ItemStack oldItem, ItemStack newItem) {
+        if (newItem.isEmpty() || ((EntityAccessor) maid).tlm$firstTick() || !slot.isArmor()) {
+            return;
+        }
+
+        // 触发成就
+        if (maid.getOwner() instanceof ServerPlayer serverPlayer) {
+            InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.ANY_EQUIPMENT);
+        }
+
+        // 如果是下界合金
+        if (this.isNetheriteArmor(newItem)) {
+            // 检查全身装备
+            for (EquipmentSlot slotIn : EquipmentSlot.values()) {
+                if (!slotIn.isArmor() || slotIn == slot || slotIn == EquipmentSlot.BODY) {
+                    continue;
+                }
+                ItemStack itemBySlot = maid.getItemBySlot(slotIn);
+                if (!isNetheriteArmor(itemBySlot)) {
+                    return;
+                }
+            }
+            // 触发事件
+            if (maid.getOwner() instanceof ServerPlayer serverPlayer) {
+                InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.ALL_NETHERITE_EQUIPMENT);
+            }
+        }
+    }
+
+    void updateUsingItem(ItemStack usingItem) {
+        // 处理问题 https://github.com/TartaricAcid/TouhouLittleMaid/issues/1003
+        // 检测女仆是否处于异常的进食状态：正在使用物品但手中物品不是可正常使用状态下的物品
+        if (maid.isUsingItem()) {
+            ItemStack currentItem = maid.getUseItem();
+            // 如果正在使用物品但该物品无法继续使用（例如食物已被移除），则强制停止使用
+            if (currentItem.isEmpty() || currentItem.getUseDuration(maid) <= 0) {
+                maid.stopUsingItem();
+                return;
+            }
+        }
+
+        if (!usingItem.isEmpty()) {
+            AttributeInstance attribute = maid.getAttribute(InitAttribute.MAID_USE_ITEM_SPEED);
+            if (attribute != null) {
+                // MAID_USE_ITEM_SPEED 默认是 1
+                // 故这里减去属性值再加 1，保证属性值为 1 时行为和原版一致
+                maid.setUseItemRemainingTicks(maid.getUseItemRemainingTicks() - (int) attribute.getValue() + 1);
+            }
+        }
+    }
+
+    void save(ValueOutput output) {
+        maidInv.serialize(output.child(MAID_INVENTORY_TAG));
+        maidBauble.serialize(output.child(MAID_BAUBLE_INVENTORY_TAG));
+        hideInv.serialize(output.child(MAID_HIDE_INVENTORY_TAG));
+        taskInv.serialize(output.child(MAID_TASK_INVENTORY_TAG));
+    }
+
+    void read(ValueInput input) {
+        maidInv.deserialize(input.childOrEmpty(MAID_INVENTORY_TAG));
+        maidBauble.deserialize(input.childOrEmpty(MAID_BAUBLE_INVENTORY_TAG));
+        hideInv.deserialize(input.childOrEmpty(MAID_HIDE_INVENTORY_TAG));
+        taskInv.deserialize(input.childOrEmpty(MAID_TASK_INVENTORY_TAG));
+    }
+
+    /**
+     * 当需要临时调换手中物品和背包内物品时，可调用此方法
+     * 当置换后的物品使用完后会自动将之前的手中物品再次返回到手上
+     *
+     * @param itemStack 当前手上的物品（必须是能使用--需要持续使用的物品）
+     */
+    public void memoryHandItemStack(ItemStack itemStack) {
+        var hide = getHideInv();
+        // 先检查内部存储是否已经有物品了，有就掉落
+        ItemStack hideItemStack = ItemUtil.getStack(hide, 0);
+        if (!hideItemStack.isEmpty()) {
+            ItemStack extractItem = ItemsUtil.extractItem(hide, 0, hideItemStack.getCount(), false, null);
+            if (!extractItem.isEmpty()) {
+                ItemEntity itemEntity = new ItemEntity(maid.level(), maid.getX(), maid.getY() + 0.5, maid.getZ(), extractItem);
+                maid.level.addFreshEntity(itemEntity);
+            }
+        }
+        // 然后存入我们的物品
+        ItemsUtil.insertItemStacked(hide, itemStack, false, null);
+    }
+
+    /**
+     * 当女仆吃完后的容器无处可存，就直接以实体形式掉落
+     */
+    void handleExtraItemsCreatedOnUse(ItemStack convertedStack) {
+        var availableInv = this.getAvailableInv(false);
+        try (Transaction tx = Transaction.openOuter()) {
+            ItemVariant resource = ItemVariant.of(convertedStack);
+            int insert = availableInv.insert(resource, convertedStack.count(), tx);
+            // 如果女仆背包满了，掉落在地上
+            if (insert < convertedStack.count()) {
+                ItemStack droppedStack = convertedStack.copyWithCount(convertedStack.count() - insert);
+                ItemEntity itemEntity = new ItemEntity(maid.level, maid.getX(), maid.getY(), maid.getZ(), droppedStack);
+                maid.level.addFreshEntity(itemEntity);
+            }
+            tx.commit();
+        }
+    }
+
+    private ItemStack getRandomItemWithMendingEnchantments(ResourceHandler<ItemVariant> handler) {
+        RegistryAccess access = maid.level.registryAccess();
+        List<ItemStack> stacks = Lists.newArrayList();
+        for (int i = 0; i < handler.size(); i++) {
+            ItemStack stackInSlot = ItemUtil.getStack(handler, i);
+            if (!stackInSlot.isEmpty() && getEnchantmentLevel(access, Enchantments.MENDING, stackInSlot) > 0
+                    && stackInSlot.isDamaged() && !stackInSlot.is(TagItem.MAID_MENDING_BLOCKLIST_ITEM)) {
+                stacks.add(stackInSlot);
+            }
+        }
+        return stacks.isEmpty() ? ItemStack.EMPTY : stacks.get(maid.getRandom().nextInt(stacks.size()));
+    }
+
+    private boolean isNetheriteArmor(ItemStack stack) {
+        //FIXME 判断合理?
+        if (stack.has(DataComponents.EQUIPPABLE) && stack.has(DataComponents.REPAIRABLE)) {
+            return stack.get(DataComponents.REPAIRABLE).isValidRepairItem(Items.NETHERITE_INGOT.getDefaultInstance());
+        }
+        return false;
+    }
+
+    private ItemStack getArrowFromEntity(AbstractArrow entity) {
+        if (entity instanceof ArrowAccessor mixinArrow) {
+            // 落地箭矢：一律可捡，这是女仆回收箭矢的正常玩法
+            if (mixinArrow.tlmInGround()) {
+                return mixinArrow.getTlmPickupItem();
+            }
+            // 上游缺陷（TartaricAcid/TouhouLittleMaid#938）：isNoPhysics() 等价于
+            // 「忠诚三叉戟正在飞回主人」——ThrownTrident 对 loyalty>0 的返程 setNoPhysics(true)。
+            // 原版对该状态的拾取一律限定所有者，女仆原先照单全收，会在半空截走玩家的忠诚三叉戟。
+            // 此处按原版同款判据收口，女仆自己投出的（owner == maid）与无主投射物不受影响。
+            if (entity.isNoPhysics() && (entity.getOwner() == null || entity.getOwner() == this.maid)) {
+                return mixinArrow.getTlmPickupItem();
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    public interface View {
+        MaidItemManager getItemManager();
+
+        default ResourceHandler<ItemVariant> getArmorInvWrapper() {
+            return getItemManager().getArmorInvWrapper();
+        }
+
+        default ResourceHandler<ItemVariant> getHandsInvWrapper() {
+            return getItemManager().getHandsInvWrapper();
+        }
+
+        default ItemStacksResourceHandler getMaidInv() {
+            return getItemManager().getMaidInv();
+        }
+
+        default BaubleItemHandler getMaidBauble() {
+            return getItemManager().getMaidBauble();
+        }
+
+        default ItemStacksResourceHandler getHideInv() {
+            return getItemManager().getHideInv();
+        }
+
+        default ItemStacksResourceHandler getTaskInv() {
+            return getItemManager().getTaskInv();
+        }
+
+        default CombinedResourceHandler<ItemVariant> getAllInv() {
+            return getItemManager().getAllInv();
+        }
+
+        default CombinedResourceHandler<ItemVariant> getAvailableBackpackInv() {
+            return getItemManager().getAvailableBackpackInv();
+        }
+
+        default CombinedResourceHandler<ItemVariant> getAvailableInv(boolean handsFirst) {
+            return getItemManager().getAvailableInv(handsFirst);
+        }
+
+        default void dropResourcesToMaidInv(BlockState state, Level level, BlockPos pos,
+                                            @Nullable BlockEntity blockEntity, ItemStack tool) {
+            getItemManager().dropResourcesToMaidInv(state, level, pos, blockEntity, tool);
+        }
+
+        default void hurtAndBreak(ItemStack stack, int amount) {
+            getItemManager().hurtAndBreak(stack, amount);
+        }
+
+        default boolean pickupArrow(AbstractArrow arrow, boolean simulate) {
+            return getItemManager().pickupArrow(arrow, simulate);
+        }
+
+        default boolean pickupItem(ItemEntity entityItem, boolean simulate) {
+            return getItemManager().pickupItem(entityItem, simulate);
+        }
+
+        default void pickupXPOrb(ExperienceOrb entityXPOrb) {
+            getItemManager().pickupXPOrb(entityXPOrb);
+        }
+
+        default void pickupPowerPoint(EntityPowerPoint powerPoint) {
+            getItemManager().pickupPowerPoint(powerPoint);
+        }
+
+        default boolean canPickup(Entity pickupEntity, boolean checkInWater) {
+            return getItemManager().canPickup(pickupEntity, checkInWater);
+        }
+
+        default boolean canPickup(Entity pickupEntity) {
+            return getItemManager().canPickup(pickupEntity, false);
+        }
+
+        default void memoryHandItemStack(ItemStack itemStack) {
+            getItemManager().memoryHandItemStack(itemStack);
+        }
+    }
+}

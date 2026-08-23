@@ -1,0 +1,64 @@
+package com.github.tartaricacid.touhoulittlemaid.compat.curios;
+
+
+import com.github.tartaricacid.touhoulittlemaid.api.event.MaidTombstoneEvent;
+import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityTombstone;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import eu.pb4.trinkets.api.TrinketSlotAccess;
+import eu.pb4.trinkets.api.TrinketsApi;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+
+public class CuriosEvent {
+    /**
+     * 当添加可以修改槽位数量的饰品时，重置饰品容器
+     */
+    public static void onSlotUpdate(ItemStack previous, ItemStack stack, TrinketSlotAccess slot, LivingEntity entity) {
+//        if (entity instanceof EntityMaid maid && maid.getOwner() instanceof Player player) {
+//            MaidContainerCache.invalidate(maid);
+//            if (player.containerMenu instanceof CuriosContainer container) {
+//                container.resetPage(player);
+//
+//                // 客户端需要再次更新，否则可能会触发增减槽位不更新问题
+//                if (entity.level.isClientSide()) {
+//                    CuriosCompat.clientResetPage();
+//                }
+//            }
+//        }
+    }
+
+    /**
+     * 当女仆墓碑生成时，将 Curios 饰品从女仆身上转移到墓碑中
+     * Curios 后续的掉落事件仍然会触发，但此时女仆身上已经没有饰品了
+     */
+    public static void onMaidTombstone(MaidTombstoneEvent event) {
+        if (event.isCanceled()) {
+            return;
+        }
+        if (!CuriosCompat.isLoadedOrEnable()) {
+            return;
+        }
+
+        EntityTombstone tombstone = event.getTombstone();
+        EntityMaid maid = event.getMaid();
+
+//        AccessoriesCapability.getOptionally(maid).ifPresent(handler -> {
+//            var values = handler.getContainers().values();
+//            for (AccessoriesContainer stacksHandler : values) {
+//                var stacks = stacksHandler.getAccessories();
+//                for (int i = 0; i < stacks.getContainerSize(); i++) {
+//                    ItemStack stack = stacks.removeItem(i, stacks.getItem(i).getCount());
+//                    if (!stack.isEmpty()) {
+//                        tombstone.insertItem(stack);
+//                    }
+//                }
+//            }
+//        });
+
+        TrinketsApi.getAttachment(maid).getAllEquipped().forEach(tuple -> {
+            var inv = tuple.getA().inventory();
+            ItemStack stack = inv.removeItem(tuple.getA().index(), tuple.getB().getCount());
+            tombstone.insertItem(stack);
+        });
+    }
+}

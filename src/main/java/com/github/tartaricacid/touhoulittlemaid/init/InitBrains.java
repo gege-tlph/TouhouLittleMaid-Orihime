@@ -1,0 +1,124 @@
+package com.github.tartaricacid.touhoulittlemaid.init;
+
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.sensor.MaidHostilesSensor;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.sensor.MaidNearestLivingEntitySensor;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.sensor.MaidPickupEntitiesSensor;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.edible.MaidEdibleBlockAction;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.attribute.AttributeTypes;
+import net.minecraft.world.attribute.EnvironmentAttribute;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.behavior.PositionTracker;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.sensing.SensorType;
+import net.minecraft.world.entity.schedule.Activity;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface InitBrains {
+    Activity RIDE_IDLE = registerActivity("ride_idle", new Activity("tlm_ride_idle"));
+    Activity RIDE_WORK = registerActivity("ride_work", new Activity("tlm_ride_work"));
+    Activity RIDE_REST = registerActivity("ride_rest", new Activity("tlm_ride_rest"));
+    Activity EMERGENCY_COMBAT = registerActivity("emergency_combat", new Activity("tlm_emergency_combat"));
+
+    MemoryModuleType<List<Entity>> VISIBLE_PICKUP_ENTITIES = registerMemoryModuleType(
+            "visible_pickup_entities",
+            new MemoryModuleType<>(Optional.empty())
+    );
+
+    MemoryModuleType<PositionTracker> TARGET_POS = registerMemoryModuleType(
+            "target_pos",
+            new MemoryModuleType<>(Optional.empty())
+    );
+
+    MemoryModuleType<MaidEdibleBlockAction> MAID_EDIBLE_BLOCK_ACTION = registerMemoryModuleType(
+            "maid_edible_block_action",
+            new MemoryModuleType<>(Optional.empty())
+    );
+
+    /**
+     * 偷吃/摆盘对目标的持有期限（游戏刻绝对值）。超过它就让位给优先级更高的工作行为，
+     * 免得女仆为一份够不着或抢不到的桌上食物无限期占着 {@code TARGET_POS}。
+     *
+     * <p>⚠️ **无 codec，因此有意不随实体存档持久化**——它是一个 tick 级仲裁量，
+     * 重进世界后重新计时才是正确行为；给它 codec 反而会让旧的期限跨存档生效。</p>
+     *
+     * <p>⚠️ 注册在此还不够：必须同时进 {@code MaidBrain} 的 memory 列表，
+     * 否则 {@code setMemory} **静默无效**（证伪表既有条目，这是第 3 处静默注册面）。</p>
+     */
+    MemoryModuleType<Long> MAID_EDIBLE_HOLD_EXPIRY = registerMemoryModuleType(
+            "maid_edible_hold_expiry",
+            new MemoryModuleType<>(Optional.empty())
+    );
+
+    /**
+     * 瞬态应战活动的进入条件位。⚠️ 注册在此还不够：必须同时进
+     * {@code MaidBrain.getMemoryTypes()}，否则 {@code setMemory} 静默无效（证伪表既有条目）。
+     * 有意不给 codec：应战状态不持久化，跨存档恒从头开始。
+     */
+    MemoryModuleType<Boolean> EMERGENCY_COMBAT_ACTIVE = registerMemoryModuleType(
+            "emergency_combat_active",
+            new MemoryModuleType<>(Optional.empty())
+    );
+
+    SensorType<MaidNearestLivingEntitySensor> MAID_NEAREST_LIVING_ENTITY_SENSOR = registerSensorType(
+            "maid_nearest_living_entity",
+            new SensorType<>(MaidNearestLivingEntitySensor::new)
+    );
+
+    SensorType<MaidHostilesSensor> MAID_HOSTILES_SENSOR = registerSensorType(
+            "maid_hostiles",
+            new SensorType<>(MaidHostilesSensor::new)
+    );
+
+    SensorType<MaidPickupEntitiesSensor> MAID_PICKUP_ENTITIES_SENSOR = registerSensorType(
+            "maid_pickup_entities",
+            new SensorType<>(MaidPickupEntitiesSensor::new)
+    );
+
+    EnvironmentAttribute<Activity> MAID_DAY_SHIFT_ACTIVITY = registerEnvironment(
+            "gameplay/maid_day_shift_activity",
+            EnvironmentAttribute
+                    .builder(AttributeTypes.ACTIVITY)
+                    .defaultValue(Activity.IDLE)
+                    .build());
+
+    EnvironmentAttribute<Activity> MAID_NIGHT_SHIFT_ACTIVITY = registerEnvironment(
+            "gameplay/maid_night_shift_activity",
+            EnvironmentAttribute
+                    .builder(AttributeTypes.ACTIVITY)
+                    .defaultValue(Activity.IDLE)
+                    .build());
+
+    EnvironmentAttribute<Activity> MAID_ALL_DAY_ACTIVITY = registerEnvironment(
+            "gameplay/maid_all_day_activity",
+            EnvironmentAttribute
+                    .builder(AttributeTypes.ACTIVITY)
+                    .defaultValue(Activity.WORK)
+                    .build()
+    );
+
+    private static <T extends MemoryModuleType<?>> T registerMemoryModuleType(String id, T mType) {
+        return Registry.register(BuiltInRegistries.MEMORY_MODULE_TYPE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), mType);
+    }
+
+    private static <T extends SensorType<?>> T registerSensorType(String id, T sType) {
+        return Registry.register(BuiltInRegistries.SENSOR_TYPE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), sType);
+    }
+
+    private static EnvironmentAttribute<Activity> registerEnvironment(String id, EnvironmentAttribute<Activity> schedule) {
+        return Registry.register(BuiltInRegistries.ENVIRONMENT_ATTRIBUTE, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), schedule);
+    }
+
+    private static Activity registerActivity(String id, Activity activity) {
+        return Registry.register(BuiltInRegistries.ACTIVITY, Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, id), activity);
+    }
+
+    static void init() {
+
+    }
+}

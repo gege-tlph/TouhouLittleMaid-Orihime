@@ -1,0 +1,168 @@
+package com.github.tartaricacid.touhoulittlemaid.entity.task;
+
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
+import com.github.tartaricacid.touhoulittlemaid.api.task.IAttackTask;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidFeedAnimalTask;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidMeleeAttack;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.init.InitSounds;
+import com.github.tartaricacid.touhoulittlemaid.inventory.container.AbstractMaidContainer;
+import com.github.tartaricacid.touhoulittlemaid.inventory.container.task.DefaultMaidTaskConfigContainer;
+import com.github.tartaricacid.touhoulittlemaid.util.ItemsUtil;
+import com.github.tartaricacid.touhoulittlemaid.util.SoundUtil;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Lists;
+import com.mojang.datafixers.util.Pair;
+import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.behavior.*;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.NearestVisibleLivingEntities;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
+
+public class TaskFeedAnimal implements IAttackTask {
+    public static final Identifier UID = IdentifierUtil.modLoc("feed_animal");
+    private static final int MAX_STOP_ATTACK_DISTANCE = 8;
+
+    @Override
+    public Identifier getUid() {
+        return UID;
+    }
+
+    @Override
+    public ItemStack getIcon() {
+        return Items.WHEAT.getDefaultInstance();
+    }
+
+    @Nullable
+    @Override
+    public SoundEvent getAmbientSound(EntityMaid maid) {
+        return SoundUtil.environmentSound(maid, InitSounds.MAID_FEED_ANIMAL, 0.5f);
+    }
+
+    @Override
+    public List<Pair<Integer, BehaviorControl<? super EntityMaid>>> createBrainTasks(EntityMaid maid) {
+        BehaviorControl<EntityMaid> supplementedTask = StartAttacking.create((level, e) -> hasAssaultWeapon(e), (level, e) -> findFirstValidAttackTarget(e));
+        BehaviorControl<EntityMaid> findTargetTask = StopAttackingIfTargetInvalid.create(
+                (level, target) -> !maid.canAttack(target) || !hasAssaultWeapon(maid) || farAway(target, maid));
+        BehaviorControl<Mob> moveToTargetTask = SetWalkTargetFromAttackTargetIfTargetOutOfReach.create(0.6f);
+        BehaviorControl<EntityMaid> attackTargetTask = MaidMeleeAttack.create(20);
+
+        return Lists.newArrayList(
+                Pair.of(5, new MaidFeedAnimalTask(0.6f, ServerRuleConfig.get(MaidConfig.FEED_ANIMAL_MAX_NUMBER))),
+                Pair.of(6, supplementedTask),
+                Pair.of(6, findTargetTask),
+                Pair.of(6, moveToTargetTask),
+                Pair.of(6, attackTargetTask)
+        );
+    }
+
+    private Optional<? extends LivingEntity> findFirstValidAttackTarget(EntityMaid maid) {
+        long animalCount = this.getEntities(maid)
+                .find(e -> maid.isWithinHome(e.blockPosition()))
+                .filter(Entity::isAlive)
+                .filter(e -> e instanceof Animal).count();
+
+        if (animalCount < (ServerRuleConfig.get(MaidConfig.FEED_ANIMAL_MAX_NUMBER) - 2)) {
+            return Optional.empty();
+        }
+
+        return this.getEntities(maid)
+                .find(e -> maid.isWithinHome(e.blockPosition()))
+                .filter(Entity::isAlive)
+                .filter(e -> e instanceof Animal)
+                .filter(e -> ((Animal) e).getAge() == 0)
+                .filter(e -> ((Animal) e).canFallInLove())
+                .filter(e -> ItemsUtil.isStackIn(maid.getAvailableInv(false), ((Animal) e)::isFood))
+                // 超出上限时本任务会宰杀多余动物，所以候选必须过敌我策略——
+                // 否则受保护的宠物会被当成「多余的动物」清理掉
+                .filter(maid::canAttack)
+                .filter(maid::canPathReach)
+                .findFirst();
+    }
+
+    @Override
+    public boolean canAttack(EntityMaid maid, LivingEntity target) {
+        return true;
+    }
+
+    @Override
+    public List<Pair<String, Predicate<EntityMaid>>> getConditionDescription(EntityMaid maid) {
+        return Lists.newArrayList(Pair.of("can_feed", Predicates.alwaysTrue()), Pair.of("assault_weapon", this::hasAssaultWeapon));
+    }
+
+    @Override
+    public MenuProvider getTaskConfigGuiProvider(EntityMaid maid) {
+        final int entityId = maid.getId();
+        return new ExtendedMenuProvider<>() {
+            @Override
+            public Integer getScreenOpeningData(ServerPlayer serverPlayer) {
+                return entityId;
+            }
+
+            @Override
+            public Component getDisplayName() {
+                return Component.literal("Maid Task Config Container");
+            }
+
+            @Override
+            public AbstractMaidContainer createMenu(int index, Inventory playerInventory, Player player) {
+                return new DefaultMaidTaskConfigContainer(index, playerInventory, entityId);
+            }
+
+            @Override
+            public boolean shouldCloseCurrentScreen() {
+                return false;
+            }
+        };
+    }
+
+    @Override
+    public boolean isWeapon(EntityMaid maid, ItemStack stack) {
+        ItemAttributeModifiers attributeModifiers = stack/*.getAttributeModifiers()*/.get(DataComponents.ATTRIBUTE_MODIFIERS);
+        return attributeModifiers != null && attributeModifiers.modifiers()
+                .stream()
+                .anyMatch(modifier -> modifier.attribute().is(Attributes.ATTACK_DAMAGE));
+    }
+
+    private NearestVisibleLivingEntities getEntities(EntityMaid maid) {
+        return maid.getBrain().getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES).orElse(NearestVisibleLivingEntities.empty());
+    }
+
+    private boolean hasAssaultWeapon(EntityMaid maid) {
+        ItemAttributeModifiers attributeModifiers = maid.getMainHandItem()/*.getAttributeModifiers()*/.get(DataComponents.ATTRIBUTE_MODIFIERS);
+        return attributeModifiers != null && attributeModifiers.modifiers()
+                .stream()
+                .anyMatch(modifier -> modifier.attribute().is(Attributes.ATTACK_DAMAGE));
+    }
+
+    private boolean farAway(LivingEntity target, EntityMaid maid) {
+        return maid.distanceTo(target) > MAX_STOP_ATTACK_DISTANCE;
+    }
+
+    @Override
+    public String getMaidActionSummary() {
+        return "Feed and breed animals";
+    }
+}

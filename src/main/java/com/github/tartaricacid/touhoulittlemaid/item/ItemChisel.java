@@ -1,0 +1,147 @@
+package com.github.tartaricacid.touhoulittlemaid.item;
+
+import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
+import com.github.tartaricacid.touhoulittlemaid.block.BlockStatue;
+import com.github.tartaricacid.touhoulittlemaid.blockentity.BlockEntityStatue;
+import com.github.tartaricacid.touhoulittlemaid.init.InitBlocks;
+import com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent;
+import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
+import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
+import com.google.common.collect.Lists;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+
+import javax.annotation.Nullable;
+
+public class ItemChisel extends Item {
+    public ItemChisel(Identifier id) {
+        super((new Properties())
+                .setId(ResourceKey.create(Registries.ITEM, id))
+                .stacksTo(1)
+                .durability(64));
+    }
+
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        Level worldIn = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        Player player = context.getPlayer();
+
+        if (context.getHand() != InteractionHand.MAIN_HAND || player == null) {
+            return super.useOn(context);
+        }
+
+        if (worldIn.getBlockState(pos).getBlock() != Blocks.CLAY) {
+            if (!worldIn.isClientSide()) {
+                MutableComponent msg = Component.translatable("message.touhou_little_maid.chisel.hit_block_error");
+                player.sendSystemMessage(msg);
+            }
+            return InteractionResult.PASS;
+        }
+
+        if (player.getOffhandItem().getItem() != InitItems.PHOTO) {
+            if (!worldIn.isClientSide()) {
+                MutableComponent msg = Component.translatable("message.touhou_little_maid.chisel.offhand_not_photo");
+                player.sendSystemMessage(msg);
+            }
+            return InteractionResult.PASS;
+        }
+
+        this.genStatueBlocks(player, worldIn, pos, context.getClickedFace());
+        if (player instanceof ServerPlayer serverPlayer) {
+            InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.CHISEL_STATUE);
+        }
+
+        return InteractionResult.SUCCESS;
+    }
+
+    private void genStatueBlocks(Player player, Level worldIn, BlockPos pos, Direction facing) {
+        CustomData compoundData = player.getOffhandItem().get(InitDataComponent.MAID_INFO);
+        if (compoundData == null) {
+            return;
+        }
+
+        BlockEntityStatue.Size[] sizes = BlockEntityStatue.Size.values();
+        for (int i = sizes.length - 1; i >= 0; i--) {
+            BlockEntityStatue.Size size = sizes[i];
+            Vec3i dimension = size.getDimension();
+            BlockPos[] posList = checkBlocks(worldIn, pos, dimension, facing);
+            if (posList == null) {
+                continue;
+            }
+
+            boolean isTiny = posList.length == 1;
+            for (BlockPos posIn : posList) {
+                BlockState blockState = InitBlocks.STATUE
+                        .defaultBlockState()
+                        .setValue(BlockStatue.IS_TINY, isTiny)
+                        .setValue(BlockStatue.FACING, facing);
+
+                worldIn.setBlock(posIn, blockState, Block.UPDATE_ALL);
+                BlockEntity te = worldIn.getBlockEntity(posIn);
+
+                if (!(te instanceof BlockEntityStatue statue)) {
+                    continue;
+                }
+                if (posIn.equals(pos)) {
+                    statue.setAllData(size, true, pos,
+                            Lists.newArrayList(posList), compoundData.copyTag());
+                } else {
+                    statue.setAllData(size, false, pos,
+                            Lists.newArrayList(posList), null);
+                }
+            }
+
+            player.getMainHandItem().hurtAndBreak(size.ordinal() + 1, player, EquipmentSlot.MAINHAND);
+            player.playSound(SoundEvents.ANVIL_LAND, 0.5f, 1.5f);
+            return;
+        }
+    }
+
+
+    @Nullable
+    private BlockPos[] checkBlocks(Level worldIn, BlockPos origin, Vec3i dimension, Direction facing) {
+        BlockPos[] posList = new BlockPos[dimension.getX() * dimension.getY() * dimension.getZ()];
+
+        int index = 0;
+        for (int x = 0; x < dimension.getX(); x++) {
+            for (int y = 0; y < dimension.getY(); y++) {
+                for (int z = 0; z < dimension.getZ(); z++) {
+                    BlockPos pos = switch (facing) {
+                        case WEST -> origin.offset(new Vec3i(x, y, z));
+                        case SOUTH -> origin.offset(new Vec3i(x, y, -z));
+                        case EAST -> origin.offset(new Vec3i(-x, y, -z));
+                        default -> origin.offset(new Vec3i(-x, y, z));
+                    };
+                    posList[index] = pos;
+                    index++;
+                    if (!worldIn.getBlockState(pos).is(Blocks.CLAY)) {
+                        return null;
+                    }
+                }
+            }
+        }
+
+        return posList;
+    }
+}

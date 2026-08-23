@@ -1,0 +1,43 @@
+package com.github.tartaricacid.touhoulittlemaid.network.message;
+
+import com.github.tartaricacid.touhoulittlemaid.blockentity.BlockEntityMaidBeacon;
+import io.netty.buffer.ByteBuf;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
+
+public record SetBeaconPotionPackage(BlockPos pos, int potionIndex) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<SetBeaconPotionPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("set_beacon_potion"));
+    public static final StreamCodec<ByteBuf, SetBeaconPotionPackage> STREAM_CODEC = StreamCodec.composite(
+            BlockPos.STREAM_CODEC,
+            SetBeaconPotionPackage::pos,
+            ByteBufCodecs.VAR_INT,
+            SetBeaconPotionPackage::potionIndex,
+            SetBeaconPotionPackage::new
+    );
+
+    public static void handle(SetBeaconPotionPackage message, ServerPlayNetworking.Context context) {
+        context.server().execute(() -> {
+            ServerPlayer sender = context.player();
+            Level world = sender.level();
+            if (world.isLoaded(message.pos)) {
+                BlockEntity te = world.getBlockEntity(message.pos);
+                if (te instanceof BlockEntityMaidBeacon) {
+                    ((BlockEntityMaidBeacon) te).setPotionIndex(message.potionIndex);
+                }
+            }
+        });
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+}

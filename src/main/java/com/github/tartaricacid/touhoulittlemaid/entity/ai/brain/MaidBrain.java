@@ -1,0 +1,338 @@
+package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain;
+
+import com.github.tartaricacid.touhoulittlemaid.api.entity.ai.IExtraMaidBrain;
+import com.github.tartaricacid.touhoulittlemaid.api.task.IMaidTask;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.ride.MaidRideBegTask;
+import com.github.tartaricacid.touhoulittlemaid.compat.gun.common.ai.GunShootTargetTask;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.*;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.combat.MaidEmergencyCombatManager;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.init.InitBrains;
+import com.github.tartaricacid.touhoulittlemaid.util.migrate.EntityTypeUtil;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.mojang.datafixers.util.Pair;
+import net.minecraft.world.entity.ai.ActivityData;
+import net.minecraft.world.entity.ai.Brain;
+import net.minecraft.world.entity.ai.behavior.*;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.ai.sensing.Sensor;
+import net.minecraft.world.entity.ai.sensing.SensorType;
+import net.minecraft.world.entity.schedule.Activity;
+
+import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
+
+public final class MaidBrain {
+    /**
+     * 跟随主人的优先级。{@code Brain} 按优先级**升序**启动处于停止态的行为，所以数字小 = 先启动。
+     *
+     * <p>4 的含义：排在 CORE 的移动 / 开门（2）与自愈（3）之后，但**先于**全部工作与机会行为
+     * （WORK / IDLE / REST 都是 5-20）。跟随必须先拿到 WALK_TARGET，否则被叫的女仆不会过来。
+     * 它之所以还能算「兜底」，靠的是
+     * {@link com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidFollowOwnerTask}
+     * 那边的两条：进入条件只被真战斗挡住，以及 WALK_TARGET 带 1 tick 有效期（跟上了就自动让位），
+     * **不是**靠把优先级压低。</p>
+     *
+     * <p>⚠️ 行为基准上这个常量一度是 50（真·排最后），配的 javadoc 说「工作行为用 5-20，
+     * 所以跟随必须排在其后」。那次实测的结果是**女仆叫不动**，随后被改回 4，
+     * 而那段 javadoc 没跟着改——它描述的是已经被回退掉的设计。此处按实际数值重写理由。
+     * 判据见 {@code MaidFollowOwnerGameTest#followRunsBeforeWorkButAfterCoreMovement}。</p>
+     */
+    private static final int FOLLOW_OWNER_PRIORITY = 4;
+
+    @SuppressWarnings("deprecation")
+    public static final Brain.Provider<EntityMaid> BRAIN_PROVIDER = Brain.provider(
+            MaidBrain.getMemoryTypes(),
+            MaidBrain.getSensorTypes(),
+            MaidBrain::getActivities
+    );
+
+    public static ImmutableList<MemoryModuleType<?>> getMemoryTypes() {
+        List<MemoryModuleType<?>> defaultTypes = Lists.newArrayList(
+                MemoryModuleType.PATH,
+                MemoryModuleType.DOORS_TO_CLOSE,
+                MemoryModuleType.LOOK_TARGET,
+                MemoryModuleType.NEAREST_HOSTILE,
+                MemoryModuleType.HURT_BY,
+                MemoryModuleType.HURT_BY_ENTITY,
+                MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE,
+                MemoryModuleType.WALK_TARGET,
+                MemoryModuleType.ATTACK_TARGET,
+                MemoryModuleType.ATTACK_COOLING_DOWN,
+                InitBrains.TARGET_POS,
+                InitBrains.MAID_EDIBLE_BLOCK_ACTION,
+                InitBrains.MAID_EDIBLE_HOLD_EXPIRY,
+                InitBrains.EMERGENCY_COMBAT_ACTIVE
+        );
+        ExtraMaidBrainManager.EXTRA_MAID_BRAINS.forEach(extra ->
+                defaultTypes.addAll(extra.getExtraMemoryTypes())
+        );
+        return ImmutableList.copyOf(defaultTypes);
+    }
+
+    public static ImmutableList<SensorType<? extends Sensor<? super EntityMaid>>> getSensorTypes() {
+        List<SensorType<? extends Sensor<? super EntityMaid>>> defaultTypes = Lists.newArrayList(
+                InitBrains.MAID_NEAREST_LIVING_ENTITY_SENSOR,
+                SensorType.HURT_BY,
+                InitBrains.MAID_HOSTILES_SENSOR,
+                InitBrains.MAID_PICKUP_ENTITIES_SENSOR
+        );
+        ExtraMaidBrainManager.EXTRA_MAID_BRAINS.forEach(extra ->
+                defaultTypes.addAll(extra.getExtraSensorTypes())
+        );
+        return ImmutableList.copyOf(defaultTypes);
+    }
+
+    public static List<ActivityData<EntityMaid>> getActivities(EntityMaid maid) {
+        return List.of(
+                initCoreActivity(),
+                initPanicActivity(),
+                initEmergencyCombatActivity(),
+                initRideIdleActivity(),
+                initRideWorkActivity(maid),
+                initRideRestActivity(),
+                initIdleActivity(),
+                initWorkActivity(maid),
+                initRestActivity()
+        );
+    }
+
+    public static void registerBrainGoals(Brain<EntityMaid> brain, EntityMaid maid) {
+        brain.setSchedule(maid.getSchedule().getEnvironmentAttribute());
+        MaidUpdateActivityFromSchedule.updateActivityFromSchedule(maid, brain);
+    }
+
+    private static ActivityData<EntityMaid> initCoreActivity() {
+        Pair<Integer, BehaviorControl<? super EntityMaid>> swimJump = Pair.of(0, new MaidSwimJumpTask(0.8f));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> breathAir = Pair.of(0, new MaidBreathAirTask());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> breathAirStop = Pair.of(0, new MaidBreathAirStopTask());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> climb = Pair.of(0, new MaidClimbTask());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> look = Pair.of(0, new LookAtTargetSink(45, 90));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> maidPanic = Pair.of(1, new MaidPanicTask());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> maidAwait = Pair.of(1, new MaidAwaitTask());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> interactWithDoor = Pair.of(2, MaidInteractWithDoor.create());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> walkToTarget = Pair.of(2, new MoveToTargetSink());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> followOwner = Pair.of(FOLLOW_OWNER_PRIORITY, new MaidFollowOwnerTask(0.5f, 2));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> followOwnerVehicle = Pair.of(FOLLOW_OWNER_PRIORITY, new MaidFollowOwnerVehicleTask(0.5f, 2));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> healSelf = Pair.of(3, new MaidHealSelfTask());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> pickupItem = Pair.of(10, new MaidPickupEntitiesTask(EntityMaid::isPickup, 0.6f));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> clearSleep = Pair.of(99, new MaidClearSleepTask());
+
+        List<Pair<Integer, BehaviorControl<? super EntityMaid>>> behaviors = Lists.newArrayList(
+                swimJump, climb, breathAir, breathAirStop,
+                look, maidPanic, maidAwait, interactWithDoor,
+                walkToTarget, followOwner, followOwnerVehicle,
+                healSelf, pickupItem, clearSleep
+        );
+
+        ExtraMaidBrainManager.EXTRA_MAID_BRAINS.forEach(extra ->
+                behaviors.addAll(extra.getCoreBehaviors())
+        );
+
+        return ActivityData.create(Activity.CORE, ImmutableList.copyOf(behaviors));
+    }
+
+    private static ActivityData<EntityMaid> initIdleActivity() {
+        Pair<Integer, BehaviorControl<? super EntityMaid>> beg = Pair.of(5, new MaidBegTask());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> homeMeal = Pair.of(6, new MaidFindHomeMealTask(0.6f, 2));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> joy = Pair.of(7, new MaidJoyTask(0.6f, 2));
+
+        // 女仆偷吃
+        Pair<Integer, BehaviorControl<? super EntityMaid>> stealEdibleMove = Pair.of(8, new MaidStealEdibleMoveBlockTask(0.6f));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> stealEdibleUse = Pair.of(8, new MaidStealEdibleUseTask(2));
+
+        // 女仆随机走动
+        Pair<Integer, BehaviorControl<? super EntityMaid>> supplemented = Pair.of(20, getLookAndRandomWalk(maid ->
+                !maid.getSwimManager().isGoingToBreath())
+        );
+        Pair<Integer, BehaviorControl<? super EntityMaid>> updateActivity = Pair.of(99, new MaidUpdateActivityFromSchedule());
+
+        List<Pair<Integer, BehaviorControl<? super EntityMaid>>> behaviors = Lists.newArrayList(
+                beg, homeMeal, joy, stealEdibleMove,
+                stealEdibleUse, supplemented, updateActivity
+        );
+
+        ExtraMaidBrainManager.EXTRA_MAID_BRAINS.forEach(extra ->
+                behaviors.addAll(extra.getIdleBehaviors())
+        );
+
+        return ActivityData.create(Activity.IDLE, ImmutableList.copyOf(behaviors));
+    }
+
+    private static ActivityData<EntityMaid> initWorkActivity(EntityMaid maid) {
+        Pair<Integer, BehaviorControl<? super EntityMaid>> updateActivity = Pair.of(99, new MaidUpdateActivityFromSchedule());
+        IMaidTask task = maid.getTask();
+        List<Pair<Integer, BehaviorControl<? super EntityMaid>>> pairMaidList = task.createBrainTasks(maid);
+        if (pairMaidList.isEmpty()) {
+            pairMaidList = Lists.newArrayList(updateActivity);
+        } else {
+            pairMaidList.add(updateActivity);
+        }
+
+        // 拿着蛋糕祈求动作
+        pairMaidList.add(Pair.of(6, new MaidBegTask()));
+        // 女仆工作餐
+        pairMaidList.add(Pair.of(7, new MaidWorkMealTask()));
+        // 女仆偷吃
+        pairMaidList.add(Pair.of(8, new MaidStealEdibleMoveBlockTask(0.6f)));
+        pairMaidList.add(Pair.of(8, new MaidStealEdibleUseTask(2)));
+
+        // 女仆随机走动
+        pairMaidList.add(Pair.of(20, getLookAndRandomWalk(e ->
+                e.getTask().enableLookAndRandomWalk(e)
+                && !e.getSwimManager().isGoingToBreath()))
+        );
+
+        for (IExtraMaidBrain extra : ExtraMaidBrainManager.EXTRA_MAID_BRAINS) {
+            pairMaidList.addAll(extra.getWorkBehaviors());
+        }
+
+        return ActivityData.create(Activity.WORK, ImmutableList.copyOf(pairMaidList));
+    }
+
+    private static ActivityData<EntityMaid> initRestActivity() {
+        Pair<Integer, BehaviorControl<? super EntityMaid>> bed = Pair.of(5, new MaidBedTask(0.6f, 2));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> supplemented = Pair.of(20, getLookAndRandomWalk(_ -> true));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> updateActivity = Pair.of(99, new MaidUpdateActivityFromSchedule());
+
+        List<Pair<Integer, BehaviorControl<? super EntityMaid>>> behaviors = Lists.newArrayList(
+                bed, supplemented, updateActivity
+        );
+
+        ExtraMaidBrainManager.EXTRA_MAID_BRAINS.forEach(extra ->
+                behaviors.addAll(extra.getRestBehaviors())
+        );
+
+        return ActivityData.create(Activity.REST, ImmutableList.copyOf(behaviors));
+    }
+
+    private static ActivityData<EntityMaid> initPanicActivity() {
+        Pair<Integer, BehaviorControl<? super EntityMaid>> clearHurt = Pair.of(5, new MaidClearHurtTask());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> runAway = Pair.of(5, MaidRunAwayTask.entity(
+                MemoryModuleType.NEAREST_HOSTILE, 0.7f, false)
+        );
+
+        List<Pair<Integer, BehaviorControl<? super EntityMaid>>> behaviors = Lists.newArrayList(
+                clearHurt, runAway
+        );
+
+        ExtraMaidBrainManager.EXTRA_MAID_BRAINS.forEach(extra ->
+                behaviors.addAll(extra.getPanicBehaviors())
+        );
+
+        return ActivityData.create(Activity.PANIC, ImmutableList.copyOf(behaviors));
+    }
+
+    /** 走位速度。基准 {@code MaidAttackStrafingTask} 里硬编码为 0.5，应战沿用同一手感。 */
+    private static final float STRAFE_SPEED = 0.5f;
+
+    /**
+     * 瞬态应战活动：由 {@code MaidEmergencyCombatManager} 经
+     * {@code EMERGENCY_COMBAT_ACTIVE} 记忆开关激活，覆盖日程活动但不改常驻任务。
+     */
+    private static ActivityData<EntityMaid> initEmergencyCombatActivity() {
+        Pair<Integer, BehaviorControl<? super EntityMaid>> extinguish = Pair.of(0, new MaidExtinguishingTask(0.6f));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> useShield = Pair.of(4, new MaidUseShieldTask());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> walkToTarget = Pair.of(5, MaidEmergencyWalkToTarget.create(0.7f));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> meleeAttack = Pair.of(6, MaidMeleeAttack.create(20));
+        // 远程应战：手上是什么就用什么，不再端着弓/弩/枪冲上去肉搏。
+        // 判据统一走 MaidEmergencyCombatManager.isHoldingUsableRangedWeapon（含弹药），没弹药时自然回落到近战。
+        // 走位排在射击前，与工作模式下弓箭那套的相对次序一致。
+        Pair<Integer, BehaviorControl<? super EntityMaid>> rangedStrafing = Pair.of(5,
+                new MaidAttackStrafingAnyItemTask(MaidEmergencyCombatManager::isHoldingUsableRangedWeapon,
+                        (float) MaidEmergencyCombatManager.LOCAL_PROTECTION_RANGE, STRAFE_SPEED));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> rangedShoot = Pair.of(6,
+                new MaidShootTargetAnyItemTask(2, 20, MaidEmergencyCombatManager::isHoldingUsableRangedWeapon));
+        // 枪械走 TaCZ 自己的射击链（弹道、换弹、瞄准都在那边）；未装 TaCZ 时它的进入条件恒 false。
+        Pair<Integer, BehaviorControl<? super EntityMaid>> gunShoot = Pair.of(6, new GunShootTargetTask());
+
+        List<Pair<Integer, BehaviorControl<? super EntityMaid>>> behaviors = Lists.newArrayList(
+                extinguish, useShield, walkToTarget, rangedStrafing, rangedShoot, gunShoot, meleeAttack
+        );
+
+        return ActivityData.create(InitBrains.EMERGENCY_COMBAT, ImmutableList.copyOf(behaviors),
+                Set.of(Pair.of(InitBrains.EMERGENCY_COMBAT_ACTIVE, MemoryStatus.VALUE_PRESENT)));
+    }
+
+    private static ActivityData<EntityMaid> initRideIdleActivity() {
+        Pair<Integer, BehaviorControl<? super EntityMaid>> beg = Pair.of(4, new MaidRideBegTask());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> homeMeal = Pair.of(5, new MaidHomeMealTask());
+        Pair<Integer, BehaviorControl<? super EntityMaid>> look = Pair.of(6, getLook(_ -> true));
+        Pair<Integer, BehaviorControl<? super EntityMaid>> updateActivity = Pair.of(99, new MaidUpdateActivityFromSchedule());
+
+        List<Pair<Integer, BehaviorControl<? super EntityMaid>>> behaviors = Lists.newArrayList(
+                beg, homeMeal, look, updateActivity
+        );
+
+        ExtraMaidBrainManager.EXTRA_MAID_BRAINS.forEach(extra ->
+                behaviors.addAll(extra.getRideIdleBehaviors())
+        );
+
+        return ActivityData.create(InitBrains.RIDE_IDLE, ImmutableList.copyOf(behaviors));
+    }
+
+    private static ActivityData<EntityMaid> initRideWorkActivity(EntityMaid maid) {
+        Pair<Integer, BehaviorControl<? super EntityMaid>> updateActivity = Pair.of(99, new MaidUpdateActivityFromSchedule());
+
+        IMaidTask task = maid.getTask();
+        List<Pair<Integer, BehaviorControl<? super EntityMaid>>> pairMaidList = task.createRideBrainTasks(maid);
+        if (pairMaidList.isEmpty()) {
+            pairMaidList = Lists.newArrayList(updateActivity);
+        } else {
+            pairMaidList.add(updateActivity);
+        }
+
+        pairMaidList.add(Pair.of(6, new MaidRideBegTask()));
+        pairMaidList.add(Pair.of(7, new MaidWorkMealTask()));
+        pairMaidList.add(Pair.of(20, getLook(e -> e.getTask().enableLookAndRandomWalk(e))));
+
+        for (IExtraMaidBrain extra : ExtraMaidBrainManager.EXTRA_MAID_BRAINS) {
+            pairMaidList.addAll(extra.getRideWorkBehaviors());
+        }
+
+        return ActivityData.create(InitBrains.RIDE_WORK, ImmutableList.copyOf(pairMaidList));
+    }
+
+    private static ActivityData<EntityMaid> initRideRestActivity() {
+        Pair<Integer, BehaviorControl<? super EntityMaid>> updateActivity = Pair.of(99, new MaidUpdateActivityFromSchedule());
+        List<Pair<Integer, BehaviorControl<? super EntityMaid>>> behaviors = Lists.newArrayList(updateActivity);
+
+        ExtraMaidBrainManager.EXTRA_MAID_BRAINS.forEach(extra ->
+                behaviors.addAll(extra.getRideRestBehaviors())
+        );
+
+        return ActivityData.create(InitBrains.RIDE_REST, ImmutableList.copyOf(behaviors));
+    }
+
+    private static MaidRunOne getLookAndRandomWalk(Predicate<EntityMaid> enableCondition) {
+        Pair<BehaviorControl<? super EntityMaid>, Integer> lookToPlayer = Pair.of(SetEntityLookTarget.create(EntityTypeUtil.player(), 5), 1);
+        Pair<BehaviorControl<? super EntityMaid>, Integer> lookToMaid = Pair.of(SetEntityLookTarget.create(EntityMaid.TYPE, 5), 1);
+        Pair<BehaviorControl<? super EntityMaid>, Integer> lookToWolf = Pair.of(SetEntityLookTarget.create(EntityTypeUtil.wolf(), 5), 1);
+        Pair<BehaviorControl<? super EntityMaid>, Integer> lookToCat = Pair.of(SetEntityLookTarget.create(EntityTypeUtil.cat(), 5), 1);
+        Pair<BehaviorControl<? super EntityMaid>, Integer> lookToParrot = Pair.of(SetEntityLookTarget.create(EntityTypeUtil.parrot(), 5), 1);
+        Pair<BehaviorControl<? super EntityMaid>, Integer> walkRandomly = Pair.of(RandomStroll.stroll(0.3f, 5, 3), 1);
+        Pair<BehaviorControl<? super EntityMaid>, Integer> noLook = Pair.of(new DoNothing(30, 60), 2);
+
+        return new MaidRunOne(
+                ImmutableList.of(lookToPlayer, lookToMaid, lookToWolf, lookToCat, lookToParrot, walkRandomly, noLook),
+                enableCondition
+        );
+    }
+
+    private static MaidRunOne getLook(Predicate<EntityMaid> enableCondition) {
+        Pair<BehaviorControl<? super EntityMaid>, Integer> lookToPlayer = Pair.of(SetEntityLookTarget.create(EntityTypeUtil.player(), 5), 1);
+        Pair<BehaviorControl<? super EntityMaid>, Integer> lookToMaid = Pair.of(SetEntityLookTarget.create(EntityMaid.TYPE, 5), 1);
+        Pair<BehaviorControl<? super EntityMaid>, Integer> lookToWolf = Pair.of(SetEntityLookTarget.create(EntityTypeUtil.wolf(), 5), 1);
+        Pair<BehaviorControl<? super EntityMaid>, Integer> lookToCat = Pair.of(SetEntityLookTarget.create(EntityTypeUtil.cat(), 5), 1);
+        Pair<BehaviorControl<? super EntityMaid>, Integer> lookToParrot = Pair.of(SetEntityLookTarget.create(EntityTypeUtil.parrot(), 5), 1);
+        Pair<BehaviorControl<? super EntityMaid>, Integer> noLook = Pair.of(new DoNothing(30, 60), 2);
+
+        return new MaidRunOne(
+                ImmutableList.of(lookToPlayer, lookToMaid, lookToWolf, lookToCat, lookToParrot, noLook),
+                enableCondition
+        );
+    }
+}

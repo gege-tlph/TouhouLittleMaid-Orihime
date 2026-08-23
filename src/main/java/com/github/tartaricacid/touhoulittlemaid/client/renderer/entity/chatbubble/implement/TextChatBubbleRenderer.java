@@ -1,0 +1,71 @@
+package com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble.implement;
+
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.EntityMaidRenderer;
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble.EntityGraphics;
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble.IChatBubbleRenderer;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.FormattedCharSequence;
+
+import java.util.List;
+
+public class TextChatBubbleRenderer implements IChatBubbleRenderer {
+    private static final int MAX_WIDTH = 120;
+    private static final int MAX_CENTER_WIDTH = 200;
+
+    private final List<FormattedCharSequence> split;
+    private final Font font;
+    private final int width;
+    private final int height;
+    private final Identifier bg;
+
+    public TextChatBubbleRenderer(Component text, Identifier bg, Position position) {
+        this.font = Minecraft.getInstance().font;
+        if (position == Position.CENTER) {
+            this.split = font.split(text, MAX_CENTER_WIDTH);
+            this.width = getMaxWidth(split);
+        } else {
+            this.split = font.split(text, MAX_WIDTH);
+            this.width = getMaxWidth(split);
+        }
+        this.height = split.size() * font.lineHeight;
+        this.bg = bg;
+    }
+
+    private int getMaxWidth(List<FormattedCharSequence> split) {
+        int width = 0;
+        for (FormattedCharSequence sequence : split) {
+            int lineWidth = font.width(sequence);
+            if (lineWidth > width) {
+                width = lineWidth;
+            }
+        }
+        return width;
+    }
+
+    @Override
+    public int getHeight() {
+        return this.height;
+    }
+
+    @Override
+    public int getWidth() {
+        return this.width;
+    }
+
+    @Override
+    public void render(EntityMaidRenderer renderer, EntityGraphics graphics) {
+        int y = 0;
+        for (FormattedCharSequence sequence : this.split) {
+            graphics.drawString(sequence, 0, y, 0xFF000000, false);
+            y += font.lineHeight;
+        }
+    }
+
+    @Override
+    public Identifier getBackgroundTexture() {
+        return this.bg;
+    }
+}

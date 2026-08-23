@@ -1,0 +1,107 @@
+package com.github.tartaricacid.touhoulittlemaid.client.event;
+
+
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
+import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
+import com.github.tartaricacid.touhoulittlemaid.item.ItemKappaCompass;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.core.BlockPos;
+import net.minecraft.gizmos.GizmoStyle;
+import net.minecraft.gizmos.Gizmos;
+import net.minecraft.gizmos.TextGizmo;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.OptionalDouble;
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
+
+public class CompassRenderEvent {
+    //AfterOpaqueFeatures
+    public static void onRender(LevelRenderContext context) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) {
+            return;
+        }
+        ItemStack stack = mc.player.getMainHandItem();
+        if (stack.getItem() != InitItems.KAPPA_COMPASS) {
+            stack = mc.player.getOffhandItem();
+            if (stack.getItem() != InitItems.KAPPA_COMPASS) {
+                return;
+            }
+        }
+        if (!ItemKappaCompass.hasKappaCompassData(stack)) {
+            return;
+        }
+        Identifier dimension = ItemKappaCompass.getDimension(stack);
+        if (dimension != null && !mc.player.level.dimension().identifier().equals(dimension)) {
+            return;
+        }
+        BlockPos workPos = ItemKappaCompass.getPoint(Activity.WORK, stack);
+        if (workPos != null) {
+            double radius = ServerRuleConfig.get(MaidConfig.MAID_WORK_RANGE) + 0.1;
+            renderArea(workPos, radius, 0xffff0000);
+            Vec3 textPos = new Vec3(workPos.getX() + 0.5, workPos.getY() + 2, workPos.getZ() + 0.5);
+            String text = I18n.get("message.touhou_little_maid.kappa_compass.work_area");
+            renderLabel(text, textPos, 0xffff1111);
+        }
+
+        BlockPos idlePos = ItemKappaCompass.getPoint(Activity.IDLE, stack);
+        if (idlePos != null) {
+            double radius = ServerRuleConfig.get(MaidConfig.MAID_IDLE_RANGE);
+            renderArea(idlePos, radius, 0xff00ff00);
+            Vec3 textPos = new Vec3(idlePos.getX() + 0.5, idlePos.getY() + 2, idlePos.getZ() + 0.5);
+            if (idlePos.equals(workPos)) {
+                textPos = textPos.add(0, 1, 0);
+            } else if (workPos != null) {
+                Gizmos.line(centerPos(idlePos), centerPos(workPos), 0xffffffff);
+            }
+            String text = I18n.get("message.touhou_little_maid.kappa_compass.idle_area");
+            renderLabel(text, textPos, 0xff11ff11);
+        }
+
+        BlockPos resetPos = ItemKappaCompass.getPoint(Activity.REST, stack);
+        if (resetPos != null) {
+            double radius = ServerRuleConfig.get(MaidConfig.MAID_SLEEP_RANGE) - 0.1;
+            renderArea(resetPos, radius, 0xff0000ff);
+            Vec3 textPos = new Vec3(resetPos.getX() + 0.5, resetPos.getY() + 2, resetPos.getZ() + 0.5);
+            if (resetPos.equals(idlePos)) {
+                textPos = textPos.add(0, 2, 0);
+            } else if (idlePos != null && workPos != null) {
+                Gizmos.line(centerPos(resetPos), centerPos(idlePos), 0xffffffff);
+                Gizmos.line(centerPos(resetPos), centerPos(workPos), 0xffffffff);
+            }
+            String text = I18n.get("message.touhou_little_maid.kappa_compass.sleep_area");
+            renderLabel(text, textPos, 0xff1111ff);
+        }
+    }
+
+    private static Vec3 centerPos(BlockPos pos) {
+        return Vec3.atCenterOf(pos).add(0, 1, 0);
+    }
+
+    private static void renderArea(BlockPos pos, double radius, int color) {
+        Gizmos.circle(centerPos(pos), (float) radius, GizmoStyle.stroke(color));
+    }
+
+    /**
+     * 基准布局：文字锚点在 textPos 上方 1.07 格（基准是 poseStack.translate(0,1,0) + 0.07），
+     * 标签再高 0.75、▼ 再低 0.75（±5 像素 × 0.15 缩放经字体空间 y 反转）——
+     * 标签在上、▼ 在下指向方块。
+     */
+    private static void renderLabel(String text, Vec3 textPos, int color) {
+        renderText(text, textPos.add(0, 1.07 + 0.75, 0), color);
+        renderText("▼", textPos.add(0, 1.07 - 0.75, 0), color);
+    }
+
+    /**
+     * 不开 always-on-top、不用 SEE_THROUGH：基准与 origin/1.21.1 的这段文字都会被墙体遮挡。
+     * 置顶还有个更硬的代价——它会清主渲染目标的深度贴图，开光影时地面整片发白。
+     */
+    private static void renderText(String text, Vec3 pos, int color) {
+        Gizmos.billboardText(text, pos, new TextGizmo.Style(color, 1.5f, OptionalDouble.empty()));
+    }
+}

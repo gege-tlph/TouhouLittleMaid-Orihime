@@ -1,0 +1,40 @@
+package com.github.tartaricacid.touhoulittlemaid.compat.jade.provider;
+
+import com.github.tartaricacid.touhoulittlemaid.blockentity.BlockEntityAltar;
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
+import snownee.jade.api.Accessor;
+import snownee.jade.api.view.*;
+
+import java.util.Collections;
+import java.util.List;
+
+public enum AltarProvider implements IServerExtensionProvider<ItemStack>, IClientExtensionProvider<ItemStack, ItemView> {
+
+    INSTANCE;
+
+    private static final Identifier UID = IdentifierUtil.modLoc("altar");
+
+    @Override
+    public List<ClientViewGroup<ItemView>> getClientGroups(Accessor<?> accessor, List<ViewGroup<ItemStack>> list) {
+        return ClientViewGroup.map(list, ItemView::new, null);
+    }
+
+    @Override
+    public @Nullable List<ViewGroup<ItemStack>> getGroups(Accessor<?> accessor) {
+        if (accessor.getTarget() instanceof BlockEntityAltar altar) {
+            ItemStack storageItem = altar.getStorageItem();
+            if (!storageItem.isEmpty()) {
+                return List.of(new ViewGroup<>(Collections.singletonList(storageItem.copy())));
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Identifier getUid() {
+        return UID;
+    }
+}

@@ -1,0 +1,56 @@
+package com.github.tartaricacid.touhoulittlemaid.client.gui.mod;
+
+import com.github.tartaricacid.touhoulittlemaid.util.migrate.ScreenUtil;
+import net.minecraft.client.gui.ActiveTextCollector;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.TextAlignment;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.MultiLineLabel;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.Util;
+import org.apache.commons.lang3.StringUtils;
+
+public class PatchouliWarningScreen extends Screen {
+    private final String patchouliUrl = "https://www.curseforge.com/minecraft/mc-mods/patchouli-fabric";
+    private final Screen lastScreen;
+    private MultiLineLabel message = MultiLineLabel.EMPTY;
+
+    protected PatchouliWarningScreen(Screen lastScreen) {
+        super(Component.literal("Patchouli"));
+        this.lastScreen = lastScreen;
+    }
+
+    public static void open() {
+        ScreenUtil.setScreen(new PatchouliWarningScreen(ScreenUtil.getScreen()));
+    }
+
+    @Override
+    protected void init() {
+        int posX = (this.width - 200) / 2;
+        int posY = this.height / 2;
+        this.message = MultiLineLabel.create(this.font, Component.translatable("gui.touhou_little_maid.patchouli_warning.tips"), 300);
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.touhou_little_maid.patchouli_warning.download"), b -> openUrl(patchouliUrl)).bounds(posX, posY - 15, 200, 20).build());
+        this.addRenderableWidget(Button.builder(CommonComponents.GUI_BACK, (pressed) -> ScreenUtil.setScreen(this.lastScreen)).bounds(posX, posY + 50, 200, 20).build());
+    }
+
+    @Override
+    public void extractRenderState(GuiGraphicsExtractor graphics, int pMouseX, int pMouseY, float pPartialTick) {
+        ActiveTextCollector textRenderer = graphics.textRenderer();
+        this.message.visitLines(TextAlignment.CENTER, this.width / 2, 100, 9, textRenderer);
+        super.extractRenderState(graphics, pMouseX, pMouseY, pPartialTick);
+    }
+
+    private void openUrl(String url) {
+        if (StringUtils.isNotBlank(url) && minecraft != null) {
+            ScreenUtil.setScreen(new ConfirmLinkScreen(yes -> {
+                if (yes) {
+                    Util.getPlatform().openUri(url);
+                }
+                ScreenUtil.setScreen(this);
+            }, url, true));
+        }
+    }
+}

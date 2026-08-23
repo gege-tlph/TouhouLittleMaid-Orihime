@@ -1,0 +1,48 @@
+package com.github.tartaricacid.touhoulittlemaid.client.init;
+
+import com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.AnimationRegister;
+import com.github.tartaricacid.touhoulittlemaid.client.event.ShowOptifineScreen;
+import com.github.tartaricacid.touhoulittlemaid.client.overlay.BroomTipsOverlay;
+import com.github.tartaricacid.touhoulittlemaid.client.overlay.MaidTipsOverlay;
+import com.github.tartaricacid.touhoulittlemaid.client.overlay.ShowPowerOverlay;
+import com.github.tartaricacid.touhoulittlemaid.client.overlay.TrackerMarkerOverlay;
+import com.github.tartaricacid.touhoulittlemaid.compat.embeddium.EmbeddiumCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.immersivemelodies.client.ImmersiveMelodiesCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.iris.IrisCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.oculus.OculusCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.patpat.PatPatCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.ponder.PonderCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.simplehats.SimpleHatsCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.sodium.SodiumCompat;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
+
+public class ClientSetupEvent {
+    public static void onClientSetup() {
+        AnimationRegister.registerAnimationState();
+        MaidTipsOverlay.init();
+        ShowOptifineScreen.checkOptifineIsLoaded();
+        KeyMappingRegister.onRegisterKeyMappings();
+
+        // 客户端兼容
+        SimpleHatsCompat.init();
+        ImmersiveMelodiesCompat.init();
+        SodiumCompat.init();
+        EmbeddiumCompat.init();
+        IrisCompat.init();
+        OculusCompat.init();
+        PatPatCompat.init();
+        PonderCompat.register();
+    }
+
+    public static void onRegisterGuiLayers() {
+        HudElementRegistry.attachElementBefore(VanillaHudElements.CROSSHAIR, modLoc("tlm_maid_tips"), MaidTipsOverlay.INSTANCE);
+        HudElementRegistry.attachElementBefore(VanillaHudElements.CROSSHAIR, modLoc("tlm_broom_tips"), BroomTipsOverlay.INSTANCE);
+        HudElementRegistry.attachElementBefore(VanillaHudElements.HOTBAR, modLoc("tlm_show_power"), ShowPowerOverlay.INSTANCE);
+        // 追踪标记画在 HUD 而不是世界里：世界内的「置顶」会清掉主渲染目标的深度贴图，
+        // 连带抹掉光影包的深度附件（详见 TrackerMarkerOverlay 的 javadoc）
+        HudElementRegistry.attachElementBefore(VanillaHudElements.CROSSHAIR, modLoc("tlm_tracker_marker"), TrackerMarkerOverlay.INSTANCE);
+    }
+}

@@ -1,0 +1,217 @@
+package com.github.tartaricacid.touhoulittlemaid.entity.item;
+
+import com.github.tartaricacid.touhoulittlemaid.init.InitSounds;
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
+import com.mojang.serialization.Codec;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
+
+import static net.minecraft.network.syncher.EntityDataSerializers.INT;
+
+public class EntityBox extends Entity {
+    public static final Identifier ENTITY_ID = IdentifierUtil.modLoc("box");
+    public static final ResourceKey<EntityType<?>> ENTITY_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ENTITY_ID);
+    public static final EntityType<EntityBox> TYPE = EntityType
+            .Builder.<EntityBox>of(EntityBox::new, MobCategory.MISC)
+            .sized(2.0f, 2.0f)
+            .clientTrackingRange(10)
+            .build(ENTITY_KEY);
+
+    // 打开时的动画状态
+    private static final EntityDataAccessor<Integer> OPEN_STAGE = SynchedEntityData.defineId(EntityBox.class, INT);
+    // 材质索引
+    private static final EntityDataAccessor<Integer> TEXTURE_INDEX = SynchedEntityData.defineId(EntityBox.class, INT);
+
+    // NBT 数据
+    private static final String STAGE_TAG = "OpenStage";
+    private static final String TEXTURE_TAG = "TextureIndex";
+
+    // 目前最大材质数为 8
+    public static final int MAX_TEXTURE_SIZE = 8;
+
+    // 动画阶段，有三个阶段
+    public static final int FIRST_STAGE = 0;
+    public static final int SECOND_STAGE = 1;
+    public static final int THIRD_STAGE = 2;
+
+    // 用于第二阶段蛋糕盒动画计算的变量
+    public long thirdStageTimeStamp = 0L;
+    private int thirdStageTicks = 0;
+
+    public EntityBox(EntityType<?> entityTypeIn, Level worldIn) {
+        super(entityTypeIn, worldIn);
+        this.setRandomTexture();
+    }
+
+    public EntityBox(Level worldIn) {
+        this(TYPE, worldIn);
+    }
+
+    @Override
+    public void baseTick() {
+        super.baseTick();
+
+        // 缓慢下落
+        if (!this.isNoGravity() && !this.onGround()) {
+            this.move(MoverType.SELF, this.getDeltaMovement().add(0, -0.1, 0));
+        }
+
+        int stage = this.getOpenStage();
+        // 第一阶段时，定期给里面的实体添加隐身效果，保持神秘性
+        if (stage == FIRST_STAGE) {
+            this.getPassengers().forEach(this::applyInvisibilityEffect);
+            return;
+        }
+        // 第三阶段到期后，延迟 100 tick 自动消失
+        if (stage == THIRD_STAGE) {
+            thirdStageTicks++;
+            if (thirdStageTicks > 100) {
+                this.addStageChange();
+            }
+        }
+    }
+
+    private void applyInvisibilityEffect(Entity entity) {
+        if (entity instanceof TamableAnimal tamable) {
+            MobEffectInstance effect = new MobEffectInstance(
+                    MobEffects.INVISIBILITY, 2, 1,
+                    false, false
+            );
+            tamable.addEffect(effect);
+        }
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel serverLevel, DamageSource damageSource, float v) {
+        return false;
+    }
+
+    @Override
+    public InteractionResult interact(Player player, InteractionHand hand, Vec3 location) {
+        this.addStageChange();
+
+        if (this.getOpenStage() == SECOND_STAGE) {
+            this.playSound(InitSounds.BOX_OPEN, 3.0f, 1.0f);
+            return InteractionResult.SUCCESS_SERVER;
+        }
+
+        if (this.getOpenStage() == THIRD_STAGE) {
+            this.thirdStageTimeStamp = System.currentTimeMillis();
+            this.playSound(InitSounds.BOX_OPEN, 3.0f, 1.0f);
+            return InteractionResult.SUCCESS_SERVER;
+        }
+
+        this.playSound(InitSounds.BOX_OPEN, 3.0f, 2.0f);
+        return InteractionResult.SUCCESS_SERVER;
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(OPEN_STAGE, FIRST_STAGE);
+        builder.define(TEXTURE_INDEX, 0);
+    }
+
+    @Override
+    protected void readAdditionalSaveData(ValueInput input) {
+        input.read(STAGE_TAG, Codec.INT).ifPresent(this::setOpenStage);
+        input.read(TEXTURE_TAG, Codec.INT).ifPresent(this::setTextureIndex);
+    }
+
+    @Override
+    protected void addAdditionalSaveData(ValueOutput compound) {
+        compound.putInt(STAGE_TAG, this.getOpenStage());
+        compound.putInt(TEXTURE_TAG, this.getTextureIndex());
+    }
+
+    @Override
+    public boolean canBeCollidedWith(@Nullable Entity entity) {
+        return isAlive();
+    }
+
+    @Override
+    public boolean isPickable() {
+        return this.isAlive();
+    }
+
+    public int getOpenStage() {
+        return this.entityData.get(OPEN_STAGE);
+    }
+
+    private void setOpenStage(int stage) {
+        this.entityData.set(OPEN_STAGE, stage);
+    }
+
+    public int getTextureIndex() {
+        return this.entityData.get(TEXTURE_INDEX);
+    }
+
+    private void setTextureIndex(int index) {
+        int clamped = Mth.clamp(index, 1, MAX_TEXTURE_SIZE - 1);
+        this.entityData.set(TEXTURE_INDEX, clamped);
+    }
+
+    public void setRandomTexture() {
+        setTextureIndex(random.nextInt(MAX_TEXTURE_SIZE));
+    }
+
+    private void addStageChange() {
+        this.setOpenStage(this.getOpenStage() + 1);
+        if (this.getOpenStage() > THIRD_STAGE && this.level instanceof ServerLevel serverLevel) {
+            this.kill(serverLevel);
+        }
+    }
+
+    @Override
+    public void kill(ServerLevel serverLevel) {
+        serverLevel.sendParticles(
+                ParticleTypes.EXPLOSION,
+                this.getX(), this.getY() + 0.25, this.getZ(),
+                20, 1, 1, 1, 0.2
+        );
+
+        // 从战利品列表里掉落
+        this.getType().getDefaultLootTable().ifPresent(table -> {
+            LootTable lootTable = serverLevel.getServer().reloadableRegistries().getLootTable(table);
+            LootParams.Builder builder = new LootParams.Builder(serverLevel)
+                    .withParameter(LootContextParams.THIS_ENTITY, this)
+                    .withParameter(LootContextParams.ORIGIN, this.position())
+                    .withParameter(LootContextParams.DAMAGE_SOURCE, damageSources().genericKill());
+            LootParams params = builder.create(LootContextParamSets.ENTITY);
+            lootTable.getRandomItems(
+                    params, 0,
+                    (i) -> this.spawnAtLocation(serverLevel, i)
+            );
+        });
+
+        super.kill(serverLevel);
+    }
+
+    @Override
+    public Vec3 getPassengerRidingPosition(Entity passenger) {
+        EntityDimensions dimensions = this.getDimensions(Pose.STANDING);
+        Vec3 point = this.getPassengerAttachmentPoint(passenger, dimensions, 1);
+        return this.position().add(point).subtract(0, 2, 0);
+    }
+}

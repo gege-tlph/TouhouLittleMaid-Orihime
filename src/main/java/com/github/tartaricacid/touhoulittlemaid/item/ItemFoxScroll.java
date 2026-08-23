@@ -1,0 +1,138 @@
+package com.github.tartaricacid.touhoulittlemaid.item;
+
+import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
+import com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent;
+import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
+import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
+import com.github.tartaricacid.touhoulittlemaid.network.message.FoxScrollPackage;
+import com.github.tartaricacid.touhoulittlemaid.world.data.MaidInfo;
+import com.github.tartaricacid.touhoulittlemaid.world.data.MaidWorldData;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.netty.buffer.ByteBuf;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.level.Level;
+
+import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
+@SuppressWarnings("deprecation")
+public class ItemFoxScroll extends Item {
+    public ItemFoxScroll(Identifier id) {
+        super((new Properties())
+                .setId(ResourceKey.create(Registries.ITEM, id))
+                .stacksTo(1));
+    }
+
+    public static void setTrackInfo(ItemStack scroll, String dimension, BlockPos pos) {
+        scroll.set(InitDataComponent.TRACK_INFO, new TrackInfo(dimension, pos));
+    }
+
+    @Nullable
+    public static TrackInfo getTrackInfo(ItemStack scroll) {
+        return scroll.get(InitDataComponent.TRACK_INFO);
+    }
+
+    @Override
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
+        if (!(player instanceof ServerPlayer serverPlayer) || hand != InteractionHand.MAIN_HAND) {
+            return super.use(level, player, hand);
+        }
+
+        ItemStack item = player.getMainHandItem();
+        MaidWorldData maidWorldData = MaidWorldData.get(level);
+        if (maidWorldData == null) {
+            return super.use(level, player, hand);
+        }
+
+        Map<String, List<FoxScrollPackage.FoxScrollData>> data = Maps.newHashMap();
+        List<MaidInfo> maidInfos = null;
+        if (item.getItem() == InitItems.RED_FOX_SCROLL) {
+            maidInfos = maidWorldData.getPlayerMaidInfos(player);
+        } else if (item.getItem() == InitItems.WHITE_FOX_SCROLL) {
+            maidInfos = maidWorldData.getPlayerMaidTombstones(player);
+        }
+
+        if (maidInfos == null) {
+            maidInfos = Collections.emptyList();
+        }
+        maidInfos.forEach(info -> {
+            var scrollData = data.computeIfAbsent(info.dimension(), _ -> Lists.newArrayList());
+            scrollData.add(new FoxScrollPackage.FoxScrollData(info.chunkPos(), info.name(), info.timestamp()));
+        });
+        ServerPlayNetworking.send(serverPlayer, new FoxScrollPackage(data));
+
+        if (item.getItem() == InitItems.RED_FOX_SCROLL) {
+            InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.USE_RED_FOX_SCROLL);
+        } else if (item.getItem() == InitItems.WHITE_FOX_SCROLL) {
+            InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.USE_WHITE_FOX_SCROLL);
+        }
+
+        return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext worldIn, TooltipDisplay display, Consumer<Component> components, TooltipFlag flagIn) {
+        TrackInfo info = getTrackInfo(stack);
+        if (info != null) {
+            components.accept(Component
+                    .translatable("tooltips.touhou_little_maid.fox_scroll.dimension", info.dimension)
+                    .withStyle(ChatFormatting.GOLD)
+            );
+
+            String posText = info.position.toShortString();
+            components.accept(Component
+                    .translatable("tooltips.touhou_little_maid.fox_scroll.position", posText)
+                    .withStyle(ChatFormatting.RED)
+            );
+
+            components.accept(Component.empty());
+        }
+
+        if (stack.getItem() == InitItems.RED_FOX_SCROLL) {
+            components.accept(Component
+                    .translatable("tooltips.touhou_little_maid.fox_scroll.red")
+                    .withStyle(ChatFormatting.GRAY)
+            );
+        } else if (stack.getItem() == InitItems.WHITE_FOX_SCROLL) {
+            components.accept(Component
+                    .translatable("tooltips.touhou_little_maid.fox_scroll.white")
+                    .withStyle(ChatFormatting.GRAY)
+            );
+        }
+    }
+
+    public record TrackInfo(String dimension, BlockPos position) {
+        public static final Codec<TrackInfo> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.STRING.fieldOf("dimension").forGetter(TrackInfo::dimension),
+                BlockPos.CODEC.fieldOf("position").forGetter(TrackInfo::position)
+        ).apply(instance, TrackInfo::new));
+
+        public static final StreamCodec<ByteBuf, TrackInfo> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, TrackInfo::dimension,
+                BlockPos.STREAM_CODEC, TrackInfo::position,
+                TrackInfo::new
+        );
+    }
+}

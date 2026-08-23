@@ -1,0 +1,143 @@
+package com.github.tartaricacid.touhoulittlemaid.item;
+
+import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
+import com.github.tartaricacid.touhoulittlemaid.api.block.IMultiBlock;
+import com.github.tartaricacid.touhoulittlemaid.block.multiblock.MultiBlockManager;
+import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.ProjectileWeaponItem;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import org.jspecify.annotations.Nullable;
+
+import java.util.List;
+import java.util.function.Predicate;
+
+import static net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND;
+import static net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE;
+import static net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE;
+import static net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED;
+
+
+@SuppressWarnings("deprecation")
+public class ItemGohei extends ProjectileWeaponItem {
+    public ItemGohei(Identifier id) {
+        super(new Properties()
+                .setId(ResourceKey.create(Registries.ITEM, id))
+                .durability(1200)
+                .attributes(createAttributes()));
+    }
+
+    private static ItemAttributeModifiers createAttributes() {
+        return ItemAttributeModifiers.builder()
+                .add(ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_ID, 4, ADD_VALUE), MAINHAND)
+                .add(ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_ID, -2, ADD_VALUE), MAINHAND)
+                .build();
+    }
+
+    public static boolean isGohei(ItemStack stack) {
+        return stack.getItem() instanceof ItemGohei;
+    }
+
+    @Override
+    public Predicate<ItemStack> getAllSupportedProjectiles() {
+        return _ -> true;
+    }
+
+    @Override
+    public int getDefaultProjectileRange() {
+        return 15;
+    }
+
+    @Override
+    protected void shootProjectile(
+            LivingEntity shooter, Projectile projectileEntity, int index, float power,
+            float uncertainty, float angle, @Nullable LivingEntity targetOverride
+    ) {
+        // 御币不能发射弹幕的，所以该方法为空体
+    }
+
+    @Override
+    public int getUseDuration(ItemStack stack, LivingEntity pEntity) {
+        return 500;
+    }
+
+    @Override
+    public ItemUseAnimation getUseAnimation(ItemStack stack) {
+        return ItemUseAnimation.BOW;
+    }
+
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        if (context.getHand() != InteractionHand.MAIN_HAND) {
+            return super.useOn(context);
+        }
+
+        List<IMultiBlock> multiBlockList = MultiBlockManager.getMultiBlockList();
+        BlockState blockState = context.getLevel().getBlockState(context.getClickedPos());
+        BlockPos pos = context.getClickedPos();
+
+        if (!(context.getLevel() instanceof ServerLevel serverLevel)) {
+            return InteractionResult.SUCCESS;
+        }
+
+        // 检查水平四个方向
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            // 有可能玩家点击的是右侧，故需要判断两个位置
+            BlockPos leftPos = pos.relative(direction.getClockWise());
+            BlockState leftBlockState = context.getLevel().getBlockState(leftPos);
+
+            for (IMultiBlock multiBlock : multiBlockList) {
+                if (multiBlock.isCoreBlock(blockState)
+                    && multiBlock.directionIsSuitable(direction)
+                    && this.checkAndBuild(context, multiBlock, serverLevel, pos, direction)) {
+                    return InteractionResult.SUCCESS;
+                }
+
+                if (multiBlock.isCoreBlock(leftBlockState)
+                    && multiBlock.directionIsSuitable(direction)
+                    && this.checkAndBuild(context, multiBlock, serverLevel, leftPos, direction)) {
+                    return InteractionResult.SUCCESS;
+                }
+            }
+        }
+
+        return InteractionResult.SUCCESS;
+    }
+
+    private boolean checkAndBuild(UseOnContext context, IMultiBlock multiBlock, ServerLevel world, BlockPos pos, Direction direction) {
+        BlockPos posStart = pos.offset(multiBlock.getCenterPos(direction));
+        StructureTemplate template = multiBlock.getTemplate(world, direction);
+        if (multiBlock.isMatch(world, posStart, direction, template)) {
+            multiBlock.build(world, posStart, direction, template);
+            world.playSound(null, pos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1.5f, 1);
+            if (context.getPlayer() instanceof ServerPlayer serverPlayer) {
+                InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.BUILD_ALTAR);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+        stack.hurtAndBreak(2, attacker, attacker.getEquipmentSlotForItem(stack));
+    }
+}

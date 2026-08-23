@@ -1,0 +1,36 @@
+package com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button;
+
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
+
+import java.util.function.Consumer;
+
+public class ModelDetailsButton extends TouhouStateSwitchButton {
+    private static final Identifier BUTTON_TEXTURE = IdentifierUtil.modLoc("textures/gui/skin_detail.png");
+    private final Consumer<Boolean> onClick;
+    private final MutableComponent name;
+
+    public ModelDetailsButton(int xIn, int yIn, String langKey, Consumer<Boolean> onClick) {
+        super(xIn, yIn, 128, 12, false);
+        this.name = Component.translatable(langKey);
+        this.onClick = onClick;
+        this.initTextureValues(0, 0, 128, 12, BUTTON_TEXTURE);
+    }
+
+    @Override
+    public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        super.extractWidgetRenderState(graphics, mouseX, mouseY, partialTicks);
+        graphics.text(Minecraft.getInstance().font, name, this.getX() + 14, this.getY() + 2, 0xffffffff, false);
+    }
+
+    @Override
+    public void onClick(MouseButtonEvent event, boolean doubleClick) {
+        this.isStateTriggered = !this.isStateTriggered;
+        onClick.accept(this.isStateTriggered);
+    }
+}

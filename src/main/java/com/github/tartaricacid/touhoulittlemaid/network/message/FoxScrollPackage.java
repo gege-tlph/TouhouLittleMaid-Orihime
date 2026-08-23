@@ -1,0 +1,58 @@
+package com.github.tartaricacid.touhoulittlemaid.network.message;
+
+import com.github.tartaricacid.touhoulittlemaid.network.client.FoxScrollPackageProxy;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLoc;
+
+public record FoxScrollPackage(Map<String, List<FoxScrollData>> data) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<FoxScrollPackage> TYPE = new CustomPacketPayload.Type<>(modLoc("fox_scroll"));
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, List<FoxScrollData>> LIST_STREAM_CODEC = ByteBufCodecs.collection(
+            ArrayList::new,
+            FoxScrollData.FOX_SCROLL_DATA_STREAM_CODEC,
+            1024
+    );
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, Map<String, List<FoxScrollData>>> BYTE_BUF_MAP_STREAM_CODEC = ByteBufCodecs.map(
+            HashMap::new,
+            ByteBufCodecs.STRING_UTF8,
+            LIST_STREAM_CODEC,
+            1024
+    );
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, FoxScrollPackage> STREAM_CODEC = StreamCodec.composite(
+            BYTE_BUF_MAP_STREAM_CODEC,
+            FoxScrollPackage::data,
+            FoxScrollPackage::new
+    );
+
+    public static void handle(FoxScrollPackage message, ClientPlayNetworking.Context context) {
+        context.client().execute(() -> FoxScrollPackageProxy.handle(message));
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    public record FoxScrollData(BlockPos pos, Component name, long timestamp) {
+        public static final StreamCodec<RegistryFriendlyByteBuf, FoxScrollData> FOX_SCROLL_DATA_STREAM_CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC, FoxScrollData::pos,
+                ComponentSerialization.STREAM_CODEC, FoxScrollData::name,
+                ByteBufCodecs.VAR_LONG, FoxScrollData::timestamp,
+                FoxScrollData::new);
+    }
+}

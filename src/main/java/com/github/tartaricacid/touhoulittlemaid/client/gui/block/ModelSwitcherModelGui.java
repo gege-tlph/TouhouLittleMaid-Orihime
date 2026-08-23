@@ -1,0 +1,156 @@
+package com.github.tartaricacid.touhoulittlemaid.client.gui.block;
+
+import com.github.tartaricacid.touhoulittlemaid.api.client.render.MaidRenderState;
+import com.github.tartaricacid.touhoulittlemaid.blockentity.BlockEntityModelSwitcher;
+import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.cache.CacheIconManager;
+import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.detail.MaidModelDetailsGui;
+import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.model.AbstractModelGui;
+import com.github.tartaricacid.touhoulittlemaid.client.resource.loader.CustomPackLoader;
+import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelInfo;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil;
+import com.github.tartaricacid.touhoulittlemaid.util.GuiTools;
+import com.github.tartaricacid.touhoulittlemaid.util.migrate.ScreenUtil;
+import net.fabricmc.fabric.api.client.screen.v1.Screens;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.level.Level;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.List;
+
+import static com.github.tartaricacid.touhoulittlemaid.client.resource.models.SpecialMaidModelResolver.EASTER_EGG_MODEL;
+import static com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil.clearMaidDataResidue;
+
+public class ModelSwitcherModelGui extends AbstractModelGui<EntityMaid, MaidModelInfo> {
+    private static int PAGE_INDEX = 0;
+    private static int PACK_INDEX = 0;
+    private static int ROW_INDEX = 0;
+    private final BlockEntityModelSwitcher.ModeInfo infoIn;
+    private final ModelSwitcherGui modelSwitcherGui;
+
+    public ModelSwitcherModelGui(EntityMaid maid, BlockEntityModelSwitcher.ModeInfo infoIn, ModelSwitcherGui modelSwitcherGui) {
+        super(maid, CustomPackLoader.MAID_MODELS.getPackList());
+        this.infoIn = infoIn;
+        this.modelSwitcherGui = modelSwitcherGui;
+    }
+
+    @Override
+    protected void drawLeftEntity(GuiGraphicsExtractor graphics, int middleX, int middleY, float mouseX, float mouseY) {
+        float renderItemScale = CustomPackLoader.MAID_MODELS.getModelRenderItemScale(entity.getModelId());
+        int centerX = (middleX - 256 / 2) / 2;
+        int yOffset = (int) (45 * (renderItemScale - 1));
+        InventoryScreen.extractEntityInInventoryFollowsMouse(
+                graphics,
+                centerX - 100,
+                middleY - 100,
+                centerX + 100,
+                middleY + 200 - yOffset,
+                (int) (45 * renderItemScale),
+                0.1F,
+                mouseX,
+                mouseY,
+                entity);
+    }
+
+    @Override
+    protected void drawRightEntity(GuiGraphicsExtractor graphics, int posX, int posY, MaidModelInfo modelItem) {
+        Identifier cacheIconId = modelItem.getCacheIconId();
+        // 26.1.2：TextureManager.byPath 已私有化，基准直接读它的判在写法改走 CacheIconManager 自持注册表
+        if (MiscConfig.MODEL_ICON_CACHE.get() && CacheIconManager.isIconCached(cacheIconId)) {
+            int textureSize = 24;
+            // 整图缩放绘制（w==uW、h==vH），语义同基准 blit 管线形态
+            GuiTools.guiBlit(graphics, cacheIconId, posX - textureSize / 2, posY - textureSize, 0, 0, textureSize, textureSize, textureSize, textureSize);
+        } else {
+            drawEntity(graphics, posX, posY, modelItem);
+        }
+    }
+
+    @Override
+    protected void openDetailsGui(EntityMaid maid, MaidModelInfo modelInfo) {
+        if (minecraft != null && modelInfo.getEasterEgg() == null) {
+            ScreenUtil.setScreen(new MaidModelDetailsGui(maid, modelInfo));
+        }
+    }
+
+    @Override
+    protected void notifyModelChange(EntityMaid maid, MaidModelInfo info) {
+        if (info.getEasterEgg() == null) {
+            maid.setModelId(info.getModelId().toString());
+            infoIn.setModelId(info.getModelId());
+            ScreenUtil.setScreen(this.modelSwitcherGui);
+        }
+    }
+
+    @Override
+    protected void addModelCustomTips(MaidModelInfo modelItem, List<Component> tooltips) {
+        String useSoundPackId = modelItem.getUseSoundPackId();
+        if (StringUtils.isNotBlank(useSoundPackId)) {
+            tooltips.add(Component.translatable("gui.touhou_little_maid.skin.tooltips.maid_use_sound_pack_id", useSoundPackId)
+                    .withStyle(ChatFormatting.GOLD));
+        }
+    }
+
+    @Override
+    protected int getPageIndex() {
+        return PAGE_INDEX;
+    }
+
+    @Override
+    protected void setPageIndex(int pageIndex) {
+        PAGE_INDEX = pageIndex;
+    }
+
+    @Override
+    protected int getPackIndex() {
+        return PACK_INDEX;
+    }
+
+    @Override
+    protected void setPackIndex(int packIndex) {
+        PACK_INDEX = packIndex;
+    }
+
+    @Override
+    protected int getRowIndex() {
+        return ROW_INDEX;
+    }
+
+    @Override
+    protected void setRowIndex(int rowIndex) {
+        ROW_INDEX = rowIndex;
+    }
+
+    private void drawEntity(GuiGraphicsExtractor graphics, int posX, int posY, MaidModelInfo modelItem) {
+        Level world = Screens.getMinecraft(this).level;
+        if (world == null) {
+            return;
+        }
+
+        EntityMaid maid = EntityCacheUtil.getMaid(world, EntitySpawnReason.COMMAND);
+        maid.renderState = MaidRenderState.GUI;
+
+        clearMaidDataResidue(maid, false);
+        if (modelItem.getEasterEgg() != null) {
+            maid.setModelId(EASTER_EGG_MODEL);
+        } else {
+            maid.setModelId(modelItem.getModelId().toString());
+        }
+        InventoryScreen.extractEntityInInventoryFollowsMouse(
+                graphics,
+                posX - 10,
+                posY - 32,
+                posX + 10,
+                posY + 12,
+                (int) (12 * modelItem.getRenderItemScale()),
+                0.1F,
+                posX + 25,
+                posY + 5,
+                maid);
+    }
+}

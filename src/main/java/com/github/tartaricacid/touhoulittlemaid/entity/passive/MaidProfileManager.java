@@ -1,0 +1,55 @@
+package com.github.tartaricacid.touhoulittlemaid.entity.passive;
+
+import com.github.tartaricacid.touhoulittlemaid.entity.data.ProfileData;
+
+import static com.github.tartaricacid.touhoulittlemaid.init.InitDataAttachment.PROFILE;
+
+/**
+ * 女仆档案管理器，主要管理女仆的模型和音效包等信息
+ */
+@MaidManagerDef(alias = "profileManager", exposeView = true)
+public class MaidProfileManager {
+    private final EntityMaid maid;
+
+    public MaidProfileManager(EntityMaid entityMaid) {
+        maid = entityMaid;
+    }
+
+    public String getModelId() {
+        return maid.getAttachedOrCreate(PROFILE).modelId();
+    }
+
+    public void setModelId(String modelId) {
+        ProfileData profileData = maid.getAttachedOrCreate(PROFILE).withModelId(modelId);
+        maid.setAttached(PROFILE, profileData);
+    }
+
+    public String getSoundPackId() {
+        return maid.getAttachedOrCreate(PROFILE).soundPackId();
+    }
+
+    public void setSoundPackId(String soundPackId) {
+        ProfileData profileData = maid.getAttachedOrCreate(PROFILE).withSoundPackId(soundPackId);
+        maid.setAttached(PROFILE, profileData);
+    }
+
+    public interface View {
+        MaidProfileManager getProfileManager();
+
+        default String getModelId() {
+            return getProfileManager().getModelId();
+        }
+
+        default void setModelId(String modelId) {
+            getProfileManager().setModelId(modelId);
+        }
+
+        default String getSoundPackId() {
+            return getProfileManager().getSoundPackId();
+        }
+
+        default void setSoundPackId(String soundPackId) {
+            getProfileManager().setSoundPackId(soundPackId);
+        }
+    }
+}
