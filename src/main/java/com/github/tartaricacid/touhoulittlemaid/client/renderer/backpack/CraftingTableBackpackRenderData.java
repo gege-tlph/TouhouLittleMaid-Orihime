@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
 import static com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid.MOD_ID;
 import static com.github.tartaricacid.touhoulittlemaid.client.resource.bedrock.InternalBedrockModelRegistry.CRAFTING_TABLE_BACKPACK;
 
-// NODE R8：origin CraftingTableBackpack 的 client 渲染三元组（模型/纹理/offset 逐字还原）
+// Keep the model, texture and item offset together so the backpack remains aligned in every pose.
 public class CraftingTableBackpackRenderData extends MaidBackpackRenderData {
     private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(MOD_ID, "textures/bedrock/entity/backpack/crafting_table_backpack.png");
 

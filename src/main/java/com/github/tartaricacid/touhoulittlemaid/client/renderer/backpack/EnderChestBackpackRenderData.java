@@ -11,7 +11,8 @@ import org.jspecify.annotations.Nullable;
 import static com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid.MOD_ID;
 import static com.github.tartaricacid.touhoulittlemaid.client.resource.bedrock.InternalBedrockModelRegistry.END_CHEST_BACKPACK;
 
-// NODE R8：origin EnderChestBackpack 的 client 渲染三元组（注意 origin 就是 模型=end_chest / 纹理=ender_chest，非笔误）
+// The model id and texture intentionally follow the behavior baseline: the model is end_chest,
+// while the rendered texture is ender_chest_backpack.
 public class EnderChestBackpackRenderData extends MaidBackpackRenderData {
     private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(MOD_ID, "textures/bedrock/entity/backpack/ender_chest_backpack.png");
 
