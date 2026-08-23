@@ -277,21 +277,22 @@ class OptionalCompatWiringContractTest {
     }
 
     /**
-     * TaCZ 弹药来源走官方 API，且**不得再留任何 tacz mixin**。
+     * TaCZ 弹药来源走官方 API；旧弹药注入不得复活，但 JEI 资源重载兼容桥允许存在。
      *
      * <p>{@code 26.1.2_R2} 起上游提供了 {@code AmmoSource} / {@code AmmoSourceProvider} /
      * {@code AmmoSourceRegistry}，同时把我们四个 mixin 的注入锚点**全部移除**
      * （R1/R2 双 jar javap 实证：{@code tacz$getItemHandler} 由 5 处变 0，
      * {@code lambda$hasAmmoToConsume$0} 由 1 处变 0）。而
      * {@code touhou_little_maid_fabric.mixins.json} 是 {@code "required": true}，
-     * 所以留着旧 mixin 不是「兼容退化」而是**启动崩溃**——两者互斥，没有并存写法。</p>
+     * 所以留着旧 mixin 不是「兼容退化」而是**启动崩溃**——两者互斥，没有并存写法。
+     * 当前唯一允许的 TaCZ mixin 是配方查看器兼容桥：它不碰弹药注入锚点，只修 JEI 事件名漂移。</p>
      *
      * <p>这道闸同时看守两件事：provider 登记还在（没登记＝女仆背包里的弹药 TaCZ 看不见，
      * 会静默回落到 {@code ENTITY_INVENTORY}，表现为「有弹药却换不了弹」而不报任何错），
      * 与 mixin 没有复活。</p>
      */
     @Test
-    void taczAmmoGoesThroughTheOfficialApiAndNoTaczMixinSurvives() throws IOException {
+    void taczAmmoGoesThroughTheOfficialApiAndOnlyRecipeViewerMixinSurvives() throws IOException {
         String compat = stripComments(Files.readString(TAC_COMPAT, StandardCharsets.UTF_8));
         String init = methodBodyOf(compat, "public static boolean init()");
         assertTrue(init != null, "TacCompat.init() 找不到，判据的识别依据已失效");
@@ -300,13 +301,25 @@ class OptionalCompatWiringContractTest {
                         + "且会静默回落到实体自身物品栏，不报任何错");
 
         String mixins = Files.readString(FABRIC_MIXINS, StandardCharsets.UTF_8);
-        assertTrue(!mixins.contains("compat.tacz."),
-                "mixins.json 仍登记着 tacz mixin：R2 已移除全部注入锚点，required:true 下会启动崩溃");
+        assertTrue(mixins.contains("compat.tacz.client.RecipeViewerReloadBridgeMixin"),
+                "mixins.json 缺少 TaCZ JEI 资源重载兼容桥");
+        assertTrue(!mixins.contains("compat.tacz.common.") && !mixins.contains("compat.tacz.client.AbstractGun"),
+                "mixins.json 仍登记着已被 R2 移除锚点承载的旧 TaCZ 注入");
         try (Stream<Path> walk = Files.walk(MIXIN_ROOT)) {
             List<Path> left = walk.filter(p -> p.toString().replace('\\', '/').contains("/mixin/compat/tacz/"))
                     .filter(p -> p.toString().endsWith(".java")).toList();
-            assertTrue(left.isEmpty(), "还留着 tacz mixin 源文件：" + left);
+            assertEquals(1, left.size(), "TaCZ compat mixin 源文件数量异常：" + left);
+            assertTrue(left.get(0).toString().replace('\\', '/').endsWith(
+                    "/mixin/compat/tacz/client/RecipeViewerReloadBridgeMixin.java"),
+                    "TaCZ compat 中只能保留配方查看器桥：" + left);
         }
+
+        Path recipeBridge = MIXIN_ROOT.resolve("compat/tacz/client/RecipeViewerReloadBridgeMixin.java");
+        String bridge = stripComments(Files.readString(recipeBridge, StandardCharsets.UTF_8));
+        assertTrue(bridge.contains("AFTER_RECIPE_SYNC"),
+                "TaCZ JEI 兼容桥必须调用 JEI 29 的 AFTER_RECIPE_SYNC");
+        assertTrue(bridge.contains("refreshJei()Z"),
+                "TaCZ JEI 兼容桥必须钉在 R2 的 refreshJei() 返回值入口");
 
         // provider 的两侧判据必须一致：hasAmmo 说有、consumeAmmo 抠不到，会让换弹动画播了却不上弹
         String source = stripComments(Files.readString(MAID_AMMO_SOURCE, StandardCharsets.UTF_8));

@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -87,6 +88,27 @@ class ClientRenderContractTest {
         assertTrue(renderers >= 2,
                 "只认出 " + renderers + " 个 SpecialModelRenderer 实现，识别依据可能已失效");
         assertEquals(List.of(), offenders, "特殊模型渲染器的状态必须按数据记忆化");
+    }
+
+    /**
+     * 坐垫的缓存对象只负责提供稳定的 model identity，不能持有一次性的实体渲染状态。
+     * Gecko 几何提交后会关闭 {@code GeckoRenderData}；若把包含它的状态按 modelId 缓存，
+     * 第一帧之后同一坐垫只会反复拿到 CLOSED 数据，表现为 Alex 坐垫完全透明。
+     */
+    @Test
+    void cachedChairIdentityDoesNotOwnOneShotEntityRenderState() throws IOException {
+        Path stateFile = MAIN_JAVA.resolve(
+                "com/github/tartaricacid/touhoulittlemaid/client/renderer/item/state/ChairRenderRenderState.java");
+        String stateSource = stripComments(Files.readString(stateFile, StandardCharsets.UTF_8));
+        assertFalse(stateSource.contains("EntityRenderState"),
+                "按 modelId 缓存的坐垫 identity 不能持有一次性 EntityRenderState");
+
+        Path rendererFile = MAIN_JAVA.resolve(
+                "com/github/tartaricacid/touhoulittlemaid/client/renderer/item/ChairItemRenderer.java");
+        String rendererSource = stripComments(Files.readString(rendererFile, StandardCharsets.UTF_8));
+        String submit = methodBody(rendererSource, "submit");
+        assertTrue(submit != null && submit.contains("extractEntity(") && submit.contains("state.modelId"),
+                "坐垫必须在每次实际 submit 时按缓存的 modelId 抽取新实体渲染状态");
     }
 
     /**

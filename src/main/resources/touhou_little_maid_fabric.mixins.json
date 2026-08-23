@@ -57,7 +57,8 @@
     "client.ItemInHandRendererMixin",
     "client.KeyboardHandlerMixin",
     "client.RemotePlayerMixin",
-    "client.SoundEngineMixin"
+    "client.SoundEngineMixin",
+    "compat.tacz.client.RecipeViewerReloadBridgeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

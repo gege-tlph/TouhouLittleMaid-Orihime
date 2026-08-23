@@ -20,6 +20,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 import java.util.concurrent.ExecutionException;
@@ -44,8 +45,8 @@ public class ChairItemRenderer implements SpecialModelRenderer<ChairRenderRender
      * 同 {@link GarageKitItemRenderer}：{@code extractArgument} 的返回值会被
      * {@code SpecialModelWrapper} 追加进 GUI 图标缓存的 model identity（26.1.2 反编译源实查），
      * 而本状态类没有 {@code equals} —— 每帧新建实例就等于每帧换一个 identity，
-     * 图标缓存永远失效，创造栏/JEI 里满屏坐垫时每帧全量重抽取重绘。按 modelId 记忆化后，
-     * 重活只在模型变化时做一次。
+     * 图标缓存永远失效。这里只缓存可重复使用的模型标识与缩放；实体渲染状态不能缓存，
+     * 因为 Gecko 的 {@code GeckoRenderData} 在一次几何提交后会被 {@code close()} 回收。
      */
     private static final ChairRenderRenderState EMPTY = new ChairRenderRenderState();
     private static final Cache<String, ChairRenderRenderState> STATE_CACHE =
@@ -68,27 +69,20 @@ public class ChairItemRenderer implements SpecialModelRenderer<ChairRenderRender
         }
         String modelId = ItemChair.getData(stack).modelId();
         try {
-            return STATE_CACHE.get(modelId, () -> buildState(modelId, level));
+            return STATE_CACHE.get(modelId, () -> buildState(modelId));
         } catch (ExecutionException e) {
             TouhouLittleMaid.LOGGER.error("Failed to prepare chair item preview", e);
             return EMPTY;
         }
     }
 
-    private static ChairRenderRenderState buildState(String modelId, Level level) {
+    private static ChairRenderRenderState buildState(String modelId) {
         ChairRenderRenderState state = new ChairRenderRenderState();
         state.modelId = modelId;
 
         CustomPackLoader.CHAIR_MODELS.getInfo(modelId).ifPresent(
                 info -> state.renderItemScale = info.getRenderItemScale()
         );
-
-        EntityChair chair = EntityCacheUtil.getChair(level, EntitySpawnReason.LOAD);
-        chair.setModelId(modelId);
-
-        EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
-        state.entityRenderState = dispatcher.extractEntity(chair, 0);
-
         return state;
     }
 
@@ -109,7 +103,17 @@ public class ChairItemRenderer implements SpecialModelRenderer<ChairRenderRender
             return;
         }
 
-        if (state.entityRenderState == null) {
+        Level level = Minecraft.getInstance().level;
+        if (level == null) {
+            return;
+        }
+
+        EntityChair chair = EntityCacheUtil.getChair(level, EntitySpawnReason.LOAD);
+        chair.setModelId(state.modelId);
+
+        EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+        var entityRenderState = dispatcher.extractEntity(chair, 0);
+        if (entityRenderState == null) {
             return;
         }
 
@@ -118,19 +122,28 @@ public class ChairItemRenderer implements SpecialModelRenderer<ChairRenderRender
 
         poseStack.pushPose();
         poseStack.scale(scale, scale, scale);
-        state.entityRenderState.lightCoords = lightCoords;
-        EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+        entityRenderState.lightCoords = lightCoords;
         CameraRenderState camera = new CameraRenderState();
-        dispatcher.submit(state.entityRenderState, camera, 1 / scale - 0.125, 0.25, 0.75, poseStack, collector);
+        dispatcher.submit(entityRenderState, camera, 1 / scale - 0.125, 0.25, 0.75, poseStack, collector);
         poseStack.popPose();
     }
 
+    /**
+     * GUI/world extents for the cushion preview, in the space {@link #submit} draws in.
+     *
+     * <p><b>minY MUST stay 0</b>: {@code ItemEntityRenderer} derives a dropped item's height
+     * from {@code -getModelBoundingBox().minY + 0.0625} (javap-confirmed on 26.1.2). The raw
+     * {@code root().getExtentsForGui} reports y in 1.3125..1.5 (a Bedrock part origin sits 24
+     * units up), which yields droppedHeight = -1.25 and sinks the dropped cushion 1.25 blocks
+     * into the floor (probe-confirmed 2026-08-22). Item render space puts the ground at y=0,
+     * so the box is rebased to start there — the same hardcoded box the behavior baseline
+     * {@code port/1.21.11-fabric} ships and the user verified. Not derived at runtime on
+     * purpose: {@code getExtentsForGui} lives in Bedrock-part space, not this render space.
+     */
     @Override
     public void getExtents(Consumer<Vector3fc> output) {
-        PoseStack poseStack = new PoseStack();
-        CustomPackLoader.CHAIR_MODELS.getModel(DEFAULT_CHAIR_ID).ifPresent(model ->
-                model.root().getExtentsForGui(poseStack, output)
-        );
+        output.accept(new Vector3f(-0.4375F, 0, -0.4375F));
+        output.accept(new Vector3f(0.4375F, 0.1875F, 0.4375F));
     }
 
     public record Unbaked() implements SpecialModelRenderer.Unbaked<ChairRenderRenderState> {

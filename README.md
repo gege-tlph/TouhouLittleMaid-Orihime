@@ -1,23 +1,123 @@
-## [TouhouLittleMaid](https://github.com/TartaricAcid/TouhouLittleMaid) unofficial Fabric port.
-Available on [Modrinth](https://modrinth.com/mod/touhoulittlemaid-orihime) and [CurseForge](https://curseforge.com/minecraft/mc-mods/touhoulittlemaid-orihime).<br>
-You can get the detail on TLM's [WIKI](http://page.cfpa.team/TouhouLittleMaid/).<br>
+# Touhou Little Maid: Tsumugi
 
-**Note:**
-- **This mod requires [Forge Config API Port](https://modrinth.com/mod/forge-config-api-port).**
-- **If you want to change some settings in-game, you should install [Cloth Config API](https://modrinth.com/mod/cloth-config).**
-- **This mod is still experimental, perhaps there exist some bugs.**
-- **If you want to install TACZ-Fabric-1.20.1, you must use [this fork](https://github.com/Sh1roCu/TACZ-Fabric/releases/tag/v1.0.2-hotfix4), or else maids won't send sound.**
-- **Compatible with [TACZ-Refabricated](https://github.com/Sh1roCu/TACZ-Refabricated) since version1.20.1-0.1.7.1-(neo)forge1.3.8, and don't support old version of TACZ-Fabric.**
+**简体中文** | [English](README_en.md)
 
-**<br>
-If you want to extend this mod, you can add an entry point of type "little_maid_extension" in your fabric.mod.json:**
+[![Release](https://img.shields.io/github/v/release/gege-tlph/TouhouLittleMaid-Tsumugi?logo=github&label=Release)](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/releases)
+[![GitHub downloads](https://img.shields.io/github/downloads/gege-tlph/TouhouLittleMaid-Tsumugi/total?logo=github&label=Downloads)](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/releases)
+[![Mod Loader](https://img.shields.io/badge/Mod%20Loader-Fabric-DBD0B4)](https://fabricmc.net/)
+[![License](https://img.shields.io/badge/License-MIT%20%2B%20CC%20BY--NC--SA%204.0-blue)](LICENSE-MIT)
 
+> [!IMPORTANT]
+> 本仓库是 [Sh1roCu/TouhouLittleMaid-Orihime](https://github.com/Sh1roCu/TouhouLittleMaid-Orihime)
+> 的非官方后续移植系列，由 gege-tlph 独立维护，不代表原模组官方版本。本分支面向
+> **Minecraft 26.1.2 Fabric**，当前版本为 **Beta**。
+
+[Touhou Little Maid](https://github.com/TartaricAcid/TouhouLittleMaid)（东方小女仆）是以东方 Project
+为主题的女仆模组：你可以召唤女仆陪伴，让她们种地、钓鱼、整理物品、跟随战斗、换装并与你聊天。
+玩法资料请参阅 [Touhou Little Maid Wiki](http://page.cfpa.team/TouhouLittleMaid/)。
+
+## 支持的版本
+
+| Minecraft | 加载器 | 分支 | 状态 |
+|---|---|---|---|
+| 26.1.2 | Fabric | [`port/26.1.2`](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/tree/port/26.1.2) | `v1.0.22-beta.1`，Beta |
+| 1.21.11 | Fabric | [`port/1.21.11-fabric`](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/tree/port/1.21.11-fabric) | 稳定维护 |
+
+每个 Minecraft 版本使用独立分支维护。构件、依赖和存档均应按目标版本核对，不要跨版本混装。
+
+## 下载
+
+从 [GitHub Releases](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/releases) 下载与
+Minecraft 26.1.2 对应、名称中不含 `sources`、`shadow` 或 `dev` 的
+`touhoulittlemaid-fabric-*.jar`。
+
+本 Beta 仍在收集真实客户端、专用服务器和第三方模组组合的反馈。更新前请备份世界。
+
+## 关于本项目
+
+26.1.2 分支基于 Orihime 的同版本 Fabric 实现，并以本项目已验证的 1.21.11 分支作为行为基准。
+除适配 Minecraft 26.1.2 的 API、数据和渲染体系外，本项目还包含：
+
+- 女仆空闲时可以自卫或保护主人，临时应战不会覆盖原有工作日程。
+- 女仆手持弓、弩或 TACZ 枪械并有弹药时会保持距离射击。
+- 重写配置与 AI 设置界面，支持服务器规则同步、站点检查、TTS 试听和独立重载命令。
+- 修复炉子背包、进食副手物品、忠诚三叉戟、灭火剂、女仆界面竞态等继承问题。
+- 修复坐垫、物品预览、模型标记、背包界面和多种跨版本渲染回归。
+
+AI 聊天与语音需要玩家自行准备服务和密钥，本模组不提供或代理任何 AI 服务。
+
+## 26.1.2 分支：兼容性要求
+
+| 组件 | 要求 |
+|---|---|
+| Minecraft | 26.1.2 |
+| Java | 25 |
+| Fabric Loader | `>=0.19.0`；安装 TACZ R2 时 `>=0.19.3` |
+| Fabric API | `>=0.149.0`；安装 TACZ R2 时 `>=0.155.2` |
+| Forge Config API Port | `>=26.1.5`，必装 |
+| 安装位置 | 客户端与服务端 |
+
+推荐但非必需：Mod Menu 与 Cloth Config（游戏内配置）、JEI 或 REI（查看祭坛配方）、
+Patchouli（《幻想乡秘话》手册）。缺少 Patchouli 时，游戏内提示会打开
+[Patchouli Fabric 下载页](https://www.curseforge.com/minecraft/mc-mods/patchouli-fabric)；
+当前验证版本为 `26.1-94-beta`。
+
+## 26.1.2 分支：安装
+
+1. 安装适用于 Minecraft 26.1.2 的 Fabric Loader。
+2. 安装 Fabric API 与 Forge Config API Port。
+3. 下载本模组的可安装 JAR，与依赖一起放入客户端和服务端的 `mods` 目录。
+4. 需要游戏内手册时安装 Patchouli Fabric；需要游戏内配置界面时安装 Cloth Config 与 Mod Menu。
+
+表中下限是基础运行要求。可选兼容模组可能提高 Fabric Loader 或 Fabric API 的最低版本。
+
+## 26.1.2 分支：可选模组兼容
+
+| 模组 | 兼容内容 |
+|---|---|
+| Patchouli | 内置《幻想乡秘话》手册、祭坛说明与配方页面 |
+| JEI / REI | 祭坛配方与物品变体展示 |
+| Sodium / Iris | 动态模型、标记与光影环境渲染 |
+| TACZ Refabricated R2 | 女仆持枪作战、背包取弹、远程应战与持枪渲染 |
+| Farmer's Delight Refabricated | 女仆识别并食用其食物 |
+| Kaleidoscope Cookery Refabricated | 特殊食物、水稻收获与补种 |
+| Kaleidoscope Tavern Refabricated | 桌台、坐具、葡萄采收与工作餐边界 |
+| Carry On | 搬运女仆时的模型、姿势与黑名单 |
+
+TACZ 兼容针对
+[TaCZ Refabricated Unofficial](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases)
+的 26.1.2 R2 构件。第三方 JAR 不会打包进本模组。
+
+KubeJS、Aquaculture、Accessories、Sophisticated Backpacks、YSM/OpenYSM 等目前没有经过验证的
+26.1.2 Fabric 接入点，本 Beta 不宣称兼容。可选模组未安装时，其兼容代码不会参与基础加载。
+
+## 反馈问题
+
+请在 [Issues](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/issues) 中选择对应模板。
+先说明 Minecraft 版本、Fabric Loader、Fabric API 和完整模组列表，再附上 `logs/latest.log` 与复现步骤；
+涉及 AI 功能时请先打码密钥。
+
+## 从源码构建（26.1.2 分支）
+
+确认 checkout 的分支是 `port/26.1.2`，并安装 JDK 25。构建还需要将 TACZ R2 与 Patchouli Fabric 的
+编译期 JAR 放入 `libs/compile_only/`；它们只参与编译，不会进入最终产物。
+
+```bash
+./gradlew build
 ```
-  "entrypoints": {
-    "little_maid_extension": [
-      "com.example.yourmod.YourMaid"
-    ]
-  },
-```
 
-**and implement** ```ILittleMaid```
+Windows PowerShell 使用 `./gradlew.bat build`。产物位于 `build/libs/`，安装时只使用 remap JAR。
+
+## 扩展接口
+
+附属模组可以在自己的 `fabric.mod.json` 中注册 `little_maid_extension` entrypoint，入口类实现
+`ILittleMaid`。兼容代码应保持可选依赖边界，不要求未安装模组的类参与基础加载。
+
+## 来源与许可证
+
+- 原模组：[TartaricAcid/TouhouLittleMaid](https://github.com/TartaricAcid/TouhouLittleMaid)
+- Fabric 移植来源：[Sh1roCu/TouhouLittleMaid-Orihime](https://github.com/Sh1roCu/TouhouLittleMaid-Orihime)
+- 本项目：[gege-tlph/TouhouLittleMaid-Tsumugi](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi)
+
+代码采用 MIT License，美术与资源采用 CC BY-NC-SA 4.0，详见 [`LICENSE-MIT`](LICENSE-MIT) 与
+[`LICENSE-CC`](LICENSE-CC)。
