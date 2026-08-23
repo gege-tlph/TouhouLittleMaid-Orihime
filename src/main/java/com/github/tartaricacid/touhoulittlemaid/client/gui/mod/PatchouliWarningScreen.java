@@ -15,7 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 
 @Environment(EnvType.CLIENT)
 public class PatchouliWarningScreen extends Screen {
-    private final String patchouliUrl = "https://www.curseforge.com/minecraft/mc-mods/patchouli-fabric";
+    private final String patchouliUrl = "https://www.curseforge.com/minecraft/mc-mods/patchouli-fabric-edition";
     private final Screen lastScreen;
     private MultiLineLabel message = MultiLineLabel.EMPTY;
 
