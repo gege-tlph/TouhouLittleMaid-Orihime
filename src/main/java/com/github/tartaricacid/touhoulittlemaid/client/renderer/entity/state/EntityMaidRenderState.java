@@ -11,6 +11,7 @@ import cn.sh1rocu.touhoulittlemaid.util.neoforge.ClientHooks;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.backpack.BackpackManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleDataCollection;
+import com.github.tartaricacid.touhoulittlemaid.compat.gun.tacz.TacCompat;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.event.GeckoUpdateTask;
 import net.minecraft.client.renderer.blockentity.state.BannerRenderState;
@@ -186,7 +187,7 @@ public class EntityMaidRenderState extends HumanoidRenderState {
      * 26.1 仅架构参考，故此处**忠实还原 HEAD 表示 = BlockState**（非 BlockModelRenderState，非 ItemStackRenderState）。
      * <p>renderSingleBlock 路径在 1.21.11 完整可用（javap 证：renderSingleBlock(BlockState,PoseStack,MultiBufferSource,int,int)
      * + Minecraft.renderBuffers().bufferSource()/endBatch 均在）。填充=Node 5 extract（从 showItem）；渲染调用=
-     * 2c BipedHead（原生 renderSingleBlock，非 submit 管线）。
+     * 2c BipedHead（HEAD 原生 renderSingleBlock，非 submit 管线）。
      */
     public @Nullable BlockState headBlockState;
     /**
@@ -404,8 +405,14 @@ public class EntityMaidRenderState extends HumanoidRenderState {
 
         ItemStack showItem = maid.getBackpackShowItem();
         state.backpackShowItem = showItem;
-        // 只有工具类物品才会显示在背部
-        if (showItem.has(DataComponents.TOOL)) {
+        // 只有工具类物品才会显示在背部。
+        //
+        // ⚠️ 枪械另外排除：它带 TOOL 组件，所以本来满足上面那条，但枪的模型相对女仆过大，
+        // 摆到背上会穿进模型里（用户 2026-08-20 实机报出）。
+        // 判据落在**渲染**侧而不是槽位准入侧——那一格没有任何 mayPlace，
+        // 玩家想往里放什么是他的自由（手动拖放不该被拦），我们只是不去画它。
+        // TacCompat.isGun 自带 INSTALLED 守卫，未装 TACZ 时恒 false。
+        if (showItem.has(DataComponents.TOOL) && !TacCompat.isGun(showItem)) {
             itemModelResolver.updateForLiving(state.backItem, showItem, ItemDisplayContext.FIXED, maid);
         }
     }

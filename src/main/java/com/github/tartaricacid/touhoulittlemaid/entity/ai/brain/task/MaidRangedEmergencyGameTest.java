@@ -104,7 +104,6 @@ public class MaidRangedEmergencyGameTest {
 
     @GameTest(maxTicks = 100)
     public void nonRangedTaskStillFiresBecauseImplementationIsResolvedFromTheWeapon(GameTestHelper helper) {
-        // 弓弩不再绑定工作任务。此前 EntityMaid.performRangedAttack 把射击
         // 委派给当前工作任务，任务不对就是空操作，于是「农场女仆手持弓有箭」在应战里只能冲上去肉搏，
         // 而同样情形下手持枪却会站定开枪（枪走 TaCZ 自己的射击链，不受任务限制）——两者不一致。
         // 解绑后按**手里的武器**去找能开火的实现，两条路终于对齐。
@@ -150,6 +149,53 @@ public class MaidRangedEmergencyGameTest {
      * <p>判据落在 WALK_TARGET 这个可观测量上，而不是「代码里有没有那一行」：
      * 设了 = 她要贴过去打；没设 = 她站定（把 WALK_TARGET 让给远程走位与射击行为）。</p>
      */
+    /**
+     * 坐着的女仆挨打后不许再平移走位——但照旧原地还手。
+     *
+     * <p>根因不在「没判坐姿」，而在<b>走位这条路绕过了移动闸</b>：它不设 {@code WALK_TARGET}，
+     * 直接写 MoveControl（{@code getMoveControl().strafe(...)}），所以兄弟任务
+     * {@code MaidEmergencyWalkToTarget} 用的 {@code canBrainMoving()} 管不到它。
+     * 修法补的是<b>同一个</b>移动闸，于是坐 / 骑乘 / 睡觉 / 被拴一并挡住，
+     * 而不是新造一个「坐姿」判据——后者只堵住今天这一种。</p>
+     *
+     * <p><b>对照组不能省</b>：站着必须返回 true。只断言「坐着不走位」时，任务因为任何别的
+     * 原因起不来（拿错武器、没目标）也会绿——那正是本仓库反复栽的「零覆盖恒绿」。
+     * 另外坐姿是<b>写进去再读出来</b>的 fixture，必须显式断言写成功了：setter 带过滤器是常态，
+     * 写入被静默丢弃会让「期望 false」的断言集体假绿。</p>
+     */
+    @GameTest(maxTicks = 100)
+    public void sittingMaidDoesNotStrafeDuringEmergency(GameTestHelper helper) {
+        EntityMaid standing = armedMaid(helper, new BlockPos(1, 2, 1), Items.BOW, Items.ARROW, new TaskBowAttack());
+        Zombie target = threat(helper, new BlockPos(3, 2, 1));
+        rememberVisibleTarget(helper, standing, target);
+        assertFalse(helper, standing.isMaidInSittingPose(), "对照组不该是坐姿");
+        assertTrue(helper, strafes(helper, standing, target),
+                "对照组：站着且端着上了箭的弓时，走位行为本该起得来——起不来说明这条用例什么都没测");
+
+        EntityMaid sitting = armedMaid(helper, new BlockPos(1, 2, 3), Items.BOW, Items.ARROW, new TaskBowAttack());
+        Zombie sitTarget = threat(helper, new BlockPos(3, 2, 3));
+        rememberVisibleTarget(helper, sitting, sitTarget);
+        // 走玩家指令那支会设重入抑制窗口，故用 without-player-command
+        sitting.setInSittingPoseWithoutPlayerCommand(true);
+        assertTrue(helper, sitting.isMaidInSittingPose(),
+                "坐姿没写进去——setter 被过滤时，下面那条期望 false 的断言会恒真假绿");
+        assertFalse(helper, sitting.canBrainMoving(), "坐姿下 canBrainMoving 应为假");
+
+        assertFalse(helper, strafes(helper, sitting, sitTarget), "坐着的女仆不该再平移走位");
+        helper.succeed();
+    }
+
+    /** 跑一次应战走位行为，回答「她会不会平移走位」。接线与 MaidBrain 应战表那一项同参。 */
+    private static boolean strafes(GameTestHelper helper, EntityMaid maid, Zombie target) {
+        maid.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
+        maid.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+        // 射程与走位速度只影响 tick 里的进退阈值，不影响进入条件；射程仍照 MaidBrain 取同一常量
+        var strafing = new MaidAttackStrafingAnyItemTask(
+                MaidCombatManager::isHoldingUsableRangedWeapon,
+                (float) MaidCombatManager.LOCAL_PROTECTION_RANGE, 0.5f);
+        return strafing.tryStart(helper.getLevel(), maid, helper.getLevel().getGameTime());
+    }
+
     private static boolean walksTowardTarget(GameTestHelper helper, EntityMaid maid, Zombie target) {
         maid.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
         maid.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);

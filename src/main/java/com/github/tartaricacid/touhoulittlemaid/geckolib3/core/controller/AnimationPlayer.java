@@ -210,7 +210,6 @@ public class AnimationPlayer {
                 this.currentAnimFinished = true;
 
                 if (currentLoopType == LoopType.LOOP) {
-                    // 对于循环动画，本轮播放结束后重置 tick offset，开始下一轮循环
                     animationContext.reset(evaluator);
                     if (currentAnim.animationLength() > 0) {
                         animTicks = animTicks % currentAnim.animationLength();

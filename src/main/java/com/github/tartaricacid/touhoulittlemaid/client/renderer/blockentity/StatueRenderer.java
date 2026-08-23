@@ -64,7 +64,6 @@ public class StatueRenderer implements BlockEntityRenderer<TileEntityStatue, Sta
                                    ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         BlockEntityRenderer.super.extractRenderState(te, state, partialTick, cameraPos, breakProgress);
         state.isCoreBlock = te.isCoreBlock();
-        // [Codex] This Fabric port persists facing in the BE; BlockStatue has no FACING property.
         state.facing = te.getFacing();
         state.size = te.getSize().getScale();
         state.statueSize = te.getSize();

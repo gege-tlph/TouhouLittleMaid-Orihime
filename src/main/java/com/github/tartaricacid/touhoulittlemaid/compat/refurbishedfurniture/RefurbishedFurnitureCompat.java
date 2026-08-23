@@ -1,11 +1,8 @@
 package com.github.tartaricacid.touhoulittlemaid.compat.refurbishedfurniture;
 
 import com.github.tartaricacid.touhoulittlemaid.api.ILittleMaid;
-import com.github.tartaricacid.touhoulittlemaid.compat.refurbishedfurniture.chest.RefurbishedStorageChestType;
-import com.github.tartaricacid.touhoulittlemaid.inventory.chest.ChestManager;
 import net.fabricmc.fabric.api.event.registry.RegistryAttribute;
 import net.fabricmc.fabric.api.event.registry.RegistryAttributeHolder;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.registries.Registries;
 
 /**
@@ -14,7 +11,9 @@ import net.minecraft.core.registries.Registries;
  * never names this compatibility module directly.
  * <p>
  * 家具本身（桌子、书桌、坐具、厨房台面）走纯数据的避让 / 禁跳 / 零食台标签，见
- * {@code TagBlock}；本类只负责储物方块，让无线 IO 能绑定它们。
+ * {@code TagBlock}。储物方块不再需要专门的箱子类型：无线 IO 已改为对任意暴露
+ * {@code ItemStorage.SIDED} 的容器方块实体通用绑定（与 26.1.2 对齐），本类只保留
+ * 装了该模组时把配方序列化器注册表标记为 SYNCED 的职责（见 {@link #init()}）。
  */
 public final class RefurbishedFurnitureCompat implements ILittleMaid {
     public static final String MOD_ID = "refurbished_furniture";
@@ -41,12 +40,5 @@ public final class RefurbishedFurnitureCompat implements ILittleMaid {
      */
     public static void init() {
         RegistryAttributeHolder.get(Registries.RECIPE_SERIALIZER).addAttribute(RegistryAttribute.SYNCED);
-    }
-
-    @Override
-    public void addChestType(ChestManager manager) {
-        if (FabricLoader.getInstance().isModLoaded(MOD_ID)) {
-            manager.add(new RefurbishedStorageChestType());
-        }
     }
 }

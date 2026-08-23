@@ -104,7 +104,6 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
     protected String rawUserMessage = StringUtils.EMPTY;
 
     /**
-     * 本轮的动作是否已经由旁路做完了。
      *
      * <p>做完之后主对话只需要「说」，不需要再「动」——实测它会把同一个 {@code switch_sit}
      * 再调一遍（工具返回 already standing），白花两次请求。</p>
@@ -419,7 +418,6 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
      * 在执行一批 tool_call 之前进行前置检查，包括：
      * <ul>
      *   <li>累加工具调用轮次计数器，超过 {@link #MAX_TOOL_TURN_COUNT} 时中断；</li>
-     *   <li>比较本轮批次签名与上一轮签名，检测连续重复调用并在超过
      *       {@link #MAX_REPEAT_TOOL_BATCH_COUNT} 时中断。</li>
      * </ul>
      *

@@ -1145,7 +1145,8 @@ public class Position {
         if (value == 0) {
             return 0;
         }
-        value = Math.abs(random.nextInt()) % value;
+        // floorMod 而非 abs+%：nextInt() 恰为 Integer.MIN_VALUE 时 abs 仍为负，加权选步退化为恒选首步
+        value = Math.floorMod(random.nextInt(), value);
         for (index = 0; index < moves; index++) {
             value -= vls[index];
             if (value < 0) {

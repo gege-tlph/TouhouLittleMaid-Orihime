@@ -127,7 +127,6 @@ public class TouhouLittleMaidFabric implements ModInitializer {
         PotentialSpawnsEvent.CALLBACK.register(MobSpawnInfoRegistry::addMobSpawnInfo);
         UseItemCallback.EVENT.register(CancelSaddleMaidEvent::onItemRightClick);
         UseEntityCallback.EVENT.register(CopyEntityIdEvent::copyEntityId);
-        // [Codex] Preserve origin behaviour: install a chair item onto an empty boat.
         UseEntityCallback.EVENT.register(InstallChairEvent::onPlayerEntityInteract);
         PlayerLoggedInEvent.CALLBACK.register(EnterServerEvent::onAttachCapabilityEvent);
         ProjectileImpactEvent.CALLBACK.register(EntityHurtEvent::onArrowImpact);

@@ -109,7 +109,6 @@ public class InitCreativeTabs {
                 });
             }).build());
 
-    // [Codex] Restored origin's generated chair-model variants as their own creative tab.
     public static CreativeModeTab GARAGE_KIT_TAB = register("chair", FabricItemGroup.builder()
             .title(Component.translatable("item_group.touhou_little_maid.chair"))
             .icon(() -> InitItems.CHAIR.getDefaultInstance())

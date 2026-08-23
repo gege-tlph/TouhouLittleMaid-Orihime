@@ -23,18 +23,19 @@ public final class AltarRecipeComponent implements IComponentProcessor {
     private static final String OUTPUT_ITEM = "output_item";
     private static final String OUTPUT_ENTITY = "output_entity";
     private static final String OUTPUT_DESC = "output_desc";
-    private static final String ALTAR_RECIPE_PATH = "altar_recipe/";
 
     private @Nullable AltarRecipeSummary recipe;
 
     @Override
     public void setup(Level level, IVariableProvider variables) {
+        // Match the page against the recipe's registry id, exactly as origin/1.21.1's
+        // recipe.id().equals(recipeId) did. The synced summary now carries that id; matching on
+        // getRecipeString() (the RECIPES_ID_TAG data component) collapsed every item craft to its
+        // "spawn_box" fallback, so all but the entity-spawn pages reported "not found".
         Identifier recipeId = Identifier.parse(variables.get(RECIPE_ID, level.registryAccess()).asString());
-        String path = recipeId.getPath();
-        String recipeString = path.startsWith(ALTAR_RECIPE_PATH)
-                ? path.substring(ALTAR_RECIPE_PATH.length()) : path;
+        String recipeIdString = recipeId.toString();
         recipe = ClientAltarRecipeCache.getRecipes().stream()
-                .filter(summary -> summary.recipeString().equals(recipeString))
+                .filter(summary -> summary.recipeId().equals(recipeIdString))
                 .findFirst()
                 .orElse(null);
         if (recipe == null) {

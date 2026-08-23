@@ -159,7 +159,6 @@ public class EntityChair extends AbstractEntityFromItem implements OwnableEntity
         input.read(MODEL_ID_TAG_NAME, Codec.STRING).ifPresent(this::setModelId);
         input.read(MOUNTED_HEIGHT_TAG_NAME, Codec.FLOAT).ifPresent(this::setMountedHeight);
         input.read(TAMEABLE_CAN_RIDE_TAG_NAME, Codec.BOOL).ifPresent(this::setTameableCanRide);
-        // [Codex] Keep origin/1.21.1's OwnerUUID key for old-world compatibility.
         this.setOwnerReference(EntityReference.read(input, OWNER_UUID_TAG_NAME));
     }
 

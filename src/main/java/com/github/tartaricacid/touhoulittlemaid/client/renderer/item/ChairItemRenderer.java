@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * [Codex] 1.21.11 special-model replacement for origin's chair BEWLR.
+ * 1.21.11 special-model replacement for origin's chair BEWLR.
  */
 public final class ChairItemRenderer implements SpecialModelRenderer<ChairItemRenderer.State> {
     public static final Identifier ID = IdentifierUtil.modLoc("chair_item");

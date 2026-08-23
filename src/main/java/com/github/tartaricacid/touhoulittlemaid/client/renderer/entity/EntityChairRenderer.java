@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 
 /**
- * [Codex] Chair renderer ported to the 1.21.11 extraction/submission pipeline.
+ * Chair renderer for the 1.21.11 extraction/submission pipeline.
  * Model selection, animation and hit-box behaviour remain the same as origin/1.21.1.
  */
 public class EntityChairRenderer extends LivingEntityRenderer<EntityChair, EntityChairRenderState, EntityChairModel> {

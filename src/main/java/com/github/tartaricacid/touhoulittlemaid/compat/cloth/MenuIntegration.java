@@ -145,7 +145,7 @@ public final class MenuIntegration {
         combat.add(serverSlider(entries, "maid.cross_bow_range", MaidConfig.CROSS_BOW_RANGE, 8, 192, session));
         combat.add(serverSlider(entries, "maid.danmaku_range", MaidConfig.DANMAKU_RANGE, 8, 192, session));
         combat.add(serverSlider(entries, "maid.trident_range", MaidConfig.TRIDENT_RANGE, 8, 192, session));
-        // 枪械三档距离只服务 TaCZ。按本仓库约定，模组专属选项按 isModLoaded 动态显示：
+        // 枪械三档距离只服务 TaCZ，按仓库约定（docs/COMPAT.md：模组专属选项按 isModLoaded 动态显示）
         // 只在装了 TaCZ 时露面，免得没装的人看到一组永远不起作用的滑条
         if (FabricLoader.getInstance().isModLoaded(TacCompat.TACZ_ID)) {
             combat.add(serverSlider(entries, "maid.maid_gun_long_distance", MaidConfig.MAID_GUN_LONG_DISTANCE, 0, 512, session));
@@ -194,6 +194,7 @@ public final class MenuIntegration {
 
         SubCategoryBuilder experimental = sub(entries, "server.experimental");
         experimental.add(serverBoolean(entries, "experimental.smooth_follow", ExperimentalConfig.SMOOTH_FOLLOW, session));
+        experimental.add(serverBoolean(entries, "experimental.snowball_knockback", ExperimentalConfig.SNOWBALL_KNOCKBACK, session));
         category.addEntry(experimental.build());
     }
 

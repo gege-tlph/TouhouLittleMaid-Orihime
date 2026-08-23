@@ -22,7 +22,9 @@ public class GeckoLayerMaidBackItem implements GeoLayerRenderer<EntityMaidRender
                        GeckoMaidRenderData data, CameraRenderState camera) {
         if (state.backItem.isEmpty() || state.backpack == null) {
             // 背部枪械渲染。基准是「背包展示物不是 TieredItem 就走枪械分支」，
-            // 本树等价的判据是 backItem 为空——它只在物品带 TOOL 组件时才被填充，枪不带。
+            // 本树等价的判据是 backItem 为空。
+            // ⚠️ 原注释断言「枪不带 TOOL 组件」，**实测是错的**：枪带 TOOL，
+            // 抽取期因此会填充 backItem，本分支一直不可达。现在抽取期显式排除枪械。
             EntityMaid gunMaid = state.maid;
             if (state.backpack != null && gunMaid != null) {
                 GunClientUtil.renderBackGun(state.backpackShowItem, data.locators(), gunMaid,

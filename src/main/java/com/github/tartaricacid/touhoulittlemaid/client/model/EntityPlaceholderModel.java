@@ -6,7 +6,7 @@ import com.github.tartaricacid.simplebedrockmodel.client.bedrock.model.BedrockPa
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-/** [Codex] Lightweight item-icon plane; no entity render state is required. */
+/** Lightweight item-icon plane; no entity render state is required. */
 public class EntityPlaceholderModel {
     private final BedrockPart bone;
 

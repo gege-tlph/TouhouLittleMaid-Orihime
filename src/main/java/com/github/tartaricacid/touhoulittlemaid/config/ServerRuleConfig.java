@@ -309,6 +309,7 @@ public final class ServerRuleConfig {
                 MiscConfig.SHRINE_LAMP_MAX_RANGE,
                 MiscConfig.SCARECROW_RANGE,
                 ExperimentalConfig.SMOOTH_FOLLOW,
+                ExperimentalConfig.SNOWBALL_KNOCKBACK,
                 // AI 规则已整体迁往 AiServerRuleConfig（实例级），本表不再含任何 AI 条目
                 ServerConfig.CLIENT_PACK_DOWNLOAD_URLS,
                 ServerConfig.MAID_AI_TIME_DEBUG,

@@ -29,18 +29,23 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
 
+      # Loom's transformed Minecraft cache is rebuildable. Clear it so a
+      # partially restored runner cache cannot fail checksum validation.
+      - name: Reset Fabric Loom cache
+        run: rm -rf "$HOME/.gradle/caches/fabric-loom"
+
       # TACZ 的编译期依赖。它只在 GitHub Releases 发布、没有 Maven 坐标，
       # 且体积大、许可证（GPL-3.0）与本仓库（MIT+CC）不同，故不入库。
       # 只用于编译，不打进产物。按 SHA-256 钉住，上游资产被替换时构建立即失败而不是静默换依赖。
       - name: Fetch TACZ compile-only dependency
         env:
-          TACZ_JAR: TACZ-Refabricated-1.21.11-1.1.8+fabric.1.21.11.R1.jar
-          TACZ_SHA256: 9eee802502679498c42c3c1cad786cb3b9143a4dfacfb7a02f0c7146b073ed40
+          TACZ_JAR: TACZ-Refabricated-1.21.11-1.1.8+fabric.1.21.11.R2.jar
+          TACZ_SHA256: 34d117f316a2ab6b3ca4d9bfbf61a87fefc416c2919874e057688054d75e788d
         run: |
           mkdir -p libs/compile_only
           curl -fsSL --retry 3 --retry-delay 5 \
             -o "libs/compile_only/$TACZ_JAR" \
-            "https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases/download/1.21.11_R1/$TACZ_JAR"
+            "https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases/download/1.21.11_R2/$TACZ_JAR"
           echo "$TACZ_SHA256  libs/compile_only/$TACZ_JAR" | sha256sum -c -
 
       - name: Build

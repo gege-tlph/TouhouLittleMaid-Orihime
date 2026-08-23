@@ -3,10 +3,11 @@ package com.github.tartaricacid.touhoulittlemaid.item;
 import java.util.function.Consumer;
 import net.minecraft.world.item.component.TooltipDisplay;
 import cn.sh1rocu.touhoulittlemaid.util.itemhandler.ItemStackHandler;
-import com.github.tartaricacid.touhoulittlemaid.api.bauble.IChestType;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
-import com.github.tartaricacid.touhoulittlemaid.inventory.chest.ChestManager;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.other.WirelessIOContainer;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
@@ -130,15 +131,21 @@ public class ItemWirelessIO extends Item implements ExtendedScreenHandlerFactory
             return super.useOn(context);
         }
 
-        for (IChestType type : ChestManager.getAllChestTypes()) {
-            if (!type.isChest(te)) {
-                continue;
-            }
-            if (type.canOpenByPlayer(te, player)) {
-                ItemStack stack = player.getMainHandItem();
-                setBindingPos(stack, pos);
-                return worldIn.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER;
-            }
+        // BaseContainerBlockEntity 需要权限校验，能开才能绑
+        if (te instanceof BaseContainerBlockEntity baseContainer && !baseContainer.canOpen(player)) {
+            return super.useOn(context);
+        }
+
+        // 依据输入 / 输出模式选择朝向：上进料、下出货，与容器的 WorldlyContainer 面语义对齐
+        ItemStack stack = player.getMainHandItem();
+        boolean isMaidToChest = ItemWirelessIO.isMaidToChest(stack);
+        Direction side = isMaidToChest ? Direction.UP : Direction.DOWN;
+
+        // 只要该面有可用的物品存储 capability 就能绑定，不再限定白名单箱子类型
+        var capability = ItemStorage.SIDED.find(worldIn, pos, worldIn.getBlockState(pos), te, side);
+        if (capability != null) {
+            setBindingPos(stack, pos);
+            return worldIn.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER;
         }
         return super.useOn(context);
     }

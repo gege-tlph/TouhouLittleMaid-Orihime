@@ -27,6 +27,14 @@ import static net.minecraft.world.inventory.InventoryMenu.*;
 
 public abstract class MaidMainContainer extends AbstractMaidContainer {
     protected static final int PLAYER_INVENTORY_SIZE = 36;
+
+    /**
+     * 储物区（默认背包 + 背包本体）在 {@code slots} 里的起点。
+     *
+     * <p>装备槽与手持槽排在它之前——**手持槽没有任何准入判据，什么都收**，
+     * 于是按注册顺序搬运时它们总是先被填满。见 {@link #quickMoveStack}。</p>
+     */
+    private int storageStart = PLAYER_INVENTORY_SIZE;
     protected static final Identifier EMPTY_MAINHAND_SLOT = Identifier.withDefaultNamespace("container/slot/sword");
     protected static final Identifier EMPTY_BACK_SHOW_SLOT = Identifier.fromNamespaceAndPath(TouhouLittleMaid.MOD_ID, "container/slot/back_show");
     protected static final Identifier[] TEXTURE_EMPTY_SLOTS = new Identifier[]{EMPTY_ARMOR_SLOT_BOOTS, EMPTY_ARMOR_SLOT_LEGGINGS, EMPTY_ARMOR_SLOT_CHESTPLATE, EMPTY_ARMOR_SLOT_HELMET};
@@ -37,6 +45,9 @@ public abstract class MaidMainContainer extends AbstractMaidContainer {
         if (maid != null) {
             this.addMaidArmorInv();
             this.addMaidHandInv();
+            // 记下「储物区」的起点：它之前是装备槽与手持槽，之后全是可以随便放东西的地方。
+            // 快捷移动要优先落在储物区，见 quickMoveStack。
+            this.storageStart = this.slots.size();
             this.addMainDefaultInv();
             this.addBackpackInv(inventory);
         }
@@ -123,7 +134,18 @@ public abstract class MaidMainContainer extends AbstractMaidContainer {
             stack1 = stack2.copy();
 
             if (index < PLAYER_INVENTORY_SIZE) {
-                if (!this.moveItemStackTo(stack2, PLAYER_INVENTORY_SIZE, this.slots.size(), false)) {
+                // 先试储物区（默认背包 + 背包本体），装不下才轮到装备与手持。
+                //
+                // ⚠️ 成因不是「手持槽优先级高」，而是**手持槽没有准入判据**：它们继承
+                // SlotItemHandler 的默认 mayPlace，什么都收，而搬运是按槽位注册顺序试的，
+                // 它们又恰好排在储物区之前。玩家用 IPN 之类的整理工具按住 Shift/Alt
+                // 批量搬运时，东西就全进了主副手。
+                //
+                // 这里只调整**落点顺序**，不加准入限制——手动拖放仍然可以往手持槽里放任何东西，
+                // 那是玩家的明确意图；快捷移动则是「随便找个地方放」，该落在储物区。
+                boolean moved = this.moveItemStackTo(stack2, this.storageStart, this.slots.size(), false)
+                        || this.moveItemStackTo(stack2, PLAYER_INVENTORY_SIZE, this.storageStart, false);
+                if (!moved) {
                     return ItemStack.EMPTY;
                 }
             } else if (!this.moveItemStackTo(stack2, 0, PLAYER_INVENTORY_SIZE, true)) {

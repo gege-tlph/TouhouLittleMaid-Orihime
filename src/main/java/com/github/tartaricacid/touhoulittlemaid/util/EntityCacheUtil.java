@@ -28,7 +28,6 @@ import java.util.function.BiFunction;
 
 @Environment(EnvType.CLIENT)
 public final class EntityCacheUtil {
-    // [Codex] Preview entities must not share the vanilla default id (0), especially for Gecko update keys.
     private static final AtomicInteger PREVIEW_ENTITY_ID = new AtomicInteger(-10000);
     /**
      * 实体缓存，在客户端会大量运用实体渲染，这个缓存可以减少重复创建实体带来的性能问题

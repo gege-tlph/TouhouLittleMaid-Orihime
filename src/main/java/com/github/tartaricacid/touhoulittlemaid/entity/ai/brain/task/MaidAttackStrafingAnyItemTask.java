@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.behavior.Behavior;
+import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
@@ -38,7 +39,16 @@ public class MaidAttackStrafingAnyItemTask extends Behavior<EntityMaid> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel worldIn, EntityMaid owner) {
-        return weaponTest.test(owner) &&
+        // 坐着的女仆挨打后照样平移。走位不经 WALK_TARGET，而是直接写 MoveControl
+        // （tick 里的 getMoveControl().strafe(...)），于是**绕过了全仓统一的移动闸**——
+        // 兄弟任务 MaidEmergencyWalkToTarget 早就在用 canBrainMoving() 让出 WALK_TARGET，
+        // 但那道闸管不到 strafe。这里补上同一个判据，而不是新造一个「坐姿」判据：
+        // 成因是「这条路绕过了移动闸」，不是「没判坐姿」，所以坐/骑乘/睡觉/被拴都该一并挡住。
+        // ⚠️ 只挡移动，不挡出手：原地射击（MaidShootTargetAnyItemTask）与贴脸近战
+        // （MaidMeleeAttack，它自带「已在近战距离内」的前提，本身不移动）都照旧——
+        // 「敌人贴脸时端着弓也得还手」是有意契约，不能因为坐着就站着挨打。
+        return owner.canBrainMoving() &&
+                weaponTest.test(owner) &&
                 owner.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET)
                         .filter(target -> MaidTargetingPolicy.canContinueTargeting(
                                 owner, target, MaidTargetingContext.PLANNED_ATTACK))
@@ -74,9 +84,14 @@ public class MaidAttackStrafingAnyItemTask extends Behavior<EntityMaid> {
             // 如果攻击时间大于 -1
             if (this.strafingTime > -1) {
                 // 依据距离远近决定是否前后走位
-                if (distance > projectileRange * 0.5) {
+                // ⚠️ 阈值必须按**这把武器自己的**射程取，与 MaidAttackStrafingTask 同式：
+                // 弓 15 / 弩 8，而本任务的 projectileRange 是一个固定值（应战接线传 16）。
+                // 用固定值等于让弩在 3.2 格就后退（本该 1.6）、拖到 8 格才压上（本该 4），
+                // 手感因此明显不如上游。只有拿不到武器射程时（模组远程武器/枪）才回落构造参数。
+                double maxAttackDistance = resolveMaxAttackDistance(owner);
+                if (distance > maxAttackDistance * 0.5) {
                     this.strafingBackwards = false;
-                } else if (distance < projectileRange * 0.2) {
+                } else if (distance < maxAttackDistance * 0.2) {
                     this.strafingBackwards = true;
                 }
 
@@ -113,4 +128,19 @@ public class MaidAttackStrafingAnyItemTask extends Behavior<EntityMaid> {
     protected boolean canStillUse(ServerLevel worldIn, EntityMaid entityIn, long gameTimeIn) {
         return this.checkExtraStartConditions(worldIn, entityIn);
     }
+
+    /**
+     * 走位阈值所用的射程：原版远程武器取它自己的 {@code getDefaultProjectileRange()}
+     * （与 {@link MaidAttackStrafingTask} 逐字同式），否则回落构造参数。
+     *
+     * <p>回落分支服务的是**拿不到武器射程**的那一类——枪与模组远程武器；
+     * 弓/弩永远走前一支，因此手感与上游一致。</p>
+     */
+    private double resolveMaxAttackDistance(EntityMaid owner) {
+        if (owner.getMainHandItem().getItem() instanceof ProjectileWeaponItem weapon) {
+            return weapon.getDefaultProjectileRange();
+        }
+        return this.projectileRange;
+    }
+
 }

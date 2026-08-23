@@ -3,18 +3,23 @@ package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetingPolicy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.init.InitAttribute;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Optional;
 import java.util.function.Predicate;
+
+import static com.github.tartaricacid.touhoulittlemaid.datagen.EnchantmentKeys.getEnchantmentLevel;
 
 /**
  * MaidShootTargetAnyItemTask 的升级版本，不限制手持物品必须是 ProjectileWeaponItem
@@ -94,11 +99,16 @@ public class MaidShootTargetAnyItemTask extends Behavior<EntityMaid> {
             } else if (canSee) {
                 // 否则开始进行远程攻击
                 int ticksUsingItem = owner.getTicksUsingItem();
-                if (ticksUsingItem >= this.chargeDurationTick) {
+                // ⚠️ 蓄力门槛必须读快速射击附魔，否则附魔弓与白板弓射速一样——附魔白附。
+                // 与 MaidShootTargetTask 同式，只是把上游硬编码的 20 换成本任务的 chargeDurationTick
+                // （应战接线传的正是 20，故对弓/弩逐字等价）。
+                int level = getEnchantmentLevel(owner.level.registryAccess(),
+                        Enchantments.QUICK_CHARGE, owner.getMainHandItem());
+                if (level > 4 || ticksUsingItem >= (this.chargeDurationTick - level * 5)) {
                     owner.stopUsingItem();
                     int powerTime = Math.max(ticksUsingItem, 20);
                     owner.performRangedAttack(target, BowItem.getPowerForTime(powerTime));
-                    this.attackTime = this.attackCooldown;
+                    this.attackTime = resolveAttackCooldown(owner);
                 }
             }
         } else if (--this.attackTime <= 0 && this.seeTime >= -60) {
@@ -116,7 +126,7 @@ public class MaidShootTargetAnyItemTask extends Behavior<EntityMaid> {
                 if (swingTime >= this.chargeDurationTick) {
                     int powerTime = Math.max(swingTime, 20);
                     owner.performRangedAttack(target, BowItem.getPowerForTime(powerTime));
-                    this.attackTime = this.attackCooldown;
+                    this.attackTime = resolveAttackCooldown(owner);
                     owner.setSwingingArms(false);
                     swingTime = 0;
                 }
@@ -134,7 +144,19 @@ public class MaidShootTargetAnyItemTask extends Behavior<EntityMaid> {
         this.swingTime = 0;
         entityIn.stopUsingItem();
         // start() 置了 swingingArms，可用物品那一支（弓）从不清它。
-        // 不在这里清掉，换武器后女仆会一直保持拉弓姿势。
         entityIn.setSwingingArms(false);
     }
+
+    /**
+     * 射击间隔按属性取值，与 {@link MaidShootTargetTask} 同式。
+     *
+     * <p>⚠️ {@link InitAttribute#MAID_SHOOT_COOLDOWN} <b>就是为调射速而存在的</b>；
+     * 本任务此前恒用构造参数，等于让它在应战期整个失效。上游无属性时回落硬编码 2，
+     * 这里回落到本任务的 attackCooldown——应战接线传的正是 2，故对弓/弩逐字等价。</p>
+     */
+    private int resolveAttackCooldown(EntityMaid owner) {
+        AttributeInstance attributeInstance = owner.getAttribute(InitAttribute.MAID_SHOOT_COOLDOWN);
+        return attributeInstance != null ? (int) attributeInstance.getValue() : this.attackCooldown;
+    }
+
 }

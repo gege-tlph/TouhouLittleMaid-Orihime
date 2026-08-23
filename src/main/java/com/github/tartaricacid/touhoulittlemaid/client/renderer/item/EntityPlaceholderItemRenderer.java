@@ -28,7 +28,7 @@ import java.nio.file.Paths;
 import java.util.function.Consumer;
 
 /**
- * [Codex] Dynamic altar-result icon renderer. It preserves origin's
+ * Dynamic altar-result icon renderer. It preserves origin's
  * recipe-id-to-texture fallback without relying on the removed BEWLR API.
  */
 public final class EntityPlaceholderItemRenderer implements SpecialModelRenderer<EntityPlaceholderItemRenderer.Icon> {

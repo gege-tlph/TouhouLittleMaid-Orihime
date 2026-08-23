@@ -93,6 +93,14 @@ public class Point {
     }
 
     @Override
+    public int hashCode() {
+        int result = Integer.hashCode(x);
+        result = 31 * result + Integer.hashCode(y);
+        result = 31 * result + Integer.hashCode(type);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return (type == 1 ? "Black" : "White") + "[" + x + "," + y + ']';
     }

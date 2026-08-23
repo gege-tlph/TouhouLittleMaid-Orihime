@@ -705,7 +705,6 @@ public abstract class AbstractModelGui<T extends LivingEntity, E extends IModelI
             this.searchText = text;
             this.setRowIndex(0);
             this.init();
-            // [Codex] 1.21.11 keeps Screen focus on the EditBox instance that fired the
             // responder. init() replaces it, so transfer focus to the replacement.
             if (this.isSearchMode && this.searchBox != null) {
                 this.setFocused(this.searchBox);

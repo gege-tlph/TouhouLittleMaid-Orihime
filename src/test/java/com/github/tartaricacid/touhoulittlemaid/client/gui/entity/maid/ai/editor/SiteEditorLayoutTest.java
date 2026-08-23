@@ -107,7 +107,6 @@ class SiteEditorLayoutTest {
     /**
      * 三个编辑屏必须消费共享常量。
      *
-     * <p>常量集中定义只有在没人绕过它时才有意义——三份字面值各自算错正是本轮的成因。</p>
      */
     @Test
     void everyEditorScreenConsumesTheSharedLayout() throws IOException {

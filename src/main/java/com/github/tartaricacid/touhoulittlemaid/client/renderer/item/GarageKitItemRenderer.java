@@ -45,7 +45,7 @@ import java.util.function.Consumer;
 import static com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil.clearMaidDataResidue;
 
 /**
- * [Codex] 1.21.11 special-model replacement for origin's garage-kit BEWLR.
+ * 1.21.11 special-model replacement for origin's garage-kit BEWLR.
  */
 public final class GarageKitItemRenderer implements SpecialModelRenderer<GarageKitItemRenderer.State> {
     public static final Identifier ID = IdentifierUtil.modLoc("garage_kit_item");

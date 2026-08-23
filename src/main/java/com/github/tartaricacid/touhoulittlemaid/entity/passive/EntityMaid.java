@@ -607,7 +607,9 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
         // 自 1.4.2 版本起强制开启女仆备份机制
         int saveIntervalTick = ServerRuleConfig.get(ServerConfig.MAID_BACKUP_INTERVAL_SECONDS) * 20;
         // 通过哈希计算出一个随机值，这样做可以避免所有实体都在同一 tick 进行保存
-        int checkTick = Math.abs(this.getUUID().hashCode()) % saveIntervalTick;
+        // floorMod 而非 abs+%：hashCode 恰为 Integer.MIN_VALUE 时 abs 仍为负，
+        // 下方 gameTime % n == 负数 永假，该女仆的备份将终生静默失效
+        int checkTick = Math.floorMod(this.getUUID().hashCode(), saveIntervalTick);
         if (this.level.getGameTime() % saveIntervalTick == checkTick && this.level instanceof ServerLevel serverLevel) {
             MaidBackupsManager.save(serverLevel.getServer(), this);
         }
@@ -1144,7 +1146,6 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
     }
 
     /**
-     * origin/1.21.1 此逻辑覆写的是 {@code changeDimension(DimensionTransition)}
      * ——仅在女仆将要跨维度时触发一次（女仆拒绝进传送门，随机闪开 + 发光）。1.21.11 删除了
      * changeDimension，维度切换统一走 {@code Entity.teleport(TeleportTransition)}（javap 证）。
      * 此前该方法体被误嫁接到每 tick 调用的 {@code handlePortal()} 且丢失传送门前置检查
@@ -1314,7 +1315,7 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
 
     @Override
     public void performRangedAttack(LivingEntity target, float distanceFactor) {
-        // 基准只认当前工作任务，任务不是远程任务时整个方法是空操作。现改为
+        // 基准只认当前工作任务，任务不是远程任务时整个方法是空操作。用户 2026-08-14 裁决解绑：
         // 按手里的武器找实现（当前任务优先，故弓手/弩手的行为逐字不变），这样
         // 「农场女仆手持弓有箭」在威胁响应里也打得响，与枪械那条路对齐。
         IRangedAttackTask rangedAttackTask = IRangedAttackTask.resolveImplementation(this, this.getMainHandItem());
@@ -2948,7 +2949,6 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
     @Override
     @Nullable
     public LivingEntity getOwner() {
-        // origin 用 getOwnerUUID()（裸 UUID）→ 玩家列表直查；此前移植改成先 super.getOwner()
         // 再取 UUID = 短路了本覆写的意义（vanilla EntityReference 解析失败时 origin 仍能按 UUID 找到玩家，
         // 移植版直接返回 null → 跟随/传送等 owner 路径失效）。1.21.11 getOwnerUUID 已删 →
         // 经 getOwnerReference().getUUID() 取裸 UUID（javap 证），不经实体解析，还原 origin 语义。
@@ -2983,7 +2983,6 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
         } else if (!canTeleportTo(new BlockPos(x, y, z))) {
             return false;
         } else {
-            // origin 用 moveTo(x,y,z,yRot,xRot)（1.21.11 纯改名 snapTo，同 MaidClimbTask）；
             // setPos 不重置旧位置/朝向（setOldPosAndRot）→ 传送落地帧插值抖动，此处还原 origin 语义
             this.snapTo(x + 0.5, y, z + 0.5, this.getYRot(), this.getXRot());
             this.getNavigation().stop();

@@ -10,6 +10,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 
@@ -33,6 +34,7 @@ public record SyncAltarRecipesPackage(List<AltarRecipeSummary> recipes) implemen
 
     public static final StreamCodec<RegistryFriendlyByteBuf, AltarRecipeSummary> SUMMARY_STREAM_CODEC =
             StreamCodec.composite(
+                    ByteBufCodecs.STRING_UTF8, AltarRecipeSummary::recipeId,
                     ByteBufCodecs.STRING_UTF8, AltarRecipeSummary::recipeString,
                     INGREDIENT_LIST_CODEC, AltarRecipeSummary::inputs,
                     ItemStack.STREAM_CODEC, AltarRecipeSummary::output,
@@ -50,8 +52,7 @@ public record SyncAltarRecipesPackage(List<AltarRecipeSummary> recipes) implemen
     public static SyncAltarRecipesPackage from(RecipeManager recipeManager) {
         List<AltarRecipeSummary> recipes = recipeManager.getRecipes().stream()
                 .filter(holder -> holder.value().getType() == InitRecipes.ALTAR_CRAFTING)
-                .map(holder -> (AltarRecipe) holder.value())
-                .map(AltarRecipeSummary::from)
+                .map(holder -> AltarRecipeSummary.from(holder.id().identifier(), (AltarRecipe) holder.value()))
                 .toList();
         return new SyncAltarRecipesPackage(recipes);
     }
@@ -65,9 +66,9 @@ public record SyncAltarRecipesPackage(List<AltarRecipeSummary> recipes) implemen
         return TYPE;
     }
 
-    public record AltarRecipeSummary(String recipeString, List<List<ItemStack>> inputs,
+    public record AltarRecipeSummary(String recipeId, String recipeString, List<List<ItemStack>> inputs,
                                      ItemStack output, float powerCost, String langKey, String entityType) {
-        private static AltarRecipeSummary from(AltarRecipe recipe) {
+        private static AltarRecipeSummary from(Identifier recipeId, AltarRecipe recipe) {
             List<List<ItemStack>> inputs = recipe.getIngredients().stream()
                     .filter(ingredient -> !ingredient.isEmpty())
                     .map(ingredient -> ingredient.items().map(ItemStack::new).toList())
@@ -77,12 +78,12 @@ public record SyncAltarRecipesPackage(List<AltarRecipeSummary> recipes) implemen
                 output = InitItems.ENTITY_PLACEHOLDER.getDefaultInstance();
                 ItemEntityPlaceholder.setRecipeId(output, recipe.getRecipeString());
             }
-            return new AltarRecipeSummary(recipe.getRecipeString(), inputs, output,
+            return new AltarRecipeSummary(recipeId.toString(), recipe.getRecipeString(), inputs, output,
                     recipe.getPower(), recipe.getLangKey(), recipe.getEntityType().toString());
         }
 
         public AltarRecipeSummary copy() {
-            return new AltarRecipeSummary(recipeString,
+            return new AltarRecipeSummary(recipeId, recipeString,
                     inputs.stream().map(items -> items.stream().map(ItemStack::copy).toList()).toList(),
                     output.copy(), powerCost, langKey, entityType);
         }

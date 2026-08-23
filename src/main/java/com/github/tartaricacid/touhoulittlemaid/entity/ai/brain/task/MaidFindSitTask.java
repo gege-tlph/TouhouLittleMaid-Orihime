@@ -71,7 +71,6 @@ public class MaidFindSitTask extends MaidCheckRateTask {
         if (!entity.isAlive() || !maid.isWithinHome(entity.blockPosition()) || !entity.getPassengers().isEmpty()) {
             return false;
         }
-        // [Codex] High-fidelity origin behaviour: both chairs and empty boats are valid seats.
         return entity instanceof EntityChair || entity instanceof Boat;
     }
 

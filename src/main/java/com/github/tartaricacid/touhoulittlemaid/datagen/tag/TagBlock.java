@@ -249,8 +249,8 @@ public class TagBlock extends FabricTagProvider.BlockTagProvider {
      * <p>
      * 收录的是<b>桌面与坐具</b>：桌子、书桌、椅子、沙发、圆凳，以及连成一排的厨房台面
      * （台柜 / 抽屉柜 / 水槽 / 储物台柜）。<b>不收</b>独立的储物家具（板条箱、储物罐、储物柜、
-     * 冷藏箱、冰箱、抽屉柜），它们在玩家直觉里更接近箱子而不是桌面；女仆能把它们当容器用，
-     * 见 {@code RefurbishedStorageChestType}。
+     * 冷藏箱、冰箱、抽屉柜），它们在玩家直觉里更接近箱子而不是桌面；女仆可通过无线 IO 把它们当容器用
+     * （无线 IO 现按 {@code ItemStorage.SIDED} 对任意容器方块实体通用绑定，不再有专门的箱子类型白名单）。
      */
     private static void addRefurbishedFurniture(TagBuilder builder) {
         builder.addOptionalTag(Identifier.parse("refurbished_furniture:tuckable"));

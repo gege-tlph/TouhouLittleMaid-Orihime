@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.compat.gun.tacz;
 
 import cn.sh1rocu.touhoulittlemaid.api.event.ExplosionEvents;
+import cn.sh1rocu.touhoulittlemaid.util.compat.tacz.TaczAmmoSourceApi;
 import cn.sh1rocu.touhoulittlemaid.api.event.LivingAttackEvent;
 import com.github.tartaricacid.touhoulittlemaid.api.entity.IMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidEquipEvent;
@@ -45,6 +46,15 @@ public class TacCompat {
 
             MaidGunEquipEvent maidGunEquipEvent = new MaidGunEquipEvent();
             MaidEquipEvent.CALLBACK.register(maidGunEquipEvent::onMaidEquip);
+
+            // 女仆背包作为弹药来源，两种实现按装着的 TaCZ 版本二选一：
+            // R2 起有官方 AmmoSource API，走这里；更老的版本没有这套 API，仍由
+            // mixin/compat/tacz 那四个 mixin 承担（MixinPlugin 用同一个判据决定它们生效与否）。
+            // 不能无条件调：MaidAmmoSource 实现了 AmmoSource，在没有该 API 的版本上一经类加载即
+            // NoClassDefFoundError，所以判据必须挡在类加载之前，且它必须是独立的类。
+            if (TaczAmmoSourceApi.isPresent()) {
+                MaidAmmoSource.register();
+            }
 
             INSTALLED = true;
         }

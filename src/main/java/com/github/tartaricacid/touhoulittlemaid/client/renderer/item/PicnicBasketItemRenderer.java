@@ -20,7 +20,7 @@ import org.joml.Vector3fc;
 import java.util.function.Consumer;
 
 /**
- * [Codex] Preserves origin's flat GUI icon and 3D in-hand picnic basket.
+ * Preserves origin's flat GUI icon and 3D in-hand picnic basket.
  */
 public final class PicnicBasketItemRenderer implements SpecialModelRenderer<Unit> {
     public static final Identifier ID = IdentifierUtil.modLoc("picnic_basket_item");

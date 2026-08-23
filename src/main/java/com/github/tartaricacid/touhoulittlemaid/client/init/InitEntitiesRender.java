@@ -38,11 +38,9 @@ public final class InitEntitiesRender {
         EntityRendererRegistry.register(EntityTombstone.TYPE, EntityTombstoneRenderer::new);
         EntityRendererRegistry.register(EntitySit.TYPE, EntitySitRenderer::new);
         EntityRendererRegistry.register(EntityBroom.TYPE, EntityBroomRender::new);
-        // [Codex] F14: 依据 1.21.11 vanilla FishingHookRenderer 迁移 render-state/线宽 API；
         // 未注册渲染器会令 EntityRenderDispatcher 在读取已有鱼钩的存档时解引用 null。
         EntityRendererRegistry.register(MaidFishingHook.TYPE, MaidFishingHookRenderer::new);
 
-        // [Codex] Chair gameplay: restore the placed-chair renderer registration.
         EntityRendererRegistry.register(EntityChair.TYPE, EntityChairRenderer::new);
         // 注册进 vanilla EntityRenderers.PROVIDERS（map put），mod init 晚于原版静态注册 → 覆盖生效；
         // 岩浆怪已拆分为独立的 REPLACE_MAGMA_CUBE_MODEL 开关（上游与史莱姆共用一个开关）。
@@ -52,7 +50,6 @@ public final class InitEntitiesRender {
 
         BlockEntityRenderers.register(TileEntityAltar.TYPE, TileEntityAltarRenderer::new);
         // （本树 util 缺，26.1 有）+ entity-in-BE 渲染 + IEntityRenderStatePartialTick cast
-        // [Codex] Restored the placed statue/garage-kit entity previews through render states.
         BlockEntityRenderers.register(TileEntityStatue.TYPE, StatueRenderer::new);
         BlockEntityRenderers.register(TileEntityGarageKit.TYPE, GarageKitRenderer::new);
         BlockEntityRenderers.register(TileEntityGomoku.TYPE, TileEntityGomokuRenderer::new);

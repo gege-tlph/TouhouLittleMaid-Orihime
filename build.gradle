@@ -156,14 +156,14 @@ configurations {
 }
 // TACZ 的编译期 jar。不入库，故可能缺席——缺席时让 compileJava 直接说清楚怎么补，
 // 而不是让 javac 抛出几十条「找不到程序包 com.tacz」把人引向别处。
-def taczCompileJar = file("libs/compile_only/TACZ-Refabricated-1.21.11-1.1.8+fabric.1.21.11.R1.jar")
+def taczCompileJar = file("libs/compile_only/TACZ-Refabricated-1.21.11-1.1.8+fabric.1.21.11.R2.jar")
 tasks.named('compileJava').configure {
     doFirst {
         if (!taczCompileJar.exists()) {
             throw new GradleException(
                     "缺少 TACZ 编译期依赖：${taczCompileJar}\n" +
-                    "从 https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases/tag/1.21.11_R1\n" +
-                    "下载 TACZ-Refabricated-1.21.11-1.1.8+fabric.1.21.11.R1.jar 放到 libs/compile_only/ 下。\n" +
+                    "从 https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases/tag/1.21.11_R2\n" +
+                    "下载 TACZ-Refabricated-1.21.11-1.1.8+fabric.1.21.11.R2.jar 放到 libs/compile_only/ 下。\n" +
                     "该 jar 体积大且许可证与本仓库不同，按约定不入库。")
         }
     }
@@ -195,8 +195,12 @@ dependencies {
     }
     modImplementation "maven.modrinth:jade:${jade_version}"
 
-    modCompileOnly("vazkii.patchouli:Patchouli:1.21.11-94.1-FABRIC") {
+    modCompileOnly("vazkii.patchouli:Patchouli:1.21.11-94.4-FABRIC") {
         // Patchouli 的静态 Maven POM 仍包含发布环境版本；依赖由本项目统一管理。
+        transitive = false
+    }
+    // 开发运行时加载手册，便于验证页面、配方和多方块预览；不会进入发布 JAR。
+    modLocalRuntime("vazkii.patchouli:Patchouli:1.21.11-94.4-FABRIC") {
         transitive = false
     }
     // 背包排序兼容

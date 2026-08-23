@@ -121,7 +121,6 @@ public class NetworkHandler {
 
     public static void registerC2SPackets() {
         registerC2SPacket(MaidModelPackage.TYPE, MaidModelPackage.STREAM_CODEC, MaidModelPackage::handle);
-        // [Codex] Chair model selection must reach the authoritative server entity.
         registerC2SPacket(ChairModelPackage.TYPE, ChairModelPackage.STREAM_CODEC, ChairModelPackage::handle);
         registerC2SPacket(MaidConfigPackage.TYPE, MaidConfigPackage.STREAM_CODEC, MaidConfigPackage::handle);
         registerC2SPacket(MaidTaskPackage.TYPE, MaidTaskPackage.STREAM_CODEC, MaidTaskPackage::handle);

@@ -43,7 +43,7 @@ import static com.github.tartaricacid.touhoulittlemaid.client.resource.bedrock.I
 import static com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil.clearMaidDataResidue;
 import static net.minecraft.util.ProblemReporter.DISCARDING;
 
-/** [Codex] 1.21.11 render-state renderer for a placed garage-kit figure. */
+/** 1.21.11 render-state renderer for a placed garage-kit figure. */
 public final class GarageKitRenderer implements BlockEntityRenderer<TileEntityGarageKit, GarageKitRenderState> {
     private static final Identifier TEXTURE = IdentifierUtil.modLoc("textures/bedrock/block/statue_base.png");
     private final EntityRenderDispatcher dispatcher;

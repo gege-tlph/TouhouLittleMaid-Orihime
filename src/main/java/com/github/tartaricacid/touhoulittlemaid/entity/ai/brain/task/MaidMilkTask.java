@@ -52,7 +52,6 @@ public class MaidMilkTask extends MaidCheckRateTask {
                 .findFirst()
                 .ifPresent(e -> {
                     milkTarget = e;
-                    // [Codex] MoveToTargetSink clears WALK_TARGET by Manhattan block distance.
                     // Requiring distance 0 makes the maid try to occupy the cow's collision box,
                     // so this behavior never receives a second start at milking range on 1.21.11.
                     BehaviorUtils.setWalkAndLookTargetMemories(maid, e, this.speedModifier, 1);

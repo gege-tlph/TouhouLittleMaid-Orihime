@@ -55,7 +55,6 @@ public class HistorySummaryManager {
         String normalized = StringUtils.defaultString(summary).trim()
                 .replaceAll("\n{3,}", "\n\n");
 
-        // LLM 返回了空白内容，放弃本轮压缩
         if (StringUtils.isBlank(normalized)) {
             this.stopHistorySummary();
             return false;

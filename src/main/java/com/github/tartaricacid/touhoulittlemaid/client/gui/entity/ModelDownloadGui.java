@@ -89,7 +89,6 @@ public class ModelDownloadGui extends Screen {
         // 1.21.11：Screen.hasShiftDown() 已移除，等价实现（GLFW 键态轮询，左右 Shift 均判定）
         textField.moveCursorToEnd(tlmHasShiftDown());
         this.addWidget(this.textField);
-        // [Codex] init() replaces the EditBox after every filter change. In 1.21.11 the
         // screen retains the old listener as its focused child unless focus is transferred.
         if (focus) {
             this.setFocused(this.textField);

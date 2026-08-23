@@ -1,5 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ExperimentalConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.network.NetworkHandler;
 import com.github.tartaricacid.touhoulittlemaid.network.message.MaidAnimationPackage;
@@ -8,17 +10,24 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SnowballItem;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.Vec3;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
     private static final float CHANCE_STOPPING = 1 / 32F;
@@ -47,8 +56,22 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
         return chanceStop(entityIn) && entityIn.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET) && isCurrentTargetInSameLevel(entityIn) && isCurrentTargetAlive(entityIn) && this.checkExtraStartConditions(worldIn, entityIn);
     }
 
+    /**
+     * 本任务开打时的那个「玩伴」。
+     *
+     * <p>{@code ATTACK_TARGET} 是**共享槽**——威胁响应、敌我策略、各战斗行为都读它，
+     * 而打雪仗只是借它存玩伴。收尾时若无条件擦除，就会擦掉**别人刚写进去的**东西：
+     * 威胁来了 → 应战写入攻击者并切换活动 → 本任务因活动切换被 stop → 擦掉应战刚设好的目标
+     * → 应战下一 tick 发现目标对不上而自我撤销 → 雪仗夺回控制。
+     * 记下 UUID（不持实体引用）以便收尾时判断「现在槽里的还是不是我放的那个」。</p>
+     */
+    private @Nullable UUID playmateId;
+
     @Override
     protected void start(ServerLevel worldIn, EntityMaid entityIn, long gameTimeIn) {
+        // 必须在第一个 return 之前记下——下面两支都可能提前返回
+        this.playmateId = entityIn.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET)
+                .map(LivingEntity::getUUID).orElse(null);
         if (entityIn.getMainHandItem().isEmpty()) {
             entityIn.setItemInHand(InteractionHand.MAIN_HAND, Items.SNOWBALL.getDefaultInstance());
             NetworkHandler.sendToPlayersTrackingEntity(entityIn, MaidAnimationPackage.pickUpSnowball(entityIn));
@@ -119,11 +142,19 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
      * to the maid that created this snow-play projectile.
      */
     private static final class MaidPlaySnowball extends Snowball {
+        /** 原版 LivingEntity.hurtServer 里击退抛射物受害者用的就是这个值。 */
+        private static final float KNOCKBACK_STRENGTH = 0.4F;
+
         private final EntityMaid shooter;
         private boolean leftShooter;
 
         private MaidPlaySnowball(EntityMaid shooter) {
-            super(shooter.level(), shooter.getX(), shooter.getY(), shooter.getZ(), Items.SNOWBALL.getDefaultInstance());
+            // ⚠️ 高度取眼高而不是 getY()（脚底）：原版基于射手的构造器就是 getEyeY()-0.1
+            // （字节码实证）。上游这里用的是裸坐标构造器 + 脚底高度，而触发玩雪的前提正是
+            // 女仆站在雪片上——雪球于是在贴地处出生、弹道极低，落在目标前方的地上，
+            // 结果是这个功能**从来没打中过任何人**。
+            super(shooter.level(), shooter.getX(), shooter.getEyeY() - 0.1, shooter.getZ(),
+                    Items.SNOWBALL.getDefaultInstance());
             this.shooter = shooter;
         }
 
@@ -136,6 +167,43 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
             super.tick();
         }
 
+        /**
+         * 世界规则「雪球击退效果」开启时，把**玩家**也击退——默认关，关着就是原版表现。
+         *
+         * <p><b>为什么只补玩家这一种</b>：原版雪球对非烈焰人是 0 伤害，而击退整段住在
+         * {@code LivingEntity.hurtServer} 里。怪物走得到那里，所以**本来就会被雪球推开**；
+         * 玩家走不到——{@code Player.hurtServer} 在 {@code amount == 0} 处直接 return false，
+         * 比击退那段早得多。所以判据不是「我猜谁需要补」，而是「原版那条路径对谁没走完」，
+         * 而这个集合恰好等于 {@code Player}：雪球只对烈焰人给非 0 伤害，玩家永远不是烈焰人。</p>
+         *
+         * <p>⚠️ 前三道闸是把 {@code Player.hurtServer} 在 {@code amount == 0} <b>之前</b>
+         * 的判定原样复述一遍：那些情形下原版连伤害流程都不进，我们也不许推人——
+         * 否则创造模式和旁观模式会被雪球推着走，那是原版从不会有的表现。</p>
+         */
+        @Override
+        protected void onHitEntity(EntityHitResult result) {
+            super.onHitEntity(result);
+            if (!(level() instanceof ServerLevel serverLevel)
+                    || !(result.getEntity() instanceof Player player)
+                    || !ServerRuleConfig.get(ExperimentalConfig.SNOWBALL_KNOCKBACK)) {
+                return;
+            }
+            DamageSource source = damageSources().thrown(this, getOwner());
+            if (player.isInvulnerableTo(serverLevel, source)
+                    || player.getAbilities().invulnerable
+                    || player.isDeadOrDying()) {
+                return;
+            }
+            Vec3 motion = getDeltaMovement();
+            player.knockback(KNOCKBACK_STRENGTH, -motion.x, -motion.z);
+            // ⚠️ 还得让**受击者自己的客户端**知道，否则这次击退玩家自己毫无感觉：
+            // 玩家的移动是客户端权威的，服务端算出来的速度会被下一个位置包直接覆盖。
+            // 原版那一段是**两句**——markHurt() 与随后的 knockback()：前者置 hurtMarked，
+            // ServerEntity 据它走 sendToTrackingPlayersAndSelf；而 knockback() 自己
+            // 只置 needsSync，那条**只发给别人**。26.1.2 就是漏了这句才实机翻车的。
+            player.hurtMarked = true;
+        }
+
         @Override
         protected boolean canHitEntity(Entity entity) {
             return (leftShooter || entity != shooter) && super.canHitEntity(entity);
@@ -146,6 +214,7 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
     protected void stop(ServerLevel worldIn, EntityMaid entityIn, long gameTimeIn) {
         this.canThrow = false;
         clearAttackTarget(entityIn);
+        this.playmateId = null;
     }
 
     private boolean isCurrentTargetInSameLevel(LivingEntity entity) {
@@ -167,7 +236,19 @@ public class MaidSnowballTargetTask extends Behavior<EntityMaid> {
         return entity.getRandom().nextFloat() > CHANCE_STOPPING;
     }
 
+    /**
+     * 只擦自己放进去的那个玩伴——**谁设的谁擦**。
+     *
+     * <p>槽里现在若换成了别人（最典型的是威胁响应写进去的攻击者），这里必须放手，
+     * 否则收尾会把别人的状态一起清掉。见 {@link #playmateId} 的说明。</p>
+     */
     private void clearAttackTarget(LivingEntity entity) {
-        entity.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
+        if (this.playmateId == null) {
+            return;
+        }
+        LivingEntity current = entity.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
+        if (current != null && this.playmateId.equals(current.getUUID())) {
+            entity.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
+        }
     }
 }
