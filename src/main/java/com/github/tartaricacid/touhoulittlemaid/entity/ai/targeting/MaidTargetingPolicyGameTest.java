@@ -4,6 +4,7 @@ import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.IMaidHostil
 import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidHostilityDecision;
 import com.github.tartaricacid.touhoulittlemaid.entity.data.inner.AttackListData;
 import com.github.tartaricacid.touhoulittlemaid.entity.misc.MonsterType;
+import com.github.tartaricacid.touhoulittlemaid.entity.monster.EntityFairy;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.task.TaskAttack;
 import com.github.tartaricacid.touhoulittlemaid.entity.task.TaskFeedAnimal;
@@ -32,6 +33,16 @@ import java.util.Map;
 
 @SuppressWarnings("removal")
 public class MaidTargetingPolicyGameTest {
+    @GameTest(maxTicks = 100)
+    public void hostileFairyUsesDefaultTargetClassification(GameTestHelper helper) {
+        EntityMaid maid = preparedMaid(helper, new TaskAttack());
+        EntityFairy fairy = helper.spawn(InitEntities.FAIRY, new BlockPos(3, 2, 2));
+
+        assertTrue(helper, maid.canAttack(fairy),
+                "hostile fairy was rejected before default target classification");
+        helper.succeed();
+    }
+
     @GameTest(maxTicks = 100)
     public void ownedEntitiesStayProtectedFromOverridesAndDirectHits(GameTestHelper helper) {
         EntityMaid maid = preparedMaid(helper, new TaskFeedAnimal());
