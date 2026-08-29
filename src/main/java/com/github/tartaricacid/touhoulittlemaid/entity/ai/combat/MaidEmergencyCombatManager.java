@@ -8,8 +8,10 @@ import com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting.MaidTargetin
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.MaidManagerDef;
 import com.github.tartaricacid.touhoulittlemaid.init.InitBrains;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -294,7 +296,9 @@ public final class MaidEmergencyCombatManager {
         }
         return !maid.getSwimManager().isGoingToBreath()
                 && !maid.getSwimManager().isEatBreatheItem()
-                && !maid.isUsingItem()
+                && (!maid.isUsingItem()
+                    || maid.getUsedItemHand() == InteractionHand.OFF_HAND
+                        && maid.getUseItem().has(DataComponents.BLOCKS_ATTACKS))
                 && !maid.isOnFire()
                 && !maid.isCanClimb()
                 && !maid.onClimbable();

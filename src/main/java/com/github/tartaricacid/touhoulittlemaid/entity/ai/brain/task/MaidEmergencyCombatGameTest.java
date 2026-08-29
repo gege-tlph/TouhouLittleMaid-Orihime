@@ -147,6 +147,42 @@ public class MaidEmergencyCombatGameTest {
         });
     }
 
+    /**
+     * 举盾不得锁死应战。{@code MaidUseShieldTask} 优先级 4，严格早于走位 5 与近战 6，
+     * 而 {@code canRunCombatActions()} 曾用裸 {@code !isUsingItem()} 同时管着这两个消费者：
+     * 敌人进 8 格 → 盾任务先起 → 谓词置真 → 走位与近战一起停摆 → 目标不走 → 永远举着挨打。
+     *
+     * <p>行为基准 {@code TaskAttack.createBrainTasks} 把举盾与近战/走位放在**同一优先级 5**，
+     * 举盾从不抢占近战——所以这是移植期新引入的回归，不是基准行为。</p>
+     *
+     * <p>判据落在两处：闸门本身（{@code canRunCombatActions}）与端到端的近战落点。
+     * 只断言后者分不开「盾自己掉了」与「闸门放行了」，故先钉 fixture。</p>
+     */
+    @GameTest(maxTicks = 100)
+    public void offHandShieldDoesNotPauseEmergencyAttack(GameTestHelper helper) {
+        EntityMaid maid = preparedMaid(helper, new BlockPos(1, 2, 1));
+        maid.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+        Zombie target = threat(helper, new BlockPos(2, 2, 1));
+        rememberVisibleTarget(helper, maid, target);
+        maid.startUsingItem(InteractionHand.OFF_HAND);
+
+        assertTrue(helper, maid.getEmergencyCombatManager().beginEmergency(
+                target, MaidTargetingContext.SELF_DEFENSE), "raised shield rejected a valid emergency");
+
+        helper.runAtTickTime(10, () -> {
+            // 前置：盾还举着。掉了的话下面两条断言就都失去意义。
+            assertTrue(helper, maid.isUsingItem(),
+                    "fixture failed: the raised shield was dropped before the assertion");
+            assertSame(helper, InteractionHand.OFF_HAND, maid.getUsedItemHand(),
+                    "fixture failed: the shield was not the off-hand item in use");
+            assertTrue(helper, maid.getEmergencyCombatManager().canRunCombatActions(),
+                    "an off-hand shield still froze the emergency combat gate");
+            assertTrue(helper, wasHurtBy(target, maid),
+                    "raised shield blocked emergency melee against an adjacent target");
+            helper.succeed();
+        });
+    }
+
     @GameTest(maxTicks = 100)
     public void explicitCommandClearsEmergencyAndSuppressesImmediateReentry(GameTestHelper helper) {
         EntityMaid maid = preparedMaid(helper, new BlockPos(1, 2, 1));
