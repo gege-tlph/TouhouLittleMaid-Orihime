@@ -131,6 +131,27 @@ public class MaidEmergencyCombatGameTest {
     }
 
     @GameTest(maxTicks = 100)
+    public void offHandShieldDoesNotPauseEmergencyAttack(GameTestHelper helper) {
+        EntityMaid maid = preparedMaid(helper, new BlockPos(1, 2, 1));
+        maid.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+        Zombie target = threat(helper, new BlockPos(2, 2, 1));
+        float health = target.getHealth();
+        rememberVisibleTarget(helper, maid, target);
+
+        assertTrue(helper, maid.getCombatManager().beginEmergency(
+                target, MaidTargetingContext.SELF_DEFENSE), "valid emergency target was rejected");
+
+        helper.runAtTickTime(10, () -> {
+            assertTrue(helper, maid.isUsingItem()
+                            && maid.getUsedItemHand() == InteractionHand.OFF_HAND,
+                    "maid did not keep the off-hand shield raised near the threat");
+            assertTrue(helper, target.getHealth() < health,
+                    "off-hand shield usage blocked emergency melee");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(maxTicks = 100)
     public void explicitCommandClearsEmergencyAndSuppressesImmediateReentry(GameTestHelper helper) {
         EntityMaid maid = preparedMaid(helper, new BlockPos(1, 2, 1));
         Zombie target = threat(helper, new BlockPos(7, 2, 1));

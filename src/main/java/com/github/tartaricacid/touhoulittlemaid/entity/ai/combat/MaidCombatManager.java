@@ -11,6 +11,8 @@ import net.minecraft.world.item.ProjectileWeaponItem;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -284,7 +286,9 @@ public final class MaidCombatManager {
         }
         return !maid.getSwimManager().isGoingToBreath()
                 && !maid.getSwimManager().isEatBreatheItem()
-                && !maid.isUsingItem()
+                && (!maid.isUsingItem()
+                || maid.getUsedItemHand() == InteractionHand.OFF_HAND
+                && maid.getUseItem().has(DataComponents.BLOCKS_ATTACKS))
                 && !maid.isOnFire()
                 && !maid.isCanClimb()
                 && !maid.onClimbable();
