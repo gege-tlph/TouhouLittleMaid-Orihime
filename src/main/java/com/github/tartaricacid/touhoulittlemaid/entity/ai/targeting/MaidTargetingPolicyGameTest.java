@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting;
 
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.IMaidHostilityAdapter;
 import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidHostilityDecision;
 import com.github.tartaricacid.touhoulittlemaid.entity.data.inner.AttackListData;
@@ -10,14 +11,18 @@ import com.github.tartaricacid.touhoulittlemaid.entity.task.TaskAttack;
 import com.github.tartaricacid.touhoulittlemaid.entity.task.TaskFeedAnimal;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
 import com.github.tartaricacid.touhoulittlemaid.init.InitTaskData;
+import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityReference;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.entity.animal.wolf.Wolf;
@@ -29,7 +34,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 
+import java.util.Comparator;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 @SuppressWarnings("removal")
 public class MaidTargetingPolicyGameTest {
@@ -40,6 +48,49 @@ public class MaidTargetingPolicyGameTest {
 
         assertTrue(helper, maid.canAttack(fairy),
                 "hostile fairy was rejected before default target classification");
+        helper.succeed();
+    }
+
+    /**
+     * 命名空间兜底否决删掉之后，本模组实体只剩按类型写死的显式保护（{@link EntityMaid}
+     * 与 {@link com.github.tartaricacid.touhoulittlemaid.entity.item.AbstractEntityFromItem}）。
+     * 这条同时钉住两件事：
+     * ① **够得到目标判据的本模组实体到底是哪几个**——只有 {@code LivingEntity} 才会进入这条链，
+     * 新增本模组 LivingEntity 时本用例会红，逼人显式决定它能不能被攻击，
+     * 而不是继续指望一条已经不存在的兜底规则；
+     * ② 除妖精外它们一个都攻击不了。没有这条下限断言，「显式保护够用」就只是一句愿望。
+     */
+    @GameTest(maxTicks = 100)
+    public void modOwnLivingEntitiesStayProtectedExceptFairy(GameTestHelper helper) {
+        EntityMaid maid = preparedMaid(helper, new TaskAttack());
+
+        Map<Identifier, LivingEntity> ownLiving = new TreeMap<>(Comparator.comparing(Identifier::toString));
+        for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
+            Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
+            if (!TouhouLittleMaid.MOD_ID.equals(id.getNamespace())) {
+                continue;
+            }
+            if (type.create(helper.getLevel(), EntitySpawnReason.LOAD) instanceof LivingEntity living) {
+                ownLiving.put(id, living);
+            }
+        }
+
+        Set<Identifier> expectedTypes = Set.of(IdentifierUtil.modLoc("maid"), IdentifierUtil.modLoc("chair"),
+                IdentifierUtil.modLoc("broom"), IdentifierUtil.modLoc("fairy"));
+        assertTrue(helper, ownLiving.keySet().equals(expectedTypes),
+                "the mod's own LivingEntity set changed — decide explicitly whether the new one may be"
+                        + " attacked, the namespace-wide denial no longer covers it: " + ownLiving.keySet());
+
+        ownLiving.forEach((id, living) -> {
+            boolean attackable = living instanceof EntityFairy;
+            assertTrue(helper, maid.canAttack(living) == attackable,
+                    "wrong autonomous targeting verdict for " + id + ": expected attackable=" + attackable);
+            // 主人指令路径（技能 / LLM 工具）**只**受硬安全约束，默认怪物分类拦不住它——
+            // 命名空间否决当初也盖着这条路，所以它才是删掉它之后真正需要看守的那条。
+            assertTrue(helper, MaidTargetingPolicy.canAttackOnOwnerCommand(maid, living) == attackable,
+                    "wrong owner-commanded verdict for " + id + ": expected attackable=" + attackable);
+            living.discard();
+        });
         helper.succeed();
     }
 
