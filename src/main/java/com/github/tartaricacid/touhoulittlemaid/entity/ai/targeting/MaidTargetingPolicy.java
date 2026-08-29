@@ -1,6 +1,5 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.targeting;
 
-import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.IMaidHostilityAdapter;
 import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidHostilityDecision;
 import com.github.tartaricacid.touhoulittlemaid.api.entity.targeting.MaidTargetingContext;
@@ -198,7 +197,6 @@ public final class MaidTargetingPolicy {
         var targetTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
         if (target instanceof Player || target instanceof ArmorStand || target instanceof AbstractEntityFromItem
                 || target instanceof Npc || target instanceof EntityMaid
-                || targetTypeId.getNamespace().equals(TouhouLittleMaid.MOD_ID)
                 || maid.isAlliedTo(target)) {
             return true;
         }
