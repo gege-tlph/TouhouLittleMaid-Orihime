@@ -63,7 +63,13 @@ public class BlockAltar extends Block implements EntityBlock, IBlock {
     public boolean tlm$addHitEffects(BlockState state, Level world, HitResult target, ParticleEngine manager) {
         if (target instanceof BlockHitResult blockTarget && world instanceof ClientLevel clientLevel) {
             BlockPos pos = blockTarget.getBlockPos();
-            this.getAltar(world, pos).ifPresent(altar -> this.crack(clientLevel, pos, altar.getStorageState(), blockTarget.getDirection()));
+            // 不用 ifPresent：lambda 会编译成**不带 @Environment 的合成方法**，而 Fabric 只剥标注过的
+            // 方法。合成方法的签名里留着 ClientLevel，专服上任何 getDeclaredMethods 反射都会
+            // NoClassDefFoundError（实测：NodeEvaluatorBurningCacher 与 Lithium 各报一次）。
+            Optional<TileEntityAltar> altar = this.getAltar(world, pos);
+            if (altar.isPresent()) {
+                this.crack(clientLevel, pos, altar.get().getStorageState(), blockTarget.getDirection());
+            }
         }
         return true;
     }
@@ -73,7 +79,11 @@ public class BlockAltar extends Block implements EntityBlock, IBlock {
     public boolean tlm$addDestroyEffects(BlockState state, Level world, BlockPos pos, ParticleEngine manager) {
         // 1.21.11：ParticleEngine.destroy → ClientLevel.addDestroyBlockEffect（origin 语义=以内部储存方块态出粒子）
         if (world instanceof ClientLevel clientLevel) {
-            this.getAltar(world, pos).ifPresent(altar -> clientLevel.addDestroyBlockEffect(pos, altar.getStorageState()));
+            // 同上：这里也不能用 lambda，否则合成方法把 ClientLevel 留在专服的类签名里。
+            Optional<TileEntityAltar> altar = this.getAltar(world, pos);
+            if (altar.isPresent()) {
+                clientLevel.addDestroyBlockEffect(pos, altar.get().getStorageState());
+            }
         }
         return true;
     }

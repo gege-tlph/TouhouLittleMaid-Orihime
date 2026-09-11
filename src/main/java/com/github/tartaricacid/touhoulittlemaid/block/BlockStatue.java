@@ -42,6 +42,10 @@ import java.util.Optional;
 public class BlockStatue extends Block implements EntityBlock, IBlock {
     public static final BooleanProperty IS_TINY = BooleanProperty.create("is_tiny");
 
+    // 专服上 @Environment(CLIENT) 的方法会被 Fabric 剥掉；漏标就会把 ParticleEngine 留在类签名里，
+    // 任何对本类做 getDeclaredMethods 的反射（NodeEvaluatorBurningCacher、Lithium 的方块信息初始化）
+    // 都会 NoClassDefFoundError。旁边的 tlm$addDestroyEffects 一直是标了的。
+    @Environment(EnvType.CLIENT)
     @Override
     public boolean tlm$addHitEffects(BlockState state, Level world, HitResult target, ParticleEngine manager) {
         if (target instanceof BlockHitResult blockTarget && world instanceof ClientLevel clientWorld) {

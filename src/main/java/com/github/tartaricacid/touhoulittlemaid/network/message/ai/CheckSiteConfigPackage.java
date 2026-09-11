@@ -29,6 +29,7 @@ import static com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil.modLo
  * <p><b>它叫「检查配置」而不是「测试连接」，是因为它确实没有验证密钥。</b>
  * 真正验证密钥要对每种服务各发一次真实请求（各家的请求体、鉴权头、错误码都不同），
  * 那是另一件工程；在此之前把它叫成「测试连接」，就是又一个说谎的标签——
+ * 而本轮重构的起因之一，正是「服务器不提供」那句提示把三轮排查引向了从未损坏的链路。</p>
  *
  * <p>它仍然有实际价值：**把「地址/网络不通」与「密钥不对」分开**。
  * 这两种故障管理员的处置完全不同，而在此之前他只能看到一句笼统的失败。</p>
@@ -89,6 +90,10 @@ public record CheckSiteConfigPackage(String service, String siteId) implements C
             java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     static boolean tryAcquire(java.util.UUID playerId, long nowMs) {
+        // 过期条目对判定毫无作用：冷却窗口之外的记录本来就一律放行。留着它们只会让这张表
+        // 随「历史上点过这个按钮的独立玩家数」无上限增长，而那个键空间没有上限，也没有下线钩子
+        // 来清它。清理判据与下面那条检查严格互补，所以这是纯粹的回收，不改任何放行/拒绝结果。
+        LAST_ACCEPTED.entrySet().removeIf(entry -> nowMs - entry.getValue() >= COOLDOWN_MS);
         if (IN_FLIGHT.contains(playerId)) {
             return false;
         }
@@ -103,6 +108,20 @@ public record CheckSiteConfigPackage(String service, String siteId) implements C
 
     static void release(java.util.UUID playerId) {
         IN_FLIGHT.remove(playerId);
+    }
+
+    /**
+     * 探测体的执行壳：无论 body 以哪种方式结束（正常返回 / Exception / Error），在途额度都必须归还。
+     *
+     * <p>单独抽出来只为一件事——让「Error 逃逸时也归还」这条<b>可直测</b>，而且产品与用例走的是
+     * 同一条实现。方法有两种逃逸方式，{@code return} 与 {@code throw}，只盯前一种的看守等于没看守。</p>
+     */
+    static void runProbe(java.util.UUID owner, Runnable body) {
+        try {
+            body.run();
+        } finally {
+            release(owner);
+        }
     }
 
     private static void check(CheckSiteConfigPackage message, @Nullable ServerPlayer player, MinecraftServer server) {
@@ -137,17 +156,23 @@ public record CheckSiteConfigPackage(String service, String siteId) implements C
         // 网络等待不能压在主线程上：这里最长会阻塞 TIMEOUT_MS。
         String url = site.url();
         String id = message.siteId;
-        Thread probe = new Thread(() -> {
+        // release 走 runProbe 的 finally，不挂在 server.execute 的任务里：
+        //   ① reachabilityFailure 只 catch Exception，Error（如 LOGGER 持有类静态初始化失败）
+        //      会让这条线程在 execute 入队之前就死掉；
+        //   ② 服务器关闭时排进去的任务不保证被排空。
+        // 两条都会把 owner 永久留在 IN_FLIGHT 里——那不只是泄漏，是把这个玩家**永久锁死**在这个
+        // 按钮之外。闸的语义是「一个在途探测」，探测结束即释放才是它本来的意思；比原先晚放到回执
+        // 渲染时才释放更准确，而 1 秒冷却仍然照常拦连点。
+        Thread probe = new Thread(() -> runProbe(owner, () -> {
             String failure = reachabilityFailure(url);
             server.execute(() -> {
-                release(owner);
                 if (failure == null) {
                     reply(player, "reachable", COLOR_OK, id);
                 } else {
                     reply(player, "unreachable", COLOR_FAILURE, id, failure);
                 }
             });
-        }, "tlm-site-config-check");
+        }), "tlm-site-config-check");
         probe.setDaemon(true);
         probe.start();
     }

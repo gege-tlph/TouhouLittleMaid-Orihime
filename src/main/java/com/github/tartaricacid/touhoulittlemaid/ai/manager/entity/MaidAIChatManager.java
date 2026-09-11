@@ -376,7 +376,11 @@ public final class MaidAIChatManager extends MaidAIChatData {
 
     private void onPlaySoundLocal(String name, String chatText, String ttsText, TTSConfig config,
                                   TTSSystemServices services, long waitingChatBubbleId) {
+        // 与 TTSCallback.onSuccess 同一族的静默丢弃：系统语音也只发给主人，主人解析不到就什么都不发。
+        // 只修云端那一半会让两条路的可诊断性不对称，而玩家侧它们的表现是同一个「没声音」。
         if (!(maid.level instanceof ServerLevel serverLevel)) {
+            TouhouLittleMaid.LOGGER.warn("Dropped system TTS request for maid {}: she is no longer on a server level",
+                    maid.getId());
             return;
         }
         MinecraftServer server = serverLevel.getServer();
@@ -384,6 +388,11 @@ public final class MaidAIChatManager extends MaidAIChatData {
             if (maid.getOwner() instanceof ServerPlayer player) {
                 TTSSystemAudioToClientPackage message = new TTSSystemAudioToClientPackage(name, ttsText, config, services);
                 ServerPlayNetworking.send(player, message);
+            } else {
+                TouhouLittleMaid.LOGGER.warn(
+                        "Dropped system TTS request for maid {}: her owner is not reachable in {}"
+                                + " (speech is only ever sent to the owner)",
+                        maid.getId(), serverLevel.dimension().identifier());
             }
             maid.getChatBubbleManager().addLLMChatText(chatText, waitingChatBubbleId);
         });

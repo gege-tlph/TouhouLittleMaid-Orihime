@@ -71,7 +71,16 @@ public class BackpackManager {
             init();
         }
         BACKPACK_MODEL_MAP = Maps.newHashMap();
-        BACKPACK_ID_MAP.forEach((id, backpack) -> BACKPACK_MODEL_MAP.put(id, Pair.of(backpack.getBackpackModel(modelSet), backpack.getBackpackTexture())));
+        // 显式循环，不用 forEach(lambda)：给方法标 @Environment(CLIENT) 拦不住 lambda——
+        // 编译器会为它生成**不带注解的合成方法**，而该合成方法的描述符里带着 EntityModelSet。
+        // Fabric 的客户端剥离按注解走，剥不掉合成方法，于是客户端类型留在了专服可见的签名里，
+        // 被反射扫描到就是 NoClassDefFoundError。与祭坛/雕像/手办那三个方块的粒子效果方法同一个缺陷
+        // （见 `97380380b`），只是当初那轮扫描漏了这一处。
+        for (Map.Entry<Identifier, IMaidBackpack> entry : BACKPACK_ID_MAP.entrySet()) {
+            IMaidBackpack backpack = entry.getValue();
+            BACKPACK_MODEL_MAP.put(entry.getKey(),
+                    Pair.of(backpack.getBackpackModel(modelSet), backpack.getBackpackTexture()));
+        }
         BACKPACK_MODEL_MAP = ImmutableMap.copyOf(BACKPACK_MODEL_MAP);
     }
 

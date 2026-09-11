@@ -56,6 +56,8 @@ import static com.github.tartaricacid.touhoulittlemaid.init.InitDataComponent.MO
 public class BlockGarageKit extends Block implements EntityBlock, IBlock {
     public static final VoxelShape BLOCK_AABB = Block.box(4, 0, 4, 12, 16, 12);
 
+    // 同 BlockStatue：漏标 @Environment 会让 ParticleEngine 留在专服的类签名里。
+    @Environment(EnvType.CLIENT)
     @Override
     public boolean tlm$addHitEffects(BlockState state, Level world, HitResult target, ParticleEngine manager) {
         if (target instanceof BlockHitResult blockTarget && world instanceof ClientLevel clientWorld) {

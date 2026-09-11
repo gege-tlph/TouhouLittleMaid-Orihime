@@ -12,9 +12,11 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.LivingEntity;
 
 import java.net.http.HttpRequest;
+import java.util.UUID;
 
 public class TTSCallback implements com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSResponse {
     private final EntityMaid maid;
@@ -47,11 +49,17 @@ public class TTSCallback implements com.github.tartaricacid.touhoulittlemaid.ai.
 
     @Override
     public void onSuccess(byte[] data) {
+        // 下面两处原先都是静默 return：音频已经合成好了（还花了钱），却在最后一步被丢掉，
+        // 玩家看到的是「气泡出字、没有声音」，与「根本没发起合成」一模一样。
+        // 与 TTSAudioToClientPackageProxy 对齐：每一条丢弃都要说出自己是谁。
         if (!(maid.level instanceof ServerLevel serverLevel)) {
+            TouhouLittleMaid.LOGGER.warn("Dropped synthesized TTS audio for maid {}: she is no longer on a server level",
+                    maid.getId());
             return;
         }
         LivingEntity owner = maid.getOwner();
         if (!(owner instanceof ServerPlayer player)) {
+            logUnreachableOwner(serverLevel);
             return;
         }
         MinecraftServer server = serverLevel.getServer();
@@ -59,6 +67,29 @@ public class TTSCallback implements com.github.tartaricacid.touhoulittlemaid.ai.
             ServerPlayNetworking.send(player, new TTSAudioToClientPackage(maid.getId(), data));
             maid.getChatBubbleManager().addLLMChatText(chatText, waitingChatBubbleId);
         });
+    }
+
+    /**
+     * {@code getOwner()} 只在女仆**所在的那层世界**里按 UUID 找主人，所以「主人在线但在别的维度」
+     * 与「主人不在线」表现完全一样——一段已经合成好的音频被静默丢掉。两者的处置完全不同
+     * （前者是设计使然，后者说明这次合成从一开始就白花），因此必须分开记。
+     */
+    private void logUnreachableOwner(ServerLevel serverLevel) {
+        EntityReference<LivingEntity> reference = maid.getOwnerReference();
+        UUID ownerId = reference == null ? null : reference.getUUID();
+        ServerPlayer online = ownerId == null ? null : serverLevel.getServer().getPlayerList().getPlayer(ownerId);
+        if (ownerId == null) {
+            TouhouLittleMaid.LOGGER.warn("Dropped synthesized TTS audio for maid {}: she has no owner", maid.getId());
+        } else if (online != null) {
+            TouhouLittleMaid.LOGGER.warn(
+                    "Dropped synthesized TTS audio for maid {}: her owner {} is online but in {}, while she is in {}"
+                            + " (audio is only ever sent to the owner)",
+                    maid.getId(), ownerId, online.level().dimension().identifier(),
+                    serverLevel.dimension().identifier());
+        } else {
+            TouhouLittleMaid.LOGGER.warn("Dropped synthesized TTS audio for maid {}: her owner {} is not online",
+                    maid.getId(), ownerId);
+        }
     }
 
     public EntityMaid getMaid() {
