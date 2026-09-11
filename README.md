@@ -21,7 +21,7 @@
 
 | Minecraft | 加载器 | 分支 | 状态 |
 |---|---|---|---|
-| 26.1.2 | Fabric | [`port/26.1.2-fabric`](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/tree/port/26.1.2-fabric) | `v1.0.22-beta.1`，Beta |
+| 26.1.2 | Fabric | [`port/26.1.2-fabric`](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/tree/port/26.1.2-fabric) | `v1.0.23-beta.1`，Beta |
 | 1.21.11 | Fabric | [`port/1.21.11-fabric`](https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi/tree/port/1.21.11-fabric) | 稳定维护 |
 
 每个 Minecraft 版本使用独立分支维护。构件、依赖和存档均应按目标版本核对，不要跨版本混装。
@@ -92,7 +92,6 @@ AI 聊天与语音仍需要玩家自行提供服务地址和凭据；本模组�
 | Aquaculture | 暂无可用的 26.1.2 Fabric 版本 |
 | Accessories | 暂无经过验证的 26.1.2 Fabric 接入点 |
 | Sophisticated Backpacks | 依赖的槽位兼容路径尚未验证 |
-| YSM / OpenYSM | 暂无经过验证的 26.1.2 Fabric 女仆兼容模块 |
 
 这不是永久排除。等目标模组提供可用版本，或出现可靠的 Fabric 接入路径后，会重新评估兼容性。
 
@@ -102,8 +101,8 @@ AI 聊天与语音仍需要玩家自行提供服务地址和凭据；本模组�
 |---|---|
 | Minecraft | 26.1.2 |
 | Java | 25 |
-| Fabric Loader | `>=0.19.0`；安装 TACZ R2 时 `>=0.19.3` |
-| Fabric API | `>=0.149.0`；安装 TACZ R2 时 `>=0.155.2` |
+| Fabric Loader | `>=0.19.0` |
+| Fabric API | `>=0.149.0` |
 | Forge Config API Port | `>=26.1.5`，必装 |
 | 安装位置 | 客户端与服务端 |
 
@@ -119,7 +118,7 @@ Patchouli（《幻想乡秘话》手册）。缺少 Patchouli 时，游戏内提
 3. 下载本模组的可安装 JAR，与依赖一起放入客户端和服务端的 `mods` 目录。
 4. 需要游戏内手册时安装 Patchouli Fabric；需要游戏内配置界面时安装 Cloth Config 与 Mod Menu。
 
-表中下限是基础运行要求。可选兼容模组可能提高 Fabric Loader 或 Fabric API 的最低版本。
+表中是本模组自身的运行要求。第三方模组各有各的版本要求，请看它们自己的页面。
 
 ## 26.1.2 分支：可选模组兼容
 
@@ -133,12 +132,13 @@ Patchouli（《幻想乡秘话》手册）。缺少 Patchouli 时，游戏内提
 | Kaleidoscope Cookery Refabricated | 特殊食物、水稻收获与补种 |
 | Kaleidoscope Tavern Refabricated | 桌台、坐具、葡萄采收与工作餐边界 |
 | Carry On | 搬运女仆时的模型、姿势与黑名单 |
+| YSM / OpenYSM | 女仆界面选择 YSM 模型、轮盘动画多人同步、照片与手办显示模型名 |
 
 TACZ 兼容针对
 [TaCZ Refabricated Unofficial](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/releases)
 的 26.1.2 R2 构件。第三方 JAR 不会打包进本模组。
 
-KubeJS、Aquaculture、Accessories、Sophisticated Backpacks、YSM/OpenYSM 等目前没有经过验证的
+KubeJS、Aquaculture、Accessories、Sophisticated Backpacks 等目前没有经过验证的
 26.1.2 Fabric 接入点，本 Beta 不宣称兼容。可选模组未安装时，其兼容代码不会参与基础加载。
 
 ## 反馈问题
