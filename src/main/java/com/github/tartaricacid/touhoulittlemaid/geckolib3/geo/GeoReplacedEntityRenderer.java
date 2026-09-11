@@ -139,4 +139,12 @@ public abstract class GeoReplacedEntityRenderer<TEntity extends LivingEntity, TS
     public final void addLayer(GeoLayerRenderer<? super TState, ? super TData> layer) {
         this.layerRenderers.add(layer);
     }
+
+    /**
+     * 供外部渲染器（如 YSM 身体接管的 {@code YsmMaidLayerBridge}）复用同一份挂件 layer 列表：
+     * {@link #layerRenderers} 是 protected 字段，跨包、非子类的外部代码拿不到，需要这个只读入口。
+     */
+    public final List<GeoLayerRenderer<? super TState, ? super TData>> getLayerRenderers() {
+        return this.layerRenderers;
+    }
 }

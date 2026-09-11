@@ -85,6 +85,7 @@ public abstract class AbstractMaidContainerGui<T extends AbstractMaidContainer> 
     private TouhouImageButton info;
     private TouhouImageButton skin;
     private TouhouImageButton sound;
+    private TouhouImageButton ysmModel;
     private TouhouImageButton pageDown;
     private TouhouImageButton pageUp;
     private TouhouImageButton pageClose;
@@ -287,6 +288,16 @@ public abstract class AbstractMaidContainerGui<T extends AbstractMaidContainer> 
                 144, 43, 10, BUTTON,
                 (b) -> ScreenUtil.setScreen(new MaidSoundPackGui(maid)));
         this.addRenderableWidget(sound);
+
+        // 「选择 YSM 模型」入口：只在装了 OpenYSM 时显示。复用 skin 按钮同一套图标裁切
+        // （占位——这条集成还没有专属图标资源，功能优先于美术）。点击只发事件，
+        // 事件谁来接、开哪个界面完全由 OpenYSM 决定，见 OpenYsmMaidScreenEvent 类注释。
+        if (com.github.tartaricacid.touhoulittlemaid.compat.ysm.YsmCompat.isInstalled()) {
+            this.ysmModel = new TouhouImageButton(leftPos + 72, topPos + 14, 9, 9, 72, 43, 10, BUTTON,
+                    (b) -> com.github.tartaricacid.touhoulittlemaid.compat.ysm.event.OpenYsmMaidScreenEvent.CALLBACK
+                            .invoker().post(new com.github.tartaricacid.touhoulittlemaid.compat.ysm.event.OpenYsmMaidScreenEvent(maid)));
+            this.addRenderableWidget(this.ysmModel);
+        }
     }
 
     private void addTaskControlButton() {

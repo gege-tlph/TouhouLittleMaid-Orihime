@@ -349,13 +349,17 @@ public abstract class AnimatableEntity<TEntity extends Entity> {
             }
             data.modelState = this.mainModelState;
         } else {
+            // data.modelState 声明为 IGeoLocatorSource（见 GeckoRenderData），这里拿一个具体的
+            // GeoModelState 局部变量喂给 extract（它只认自家池化的 GeoModelState），再赋回接口字段。
+            GeoModelState pooledState;
             var cache = modelStateCache.get(ctx);
             if (cache != null && !cache.isEmpty()) {
-                data.modelState = cache.removeLast();
+                pooledState = cache.removeLast();
             } else {
-                data.modelState = new GeoModelState();
+                pooledState = new GeoModelState();
             }
-            GeoModelStateExtractor.extract(this.currentModel, data.modelState);
+            GeoModelStateExtractor.extract(this.currentModel, pooledState);
+            data.modelState = pooledState;
         }
 
         data.texture = getTextureLocation();

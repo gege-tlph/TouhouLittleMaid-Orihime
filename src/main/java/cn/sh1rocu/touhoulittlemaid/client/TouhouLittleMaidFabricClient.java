@@ -16,6 +16,7 @@ import com.github.tartaricacid.touhoulittlemaid.client.event.*;
 import com.github.tartaricacid.touhoulittlemaid.client.init.*;
 import com.github.tartaricacid.touhoulittlemaid.client.input.DismountBroomKey;
 import com.github.tartaricacid.touhoulittlemaid.client.input.STTChatKey;
+import com.github.tartaricacid.touhoulittlemaid.compat.ysm.YsmCompat;
 import com.github.tartaricacid.touhoulittlemaid.debug.target.DebugClientRenderEvent;
 import com.github.tartaricacid.touhoulittlemaid.event.ClientExtensionsEvent;
 import com.github.tartaricacid.touhoulittlemaid.event.ClientTickEvent;
@@ -39,6 +40,10 @@ import static cn.sh1rocu.touhoulittlemaid.TouhouLittleMaidFabric.LOWEST;
 public class TouhouLittleMaidFabricClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        // 必须在 InitEntitiesRender.onEntityRenderers() 之前跑：EntityMaidRenderer 的构造器
+        // 会读 YsmCompat.isInstalled() 决定要不要接 YSM 身体接管渲染器。
+        YsmCompat.init();
+
         ClientRecipeSynchronizedEvent.EVENT.register(ClientRecipeEvent::onRecipeReceived);
         TouhouLittleMaidClient.setup();
         NetworkHandler.registerClientReceivers();

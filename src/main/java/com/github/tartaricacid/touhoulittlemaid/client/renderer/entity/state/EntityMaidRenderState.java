@@ -426,6 +426,17 @@ public class EntityMaidRenderState extends HumanoidRenderState {
 
     @SuppressWarnings("unchecked")
     private static void extractGeckoState(EntityMaidRenderState state, @Nullable GeckoMaidEntity<? extends EntityMaid> geckoEntity) {
+        // 第三方模型系统（YSM）身体接管：整条 TLM 自己的 gecko 取模/动画路径都不需要，
+        // 直接把 modelType 定成 YSM，交给 EntityMaidRenderer#submit 的 YSM 分支处理。
+        // 挂件 layer（背包/背部物品/旗帜/头饰/聊天气泡）不受影响——它们由更早的
+        // extractBackDecorationState/extractChatBubbleState/extractBackpackState 抽取，与本体渲染路径无关。
+        if (state.maid != null && state.maid.isYsmModel()) {
+            state.modelType = ModelType.YSM;
+            if (geckoEntity != null) {
+                geckoEntity.reset();
+            }
+            return;
+        }
         if (geckoEntity != null) {
             if (state.modelInfo != null && state.modelInfo.isGeckoModel()) {
                 state.modelType = ModelType.GECKO;

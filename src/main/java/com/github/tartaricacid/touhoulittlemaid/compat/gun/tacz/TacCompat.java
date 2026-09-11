@@ -15,7 +15,7 @@ import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.PlayState;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.builder.LoopType;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.event.AnimationEvent;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.animated.GeoModelState;
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.IGeoLocatorSource;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.tacz.guns.api.event.common.EntityHurtByGunEvent;
 import com.tacz.guns.api.item.ammo.AmmoSourceRegistry;
@@ -32,8 +32,11 @@ import javax.annotation.Nullable;
 
 /**
  * TaCZ（Refabricated 26.1.2 分支）兼容门面。与 1.21.11 分支的差异（皆为宿主写法适配，行为不变）：
- * IMaid 形参 → EntityMaid（宿主调用点全是 EntityMaid，无 YSM 路径）；
- * IGeoLocatorSource → {@code GeoModelState}（宿主的定位组载体，gecko 层经 {@code data.modelState} 取得）。
+ * IMaid 形参 → EntityMaid（宿主调用点全是 EntityMaid，无 YSM 路径）。
+ * <p>
+ * 定位组载体已恢复为 {@code IGeoLocatorSource}（YSM 身体接管补丁，见 {@code compat/ysm}），
+ * 与 1.21.11 分支同名同签名——之前这里简化成了具体的 {@code GeoModelState}，
+ * 原因和这条注释本身都已过时。
  */
 public class TacCompat {
     public static final Identifier MINIGUN_ID = Identifier.fromNamespaceAndPath("tacz", "minigun");
@@ -139,7 +142,7 @@ public class TacCompat {
     }
 
     @Environment(EnvType.CLIENT)
-    public static void renderBackGun(ItemStack offhandItem, GeoModelState modelState, EntityMaid maid, PoseStack poseStack, SubmitNodeCollector submitNode, int packedLight) {
+    public static void renderBackGun(ItemStack offhandItem, IGeoLocatorSource modelState, EntityMaid maid, PoseStack poseStack, SubmitNodeCollector submitNode, int packedLight) {
         if (INSTALLED && isGun(offhandItem)) {
             poseStack.pushPose();
             GunMaidRender.renderBackGun(offhandItem, modelState, maid, poseStack, submitNode, packedLight);

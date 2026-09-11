@@ -2,7 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.compat.gun.tacz.client;
 
 import com.github.tartaricacid.touhoulittlemaid.compat.gun.tacz.TacCompat;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.animated.GeoModelState;
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.IGeoLocatorSource;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.render.built.GeoLocatorType;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -35,10 +35,11 @@ import java.util.Locale;
  * 与 2026-08-20 对「没有 TAC_PISTOL/TAC_RIFLE 骨骼就不画」的裁决同一个原则：
  * 挂点归模型作者定，没给挂点就是不想让枪挂在那儿。</p>
  *
- * <p>与 1.21.11 分支的写法差异：定位组载体那边抽象成 {@code IGeoLocatorSource}，
- * 宿主直接用 {@link GeoModelState}（gecko 层的 {@code data.modelState}），
- * API 同名（visitLocatorGroup / locatorGroupSize）。物品提交走标准通道：TaCZ 侧自己实现了
- * 原版 ItemModel（TaczDynamicItemModel），{@code ItemModelResolver.updateForLiving}
+ * <p>定位组载体走 {@link IGeoLocatorSource} 接口（与 1.21.11 分支同名同签名：
+ * visitLocatorGroup / locatorGroupSize），不是具体的 {@code GeoModelState}——
+ * 这样 TLM 自己的 gecko 层（{@code data.modelState}）和 YSM 身体接管的外部定位骨骼源
+ * （{@code compat/ysm} 下的桥接）都能喂给这里，本方法不用关心是哪一种。物品提交走标准通道：
+ * TaCZ 侧自己实现了原版 ItemModel（TaczDynamicItemModel），{@code ItemModelResolver.updateForLiving}
  * + {@code ItemStackRenderState.submit} 即可画出枪模型，不必碰它的渲染器。</p>
  */
 @Environment(EnvType.CLIENT)
@@ -53,7 +54,7 @@ public class GunMaidRender {
         }
     }
 
-    public static void renderBackGun(ItemStack heldItem, GeoModelState modelState, EntityMaid maid, PoseStack poseStack,
+    public static void renderBackGun(ItemStack heldItem, IGeoLocatorSource modelState, EntityMaid maid, PoseStack poseStack,
                                      SubmitNodeCollector submitNode, int packedLight) {
         IGun gun = IGun.getIGunOrNull(heldItem);
         if (gun == null) {

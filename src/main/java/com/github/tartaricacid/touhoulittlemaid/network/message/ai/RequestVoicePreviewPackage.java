@@ -52,6 +52,9 @@ public record RequestVoicePreviewPackage(String site, String model, int requestI
             });
 
     static boolean tryAcquire(java.util.UUID playerId, long nowMs) {
+        // 与 CheckSiteConfigPackage 同形：过期条目一律会放行，留着只会让表随独立玩家数无上限增长。
+        // 清理判据与下面那条检查严格互补，纯回收，不改任何放行/拒绝结果。
+        LAST_ACCEPTED.entrySet().removeIf(entry -> nowMs - entry.getValue() >= COOLDOWN_MS);
         Long previous = LAST_ACCEPTED.get(playerId);
         if (previous != null && nowMs - previous < COOLDOWN_MS) {
             return false;

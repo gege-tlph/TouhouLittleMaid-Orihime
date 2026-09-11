@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.geckolib3.geo;
 
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.animated.GeoModelState;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.render.built.GeoBone;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.render.built.GeoMesh;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.util.EModelRenderCycle;
@@ -62,7 +63,10 @@ public interface IGeoRenderer<TState extends EntityRenderState, TData extends Ge
                 }
             }
             VertexConsumer finalVertexConsumer = vertexConsumer;
-            data.modelState.visitRenderBones(pose, (bone, poseState) -> {
+            // 本体网格渲染只在 TLM 自己的 gecko 取模路径上被调用（见 GeoReplacedEntityRenderer#submit），
+            // 该路径下 modelState 恒为 GeoModelState；外部渲染器（YSM 身体接管）路径完全跳过这个
+            // submit(TState,TData,...) 重载，自己画本体，不会触碰到这里。
+            ((GeoModelState) data.modelState).visitRenderBones(pose, (bone, poseState) -> {
                 renderCubesOfBone(bone, poseState, finalVertexConsumer, state, data);
             });
             data.close();

@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.animated;
 
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.IGeoLocatorSource;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.render.built.GeoBone;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.render.built.GeoLocatorType;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.render.built.GeoModel;
@@ -11,7 +12,7 @@ import org.joml.Matrix4f;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public final class GeoModelState {
+public final class GeoModelState implements IGeoLocatorSource {
     private GeoModel model;
     float[] data;
     final ShortArrayList renderBoneIndices;
@@ -64,6 +65,7 @@ public final class GeoModelState {
         }
     }
 
+    @Override
     public void visitLocatorGroup(GeoLocatorType type, PoseStack poseStack, Consumer<PoseStack> visitor) {
         var group = activeLocatorGroups.get(type.getSeq());
         if (!group.isEmpty()) {
@@ -78,6 +80,7 @@ public final class GeoModelState {
         }
     }
 
+    @Override
     public int locatorGroupSize(GeoLocatorType type) {
         return activeLocatorGroups.get(type.getSeq()).size();
     }

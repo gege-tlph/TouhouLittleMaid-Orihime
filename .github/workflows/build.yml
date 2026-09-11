@@ -80,6 +80,17 @@ jobs:
           echo "path=${candidates[0]}" >> "$GITHUB_OUTPUT"
           sha256sum "${candidates[0]}"
 
+          # "Exactly one candidate" cannot catch the regression it looks like it catches:
+          # if `jar` and `shadowJar` ever write the same bare name again, there is still
+          # exactly one candidate -- it just has no bundled dependencies in it.
+          # The only judgement point that survives that is the content itself.
+          relocated=$(python3 -c "import sys,zipfile; p='com/github/tartaricacid/touhoulittlemaid/libs/'; print(sum(1 for n in zipfile.ZipFile(sys.argv[1]).namelist() if n.startswith(p)))" "${candidates[0]}")
+          echo "relocated dependency entries: $relocated"
+          if [[ "$relocated" -lt 1 ]]; then
+            echo "Selected JAR carries no relocated dependencies -- the thin jar took the name." >&2
+            exit 1
+          fi
+
       - name: Upload installable JAR
         uses: actions/upload-artifact@v6
         with:

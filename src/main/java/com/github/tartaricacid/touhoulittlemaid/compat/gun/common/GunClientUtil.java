@@ -7,7 +7,7 @@ import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.PlayState;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.builder.LoopType;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.event.AnimationEvent;
-import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.animated.GeoModelState;
+import com.github.tartaricacid.touhoulittlemaid.geckolib3.geo.IGeoLocatorSource;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -38,8 +38,12 @@ public class GunClientUtil {
      * <p>⚠️ 曾经还有一个五参重载，走的是不看骨骼的固定变换兜底（bedrock 模型与
      * 「gecko + 穿背包」两条路的落点）。实机结果是枪甩到女仆身侧、穿进模型里，
      * 用户 2026-08-21 裁决砍掉，见 {@code GunMaidRender} 的类注释。</p>
+     *
+     * <p>参数类型是 {@link IGeoLocatorSource} 而非具体的 {@code GeoModelState}，
+     * 因为 YSM 身体接管场景下 {@code GeckoLayerMaidBackItem}（本方法唯一调用点）也会被
+     * {@code YsmMaidLayerBridge} 复用，此时 modelState 是外部定位骨骼源，不是 gecko 模型自己的池化实例。</p>
      */
-    public static void renderBackGun(ItemStack offhandItem, GeoModelState modelState, EntityMaid maid, PoseStack poseStack, SubmitNodeCollector submitNode, int packedLight) {
+    public static void renderBackGun(ItemStack offhandItem, IGeoLocatorSource modelState, EntityMaid maid, PoseStack poseStack, SubmitNodeCollector submitNode, int packedLight) {
         if (TacCompat.isGun(offhandItem)) {
             TacCompat.renderBackGun(offhandItem, modelState, maid, poseStack, submitNode, packedLight);
         }

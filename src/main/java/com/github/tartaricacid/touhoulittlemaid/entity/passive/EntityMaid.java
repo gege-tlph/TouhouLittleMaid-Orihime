@@ -1,6 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.passive;
 
 import cn.sh1rocu.touhoulittlemaid.api.extension.IEntity;
+import cn.sh1rocu.touhoulittlemaid.util.PacketDistributor;
 import cn.sh1rocu.touhoulittlemaid.util.transfer.ItemUtil;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
@@ -21,12 +22,16 @@ import com.github.tartaricacid.touhoulittlemaid.entity.favorability.Type;
 import com.github.tartaricacid.touhoulittlemaid.entity.projectile.MaidFishingHook;
 import com.github.tartaricacid.touhoulittlemaid.entity.task.TaskManager;
 import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
+import com.github.tartaricacid.touhoulittlemaid.compat.ysm.YsmCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.ysm.event.YsmMaidClientTickEvent;
 import com.github.tartaricacid.touhoulittlemaid.network.message.SendEffectPackage;
+import com.github.tartaricacid.touhoulittlemaid.network.message.SyncYsmMaidDataPackage;
 import com.github.tartaricacid.touhoulittlemaid.util.IdentifierUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.migrate.EntityTypeUtil;
 import com.github.tartaricacid.touhoulittlemaid.world.backups.MaidBackupsManager;
 import com.github.tartaricacid.touhoulittlemaid.world.data.MaidWorldData;
 import com.google.common.collect.Lists;
+import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -96,6 +101,34 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
     /** 液体背包储罐里的流体 id（行为基准同款）：GUI 画流体贴图与名字要用，客户端要随时拿得到 */
     private static final EntityDataAccessor<String> BACKPACK_FLUID = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<ChatBubbleDataCollection> CHAT_BUBBLE = SynchedEntityData.defineId(EntityMaid.class, ChatBubbleRegister.INSTANCE);
+    /**
+     * 第三方模型系统（YSM）身体接管：是否启用、模型 id、贴图 id。同步字段，
+     * 客户端渲染器（EntityMaidRenderer#submit 的 ModelType.YSM 分支）与本体渲染取舍全靠它。
+     * <p>
+     * 只覆盖渲染身份这一层。轮盘动画状态的同步已于 2026-09-05 补上（见 {@code SyncYsmMaidDataPackage}
+     * 与 {@link #tick()} 里的出站触发器）；roaming 变量仍未接——两端都没有消费者，见那个包的类注释。
+     */
+    private static final EntityDataAccessor<Boolean> DATA_IS_YSM_MODEL = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<String> DATA_YSM_MODEL_ID = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<String> DATA_YSM_MODEL_TEXTURE = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.STRING);
+    /** 展示用名称（YSM 模型选择界面里那个名字），只用于回显，不参与模型加载。 */
+    private static final EntityDataAccessor<String> DATA_YSM_MODEL_NAME = SynchedEntityData.defineId(EntityMaid.class, EntityDataSerializers.STRING);
+
+    /**
+     * YSM 状态的 NBT 键名。
+     *
+     * <p>公开是因为**物品提示框读的是死女仆的 NBT**——照片 / 手办里存着一份 {@code CompoundTag}，
+     * 没有实体可问，见 {@code YsmCompat#getYsmMaidInfo}。键名字符串与 {@code port/1.21.11-fabric}
+     * 逐字相同，存档互认。</p>
+     *
+     * <p>⚠️ <b>{@code YSM_MODEL_NAME_TAG} 在本树存的是纯字符串</b>（来自 {@code YsmMaidModelPackage}
+     * 的 {@code displayName}），而 1.21.11 存的是 JSON 序列化的 {@code Component}。
+     * 读它的地方**不要照抄那边的 JSON 解析**。</p>
+     */
+    public static final String IS_YSM_MODEL_TAG = "IsYsmModel";
+    public static final String YSM_MODEL_ID_TAG = "YsmModelId";
+    public static final String YSM_MODEL_TEXTURE_TAG = "YsmModelTexture";
+    public static final String YSM_MODEL_NAME_TAG = "YsmModelName";
 
     /**
      * 检查玩家是否正在打开女仆的 GUI 的标志位，打开 GUI 后女仆会暂停 Brain 的执行
@@ -155,6 +188,10 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
         builder.define(BACKPACK_ITEM_SHOW, ItemStack.EMPTY);
         builder.define(BACKPACK_FLUID, "");
         builder.define(CHAT_BUBBLE, ChatBubbleDataCollection.getEmptyCollection());
+        builder.define(DATA_IS_YSM_MODEL, false);
+        builder.define(DATA_YSM_MODEL_ID, "");
+        builder.define(DATA_YSM_MODEL_TEXTURE, "");
+        builder.define(DATA_YSM_MODEL_NAME, "");
     }
 
     @Override
@@ -224,6 +261,21 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
                 b.onTick(this, s);
                 return false;
             });
+        }
+
+        if (YsmCompat.isInstalled() && this.isYsmModel()) {
+            if (this.level.isClientSide()) {
+                // 触发 ysm 模型的客户端事件
+                YsmMaidClientTickEvent.CALLBACK.invoker().post(new YsmMaidClientTickEvent(this));
+            }
+            // 同步 ysm 轮盘数据。
+            // rouletteAnimDirty 在服务端是**出站触发器**（读到就发一次并置回 false），
+            // 在客户端是渲染端脏标记——两种角色，故它不上线。见 SyncYsmMaidDataPackage 类注释。
+            if (!this.level.isClientSide() && this.rouletteAnimDirty) {
+                this.rouletteAnimDirty = false;
+                PacketDistributor.sendToPlayersTrackingEntity(this, new SyncYsmMaidDataPackage(
+                        this.getId(), this.rouletteAnim, this.rouletteAnimPlaying, new Object2FloatOpenHashMap<>()));
+            }
         }
 
         // 强制开启女仆备份机制
@@ -439,6 +491,11 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
         this.taskManager.save(output);
         this.killRecordManager.save(output);
         this.aiChatManager.save(output);
+
+        output.putBoolean(IS_YSM_MODEL_TAG, this.isYsmModel());
+        output.putString(YSM_MODEL_ID_TAG, this.getYsmModelId());
+        output.putString(YSM_MODEL_TEXTURE_TAG, this.getYsmModelTexture());
+        output.putString(YSM_MODEL_NAME_TAG, this.getYsmModelName());
     }
 
     @Override
@@ -459,6 +516,11 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
         this.taskManager.read(input);
         this.killRecordManager.read(input);
         this.aiChatManager.read(input);
+
+        this.setIsYsmModel(input.getBooleanOr(IS_YSM_MODEL_TAG, false));
+        this.setYsmModelId(input.getStringOr(YSM_MODEL_ID_TAG, ""));
+        this.setYsmModelTexture(input.getStringOr(YSM_MODEL_TEXTURE_TAG, ""));
+        this.setYsmModelName(input.getStringOr(YSM_MODEL_NAME_TAG, ""));
 
         // 因为原版的无敌状态不会自动同步，故需要在这里手动设置同步
         this.setSyncInvulnerable(this.isInvulnerable());
@@ -767,6 +829,67 @@ public class EntityMaid extends MaidManagerHost implements IEntity, CrossbowAtta
     public void setSyncInvulnerable(boolean isInvulnerable) {
         super.setInvulnerable(isInvulnerable);
         this.entityData.set(DATA_SYNC_INVULNERABLE, isInvulnerable);
+    }
+
+    /**
+     * 本体渲染是否交给第三方模型系统（YSM）接管。
+     */
+    public boolean isYsmModel() {
+        return this.entityData.get(DATA_IS_YSM_MODEL);
+    }
+
+    public void setIsYsmModel(boolean isYsmModel) {
+        this.entityData.set(DATA_IS_YSM_MODEL, isYsmModel);
+    }
+
+    public String getYsmModelId() {
+        return this.entityData.get(DATA_YSM_MODEL_ID);
+    }
+
+    public void setYsmModelId(String modelId) {
+        this.entityData.set(DATA_YSM_MODEL_ID, modelId);
+    }
+
+    public String getYsmModelTexture() {
+        return this.entityData.get(DATA_YSM_MODEL_TEXTURE);
+    }
+
+    public void setYsmModelTexture(String texture) {
+        this.entityData.set(DATA_YSM_MODEL_TEXTURE, texture);
+    }
+
+    public String getYsmModelName() {
+        return this.entityData.get(DATA_YSM_MODEL_NAME);
+    }
+
+    public void setYsmModelName(String name) {
+        this.entityData.set(DATA_YSM_MODEL_NAME, name);
+    }
+
+    /**
+     * YSM 轮盘动画状态：是否正在播放、播放哪一个（molang 表达式/动画名），以及一个"待渲染端消费"
+     * 的脏标记。渲染端（{@code MaidAnimatable}）直接读写这三个公开字段——OpenYSM 移植文档里
+     * 记的"寄存在 EntityMaid 自己的字段上"就是指这三个，不是走 accessor 方法。
+     * <p>
+     * ⚠️ <b>本轮尚未联网</b>：这里只是纯字段，没有 SynchedEntityData/网络包把它们从服务端广播到
+     * 客户端（对应的 {@code SyncYsmMaidDataPackage} 是后续独立切片）。单人档（整合服）里服务端
+     * 与客户端渲染的是同一个 EntityMaid 实例，字段直接可见，行为正确；专服上客户端永远看不到
+     * 服务端对这三个字段的写入——这是已知、已记录的范围收窄，不是遗漏。
+     */
+    public boolean rouletteAnimDirty = false;
+    public boolean rouletteAnimPlaying = false;
+    public String rouletteAnim = "";
+
+    public void stopRouletteAnim() {
+        this.rouletteAnimPlaying = false;
+        this.rouletteAnim = "";
+        this.rouletteAnimDirty = true;
+    }
+
+    public void playRouletteAnim(String animName) {
+        this.rouletteAnimPlaying = true;
+        this.rouletteAnim = animName;
+        this.rouletteAnimDirty = true;
     }
 
     @Override

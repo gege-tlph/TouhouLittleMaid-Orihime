@@ -451,6 +451,14 @@ tasks.named('sourcesJar') {
 }
 
 jar {
+    // 本树没有 remapJar（26.x 无混淆，loom 1.16 不生成它，也就没有 build/devlibs/ 把这份产物挪走），
+    // 于是普通 jar 与 shadowJar 都写 build/libs 下同一个裸文件名、彼此没有顺序声明，
+    // 而两个 workflow 的候选筛选取的正是裸名——谁后写谁被发布，是运气不是保证。
+    // ⚠️ 方向陷阱：不要照 1.21.11 给 shadowJar 加 classifier。那边裸名归 remapJar（它吃 shadowJar 的产物），
+    //    本树加在那一侧只会让裸名稳定落到不含依赖的瘦包头上，比碰运气更糟。classifier 必须加在这一侧。
+    // 取 "dev" 是为了对齐两个 workflow 既有的 *-dev.jar 排除项（从 1.21.11 照搬时就在），无需改 CI。
+    archiveClassifier.set("dev")
+
     from("LICENSE-MIT") {
         rename { "${it}_${project.archives_base_name}" }
     }

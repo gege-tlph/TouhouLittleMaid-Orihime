@@ -54,6 +54,7 @@ public class NetworkHandler {
         ClientPlayNetworking.registerGlobalReceiver(FoxScrollPackage.TYPE, FoxScrollPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(CheckSchedulePosPacket.TYPE, CheckSchedulePosPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncMaidAreaPackage.TYPE, SyncMaidAreaPackage::handle);
+        ClientPlayNetworking.registerGlobalReceiver(SyncYsmMaidDataPackage.TYPE, SyncYsmMaidDataPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(CChessToClientPackage.TYPE, CChessToClientPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(WChessToClientPackage.TYPE, WChessToClientPackage::handle);
         ClientPlayNetworking.registerGlobalReceiver(TTSAudioToClientPackage.TYPE, TTSAudioToClientPackage::handle);
@@ -89,6 +90,7 @@ public class NetworkHandler {
         registerS2CPacket(FoxScrollPackage.TYPE, FoxScrollPackage.STREAM_CODEC);
         registerS2CPacket(CheckSchedulePosPacket.TYPE, CheckSchedulePosPacket.STREAM_CODEC);
         registerS2CPacket(SyncMaidAreaPackage.TYPE, SyncMaidAreaPackage.STREAM_CODEC);
+        registerS2CPacket(SyncYsmMaidDataPackage.TYPE, SyncYsmMaidDataPackage.STREAM_CODEC);
         registerS2CPacket(CChessToClientPackage.TYPE, CChessToClientPackage.STREAM_CODEC);
         registerS2CPacket(WChessToClientPackage.TYPE, WChessToClientPackage.STREAM_CODEC);
         registerS2CPacket(TTSAudioToClientPackage.TYPE, TTSAudioToClientPackage.STREAM_CODEC);
@@ -114,6 +116,7 @@ public class NetworkHandler {
 
     public static void registerC2SPackets() {
         registerC2SPacket(MaidModelPackage.TYPE, MaidModelPackage.STREAM_CODEC, MaidModelPackage::handle);
+        registerC2SPacket(YsmMaidModelPackage.TYPE, YsmMaidModelPackage.STREAM_CODEC, YsmMaidModelPackage::handle);
         registerC2SPacket(ChairModelPackage.TYPE, ChairModelPackage.STREAM_CODEC, ChairModelPackage::handle);
         registerC2SPacket(MaidConfigPackage.TYPE, MaidConfigPackage.STREAM_CODEC, MaidConfigPackage::handle);
         registerC2SPacket(MaidTaskPackage.TYPE, MaidTaskPackage.STREAM_CODEC, MaidTaskPackage::handle);

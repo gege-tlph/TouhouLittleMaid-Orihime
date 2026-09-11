@@ -13,9 +13,11 @@ import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.response.F
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.response.Message;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.llm.openai.response.ToolCall;
 import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.TTSSite;
+import com.github.tartaricacid.touhoulittlemaid.ai.service.tts.system.TTSSystemSite;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.AIConfig;
 import com.github.tartaricacid.touhoulittlemaid.config.ServerRuleConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import javax.annotation.Nullable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.JsonObject;
@@ -37,6 +39,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 public class LLMCallback implements ResponseCallback<ResponseChat> {
@@ -48,6 +51,10 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
      * 每个工具最大只允许重复调用两次，避免疯狂循环调用
      */
     private static final int MAX_REPEAT_TOOL_BATCH_COUNT = 2;
+    /**
+     * 已经为「静默回落到系统语音」告警过的站点 id，见 {@link #logSystemVoiceFallback}
+     */
+    private static final Set<String> SYSTEM_FALLBACK_WARNED = ConcurrentHashMap.newKeySet();
     /**
      * 当前正在对话的女仆对象
      */
@@ -241,6 +248,7 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
 
         TTSSite site = chatManager.getTTSSite();
         if (ServerRuleConfig.get(AIConfig.TTS_ENABLED) && site != null && site.enabled()) {
+            logSystemVoiceFallback(site);
             // 判据与 needsSeparateTtsText 是同一个，别各写各的
             if (chatManager.needsSeparateTtsText()) {
                 chatManager.requestTtsTranslation(site, chatText, waitingChatBubbleId);
@@ -248,9 +256,78 @@ public class LLMCallback implements ResponseCallback<ResponseChat> {
                 chatManager.tts(site, chatText, chatText, waitingChatBubbleId);
             }
         } else if (StringUtils.isNotBlank(chatText) && maid.level instanceof ServerLevel serverLevel) {
+            logSilentReply(site);
             MinecraftServer server = serverLevel.getServer();
             server.submit(() -> maid.getChatBubbleManager().addLLMChatText(chatText, waitingChatBubbleId));
         }
+    }
+
+    /**
+     * 这条分支是「女仆回了话却一声不吭」的唯一来源，而它原先什么都不打。
+     *
+     * <p>四种成因在玩家侧的表现**完全一样**——气泡出字、没有红字、没有声音——处置却完全不同：
+     * 世界规则关着要去开规则，站点没选要去女仆界面选，站点不在服务端站点表里要去服务端配，
+     * 站点被禁要去站点编辑器启用。2026-08-30 的专服取证里，服务端 20 小时零 {@code TTS request failed}、
+     * 客户端三份会话零 {@code Received TTS audio}，也就是说**所有会打日志的环节都是好的**，
+     * 而症状真实存在——剩下的全在这条不打日志的分支上，于是排查无从下手。</p>
+     *
+     * <p>与 {@code TTSAudioToClientPackageProxy} 同法：把静默 return 换成能自证的日志。
+     * 世界规则那一档也照打——它虽然是管理员有意关的，但「常态无声」这个报告本身
+     * 就区分不了「有意关掉」和「配错了」，少打这一条就等于把缺陷留一半。</p>
+     */
+    private void logSilentReply(@Nullable TTSSite site) {
+        String reason;
+        if (!ServerRuleConfig.get(AIConfig.TTS_ENABLED)) {
+            reason = "the world rule TTS_ENABLED is off";
+        } else if (site == null) {
+            reason = MaidAIChatSerializable.isNoTTSSite(chatManager.ttsSite)
+                    ? "her voice is set to \"no speech\""
+                    : "her TTS site '%s' is not in this server's site table".formatted(chatManager.ttsSite);
+        } else {
+            reason = "the TTS site '%s' is disabled".formatted(site.id());
+        }
+        TouhouLittleMaid.LOGGER.warn("Maid {} replied without speech: {}", maid.getId(), reason);
+    }
+
+    /**
+     * <b>这条分支「成功」了，但成功的是旁白，不是合成。</b>
+     *
+     * <p>{@code MaidAIChatData.resolveTTSSite} 的最后一跳无条件回落到 {@code system} 站点，
+     * 而该站点默认存在且默认启用（{@code TTSSystemSite.Serializer#defaultSite}），加上
+     * {@code AvailableSites} 是「先铺默认、再用文件覆盖」，所以<b>这一跳在任何服务器上都必定命中</b>。
+     * 于是「站点找不到 / 被禁 / 谁都没选默认站点」这三种配置错误，全都被静默翻译成
+     * 「改用玩家客户端的 MC 旁白」——而旁白既不产生音频包也不发 HTTP 请求，
+     * 服务端与客户端的日志因此<b>全都是干净的</b>，症状与「TTS 整个坏掉」一模一样。</p>
+     *
+     * <p>专服上这件事尤其查不出来：回落只发生在解析的那一瞬间，<b>女仆存的 {@code ttsSite}
+     * 一个字都没改</b>，所以玩家界面里显示的仍是他选的云端音色，管理员看服务端 {@code tts.json}
+     * 也一切正常——两个视角都"正常"，而唯一听得出问题的人在客户端。这条日志是把这两端接上的那根线。</p>
+     *
+     * <p>按「失败的那个站点 id」去重，仿 {@code SoundEngine} 的 {@code ONLY_WARN_ONCE}：
+     * 配置错误是恒定的，每句话都吼一遍只会淹掉日志；换成另一个错值时 key 变了，会重新告警。</p>
+     */
+    private void logSystemVoiceFallback(TTSSite resolved) {
+        if (!TTSSystemSite.API_TYPE.equals(resolved.id())) {
+            return;
+        }
+        String requested = StringUtils.isNotBlank(chatManager.ttsSite)
+                ? chatManager.ttsSite
+                : ServerRuleConfig.get(AIConfig.DEFAULT_TTS_SITE);
+        if (TTSSystemSite.API_TYPE.equals(requested)) {
+            // 她本来选的就是系统语音，这是玩家的选择，不是回落
+            return;
+        }
+        if (!SYSTEM_FALLBACK_WARNED.add(requested)) {
+            return;
+        }
+        String cause = StringUtils.isNotBlank(requested)
+                ? "her TTS site '%s' is missing from this server's site table or is disabled".formatted(requested)
+                : "neither she nor the world rule DefaultTTSSite names a TTS site";
+        TouhouLittleMaid.LOGGER.warn(
+                "Maid {} is speaking through the client-side narrator instead of a synthesis site: {}."
+                        + " The system voice sends no audio and makes no request, so this looks exactly like"
+                        + " \"TTS is broken\" while every log stays clean.",
+                maid.getId(), cause);
     }
 
     /**
