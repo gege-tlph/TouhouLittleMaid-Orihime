@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.github.gege-tlph</groupId>
+  <artifactId>touhoulittlemaid-fabric</artifactId>
+  <version>0.8.8-neo1.5.3+mc1.21.11</version>
+  <name>Touhou Little Maid: Tsumugi</name>
+  <description>Fabric port of Touhou Little Maid. Bundled libraries are relocated inside the jar and are intentionally not declared here.</description>
+  <url>https://github.com/gege-tlph/TouhouLittleMaid-Tsumugi</url>
+  <licenses>
+    <license>
+      <name>MIT</name>
+      <comments>Code is MIT; art assets are CC BY-NC-SA 4.0.</comments>
+    </license>
+  </licenses>
+  <dependencies>
+    <dependency>
+      <groupId>net.fabricmc</groupId>
+      <artifactId>fabric-loader</artifactId>
+      <version>0.19.3</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>net.fabricmc.fabric-api</groupId>
+      <artifactId>fabric-api</artifactId>
+      <version>0.141.6+1.21.11</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>fuzs.forgeconfigapiport</groupId>
+      <artifactId>forgeconfigapiport-fabric</artifactId>
+      <version>21.11.1</version>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+</project>
